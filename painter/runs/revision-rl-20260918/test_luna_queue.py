@@ -266,4 +266,57 @@ class LunaQueueTest(unittest.TestCase):
             queue.receipts(self.root, 'test', identity_mode=True)
 
 
+class RewardQueueSelectionTest(unittest.TestCase):
+    def setUp(self):
+        self.temp=tempfile.TemporaryDirectory();self.addCleanup(self.temp.cleanup)
+        self.root=Path(self.temp.name)
+
+    def add_request(self, ident, created_at=None, *, timestamp=True):
+        paths={};hashes={}
+        for role in ('reference','anchor','candidate'):
+            path=self.root/f'{ident}-{role}.png';path.write_bytes(f'{ident}-{role}'.encode())
+            paths[role]=path.name;hashes[role]=queue.sha(path)
+        request=dict(id=ident,images=paths,image_sha256=hashes)
+        if timestamp:
+            request['created_at']=created_at
+        folder=self.root/'judge-queue'/ident;folder.mkdir(parents=True)
+        queue.write(folder/'request.json',request)
+
+    def selected_ids(self, batch='test', limit=24):
+        queue.export(self.root,batch,limit)
+        return sorted(path.parent.name for path in
+                      (self.root/'judge-queue').glob('*/assigned.json')
+                      if json.loads(path.read_text()).get('batch') == batch)
+
+    def test_oldest_requests_are_selected_before_inverse_lexicographic_hash(self):
+        self.add_request('f-new-low-hash', created_at=30)
+        self.add_request('a-old-high-hash', created_at=10)
+        self.add_request('e-middle', created_at=20)
+        self.assertEqual(self.selected_ids(limit=2), ['a-old-high-hash', 'e-middle'])
+
+    def test_newly_arrived_low_hash_does_not_jump_older_request(self):
+        self.add_request('z-older', created_at=10)
+        self.add_request('a-new-low-hash', created_at=20)
+        self.assertEqual(self.selected_ids(limit=1), ['z-older'])
+
+    def test_equal_timestamps_use_request_id_then_path_deterministically(self):
+        self.add_request('z-request', created_at=10)
+        self.add_request('a-request', created_at=10)
+        self.assertEqual(self.selected_ids(limit=1), ['a-request'])
+
+    def test_assigned_and_completed_requests_are_excluded_and_limit_applies(self):
+        self.add_request('a-assigned', created_at=1)
+        self.add_request('b-completed', created_at=2)
+        self.add_request('c-eligible', created_at=3)
+        self.add_request('d-eligible', created_at=4)
+        queue.write(self.root/'judge-queue'/'a-assigned'/'assigned.json', {'batch':'old'})
+        queue.write(self.root/'judge-queue'/'b-completed'/'receipt.json', {'id':'b-completed'})
+        self.assertEqual(self.selected_ids(limit=1), ['c-eligible'])
+
+    def test_missing_created_at_uses_oldest_zero_fallback(self):
+        self.add_request('z-timestamped', created_at=1)
+        self.add_request('a-legacy', timestamp=False)
+        self.assertEqual(self.selected_ids(limit=1), ['a-legacy'])
+
+
 if __name__=='__main__':unittest.main()

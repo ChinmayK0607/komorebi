@@ -2,6 +2,7 @@
 import argparse
 import hashlib
 import json
+import math
 import os
 import random
 import shutil
@@ -16,6 +17,29 @@ IDENTITY_ROLES = ('reference', 'A', 'B')
 
 def sha(path):return hashlib.sha256(path.read_bytes()).hexdigest()
 def write(path,obj):path.write_text(json.dumps(obj,indent=2)+'\n')
+
+
+def _request_sort_key(root, path, request):
+    """Order pending requests oldest-first with deterministic tie-breaks.
+
+    Requests from before ``created_at`` was recorded are treated as timestamp
+    zero so legacy work remains eligible ahead of newly created requests.
+    Present timestamps must be finite JSON numbers; silently accepting an
+    unusable value would make queue order depend on an implementation detail.
+    """
+    if 'created_at' not in request:
+        created_at = 0.0
+    else:
+        value = request['created_at']
+        if isinstance(value, bool) or not isinstance(value, (int, float)):
+            raise ValueError(f'Invalid created_at in request: {path}')
+        try:
+            created_at = float(value)
+        except (OverflowError, ValueError):
+            raise ValueError(f'Invalid created_at in request: {path}') from None
+        if not math.isfinite(created_at):
+            raise ValueError(f'Invalid created_at in request: {path}')
+    return (created_at, str(request.get('id', '')), str(path.relative_to(root)))
 
 
 def _materialize_identity_asset(dest, digest, source):
@@ -54,11 +78,11 @@ def _materialize_identity_asset(dest, digest, source):
 def export(root, batch, limit):
     dest=root/'reward-batches'/batch
     if dest.exists():raise ValueError('Batch already exists: '+str(dest))
-    requests=[]
+    pending=[]
     for f in sorted((root/'judge-queue').glob('*/request.json')):
         if f.with_name('receipt.json').exists() or f.with_name('assigned.json').exists():continue
-        requests.append((f,json.loads(f.read_text())))
-        if len(requests)>=limit:break
+        pending.append((f, json.loads(f.read_text())))
+    requests=sorted(pending, key=lambda item: _request_sort_key(root, *item))[:limit]
     if not requests:print('No unassigned rewards');return
     dest.mkdir(parents=True)
     jobs=[(f,r,side) for f,r in requests for side in ['A','B']]

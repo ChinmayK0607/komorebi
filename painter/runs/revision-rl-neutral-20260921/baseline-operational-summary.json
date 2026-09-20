@@ -1,0 +1,38 @@
+{
+  "cases": 32,
+  "valid_final_canvas": 32,
+  "finished": 13,
+  "operational_cutoff": 19,
+  "mean_generated_tokens": 3910.71875,
+  "mean_turns": 6.1875,
+  "turns": 198,
+  "no_change_turns": 145,
+  "families": {
+    "tree": 2,
+    "bus": 2,
+    "vase": 2,
+    "cylinder": 4,
+    "box": 4,
+    "flower": 2,
+    "sphere": 4,
+    "sailboat": 2,
+    "ribbons": 4,
+    "cup": 2,
+    "still_life": 2,
+    "house": 2
+  },
+  "kinds": {
+    "paint": 24,
+    "finish": 4,
+    "repair": 4
+  },
+  "quality_judged": false,
+  "valid_turns": 195,
+  "total_turns": 198,
+  "no_change_nonfinish_turns": 133,
+  "snapshot": {
+    "sha256": "0ef10dec72e2dc7afbe3b667ae0981a667c959e846f4fade24b395c8f59c7bd7",
+    "bytes": 5959801,
+    "files": 823
+  }
+}
