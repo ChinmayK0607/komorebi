@@ -39,6 +39,23 @@ class LunaQueueTest(unittest.TestCase):
             queue.write(source.with_name(source.name.replace('judge-','labels-')),
                         dict(judge_model='gpt-5.6-luna',reasoning_effort='low',judgments=judgments))
 
+    def make_identity_batch(self, batch, contents):
+        dest=self.root/'reward-batches'/batch
+        ident=f'{batch}-0000';folder=dest/ident;folder.mkdir(parents=True)
+        paths={};hashes={}
+        for role,data in contents.items():
+            path=folder/(role+'.png');path.write_bytes(data)
+            paths[role]=ident+'/'+role+'.png';hashes[role]=queue.sha(path)
+        request=dict(id=f'request-{batch}',images=paths,image_sha256={
+            'reference':hashes['reference'],'anchor':hashes['B'],'candidate':hashes['A']})
+        queue.write(dest/'pairs.json',[dict(id=ident,**paths)])
+        queue.write(dest/'private-key.json',[dict(
+            id=ident,request_id=request['id'],candidate_side='A',
+            image_sha256=hashes,request=request)])
+        queue.stage(self.root,batch,identity_mode=True)
+        return json.loads((dest/'assets.json').read_text()), json.loads(
+            (dest/'identity-review-input.json').read_text())
+
     def test_reversed_views_go_to_different_agents(self):
         keys={v['id']:v for v in json.loads((self.batch/'private-key.json').read_text())}
         for source in self.batch.glob('judge-*.json'):
@@ -89,6 +106,8 @@ class LunaQueueTest(unittest.TestCase):
         queue.stage(self.root, 'test', identity_mode=True)
         assets=json.loads((self.batch/'assets.json').read_text())['assets']
         self.assertEqual(len(assets), len({asset['sha256'] for asset in assets}))
+        for asset in assets:
+            self.assertEqual(asset['asset_id'], 'asset-'+asset['sha256'])
         manifests=sorted(self.batch.glob('judge-*-assets.json'))
         self.assertTrue(manifests)
         for manifest in manifests:
@@ -98,6 +117,24 @@ class LunaQueueTest(unittest.TestCase):
                                  list(dict.fromkeys(item['rolemap'][role]
                                                     for role in ('reference','A','B'))))
                 self.assertNotIn('path', item)
+
+    def test_content_asset_ids_are_global_across_batches(self):
+        shared=b'shared bytes'
+        assets_a, items_a=self.make_identity_batch('batch-a', {
+            'reference':shared, 'A':b'batch-a candidate', 'B':b'batch-a anchor'})
+        assets_b, items_b=self.make_identity_batch('batch-b', {
+            'reference':shared, 'A':b'batch-b candidate', 'B':b'batch-a anchor'})
+        by_hash_a={row['sha256']:row for row in assets_a['assets']}
+        by_hash_b={row['sha256']:row for row in assets_b['assets']}
+        self.assertEqual(by_hash_a[queue.sha(self.root/'reward-batches/batch-a/batch-a-0000/reference.png')]['asset_id'],
+                         by_hash_b[queue.sha(self.root/'reward-batches/batch-b/batch-b-0000/reference.png')]['asset_id'])
+        candidate_a=items_a[0]['rolemap']['A']
+        candidate_b=items_b[0]['rolemap']['A']
+        self.assertNotEqual(candidate_a, candidate_b)
+        self.assertEqual(items_a[0]['ordinal'], items_b[0]['ordinal'])
+        for assets in (assets_a, assets_b):
+            for asset in assets['assets']:
+                self.assertEqual(asset['asset_id'], 'asset-'+asset['sha256'])
 
     def test_identity_receipts_keep_absolute_quality_and_deterministic_tie_separate(self):
         self.identity_labels()

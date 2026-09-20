@@ -62,7 +62,9 @@ def _identity_stage(dest, pairs, key):
             source_paths.setdefault(actual[role], set()).add(str(path))
         pair_hashes[pair['id']] = actual
     digests = sorted(source_paths)
-    asset_ids = {digest: f'asset-{index:04d}' for index, digest in enumerate(digests, 1)}
+    # Asset IDs must be stable across batches. Ordinal IDs allow a stale public
+    # label to bind an asset-0003 from one batch to different bytes in another.
+    asset_ids = {digest: f'asset-{digest}' for digest in digests}
     assets = [{
         'asset_id': asset_ids[digest],
         'bytes': Path(sorted(source_paths[digest])[0]).stat().st_size,
@@ -142,6 +144,7 @@ def _identity_receipts(root, batch):
     assets = {row['asset_id']: row for row in assets_doc.get('assets', [])}
     assert len(assets) == len(assets_doc.get('assets', []))
     for asset_id, asset in assets.items():
+        assert asset_id == f'asset-{asset["sha256"]}', f'Asset ID is not content addressed: {asset_id}'
         path = Path(asset['path'])
         assert path.is_file() and path.stat().st_size == asset['bytes']
         assert sha(path) == asset['sha256'], f'Asset hash mismatch: {asset_id}'

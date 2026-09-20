@@ -1,0 +1,21 @@
+{
+  "measurement": "10-second nvidia-smi samples; startup-inclusive; busy fraction is sampled utilization >0, not training efficiency",
+  "devices": {
+    "0": {
+      "samples": 190,
+      "window_start": "2026/09/20 15:07:18.017",
+      "window_end": "2026/09/20 15:38:48.602",
+      "mean_gpu_utilization_percent": 16.75,
+      "fraction_samples_above_zero": 0.1737,
+      "fraction_samples_at_least_90": 0.1579
+    },
+    "1": {
+      "samples": 190,
+      "window_start": "2026/09/20 15:07:18.025",
+      "window_end": "2026/09/20 15:38:48.604",
+      "mean_gpu_utilization_percent": 0.07,
+      "fraction_samples_above_zero": 0.0053,
+      "fraction_samples_at_least_90": 0.0
+    }
+  }
+}

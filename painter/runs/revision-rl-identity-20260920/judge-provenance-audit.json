@@ -1,0 +1,26 @@
+{
+  "batch": "identity-saved-004",
+  "status": "unusable_do_not_train",
+  "parent_inspected_view": "identity-saved-004-0041",
+  "observed_reference": "orange bus",
+  "observed_candidate_B_in_label": "bottom-right bus fragment",
+  "judge01_claim": "centered yellow cube reference and centered peach cube candidate",
+  "judge01_admission": "Reused earlier batch descriptions for repeated ordinal asset IDs; did not display full required asset set",
+  "judge01_reported_displayed_assets": [
+    "asset-0016",
+    "asset-0028",
+    "asset-0027",
+    "asset-0023",
+    "asset-0004",
+    "asset-0012",
+    "asset-0021",
+    "asset-0031",
+    "asset-0018",
+    "asset-0019",
+    "asset-0032"
+  ],
+  "judge02_checked_pair": "correctly described bus and severe crops",
+  "raw_labels_preserved": true,
+  "installed_on_node": false,
+  "optimizer_updates": 0
+}
