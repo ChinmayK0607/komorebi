@@ -1,0 +1,69 @@
+{
+  "source_commit": "125d5d7",
+  "bundle_sha256": "3557bc94eae139c65b524145cbb849d8b4a0c9eaf48b1bee5dc54d7f127f0bdc",
+  "bundle_bytes": 133830509,
+  "files": {
+    "EXPERIMENT.json": {
+      "sha256": "f6f0646e8fe3799762c4db9a6a6237b0b1797e2c9cf1decf570abed5c7716a43",
+      "bytes": 2418
+    },
+    "rl-states.json": {
+      "sha256": "84e60e5853d3371ab145d3eecfa767baa86f356311230eb888d19244bb497b54",
+      "bytes": 10005
+    },
+    "evaluation-tasks.json": {
+      "sha256": "aca312e30c54db5d74cf4b59701ff4892976c19c63d32aaeb8b13945c3e984e4",
+      "bytes": 7943
+    },
+    "campaign.json": {
+      "sha256": "bfb7f04125e11e9985b774156f94e0f4949f13bf89641e290c5c18e51d11bf22",
+      "bytes": 3549
+    },
+    "reward_queue.py": {
+      "sha256": "b4f1c9bcd247a4aba0f39f1c38c459489cdab4d7e6bbe0796170f1bbc9c5de80",
+      "bytes": 19097
+    },
+    "quality_signal.py": {
+      "sha256": "72caec9fc6924d0685a9dcf35772357069a385a3999ccff8268a96605347acc3",
+      "bytes": 1551
+    },
+    "prepare_async.py": {
+      "sha256": "92a17f4700e05d34f05ba7cfc474818f9f676ecac08047df3df5facac862bb73",
+      "bytes": 4982
+    },
+    "taskset_impl.py": {
+      "sha256": "4974113e704acf524810f867c7dc40aedfb8e4bb669e831642b79a5796164d21",
+      "bytes": 5237
+    },
+    "run_from_sft.py": {
+      "sha256": "d3e878f8a2bb72f469c600fc01d73c0dee4f2a63ea6542944825f459c7b6f024",
+      "bytes": 1789
+    },
+    "train_from_sft.py": {
+      "sha256": "2cad4ac1421580279fa82990df4cb4007167b05473be789bd86556170fad0c7b",
+      "bytes": 1675
+    },
+    "launch_async.sh": {
+      "sha256": "16acab3eacc94ebafbd1ccaeba9eda7f3f1b68387ffb52071c17d6148e2de64c",
+      "bytes": 1924
+    },
+    "setup_async_node.sh": {
+      "sha256": "f0480c59c6b79bffe5dec84845b4749bc55acd1b93b1df8eac1f373fad546238",
+      "bytes": 2685
+    },
+    "supervise_async.py": {
+      "sha256": "ef346f133288737fe434cd9827007d0670656acf28ca738e7e89f06dd1090fc0",
+      "bytes": 3442
+    },
+    "activate_async.sh": {
+      "sha256": "91f11e81085f6d36356bd862a45e384c97928ea9b6ca60ca53343e75fdf2e070",
+      "bytes": 1970
+    }
+  },
+  "max_steps": 2,
+  "checkpoint_interval": 1,
+  "setup_only": true,
+  "full_manifest_sha256": "aa3e32256cbbc1776354a07c47a65d3ef6ca5ce5cbdd797bca478e492460a75e",
+  "full_manifest_path": "live/bootstrap-manifest.json",
+  "bundled_file_count": 4655
+}

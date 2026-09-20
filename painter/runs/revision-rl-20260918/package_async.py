@@ -10,7 +10,7 @@ ROOT = Path(__file__).resolve().parent
 OVERLAYS = ('setup_async_node.sh', 'activate_async.sh', 'launch_async.sh', 'prepare_async.py',
             'run_from_sft.py', 'train_from_sft.py', 'render_actions.py', 'taskset_impl.py',
             'quality_signal.py', 'reward_queue.py',
-            'supervise_async.py', 'test_async_contract.py', 'test_quality_signal.py',
+            'supervise_async.py', 'evaluate_tasks.py', 'test_async_contract.py', 'test_quality_signal.py',
             'test_luna_queue.py')
 
 
