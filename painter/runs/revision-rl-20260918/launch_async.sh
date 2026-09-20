@@ -11,11 +11,14 @@ export PRIME_ROOT="$ROOT/prime-rl"
 export BRUSH_MODEL_PROFILE=qwen38_27b
 export PAINTING_JUDGE_MODEL=gpt-5.6-luna
 export HF_TOKEN_PATH="$ROOT/private/hf-token"
+RUN_ID="${PAINTER_RUN_ID:-$(bootstrap/bin/python -c 'import json; e=json.load(open("EXPERIMENT.json")); print(e.get("restart_run_name") or e["run_name"])')}"
+[[ "$RUN_ID" != */* && "$RUN_ID" != "" ]] || { echo 'Invalid PAINTER_RUN_ID' >&2; exit 2; }
+export PAINTER_RUN_ID="$RUN_ID"
 export MODEL_DIR="$(cat "$ROOT/model-path.txt")"
 export PYTHONPATH="$ROOT${PYTHONPATH:+:$PYTHONPATH}"
 export WATERCOLOUR_INIT_ADAPTER=$(cat initial-adapter-path.txt)
 export HF_CHECKPOINT_REPO=CK0607/qwen3.8-27b-brush-painting
-export HF_CHECKPOINT_RUN=revision-rl-luna-20260920
+export HF_CHECKPOINT_RUN="$RUN_ID"
 export ADAPTER_ONLY_CHECKPOINTS=1
 export CAPACITY_STATE_COMPLETE=1
 cd "$PRIME_ROOT"

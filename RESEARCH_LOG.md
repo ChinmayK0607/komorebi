@@ -4,7 +4,9 @@ Updated 2026-09-20. This is a compact index of the current painter curriculum, r
 
 ## Current status
 
-The GPU pilot is closed: one optimizer update was preserved as an invalid diagnostic checkpoint, its two-GPU pod was released, and its watcher was deleted. Current work is the GPU-free [Luna inspection validation](painter/runs/judge-validation-20260920/EXPERIMENT.md). The original 24-view validation completed with only 4/12 known-control views correct; exact file/hash binding passed. The separate-call follow-up also failed (5/12 controls correct), despite six individually described images being recognized. [Results and next decision](painter/runs/judge-validation-20260920/RESULTS.md) preserve both failures; no new GPUs or training were used.
+A fresh quality-only pilot, `revision-rl-identity-20260920`, is being activated from the trusted contract-quality step24 SFT adapter. The preceding pilot remains invalid and closed. [New runbook](painter/runs/revision-rl-identity-20260920/RUNBOOK.md) records the clean queue, immutable initializer, matched groups, two-GPU topology, bounded lease and required outcome checks.
+
+The [content-identity repair diagnostic](painter/runs/judge-identity-repair-20260920/RESULTS.md) produced grounded object/presence/cropping descriptions in all twelve reviewed views. Acceptability agreed in 6/6 real pairs, preference in 3/6; disagreements stay masked. Deterministic identity controls are excluded from visual-success counts. This supports a monitored pilot, not a general accuracy claim or proof of root cause. The [original failed validation](painter/runs/judge-validation-20260920/RESULTS.md) remains preserved.
 
 ### Historical pilot snapshot
 

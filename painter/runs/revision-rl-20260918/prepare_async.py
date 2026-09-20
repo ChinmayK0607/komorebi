@@ -1,6 +1,7 @@
 """Build native Prime config from capacity, without provider/GPU-name assumptions."""
 import copy
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -23,11 +24,15 @@ def main():
     from hardware import detect
     from prime_rl.configs.rl import RLConfig
     root = Path(__file__).resolve().parent
+    experiment = json.loads((root/'EXPERIMENT.json').read_text())
+    run_id = os.environ.get('PAINTER_RUN_ID') or experiment.get('restart_run_name') or experiment.get('run_name')
+    if not run_id or '/' in run_id or '\\' in run_id:
+        raise ValueError('EXPERIMENT.json must provide a simple restart run id')
     model = (root/'model-path.txt').read_text().strip()
     info = detect()
     deployment = topology(info)
     config = dict(max_steps=8, seq_len=16384, output_dir=str(root/'async-output'),
-        run=dict(name='revision-rl-luna-20260920'), deployment=deployment,
+        run=dict(name=run_id), deployment=deployment,
         model=dict(name=model, vlm=dict(vision_encoder_attr='model.visual',
             language_model_attr='model.language_model', freeze_vision_encoder=True)),
         weight_broadcast=dict(type='filesystem', timeout=1200),
@@ -56,7 +61,7 @@ def main():
     resolved = RLConfig.model_validate(copy.deepcopy(config))
     (root/'rl.toml').write_text(tomli_w.dumps(config))
     (root/'async-config-receipt.json').write_text(json.dumps(dict(
-        hardware=info, deployment=deployment, validated=True, run_dir=str(resolved.run_dir),
+        hardware=info, deployment=deployment, run_id=run_id, validated=True, run_dir=str(resolved.run_dir),
         optimizer_updates=0, group_size=8, batch_size=16, max_steps=8,
         max_inflight=32, max_off_policy_steps=2,
         support='Single-node CUDA with separate unsharded 27B trainer/inference replicas. Smaller memory and distributed trainer profiles are not yet validated.',
