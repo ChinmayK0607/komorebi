@@ -2,18 +2,22 @@
 
 Updated 2026-09-20. This is a compact index of the current painter curriculum, recovery, diversity, contract, and revision-RL records that are present in this workspace. It is intentionally bounded: archived folders, tarballs, and unrelated upstream clones under `work/` are not an exhaustive historical record. Read the linked run documents for scope, raw labels, hashes, and limitations before treating a statement as a result.
 
-## Current run
+## Current status
+
+The GPU pilot is closed: one optimizer update was preserved as an invalid diagnostic checkpoint, its two-GPU pod was released, and its watcher was deleted. Current work is the GPU-free [Luna inspection validation](painter/runs/judge-validation-20260920/EXPERIMENT.md). The original 24-view validation completed with only 4/12 known-control views correct; exact file/hash binding passed. The separate-call follow-up also failed (5/12 controls correct), despite six individually described images being recognized. [Results and next decision](painter/runs/judge-validation-20260920/RESULTS.md) preserve both failures; no new GPUs or training were used.
+
+### Historical pilot snapshot
 
 **2026-09-20 07:15 UTC correction:** this pilot is stopped and invalid for assessing quality improvement. During the watcher audit, a Luna-low agent admitted generating its latest shard without inspecting the images. A spot-check also found a false description of a blank candidate in an earlier shard. Previous statements that all judge images had actually been inspected were based on agent reports and are not established. Preserve all original receipts for diagnosis; do not promote the one-update adapter or reuse these rewards without a fresh verified review. The sections below retain the earlier operational observations, not a valid reward-quality claim.
 
-The newest operational record is the native Prime asynchronous revision-RL pilot `revision-rl-luna-20260920`, documented in the [revision runbook](painter/runs/revision-rl-20260918/RUNBOOK.md), [experiment manifest](painter/runs/revision-rl-20260918/EXPERIMENT.json), [state record](painter/runs/revision-rl-20260918/state.json), and [live queue status](painter/runs/revision-rl-20260918/luna-live-20260920/latest-status.json). The supplied current status is:
+The newest operational record is the native Prime asynchronous revision-RL pilot `revision-rl-luna-20260920`, documented in the [revision runbook](painter/runs/revision-rl-20260918/RUNBOOK.md), [experiment manifest](painter/runs/revision-rl-20260918/EXPERIMENT.json), [state record](painter/runs/revision-rl-20260918/state.json), and [live queue status](painter/runs/revision-rl-20260918/luna-live-20260920/latest-status.json). The following is the historical 06:51 UTC snapshot, superseded by the update, invalidation and release records below:
 
 - Two RTX PRO 6000 Blackwell 96 GB GPUs, at $2.38/hour total, with separate trainer and inference roles in native Prime async mode.
 - Eight samples per group, batch size 16, maximum 32 in-flight episodes, learning rate `1e-6`, and an eight-update pilot initialized from the contract-quality step-24 adapter.
 - `gpt-5.6-luna` at reasoning effort `low` is the visual judge; OpenRouter is not part of this run. As of 06:51 UTC, the first 12 live requests had completed 24 blinded Luna-low judgments and all 12 receipts had been installed. Five judgments were usable and seven were masked for order disagreement or uncertainty; this does not imply a pass/fail result.
 - Zero optimizer updates are confirmed. Telemetry sampled every 10 seconds from 06:45:18–06:51:08 UTC (36 samples per device) showed inference mean 88.9% with 88.9% of samples at or above 90%, while trainer mean was 0%. GPU0 has recently been busy generating while GPU1 waits for scores; that is not full-pipeline saturation. The pod TTL recorded by the runbook is 2026-09-20 08:29:39 UTC.
 
-These are operational facts for the in-flight run, not a quality result. Do not promote a checkpoint or claim learning until native optimizer audits, completed blinded labels, and matched evaluation are recorded.
+These were operational observations while the run was in flight, not a quality result. Do not promote a checkpoint or claim learning until native optimizer audits, completed blinded labels, and matched evaluation are recorded.
 
 ## Evidence map
 

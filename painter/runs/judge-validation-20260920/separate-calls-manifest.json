@@ -1,0 +1,38 @@
+[
+  {
+    "id": "view-1460f6c1d552c8c7",
+    "reference": "/Users/chinmay/Documents/Codex/2026-09-07/if-they-did-speed-painting-type/painter/runs/judge-validation-20260920/artifacts/images/p001/view-1460f6c1d552c8c7/reference.png",
+    "A": "/Users/chinmay/Documents/Codex/2026-09-07/if-they-did-speed-painting-type/painter/runs/judge-validation-20260920/artifacts/images/p001/view-1460f6c1d552c8c7/A.png",
+    "B": "/Users/chinmay/Documents/Codex/2026-09-07/if-they-did-speed-painting-type/painter/runs/judge-validation-20260920/artifacts/images/p001/view-1460f6c1d552c8c7/B.png"
+  },
+  {
+    "id": "view-23e05e28873ba41a",
+    "reference": "/Users/chinmay/Documents/Codex/2026-09-07/if-they-did-speed-painting-type/painter/runs/judge-validation-20260920/artifacts/images/p004/view-23e05e28873ba41a/reference.png",
+    "A": "/Users/chinmay/Documents/Codex/2026-09-07/if-they-did-speed-painting-type/painter/runs/judge-validation-20260920/artifacts/images/p004/view-23e05e28873ba41a/A.png",
+    "B": "/Users/chinmay/Documents/Codex/2026-09-07/if-they-did-speed-painting-type/painter/runs/judge-validation-20260920/artifacts/images/p004/view-23e05e28873ba41a/B.png"
+  },
+  {
+    "id": "view-3c6aac88e9a811c0",
+    "reference": "/Users/chinmay/Documents/Codex/2026-09-07/if-they-did-speed-painting-type/painter/runs/judge-validation-20260920/artifacts/images/p009/view-3c6aac88e9a811c0/reference.png",
+    "A": "/Users/chinmay/Documents/Codex/2026-09-07/if-they-did-speed-painting-type/painter/runs/judge-validation-20260920/artifacts/images/p009/view-3c6aac88e9a811c0/A.png",
+    "B": "/Users/chinmay/Documents/Codex/2026-09-07/if-they-did-speed-painting-type/painter/runs/judge-validation-20260920/artifacts/images/p009/view-3c6aac88e9a811c0/B.png"
+  },
+  {
+    "id": "view-27e6c5b0188aa05d",
+    "reference": "/Users/chinmay/Documents/Codex/2026-09-07/if-they-did-speed-painting-type/painter/runs/judge-validation-20260920/artifacts/images/p006/view-27e6c5b0188aa05d/reference.png",
+    "A": "/Users/chinmay/Documents/Codex/2026-09-07/if-they-did-speed-painting-type/painter/runs/judge-validation-20260920/artifacts/images/p006/view-27e6c5b0188aa05d/A.png",
+    "B": "/Users/chinmay/Documents/Codex/2026-09-07/if-they-did-speed-painting-type/painter/runs/judge-validation-20260920/artifacts/images/p006/view-27e6c5b0188aa05d/B.png"
+  },
+  {
+    "id": "view-7b5665147de57946",
+    "reference": "/Users/chinmay/Documents/Codex/2026-09-07/if-they-did-speed-painting-type/painter/runs/judge-validation-20260920/artifacts/images/p010/view-7b5665147de57946/reference.png",
+    "A": "/Users/chinmay/Documents/Codex/2026-09-07/if-they-did-speed-painting-type/painter/runs/judge-validation-20260920/artifacts/images/p010/view-7b5665147de57946/A.png",
+    "B": "/Users/chinmay/Documents/Codex/2026-09-07/if-they-did-speed-painting-type/painter/runs/judge-validation-20260920/artifacts/images/p010/view-7b5665147de57946/B.png"
+  },
+  {
+    "id": "view-c706a23397e3e08f",
+    "reference": "/Users/chinmay/Documents/Codex/2026-09-07/if-they-did-speed-painting-type/painter/runs/judge-validation-20260920/artifacts/images/p003/view-c706a23397e3e08f/reference.png",
+    "A": "/Users/chinmay/Documents/Codex/2026-09-07/if-they-did-speed-painting-type/painter/runs/judge-validation-20260920/artifacts/images/p003/view-c706a23397e3e08f/A.png",
+    "B": "/Users/chinmay/Documents/Codex/2026-09-07/if-they-did-speed-painting-type/painter/runs/judge-validation-20260920/artifacts/images/p003/view-c706a23397e3e08f/B.png"
+  }
+]
