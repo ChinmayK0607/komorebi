@@ -154,6 +154,8 @@ def add_evidence(
     output_dir: Path,
     allow_blinded_reward_key: bool = False,
 ) -> None:
+    if source.is_symlink():
+        return
     source = source.resolve()
     if excluded_evidence_file(source, output_dir, allow_blinded_reward_key):
         return
@@ -203,7 +205,7 @@ def collect_evidence(root: Path, run_name: str, output_dir: Path) -> dict[str, E
             if path.is_file() and path.suffix.lower() in {".py", ".sh", ".js", ".cjs"}:
                 add_evidence(files, path, str(path.relative_to(root.resolve())), output_dir)
 
-    for directory in ("logs", "rl-rollouts", "judge-queue"):
+    for directory in ("logs", "rl-rollouts", "judge-queue", "evaluation", "rl-states"):
         collect_tree(files, root / directory, directory, output_dir)
     collect_tree(files, root / "reward-batches", "reward-batches", output_dir, allow_blinded_reward_key=True)
 
@@ -214,6 +216,8 @@ def collect_evidence(root: Path, run_name: str, output_dir: Path) -> dict[str, E
     collect_tree(files, async_root, str(Path("async-output") / run_name), output_dir)
     for name in (
         "rl-states.json",
+        "evaluation-manifest.json",
+        "evaluation-campaign.json",
         "judge-provenance-audit.json",
         "async-config-receipt.json",
         "metrics.jsonl",
