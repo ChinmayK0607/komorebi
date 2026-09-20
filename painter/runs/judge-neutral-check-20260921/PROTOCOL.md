@@ -1,0 +1,5 @@
+# Neutral-file, explicit-role judge check
+
+Hypothesis: neutral content-hash filenames plus an immediate REFERENCE/A/B caption beside each separately displayed image reduce observation-to-role inversion. Two fresh Luna-low agents; one view per assignment, opposite orientations separated. This changes two presentation factors together and does not isolate their separate effects. No old labels are rewritten. Parent knew expected facts before dispatch; agents do not receive source identities or expected answers.
+
+Four distinct-image comparisons from the held-out gallery: clear crop failure, flower preference, tree preference, and wrong-subject control. All eight views must have correct subject/presence/cropping observations; both controls must be correct in both orders. At least two of three real pairs must reconcile under unchanged reward code for a limited pilot. Failure stops GPU launch; no automatic sequence of new hardware rentals. A pass is not general artistic accuracy. Source revisions and all image hashes are recorded. No ML or image rendering occurs locally.

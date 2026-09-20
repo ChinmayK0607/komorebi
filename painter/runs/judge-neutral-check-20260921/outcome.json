@@ -1,0 +1,44 @@
+{
+  "diagnostic_scope": "4 distinct-image pairs, 8views; freshagents and smallassignments",
+  "known_controls_correct_views": 4,
+  "known_control_views": 4,
+  "grounded_subject_presence_crop_views": 8,
+  "total_views": 8,
+  "real_pairs_reconciled": 2,
+  "real_pairs": 3,
+  "usable_requests": 3,
+  "requests": 4,
+  "masked_case": "tree",
+  "limited_pilot_criterion": "passed",
+  "general_accuracy_claim": false,
+  "cases": [
+    {
+      "case": "tree",
+      "judgment": null
+    },
+    {
+      "case": "wrong_subject",
+      "judgment": {
+        "delta": 1.0,
+        "candidate_acceptable": true,
+        "anchor_acceptable": false
+      }
+    },
+    {
+      "case": "flower",
+      "judgment": {
+        "delta": 1.0,
+        "candidate_acceptable": true,
+        "anchor_acceptable": true
+      }
+    },
+    {
+      "case": "vase",
+      "judgment": {
+        "delta": 1.0,
+        "candidate_acceptable": true,
+        "anchor_acceptable": false
+      }
+    }
+  ]
+}

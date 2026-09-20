@@ -1,0 +1,5 @@
+# Fresh small-assignment judge check
+
+Hypothesis: full image-hash identities and one-view assignments avoid stale observations and permit grounded Luna-low judgments. Source baseline 0b0a8eb. Judge gpt-5.6-luna, effort low; immutable backend revision unavailable. Four distinct-image pairs from existing held-out contract-quality renderings: a clear crop control, a wrong-subject control, flower and tree preference comparisons. Parent viewed all images and recorded expected facts before judge dispatch. Judges receive only blinded hash assets and one assignment at a time.
+
+Pass criterion for a limited pilot: all eight views describe correct subjects and presence/cropping; both known-answer controls correct in both orders; at least two of three same-reference real pairs (crop, flower, tree) reconcile under the unchanged reward criteria. A small pass is not broad artistic accuracy. Preserve every first-pass label; a failed check does not trigger another GPU rental. Existing pixels are copied, never locally rendered. No ML or GPU rental for this check.

@@ -2,9 +2,11 @@
 import argparse
 import hashlib
 import json
+import os
 import random
 import shutil
 import tarfile
+import tempfile
 from pathlib import Path
 from quality_signal import reconcile
 
@@ -14,6 +16,40 @@ IDENTITY_ROLES = ('reference', 'A', 'B')
 
 def sha(path):return hashlib.sha256(path.read_bytes()).hexdigest()
 def write(path,obj):path.write_text(json.dumps(obj,indent=2)+'\n')
+
+
+def _materialize_identity_asset(dest, digest, source):
+    """Install one immutable, neutral-name copy of an identity image."""
+    assets_dir = dest / 'assets'
+    if assets_dir.is_symlink() or (assets_dir.exists() and not assets_dir.is_dir()):
+        raise ValueError(f'Identity asset directory conflicts: {assets_dir}')
+    assets_dir.mkdir(exist_ok=True)
+    destination = assets_dir / f'{digest}.png'
+    if destination.is_symlink():
+        raise ValueError(f'Identity asset destination is a symlink: {destination}')
+    if destination.exists():
+        if not destination.is_file() or sha(destination) != digest:
+            raise ValueError(f'Existing identity asset differs: {destination}')
+        return destination.resolve()
+
+    temporary = None
+    try:
+        with tempfile.NamedTemporaryFile(prefix=f'.{digest}.', suffix='.tmp',
+                                         dir=assets_dir, delete=False) as output:
+            temporary = Path(output.name)
+        shutil.copyfile(source, temporary)
+        if sha(temporary) != digest:
+            raise ValueError(f'Copied identity asset differs: {source}')
+        # Link into place so a concurrent stage cannot be silently overwritten.
+        try:
+            os.link(temporary, destination)
+        except FileExistsError:
+            if destination.is_symlink() or not destination.is_file() or sha(destination) != digest:
+                raise ValueError(f'Concurrent identity asset differs: {destination}')
+    finally:
+        if temporary is not None:
+            temporary.unlink(missing_ok=True)
+    return destination.resolve()
 
 def export(root, batch, limit):
     dest=root/'reward-batches'/batch
@@ -65,10 +101,15 @@ def _identity_stage(dest, pairs, key):
     # Asset IDs must be stable across batches. Ordinal IDs allow a stale public
     # label to bind an asset-0003 from one batch to different bytes in another.
     asset_ids = {digest: f'asset-{digest}' for digest in digests}
+    canonical_paths = {
+        digest: _materialize_identity_asset(
+            dest, digest, Path(sorted(source_paths[digest])[0]))
+        for digest in digests
+    }
     assets = [{
         'asset_id': asset_ids[digest],
-        'bytes': Path(sorted(source_paths[digest])[0]).stat().st_size,
-        'path': sorted(source_paths[digest])[0],
+        'bytes': canonical_paths[digest].stat().st_size,
+        'path': str(canonical_paths[digest]),
         'sha256': digest,
     } for digest in digests]
     items, bindings = [], {}

@@ -18,6 +18,18 @@ def topology(info):
                 type='single_node')
 
 
+def training_limits(experiment):
+    """Resolve and validate the bounded training horizon from a run config."""
+    values = {
+        'max_steps': experiment.get('max_steps', 8),
+        'checkpoint_interval': experiment.get('checkpoint_interval', 2),
+    }
+    for name, value in values.items():
+        if isinstance(value, bool) or not isinstance(value, int) or value < 1:
+            raise ValueError(f'{name} must be a positive integer')
+    return values['max_steps'], values['checkpoint_interval']
+
+
 def main():
     assert sys.platform == 'linux', 'Configuration validation and model setup run on node'
     import tomli_w
@@ -25,18 +37,19 @@ def main():
     from prime_rl.configs.rl import RLConfig
     root = Path(__file__).resolve().parent
     experiment = json.loads((root/'EXPERIMENT.json').read_text())
+    max_steps, checkpoint_interval = training_limits(experiment)
     run_id = os.environ.get('PAINTER_RUN_ID') or experiment.get('restart_run_name') or experiment.get('run_name')
     if not run_id or '/' in run_id or '\\' in run_id:
         raise ValueError('EXPERIMENT.json must provide a simple restart run id')
     model = (root/'model-path.txt').read_text().strip()
     info = detect()
     deployment = topology(info)
-    config = dict(max_steps=8, seq_len=16384, output_dir=str(root/'async-output'),
+    config = dict(max_steps=max_steps, seq_len=16384, output_dir=str(root/'async-output'),
         run=dict(name=run_id), deployment=deployment,
         model=dict(name=model, vlm=dict(vision_encoder_attr='model.visual',
             language_model_attr='model.language_model', freeze_vision_encoder=True)),
         weight_broadcast=dict(type='filesystem', timeout=1200),
-        ckpt=dict(interval=2, keep_last=1), monitors=dict(file={}),
+        ckpt=dict(interval=checkpoint_interval, keep_last=1), monitors=dict(file={}),
         trainer=dict(model=dict(impl='custom', compile='None', attn='auto',
             optimization_dtype='bfloat16', reduce_dtype='bfloat16',
             lora=dict(rank=16, alpha=32, target_modules=['q_proj','k_proj','v_proj','o_proj',
@@ -62,7 +75,8 @@ def main():
     (root/'rl.toml').write_text(tomli_w.dumps(config))
     (root/'async-config-receipt.json').write_text(json.dumps(dict(
         hardware=info, deployment=deployment, run_id=run_id, validated=True, run_dir=str(resolved.run_dir),
-        optimizer_updates=0, group_size=8, batch_size=16, max_steps=8,
+        optimizer_updates=0, group_size=8, batch_size=16, max_steps=max_steps,
+        checkpoint_interval=checkpoint_interval,
         max_inflight=32, max_off_policy_steps=2,
         support='Single-node CUDA with separate unsharded 27B trainer/inference replicas. Smaller memory and distributed trainer profiles are not yet validated.',
         objective='Native GRPO mean-centered rewards and native token-normalized IPO loss; no length penalty'),indent=2)+'\n')

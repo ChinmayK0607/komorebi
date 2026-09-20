@@ -14,10 +14,23 @@ OVERLAYS = ('setup_async_node.sh', 'activate_async.sh', 'launch_async.sh', 'prep
             'test_luna_queue.py')
 
 
+def load_experiment(path=None):
+    """Read a run config without modifying the historical default manifest."""
+    experiment_path = Path(path) if path is not None else ROOT / 'EXPERIMENT.json'
+    if not experiment_path.is_file():
+        raise ValueError('Experiment config not found: ' + str(experiment_path))
+    try:
+        return json.loads(experiment_path.read_text())
+    except json.JSONDecodeError as exc:
+        raise ValueError('Experiment config is not valid JSON: ' + str(experiment_path)) from exc
+
+
 def main():
     parser = argparse.ArgumentParser(description='Build a portable async RL bundle.')
     parser.add_argument('--run-id', help='Fresh output/Hugging Face run prefix.')
     parser.add_argument('--source-id', help='Immutable source baseline identifier to record in the override.')
+    parser.add_argument('--experiment', type=Path,
+                        help='Fresh experiment config; defaults to the historical EXPERIMENT.json.')
     parser.add_argument('--output', type=Path,
                         help='Bundle path; defaults to async-restart-<run-id>.tar.gz.')
     args = parser.parse_args()
@@ -27,7 +40,7 @@ def main():
              and not {'__pycache__', '.git', 'private'} & set(p.relative_to(inputs).parts)
              and p.name not in {'pipeline.py', 'sample_phase.sh', 'input-manifest.json'}}
     files.update({name: ROOT / name for name in OVERLAYS})
-    experiment = json.loads((ROOT/'EXPERIMENT.json').read_text())
+    experiment = load_experiment(args.experiment)
     run_id = args.run_id or experiment.get('restart_run_name') or experiment.get('run_name')
     if not run_id or '/' in run_id or '\\' in run_id or run_id in {'.', '..'}:
         raise ValueError('A simple run id is required')

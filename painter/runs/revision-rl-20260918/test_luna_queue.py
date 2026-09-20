@@ -108,6 +108,12 @@ class LunaQueueTest(unittest.TestCase):
         self.assertEqual(len(assets), len({asset['sha256'] for asset in assets}))
         for asset in assets:
             self.assertEqual(asset['asset_id'], 'asset-'+asset['sha256'])
+            canonical=Path(asset['path'])
+            self.assertTrue(canonical.is_absolute())
+            self.assertEqual(canonical, (self.batch/'assets'/(asset['sha256']+'.png')).resolve())
+            self.assertEqual(queue.sha(canonical), asset['sha256'])
+        for role in ('reference', 'A', 'B'):
+            self.assertTrue((self.batch/'test-0000'/(role+'.png')).is_file())
         manifests=sorted(self.batch.glob('judge-*-assets.json'))
         self.assertTrue(manifests)
         for manifest in manifests:
@@ -117,6 +123,49 @@ class LunaQueueTest(unittest.TestCase):
                                  list(dict.fromkeys(item['rolemap'][role]
                                                     for role in ('reference','A','B'))))
                 self.assertNotIn('path', item)
+
+    def test_identity_paths_are_stable_across_orientations(self):
+        batch='oriented'
+        dest=self.root/'reward-batches'/batch
+        pairs=[];keys=[]
+        for index, (a_bytes, b_bytes) in enumerate(
+                ((b'candidate', b'anchor'), (b'anchor', b'candidate'))):
+            ident=f'{batch}-{index:04d}';folder=dest/ident;folder.mkdir(parents=True)
+            paths={};hashes={}
+            for role,data in (('reference', b'reference'), ('A', a_bytes), ('B', b_bytes)):
+                path=folder/(role+'.png');path.write_bytes(data)
+                paths[role]=ident+'/'+role+'.png';hashes[role]=queue.sha(path)
+            request=dict(id=f'request-{index}', images=paths,
+                         image_sha256={'reference':hashes['reference'],
+                                       'candidate':hashes['A'], 'anchor':hashes['B']})
+            pairs.append(dict(id=ident, **paths))
+            keys.append(dict(id=ident, request_id=request['id'], candidate_side='A',
+                             image_sha256=hashes, request=request))
+        queue.write(dest/'pairs.json', pairs)
+        queue.write(dest/'private-key.json', keys)
+        queue.stage(self.root, batch, identity_mode=True)
+
+        assets={row['sha256']: row for row in
+                json.loads((dest/'assets.json').read_text())['assets']}
+        items={row['id']: row for row in
+               json.loads((dest/'identity-review-input.json').read_text())}
+        candidate_digest=queue.sha(dest/f'{batch}-0000/A.png')
+        anchor_digest=queue.sha(dest/f'{batch}-0000/B.png')
+        self.assertEqual(items[f'{batch}-0000']['rolemap']['A'],
+                         items[f'{batch}-0001']['rolemap']['B'])
+        self.assertEqual(items[f'{batch}-0000']['rolemap']['B'],
+                         items[f'{batch}-0001']['rolemap']['A'])
+        self.assertEqual(Path(assets[candidate_digest]['path']),
+                         (dest/'assets'/(candidate_digest+'.png')).resolve())
+        self.assertEqual(Path(assets[anchor_digest]['path']),
+                         (dest/'assets'/(anchor_digest+'.png')).resolve())
+
+    def test_identity_stage_rejects_conflicting_existing_asset(self):
+        digest=queue.sha(self.batch/'test-0000/A.png')
+        assets_dir=self.batch/'assets';assets_dir.mkdir()
+        (assets_dir/(digest+'.png')).write_bytes(b'wrong bytes')
+        with self.assertRaisesRegex(ValueError, 'Existing identity asset differs'):
+            queue.stage(self.root, 'test', identity_mode=True)
 
     def test_content_asset_ids_are_global_across_batches(self):
         shared=b'shared bytes'
