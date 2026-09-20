@@ -1,5 +1,7 @@
 # Luna-low asynchronous RL pilot
 
+**STOPPED AND RELEASED — 2026-09-20 07:27 UTC.** This pilot has invalid judge provenance; do not restart, reconnect, reuse rewards, or promote its diagnostic adapter. One optimizer update completed. The full evidence archive and 1,579 members are locally hash-verified, and step 1 is publicly hash-verified under `revision-rl-luna-20260920/invalid-judge-provenance/step_1` with `DO_NOT_USE` metadata. Lium confirmed no active pods; the watcher is deleted. The operational instructions below are historical. See the root research log and `luna-live-20260920/local-preservation-verification.json`.
+
 User explicitly chose **gpt-5.6-luna, reasoning low** on September 20. OpenRouter is no longer used. No pending judge choice or API key is required. A real Luna-low agent graded four preserved pairs successfully before rental. All previous pods are released.
 
 Active pod: `930789d5-94da-4f46-80a7-1c7f2a1c0366`, 2 RTX PRO 6000 Blackwell Server Edition 96 GB, $2.38/hour total. Provider TTL: **2026-09-20 08:29:39 UTC**. SSH root@154.54.100.111, port 40300, known_hosts-luna-20260920. Resolve the exact pod with Lium before any lifecycle action. Do not reconnect prior ids or rent a duplicate.
