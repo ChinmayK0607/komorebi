@@ -1,5 +1,7 @@
 # Reference painter: [current experiments and evidence](../RESEARCH_LOG.md)
 
+**Current status, 2026-09-20:** the revision-RL pilot is stopped after a judge admitted generating labels without inspecting images. Its one-update adapter is invalid for quality claims. See the correction and preservation record in the [research log](../RESEARCH_LOG.md). The earlier status paragraph below is historical and its inspection claims are superseded.
+
 The [root research log](../RESEARCH_LOG.md) is the current index. The newest run is the [native revision-RL Luna pilot](runs/revision-rl-20260918/RUNBOOK.md), using `gpt-5.6-luna` for blinded visual judging; as of 06:51 UTC its first 12 live requests had produced 24 blinded views, with 5 usable judgments and 7 masked for order disagreement or uncertainty, and zero confirmed optimizer updates. No pass/fail result or checkpoint promotion is claimed. The older [diversity SFT result](runs/diversity-sft-20260918/RESULTS.md) remains preserved as historical evidence.
 
 The [rollout audit](runs/diversity-sft-20260918/FORENSICS.md) found that none of 216 drawing/repair episodes inspected a successful render before finishing. Painting targets append FINISHED immediately, so extra turns only repair execution errors. The next correction is to teach separate paint, preview, and revise/finish decisions and isolate coordinate-representation errors. More of the same SFT is not supported by this comparison.
