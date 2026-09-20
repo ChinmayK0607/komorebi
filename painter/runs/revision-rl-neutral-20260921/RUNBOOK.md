@@ -41,3 +41,7 @@ At21:08 UTC the native coordinator had8/16 training rows ready,30 buffered episo
 Queue-selection correction deployed21:10 UTC: reward_queue.py SHA-256`ada006e8a0175b324c9c8502cd36c0005ea435bac12eaf828c8a472e0194a60a` selects oldest created_at instead of lexical request hashes, preventing newer low-hash requests from jumping older pending work. Rewards and model config unchanged. Batch006 uses this ordering. Parent independently passed16 queue tests.
 
 Prepared standalone quality_signal_v2.py (not deployed or imported): separate confident order-consistent relative improvement from absolute readiness-to-finish consensus. On first16 pairs,11 agreed confidently on preference;4 ofthose were excluded solely by absolute-consensus disagreement underv1. This is receipt arithmetic, not proof that all11 are visually correct. V2 is not a fix for ungrounded judgments and needs independent validation before integration. Parent reviewed and independently passed all50 tests after malformed-data fixes.
+
+## Closed
+
+Stopped21:15:44 UTC with zero optimizer updates and8/16 rows ready. Node releasedapproximately21:18 UTC; provider active-pod inventory empty; watcher deleted. All1674 evidence files hash-verified. Batch006 remains uninstalled. See RESULTS.md/RESULTS.json for final utilization, costs, failures and next decision. No automatic restart.

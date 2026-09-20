@@ -1,0 +1,11 @@
+{
+  "scope": "Signal normalization coverage only; not transition reward replay or independent visual validation",
+  "requests": 24,
+  "v1_joint_signal": 11,
+  "v2_relative_signal": 18,
+  "v2_candidate_absolute_signal": 18,
+  "new_relative_signal": 7,
+  "first_pass_labels_unchanged": true,
+  "deployed": false,
+  "training_updates": 0
+}

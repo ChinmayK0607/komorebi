@@ -1,0 +1,58 @@
+{
+  "created_at_utc": "2026-09-20T21:17:23.214134+00:00",
+  "archive_sha256": "b00964e4e486b4ec7220738e7ae52fa72f63ba2380810ab2b3d93d9f8a38739a",
+  "archive_bytes": 41664395,
+  "files": 1674,
+  "file_bytes": 74104597,
+  "trained_adapter_steps": [],
+  "utilization": {
+    "0": {
+      "samples": 314,
+      "window_start": "2026/09/20 20:23:30.132",
+      "window_end": "2026/09/20 21:15:41.821",
+      "mean_gpu_util_pct": 20.828025477707005,
+      "nonzero_sample_fraction": 0.2197452229299363
+    },
+    "1": {
+      "samples": 314,
+      "window_start": "2026/09/20 20:23:30.140",
+      "window_end": "2026/09/20 21:15:41.823",
+      "mean_gpu_util_pct": 0.08917197452229299,
+      "nonzero_sample_fraction": 0.0031847133757961785
+    },
+    "2": {
+      "samples": 314,
+      "window_start": "2026/09/20 20:23:30.149",
+      "window_end": "2026/09/20 21:15:41.824",
+      "mean_gpu_util_pct": 17.159235668789808,
+      "nonzero_sample_fraction": 0.17834394904458598
+    },
+    "3": {
+      "samples": 314,
+      "window_start": "2026/09/20 20:23:30.157",
+      "window_end": "2026/09/20 21:15:41.825",
+      "mean_gpu_util_pct": 0.0,
+      "nonzero_sample_fraction": 0.0
+    }
+  },
+  "supervisor": {
+    "status": "stopped",
+    "reason": "interrupted",
+    "exit_code": 1,
+    "stopped": 1789938944.608902
+  },
+  "queue_requests": 62,
+  "queue_receipts": 20,
+  "resources_released": true,
+  "provider_active_pods_after_release": 0,
+  "release_confirmed_utc": "2026-09-20 21:18:23 UTC",
+  "estimated_rental_usd": 5.25,
+  "optimizer_updates": 0,
+  "installed_receipts": 20,
+  "installed_usable": 10,
+  "installed_excluded": 10,
+  "uninstalled_batch": "neutral-live-006",
+  "uninstalled_usable": 1,
+  "uninstalled_excluded": 3,
+  "watcher_deleted": true
+}
