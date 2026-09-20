@@ -1,0 +1,11 @@
+{
+  "source_commit": "df02bf0",
+  "bootstrap_bundle_sha256": "40e1230903a3f4646bfa9b03bb3dd01388403441ddba1233c2311a2844ed080b",
+  "files": {
+    "reward_queue.py": "99ce6b2b7bb3e1581e93cfe3fff9de90f104402c3e9794a3dc341f519c1f9a07",
+    "test_luna_queue.py": "f8bb92c4a9d4f4b1ed0aff44f56ab39c508d4070627c24fa5e41f5d8263fbfd6",
+    "launch_async.sh": "16acab3eacc94ebafbd1ccaeba9eda7f3f1b68387ffb52071c17d6148e2de64c",
+    "prepare_async.py": "2a021b6e9090b214971d6802be6bda75290a72a0acd507bf49cfa07e5f2d54fa",
+    "EXPERIMENT.json": "ce2d42b77b47e34df9fdcdd4fc937b22e7e4d1217ece4c5f63e709c60d7daa3e"
+  }
+}

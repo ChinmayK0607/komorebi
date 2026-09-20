@@ -4,7 +4,7 @@ Updated 2026-09-20. This is a compact index of the current painter curriculum, r
 
 ## Current status
 
-A fresh quality-only pilot, `revision-rl-identity-20260920`, is being activated from the trusted contract-quality step24 SFT adapter. The preceding pilot remains invalid and closed. [New runbook](painter/runs/revision-rl-identity-20260920/RUNBOOK.md) records the clean queue, immutable initializer, matched groups, two-GPU topology, bounded lease and required outcome checks.
+A fresh quality-only pilot, `revision-rl-identity-20260920`, was launched at 15:07 UTC from the trusted contract-quality step24 SFT adapter (source `df02bf0`). Inference and trainer have separate GPUs; an optimizer update is not yet verified. The preceding pilot remains invalid and closed. [New runbook](painter/runs/revision-rl-identity-20260920/RUNBOOK.md) records the clean queue, immutable initializer, matched groups, two-GPU topology, bounded lease and required outcome checks.
 
 The [content-identity repair diagnostic](painter/runs/judge-identity-repair-20260920/RESULTS.md) produced grounded object/presence/cropping descriptions in all twelve reviewed views. Acceptability agreed in 6/6 real pairs, preference in 3/6; disagreements stay masked. Deterministic identity controls are excluded from visual-success counts. This supports a monitored pilot, not a general accuracy claim or proof of root cause. The [original failed validation](painter/runs/judge-validation-20260920/RESULTS.md) remains preserved.
 

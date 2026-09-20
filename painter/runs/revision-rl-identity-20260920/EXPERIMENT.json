@@ -80,5 +80,6 @@
   "source_baseline": "cf2bf9b",
   "judge_protocol": "content-addressed unique assets with reference/A/B aliases, independent reversed views and strict reconciliation",
   "fresh_reward_queue": true,
-  "optimizer_resume": false
+  "optimizer_resume": false,
+  "source_commit": "df02bf0"
 }
