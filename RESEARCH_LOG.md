@@ -50,4 +50,10 @@ The first 48 unique reward requests now have 96 actual blinded Luna-low image ju
 
 The source and research records were first committed locally as `c573327`; this establishes version control from this point and does not reconstruct historical source commits. The GitHub destination is pending the user's choice. GPU telemetry and raw judge receipts remain in the run evidence, outside Git.
 
+### Async pipeline audit — 2026-09-20
+
+The first optimizer update completed at 07:02:20 UTC. Native CUDA pre/post comparison confirms 992 changed adapter tensors, 54,492,047 changed elements and finite values; this verifies learning machinery, not visual improvement. The inference log records a successful adapter reload. The pinned Prime filesystem receiver hot-reloads LoRA through vLLM during live traffic; full-model refreshes use a different pause/load path. Generation and training already overlap, with `max_off_policy_steps=2` bounding training-sample staleness.
+
+The dispatcher counts an episode against its 32-slot limit until scoring completes. Luna waits can therefore occupy every slot even after GPU decoding finishes. The proposed next systems change is separate bounded generation and judging queues, priority for finishing existing eight-sample groups, and a small ready-to-train buffer. It must retain behavior log-probabilities and policy-version tracking, bound backlog by judged throughput, and report usable training tokens/second and discarded work. This proposal has not been implemented; increasing the queue alone cannot overcome a slower judge.
+
 For every new run, preserve one hypothesis, immutable model/data/config/source identifiers, a matched baseline, results against that baseline, failures and censored cases, utilization measured over a stated window, cost, and the next decision. Keep GPU activity and judge waiting separate in the accounting. Use public, hash-verified Hugging Face checkpoint references instead of copying weights into this workspace. See the root [working agreement](AGENTS.md) and the root [.gitignore](.gitignore) for the tracking boundary.
