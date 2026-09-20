@@ -1,6 +1,6 @@
 # Neutral-role quality-only pilot
 
-Status: node rented; setup and launch pending.
+Status: native RL launched; initial model warmup underway, no optimizer update yet verified.
 
 Hypothesis: the repaired visual-role presentation and one-view assignments supply enough grounded, consistent rewards for a finite native optimizer update without changing reward criteria. Matched baseline is the pinned contract-quality step24 SFT adapter; model/data/revisions and sampling settings are inherited unchanged in EXPERIMENT.json. Two optimizer updates, checkpoint every update, no speed or length reward. No old RL adapter, rewards or optimizer state may be reused.
 
@@ -13,3 +13,13 @@ Rental began 2026-09-20 20:12 UTC: four RTX PRO 6000 Blackwell Server Edition GP
 Setup bundle source is `125d5d7`, SHA-256 `3557bc94eae139c65b524145cbb849d8b4a0c9eaf48b1bee5dc54d7f127f0bdc` (133,830,509 bytes), with the fresh two-update/interval1 configuration verified inside the archive before transfer. Node-side extraction verified the same hash. `deployment-manifest.json` retains key source/data hashes and binds the complete ignored manifest.
 
 A separate evaluation overlay adds endpoint selection without changing rollout seeds/scaffold. Plan: evaluate the pinned SFT baseline on GPU2 at localhost port8001 while native RL uses GPUs0/1, then evaluate a verified new adapter with the identical 32 held-out tasks, sample0 seed918200 and frozen campaign config. This is a plan until endpoint/rollout completion is recorded; GPU3 remains unassigned. No claim of four-GPU saturation.
+
+## Launch — 2026-09-20 20:23 UTC
+
+Node setup exited0. Native launcher started at20:23:55 UTC on physical GPU0 inference/GPU1 trainer. The resolved config validates max_steps2, checkpoint interval1, eight samples/group, batch16, 32 in flight and maximum two policy steps of staleness. Twenty-four tasks each have reference and starting-canvas images; held-out groups are disjoint. The native initializer audit confirms992/992 tensors match the pinned SFT adapter,496 nonzero B tensors,116,727,808 parameters and finite values before the first forward pass, with fresh optimizer/no resume. This is initialization evidence, not an optimizer update.
+
+The independent baseline evaluation server was started on GPU2 at20:24 UTC; its32-task, sample0 rollout producer started atapproximately20:29 UTC after the baseline endpoint became ready. Evaluator source overlay is `a5931f2`; native RL source remains `125d5d7`. Tasks/config hashes are in the ignored live evaluation manifest.
+
+A five-minute heartbeat (`neutral-painting-rl-watcher`) monitors this exact owned run, completes Luna-low judgments, preserves evidence/checkpoints, and releases the pod on completion/failure or before21:41:59 UTC. It must not rent a replacement. Local operational metadata: `/tmp/painter-neutral-pod.json`; dedicated SSH known-hosts path: `/tmp/painter-neutral-known-hosts`. These paths contain no credentials in Git. Continue with `luna_queue_ctl.py --identity-mode --run-id revision-rl-neutral-20260921 --root painter/runs/revision-rl-neutral-20260921/live`, small unique batches, limit4.
+
+Judging continuity: use agents `luna_neutral_check_01` and `luna_neutral_check_02` at Luna low. For each underlying request, root makes two one-view assignment files from identity-review-input.json/private-key.json, sending one orientation to each agent. Never expose private identities or the other agent's labels. Each image must be emitted in a separate tool call with immediate REFERENCE/A/B caption and fullhash ID, and a factual observation before the next image. Redisplay even familiar images. Save one immutable labels file per view; preserve all first passes. Parent spot-checks actualimages before receipt installation. Avoid bulk assignments: the prior agent skipped inspection on a22-view batch.

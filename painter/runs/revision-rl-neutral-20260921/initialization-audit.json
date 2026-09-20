@@ -1,0 +1,13 @@
+{
+  "tensor_count": 992,
+  "exact_tensor_matches": 992,
+  "b_tensors": 496,
+  "nonzero_b_tensors": 496,
+  "parameters": 116727808,
+  "all_finite": true,
+  "initialization_mode": "trained_adapter",
+  "source_sha256": "d10eeb3b7b53fc539aa9d5e71eb98bcfe1c59d6a4878c7a69c93b8b09b59bcfa",
+  "optimizer": "fresh",
+  "native_resume": false,
+  "before_first_forward": true
+}
