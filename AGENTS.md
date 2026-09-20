@@ -1,0 +1,11 @@
+# Repository working agreement
+
+This directory is experiment documentation and preparation for the painter work. The parent agent owns Git initialization, reviewed commits, and pushes to the user-designated remote, and treats the unrelated clones under `work/` as separate history. Future code implementation in this workspace is assigned to `gpt-5.6-luna` at reasoning effort `xhigh`; the parent agent handles planning, review, and experiment operations, while the user sets research direction. Visual judging uses `gpt-5.6-luna` at reasoning effort `low` when requested.
+
+Keep the tracked surface deliberately small: active `painter/` source, configuration, documentation, tests, and run scripts may be tracked, together with reviewed small manifests and experiment records. Generated renderings, image batches, model weights, archives, raw rollouts, large logs, caches, environments, credentials, and provider state stay out of Git. Public, hash-verified Hugging Face checkpoints are preferred over copying weights into this workspace.
+
+Every experiment record must make the next decision auditable. Before launch, write the hypothesis and the matched baseline. Record immutable identifiers for the model and revision, data or curriculum manifest, configuration, and source IDs or commits. Afterward record results against the matched baseline, failures and censored cases, training and evaluation scope, utilization, cost, and the next decision. Preserve raw labels and evidence paths when practical, but do not turn an unreviewed artifact into a result.
+
+Report GPU utilization as an interval or run-level average/busy fraction with its measurement window and denominator. An instantaneous `nvidia-smi` percentage is a snapshot, not full-pipeline utilization. Distinguish a busy inference GPU from an idle trainer waiting on external judgments, and state when the pipeline is not saturated.
+
+Machine learning and rendering run on the Linux node. Keep credentials out of source, logs, manifests, archives, and screenshots. Do not add remote connection details or secrets to durable records. The root [research index](RESEARCH_LOG.md) is the entry point for current status and evidence links; its historical coverage is intentionally bounded and must not be described as exhaustive.

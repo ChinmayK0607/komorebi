@@ -1,0 +1,21 @@
+{
+  "schema": 1,
+  "contract": {
+    "version": "canvas-pixels-preview-v1",
+    "sha256": "456ba50d34ed27e62024e21faec91ce9623764582fe76b8228c11c3130623f9e"
+  },
+  "files": {
+    "contract.py": "ed748ac78970e3205896093c13f9a607da0c8f30c74b654d2fa1df02f7cab165",
+    "client.py": "3497ab6d382f8e76a4500b6f962421496b4ce258f91f628c35418294e8c5e5dd",
+    "rollout.py": "704b350e2c763bb44b7eccb7fc2a03fbe3e3ed60b0d7f17dedc9681c907a703c",
+    "render_demos.py": "968d8a89e8843ea54a227bda4cc24ec991084d0419a4d4713e21cbfca629ef0b",
+    "recovery_data.py": "d7f551b0c5c0a090874ee666a634556fdbd31728a639b2e07e62ec6b9b18f7a9",
+    "compile_teacher.cjs": "ec275c0ec162be8d8612f9d7fb27dbb0c18ae11140658853db0708b129946576",
+    "pairwise.py": "afc99c338f8342211dc354bcf7477a00dd2d91dc61c1761613d7e01fa3c29857",
+    "reward.py": "54d11e285f852302c889061d54698153c1dd63138681cb0ddab45f7795f60ed3",
+    "foundation_lock.py": "cac75e5bf7f14898cbea5b5581062afd7cdf5db5497bd76cc5489dce807477d0",
+    "vendor/integrations/watercolour/assets/p5.brush.js": "9c6e271a78e5dcb23c9cfa9d085775317fe5fb2188f976465c83c1f7965d1ec8",
+    "vendor/integrations/watercolour/assets/p5.min.js": "87adc350e8ec0e9bced22d4f03c181bdd208dc997d3956ab3ec2e90537643c9a",
+    "vendor/integrations/watercolour/renderer.py": "ad7ba24d632f0f16989741560c3af0fe42e426275c1df01954b60ddd69b63395"
+  }
+}

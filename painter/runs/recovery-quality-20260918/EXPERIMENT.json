@@ -1,0 +1,34 @@
+{
+  "run_name": "recovery-quality-20260918",
+  "checkpoint_repo": "CK0607/qwen3.8-27b-brush-painting",
+  "model": "Qwen/Qwen3.8-27B",
+  "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+  "max_steps": 72,
+  "checkpoint_interval": 24,
+  "learning_rate": 5e-06,
+  "global_batch": 8,
+  "lora_rank": 16,
+  "lora_alpha": 32,
+  "baseline_rollouts_per_reference": 2,
+  "evaluation_reference_count": 12,
+  "evaluation_turn_limit": 8,
+  "phase": "quality",
+  "speed_reward": 0,
+  "data_kind": "oracle corrections of collected student states plus terminal/painting/general replay",
+  "initial_adapter": {
+    "repo": "CK0607/qwen3.8-27b-brush-painting",
+    "revision": "0778179fb79cfa4d7885788b743e101beae0dc38",
+    "prefix": "curriculum-sft-20260918/step_96",
+    "sha256": "970a3a0af327992a17ad52b2729aeb02946a6cab4042d94d6341ba5174c90d2b"
+  },
+  "judge": {
+    "model": "Qwen/Qwen3-VL-32B-Instruct",
+    "revision": "0cfaf48183f594c314753d30a4c4974bc75f3ccb"
+  },
+  "objectives": [
+    "reference reconstruction",
+    "repair actual student errors",
+    "keep and finish completed canvases",
+    "pairwise visual preference"
+  ]
+}

@@ -1,0 +1,122 @@
+{
+  "version": 1,
+  "phase": "quality",
+  "student": {
+    "model": "Qwen/Qwen3.8-27B",
+    "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0"
+  },
+  "checkpoint_repo": "CK0607/qwen3.8-27b-brush-painting",
+  "checkpoint_private": false,
+  "interface": "p5.brush JavaScript; reference plus actual canvas; plan, paint, inspect, revise",
+  "levels": [
+    {
+      "id": 0,
+      "name": "marks_and_volumes",
+      "content": "curves, washes, gradients, spheres, cubes, cylinders"
+    },
+    {
+      "id": 1,
+      "name": "composition_and_parts",
+      "content": "overlap, attachment, silhouette, flowers, cups, simple vehicles"
+    },
+    {
+      "id": 2,
+      "name": "single_real_objects",
+      "content": "reference photographs; varied pose, crop, lighting, background"
+    },
+    {
+      "id": 3,
+      "name": "perspective_and_scenes",
+      "content": "animals, vehicles, buildings and several connected or occluded objects"
+    },
+    {
+      "id": 4,
+      "name": "diverse_paintings",
+      "content": "unseen real references across all six subject families"
+    }
+  ],
+  "quality": {
+    "stroke_budget": null,
+    "target_token_budget": null,
+    "speed_reward_weight": 0.0,
+    "planning": true,
+    "canvas_feedback": true
+  },
+  "operational_limits": {
+    "max_tokens_per_response": 16384,
+    "max_turns": 8,
+    "episode_timeout_seconds": 1800,
+    "render_timeout_seconds": 120,
+    "note": "Runaway-job limits, not quality targets. Report censored episodes separately; never reward an operational cutoff."
+  },
+  "sft": {
+    "current_level_token_fraction": 0.7,
+    "previous_levels_token_fraction": 0.2,
+    "general_vision_token_fraction": 0.1,
+    "learning_rate": 1e-05,
+    "max_epochs": 2,
+    "lora_rank": 16,
+    "lora_alpha": 32,
+    "global_batch_size": 8,
+    "assistant_only_loss": true,
+    "complete_targets_required": true
+  },
+  "sampling": {
+    "rollouts_per_reference": 8,
+    "probe_rollouts": 8,
+    "current_level_fraction": 0.6,
+    "review_fraction": 0.25,
+    "next_level_fraction": 0.15,
+    "frontier_pass_rate": [
+      0.2,
+      0.8
+    ],
+    "family_balanced": true,
+    "seed": 917
+  },
+  "rl": {
+    "trainer": "Prime RL",
+    "anchor_mix": {
+      "frozen_previous_student": 0.5,
+      "strong_teacher": 0.5
+    },
+    "refresh_anchors_between_rounds_only": true,
+    "reward": "stable reference-conditioned pairwise preference",
+    "order_disagreement": "masked",
+    "missing_judge": "masked",
+    "invalid_program": 0.0,
+    "minimum_scored_rollouts_per_group": 4,
+    "initial_updates": 20,
+    "learning_rate": 1e-06,
+    "checkpoint_interval": 5,
+    "same_anchor_for_rollouts_in_group": true
+  },
+  "mastery": {
+    "minimum_unique_development_references": 24,
+    "completed_fraction": 0.95,
+    "absolute_acceptable_fraction": 0.8,
+    "consecutive_evaluations": 2,
+    "action_when_not_mastered": "keep practicing and retain artifacts; do not block collection",
+    "requires_all_subject_families_at_final_level": true
+  },
+  "speed": {
+    "enabled": false,
+    "budget_fractions": [
+      0.9,
+      0.75,
+      0.6,
+      0.45
+    ],
+    "baseline": "measured cost of acceptable quality-policy episodes on the same reference family",
+    "maximum_quality_preference_drop": 0.05,
+    "quality_replay_fraction": 0.25,
+    "count_planning_retries_previews": true,
+    "portable_costs": [
+      "generated_tokens",
+      "executed_brush_calls",
+      "preview_calls"
+    ],
+    "wall_time": "compare on matched hardware; report separately",
+    "minimum_mastered_level": 4
+  }
+}

@@ -1,0 +1,23 @@
+# Active diversity SFT and following RL integration
+
+The recovery run `runs/recovery-quality-20260918` is complete and its pod is released. Read RESULTS.md and state.json. Do not contact its old endpoint or relaunch its pipeline. All 72 updates, all 144 evaluation episodes and both judging passes are preserved. The user prefers the new paintings; use the pinned public step72 checkpoint as the candidate initializer while retaining the previous checkpoint for regression comparisons.
+
+The next data pool is `data/diversity-v3-20260918`: 1,920 training references and 384 development references, encoded as 6,912 syntax-checked programs. The active run is `runs/diversity-sft-20260918`; rendering and Luna visual review are in progress. Read its RUNBOOK.md and state.json for the current owned pod and TTL. Training is queued after those complete. See that directory's README for the exact scope and sampling proposal. The existing pipeline handles materialization/rendering on that node, then384 SFT updates with checkpoints96/192/288/384. Do not start a duplicate. Do not feed the two corrupted input programs per reference into assistant targets; all painting/repair targets are the complete reference program. Preserve the current twelve development references instead of converting their errors into training examples. This is geometry/composition expansion, not photograph generalization or a claim of new recipe families.
+
+Qwen's automated pass masked 42/72 outcomes for uncertainty/order disagreement. Keep those records for judge diagnosis; do not silently convert masked outcomes to training labels. The separate Luna review covers only twelve paint sample00 pairs (7 recovery wins, 5 losses; 6 vs 5 acceptable). Luna is the user's requested visual reviewer going forward. Its agent labels must not be misrepresented as a callable online reward endpoint or human ground truth.
+
+The previous 96-update SFT learned shorter programs and improved first-turn execution (41/96 to60/96), but repeated unchanged code106 times across40 episodes and finished only78/96. Visual spot-checks showed both gains and regressions. The completed recovery run addressed those observed failures:
+
+- Actual student canvases and errors are paired with the exact programs that generated their references. The twelve references supplying those states are now training-only; twelve different references are evaluated.
+- Full-reference painting replaces mandatory three-stage progress. Already-correct canvases receive a keep/FINISHED target with no redraw.
+- The scaffold accepts finish-only actions with an existing canvas and reports unchanged proposals. Parent and trained adapters use the same scaffold.
+- Continue the public step96 adapter for72 Prime SFT updates at5e-6. Save steps24/48/72 publicly with hash verification. Do not confuse setup/model loading with actual updates.
+- Compare 72 episodes per adapter, then use the pinned frozen vision judge in both A/B orders for final preferences and sample-0 transition rewards. Export all failures and masked judgments.
+
+`reward.py` produces signed visual-change rewards and an acceptability term on terminal actions. Invalid actions get-1, repetitions get0, uncertain/inconsistent visual evidence is masked. There are no speed/token penalties. The current pipeline collects these reward records; it does not feed policy-gradient updates into Prime yet. Do not label supervised training or reward collection as RL.
+
+The following RL integration must generate fresh on-policy groups on training references, preserve sampled-token masks and inference log probabilities, normalize rewards within identical state/anchor groups, and verify finite nonzero updates from the chosen public initializer. The known Prime trainer/orchestrator implementations are preserved under `work/structured-painting-campaign-20260917/correction-overfit/source/brush-rl/integrations/speedpainting/rl`. Reuse their audits, adapt the environment to the new JavaScript/finish contract, and keep the current 12 development references out of optimization. Existing held-out reward ledgers are evaluation evidence, not training batches. Pairwise preferences and actual renders determine whether the new adapter deserves promotion. Keep speed training off until quality is reliable.
+
+## Data staging for the following run
+
+The diversity run spent substantial rented H100 time on CPU-only SwiftShader rendering. Before the next training-GPU rental, render and cache the reference/corruption corpus on a CPU node and preserve the source/PNG hashes. Do not render on the user’s Mac. Transfer the verified cache to the training node so setup can lead directly into preprocessing and optimization.

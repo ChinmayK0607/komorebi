@@ -1,0 +1,41 @@
+{
+  "run_name": "contract-quality-20260918",
+  "checkpoint_repo": "CK0607/qwen3.8-27b-brush-painting",
+  "model": "Qwen/Qwen3.8-27B",
+  "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+  "max_steps": 72,
+  "checkpoint_interval": 24,
+  "learning_rate": 3e-06,
+  "global_batch": 8,
+  "lora_rank": 16,
+  "lora_alpha": 32,
+  "baseline_rollouts_per_reference": 4,
+  "evaluation_reference_count": 24,
+  "evaluation_turn_limit": 8,
+  "phase": "quality",
+  "speed_reward": 0,
+  "data_kind": "Compact canvas-coordinate teachers; observed-canvas paint and finish actions; no affine targets",
+  "initial_adapter": {
+    "repo": "CK0607/qwen3.8-27b-brush-painting",
+    "revision": "057c193b1d5191fe3a06eb5e10744b383eba9f1f",
+    "prefix": "recovery-quality-20260918/step_72",
+    "sha256": "f79de2e42472aa8a6458b0c3dc330c57f2640eebfba50ffd2ea3e2876175d92a"
+  },
+  "judge": {
+    "model": "gpt-5.6-luna",
+    "mode": "blinded agent visual review; no automated Qwen reward pass"
+  },
+  "objectives": [
+    "reference reconstruction",
+    "repair missing parts, displacement and wrong proportions",
+    "keep and finish completed canvases",
+    "pairwise visual preference"
+  ],
+  "sampling_fractions": {
+    "paint": 0.5,
+    "repair": 0.25,
+    "finish": 0.1,
+    "retention": 0.15
+  },
+  "target_plan_version": "canvas-pixels-preview-v1"
+}

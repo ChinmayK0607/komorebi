@@ -1,0 +1,25 @@
+{
+  "checked_at": "2026-09-18T14:54:07.707963+00:00",
+  "foundation": {
+    "verified": true,
+    "contract": {
+      "version": "canvas-pixels-preview-v1",
+      "sha256": "456ba50d34ed27e62024e21faec91ce9623764582fe76b8228c11c3130623f9e"
+    },
+    "files": 12,
+    "lock_sha256": "3700a0cf0993489a3ca0256ca8df4c3ed3bef5620d1b3afe0184887960d5c8e6"
+  },
+  "local_checks": {
+    "unit_tests_passed": 30,
+    "teacher_program_source_checks_passed": 216,
+    "teacher_families": 12,
+    "node_compiler_syntax": true,
+    "setup_shell_syntax": true
+  },
+  "actual_model_evaluation": false,
+  "local_model_or_render_execution": false,
+  "node_compiler_execution": false,
+  "node_render_parity": false,
+  "training_launched": false,
+  "next_action": "Node compiler/render parity on a small fixture set and matched recovery-parent evaluation under the shared preview contract."
+}
