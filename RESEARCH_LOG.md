@@ -44,4 +44,10 @@ The [revision-RL manifest](painter/runs/revision-rl-20260918/EXPERIMENT.json), [
 
 ## Run-record discipline
 
+### Live pilot update — 2026-09-20 07:00 UTC
+
+The first 48 unique reward requests now have 96 actual blinded Luna-low image judgments across four batches. All 48 reconciled receipts were delivered; excluded judgments remain excluded. At 06:59:50 UTC the native coordinator dispatched its first 16-trace training batch after 14m33s of collection. Its window reported 72 episodes, with 35 errors/exclusions and 20 without training signal. This is a substantial throughput limitation, not saturated training. The trainer began processing the batch; a completed parameter update has not yet been verified. The next operational decision is to measure reward acceptance, complete-group latency and actual update time before changing concurrency or renting more GPUs. Reward criteria were not weakened to improve utilization.
+
+The source and research records were first committed locally as `c573327`; this establishes version control from this point and does not reconstruct historical source commits. The GitHub destination is pending the user's choice. GPU telemetry and raw judge receipts remain in the run evidence, outside Git.
+
 For every new run, preserve one hypothesis, immutable model/data/config/source identifiers, a matched baseline, results against that baseline, failures and censored cases, utilization measured over a stated window, cost, and the next decision. Keep GPU activity and judge waiting separate in the accounting. Use public, hash-verified Hugging Face checkpoint references instead of copying weights into this workspace. See the root [working agreement](AGENTS.md) and the root [.gitignore](.gitignore) for the tracking boundary.
