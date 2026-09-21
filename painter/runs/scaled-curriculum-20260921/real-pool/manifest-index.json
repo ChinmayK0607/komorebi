@@ -1,0 +1,1518 @@
+{
+  "full_manifest_sha256": "272c7666d918a6265639f8766c882060f0cadc6e181a02df3289d7376c09248a",
+  "source_archive_sha256": "61e5e3028863d8ffc3b81d6a514603954889f0edd5e4b44c4ce60b2da99aeb8e",
+  "references": [
+    {
+      "id": "coco128-000000000009",
+      "source_group": "coco128:train2017:000000000009",
+      "split": "dev",
+      "image_sha256": "3b0bb6bebad60a3329f1e3484434872e86998aeb7750d779b308e4a064868c2c",
+      "annotation_classes": [
+        "bowl",
+        "broccoli",
+        "orange"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000025",
+      "source_group": "coco128:train2017:000000000025",
+      "split": "train",
+      "image_sha256": "9f016b98f31e4fe826910e56ee39fa0c2889f48d38cc5f4f6b6421c8c5fc7214",
+      "annotation_classes": [
+        "giraffe"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000030",
+      "source_group": "coco128:train2017:000000000030",
+      "split": "dev",
+      "image_sha256": "4ec415419155289eefffa7a620ed77bdeee94f477225e87ceaa00cb5f2515fe7",
+      "annotation_classes": [
+        "potted plant",
+        "vase"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000034",
+      "source_group": "coco128:train2017:000000000034",
+      "split": "train",
+      "image_sha256": "0e67e637241ac2fbf132aa2b6cc9775b474b520e1c9a99dbef377063a5a48b85",
+      "annotation_classes": [
+        "zebra"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000036",
+      "source_group": "coco128:train2017:000000000036",
+      "split": "train",
+      "image_sha256": "2bb515b26d250fcdf16effa3a7280babe32ae9b6f7608563e53cd01f5cd66ad4",
+      "annotation_classes": [
+        "person",
+        "umbrella"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000042",
+      "source_group": "coco128:train2017:000000000042",
+      "split": "train",
+      "image_sha256": "9008ddd846fc6002ec47ea6067cb92cf70f294773cc15765b6a14ffb392f52fa",
+      "annotation_classes": [
+        "dog"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000049",
+      "source_group": "coco128:train2017:000000000049",
+      "split": "dev",
+      "image_sha256": "bc1482d2cba6e4db671c8eedbc7c8d86e0a31c927587a24297647f530349fe7b",
+      "annotation_classes": [
+        "horse",
+        "person",
+        "potted plant"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000061",
+      "source_group": "coco128:train2017:000000000061",
+      "split": "train",
+      "image_sha256": "a1a9ac88e4c5cfbdd1cd425a6d262b1e78bf32676a9c17a2861ca6a23a731955",
+      "annotation_classes": [
+        "elephant",
+        "person"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000064",
+      "source_group": "coco128:train2017:000000000064",
+      "split": "train",
+      "image_sha256": "406f84619f5197d416f60566d41ad4d58f1d10b0a182652bbda266eedbc3f1ab",
+      "annotation_classes": [
+        "car",
+        "clock",
+        "stop sign",
+        "truck"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000071",
+      "source_group": "coco128:train2017:000000000071",
+      "split": "train",
+      "image_sha256": "5393bf6575c435daa599c1272d9e61e99c099994ae4d3755311684663fed0917",
+      "annotation_classes": [
+        "car",
+        "train",
+        "truck"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000072",
+      "source_group": "coco128:train2017:000000000072",
+      "split": "dev",
+      "image_sha256": "93d0d304967360bed3bfe2aafc701817e83f494c687e625fb8b765d2be54c9b2",
+      "annotation_classes": [
+        "giraffe"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000073",
+      "source_group": "coco128:train2017:000000000073",
+      "split": "train",
+      "image_sha256": "4a17dd87b487b4b6432d3aa60f6026a5349c8708834a3cae141ff16e0539a32c",
+      "annotation_classes": [
+        "motorcycle"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000074",
+      "source_group": "coco128:train2017:000000000074",
+      "split": "train",
+      "image_sha256": "99d864809a7355862032b54283bd4808971da5a2b976b20467203e6c192e755d",
+      "annotation_classes": [
+        "bicycle",
+        "dog",
+        "person"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000077",
+      "source_group": "coco128:train2017:000000000077",
+      "split": "dev",
+      "image_sha256": "e07c725d9941691ac87386f0f4edd44f62a232696288bf95fb5ddef9384347b1",
+      "annotation_classes": [
+        "person",
+        "skateboard"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000078",
+      "source_group": "coco128:train2017:000000000078",
+      "split": "dev",
+      "image_sha256": "3139fdefaa9b4320c8a4eec2032c77306a0fd167dd88633bd73f66f952baf5a7",
+      "annotation_classes": [
+        "clock"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000081",
+      "source_group": "coco128:train2017:000000000081",
+      "split": "dev",
+      "image_sha256": "9f9dd4dcc774b81fcbb64531eb717859562ff162cf058e12f80c7b4630cbaa6b",
+      "annotation_classes": [
+        "airplane"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000086",
+      "source_group": "coco128:train2017:000000000086",
+      "split": "train",
+      "image_sha256": "f58a99916783cdf4a7619286dc46adedd4ea1143bcc2cd773c6504aa5280915a",
+      "annotation_classes": [
+        "handbag",
+        "motorcycle",
+        "person"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000089",
+      "source_group": "coco128:train2017:000000000089",
+      "split": "dev",
+      "image_sha256": "cc548c7e669fefde96bdb7b1454c90cf518d414b85eb36827cc78f488d622e5a",
+      "annotation_classes": [
+        "book",
+        "knife",
+        "microwave",
+        "oven"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000092",
+      "source_group": "coco128:train2017:000000000092",
+      "split": "train",
+      "image_sha256": "886950d096ad454f0bbb9a63167c795bd49eb9d4c0cb24a72888b3429d11900a",
+      "annotation_classes": [
+        "cake",
+        "fork"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000094",
+      "source_group": "coco128:train2017:000000000094",
+      "split": "train",
+      "image_sha256": "143779e4a70bb6b6e10232aa02c2ce99a9a1246d763da344b424aba4ca71cd9f",
+      "annotation_classes": [
+        "car",
+        "truck"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000109",
+      "source_group": "coco128:train2017:000000000109",
+      "split": "train",
+      "image_sha256": "69edeeca53763fb2a4ee51739e4f9a4f053584b4f3ca4ff9911c49fa52ed2762",
+      "annotation_classes": [
+        "bench",
+        "dog",
+        "person"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000110",
+      "source_group": "coco128:train2017:000000000110",
+      "split": "train",
+      "image_sha256": "39d967c7856965853e90b9283db4a6895a034eb17fe0c84581d17af4a59edcf2",
+      "annotation_classes": [
+        "chair",
+        "cup",
+        "dining table",
+        "fork",
+        "knife",
+        "person",
+        "pizza"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000113",
+      "source_group": "coco128:train2017:000000000113",
+      "split": "dev",
+      "image_sha256": "51d5f657eacbc0f37f0d847f903abc90bb33479fa0459fdc64ebbeb5cac34d99",
+      "annotation_classes": [
+        "cake",
+        "chair",
+        "cup",
+        "dining table",
+        "knife",
+        "person"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000127",
+      "source_group": "coco128:train2017:000000000127",
+      "split": "dev",
+      "image_sha256": "0ce2f02f39d5d49260d91762bc9a659f8f9d516d8e416c8120306330bfd58023",
+      "annotation_classes": [
+        "bench",
+        "book",
+        "cake",
+        "cup",
+        "dining table",
+        "handbag",
+        "knife",
+        "person",
+        "potted plant",
+        "spoon",
+        "umbrella"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000133",
+      "source_group": "coco128:train2017:000000000133",
+      "split": "dev",
+      "image_sha256": "d8d2ea5e94c83ba74bef9dc52d58e0526e08d03355381683fb953db71ec529e6",
+      "annotation_classes": [
+        "bed",
+        "teddy bear"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000136",
+      "source_group": "coco128:train2017:000000000136",
+      "split": "train",
+      "image_sha256": "e20c569a1e6174fd845a434a3fe3d50fb4f8a0e275fb348cc2c9b42a11600ccc",
+      "annotation_classes": [
+        "giraffe",
+        "person"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000138",
+      "source_group": "coco128:train2017:000000000138",
+      "split": "train",
+      "image_sha256": "0255bce78addf8d82e9f5d434ad2a98fccd5542cbb041980ce7ad00054a3227e",
+      "annotation_classes": [
+        "bowl",
+        "clock",
+        "oven",
+        "potted plant",
+        "refrigerator",
+        "sink",
+        "vase"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000142",
+      "source_group": "coco128:train2017:000000000142",
+      "split": "train",
+      "image_sha256": "3c852dc71abcf6cf06ed58202d1b2c850bb783553f05c63cd6ca511936b431aa",
+      "annotation_classes": [
+        "banana",
+        "bottle",
+        "dining table",
+        "sandwich"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000143",
+      "source_group": "coco128:train2017:000000000143",
+      "split": "train",
+      "image_sha256": "03d4d20019d5abdf6f9314a166f8f8cf582f1d0d2167beef7ec2400d0f1b629e",
+      "annotation_classes": [
+        "bird"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000144",
+      "source_group": "coco128:train2017:000000000144",
+      "split": "train",
+      "image_sha256": "6740b5472043073062f46b253399a6bc2fe68ca77d429f652ad956c03d51b0fa",
+      "annotation_classes": [
+        "giraffe"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000149",
+      "source_group": "coco128:train2017:000000000149",
+      "split": "train",
+      "image_sha256": "73a20e38429ba6c78f62a90df787360c4a9ae3d331b002b509a8ee15179788a4",
+      "annotation_classes": [
+        "car",
+        "kite",
+        "person"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000151",
+      "source_group": "coco128:train2017:000000000151",
+      "split": "train",
+      "image_sha256": "b92d7d249e574fbd4ad8ba2fbc2c1879ca281b779f1276ac3daa0304b80039e4",
+      "annotation_classes": [
+        "person",
+        "stop sign",
+        "train"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000154",
+      "source_group": "coco128:train2017:000000000154",
+      "split": "train",
+      "image_sha256": "2938c94a9b07cacf10a8343c35949b065ae868190a11020f458f50450bd13552",
+      "annotation_classes": [
+        "zebra"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000164",
+      "source_group": "coco128:train2017:000000000164",
+      "split": "train",
+      "image_sha256": "186a1427f32ce7e5cf17052f66d5ee7cd57d7f83762001891e16195a6bda586d",
+      "annotation_classes": [
+        "bottle",
+        "bowl",
+        "chair",
+        "cup",
+        "dining table",
+        "microwave",
+        "oven",
+        "refrigerator",
+        "wine glass"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000165",
+      "source_group": "coco128:train2017:000000000165",
+      "split": "train",
+      "image_sha256": "2d3d9e0b4b165c0f783b97cd963097b13effa1af851c9576617fb7c910d63cd8",
+      "annotation_classes": [
+        "person",
+        "scissors",
+        "tie"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000192",
+      "source_group": "coco128:train2017:000000000192",
+      "split": "train",
+      "image_sha256": "93a9d9132aefccbb1f1bfb51198b5b427d1cf4a977ef259c9d0507ee5b0df732",
+      "annotation_classes": [
+        "baseball bat",
+        "person"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000194",
+      "source_group": "coco128:train2017:000000000194",
+      "split": "train",
+      "image_sha256": "0713bcf193a25769b047e4dde7820e7fa857bab06f9140a4a64c78d94ed9b4a1",
+      "annotation_classes": [
+        "knife",
+        "pizza"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000196",
+      "source_group": "coco128:train2017:000000000196",
+      "split": "train",
+      "image_sha256": "1e1d801e63ed90d34ee666845ebcc17b56edef1f864d048ff588ce7073bc94a2",
+      "annotation_classes": [
+        "bowl",
+        "broccoli",
+        "carrot",
+        "dining table",
+        "fork",
+        "spoon"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000201",
+      "source_group": "coco128:train2017:000000000201",
+      "split": "dev",
+      "image_sha256": "4efc7ce561df432c2d3d9a60040f62b1b8389b36b401269bfc6802065dfcb9d8",
+      "annotation_classes": [
+        "person",
+        "snowboard"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000208",
+      "source_group": "coco128:train2017:000000000208",
+      "split": "dev",
+      "image_sha256": "5ef004c8572c1d3a5e7c92ed16edc47529892a5306c7f70216e332a6cd65ad2d",
+      "annotation_classes": [
+        "sink",
+        "toothbrush"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000241",
+      "source_group": "coco128:train2017:000000000241",
+      "split": "train",
+      "image_sha256": "14007b87745069ed85c6412dffc8ad11a22de98d5f5c9ae896523e12622961c5",
+      "annotation_classes": [
+        "bottle",
+        "couch",
+        "cup",
+        "handbag",
+        "person",
+        "potted plant",
+        "remote"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000247",
+      "source_group": "coco128:train2017:000000000247",
+      "split": "train",
+      "image_sha256": "a57c40ee95f73bb493e573bbbd593d037fdf176a02f1d3f6a3f437c8f78f805a",
+      "annotation_classes": [
+        "airplane",
+        "car"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000250",
+      "source_group": "coco128:train2017:000000000250",
+      "split": "train",
+      "image_sha256": "a4e4243da053d3a958a1f52fd8fe9cc264d39e07077266a7089b281597050a29",
+      "annotation_classes": null,
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000257",
+      "source_group": "coco128:train2017:000000000257",
+      "split": "train",
+      "image_sha256": "ae711135026cbd548fa1e04edc0ee96bce57162587e0238e7f76b4dc46cf4208",
+      "annotation_classes": [
+        "backpack",
+        "handbag",
+        "person",
+        "traffic light",
+        "truck"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000260",
+      "source_group": "coco128:train2017:000000000260",
+      "split": "train",
+      "image_sha256": "f70992bbd14794773e27801c4cf4ba34ca4f453eb2efded62c2a558c40e3885b",
+      "annotation_classes": [
+        "bus",
+        "car",
+        "person",
+        "suitcase"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000263",
+      "source_group": "coco128:train2017:000000000263",
+      "split": "train",
+      "image_sha256": "4abc27b830dedd072dab619c6b7f2467886f601e41b0cc8c2de888f57cf90d7b",
+      "annotation_classes": [
+        "elephant"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000283",
+      "source_group": "coco128:train2017:000000000283",
+      "split": "train",
+      "image_sha256": "a668b293598b0097c9b38c136e54b8b43241df22d1c183f6f204a87eaf1f0724",
+      "annotation_classes": [
+        "bottle",
+        "chair",
+        "dining table",
+        "wine glass"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000294",
+      "source_group": "coco128:train2017:000000000294",
+      "split": "train",
+      "image_sha256": "66bff049c25ed6498e69a51ac65b88d5fc800233fed0f89ee07ab178f7db766d",
+      "annotation_classes": [
+        "clock",
+        "fork",
+        "knife",
+        "microwave",
+        "person",
+        "spoon"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000307",
+      "source_group": "coco128:train2017:000000000307",
+      "split": "train",
+      "image_sha256": "c839076b4fa14020f97c8a5909c84a1e85c912ca262a91c8c4648ebe27caf61f",
+      "annotation_classes": [
+        "car",
+        "dog",
+        "frisbee"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000308",
+      "source_group": "coco128:train2017:000000000308",
+      "split": "train",
+      "image_sha256": "07c410e96a812351bf385add8645b8dc2ed064902ff2ef01072be6351b428393",
+      "annotation_classes": [
+        "clock",
+        "person",
+        "umbrella",
+        "wine glass"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000309",
+      "source_group": "coco128:train2017:000000000309",
+      "split": "train",
+      "image_sha256": "40087a8191fc80eba012c1ba4735402b4890aa0669a84ea0d3dac043ca543247",
+      "annotation_classes": [
+        "dog",
+        "teddy bear"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000312",
+      "source_group": "coco128:train2017:000000000312",
+      "split": "train",
+      "image_sha256": "cd2fac2dfdc17fb1af0d12228e344d2e828fbe28a7c1e32396a95cb0b129d096",
+      "annotation_classes": [
+        "elephant"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000315",
+      "source_group": "coco128:train2017:000000000315",
+      "split": "train",
+      "image_sha256": "5804350236bc0d52715f9354498d52f8d260b0e3d8f965526cd85ca6a18b7caa",
+      "annotation_classes": [
+        "chair",
+        "handbag",
+        "person",
+        "umbrella"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000321",
+      "source_group": "coco128:train2017:000000000321",
+      "split": "train",
+      "image_sha256": "60f0acad099ad5cf55f44968cea66e125e0beb7eb20a1d78888ee9db34e28cd8",
+      "annotation_classes": [
+        "hot dog",
+        "sandwich"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000322",
+      "source_group": "coco128:train2017:000000000322",
+      "split": "dev",
+      "image_sha256": "4dddb450ab0a84a458c3da0cfa868a42b9b146de1cda3dd13c34b3599c7b80d3",
+      "annotation_classes": [
+        "frisbee",
+        "person"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000326",
+      "source_group": "coco128:train2017:000000000326",
+      "split": "train",
+      "image_sha256": "d8c9b6803795082707fcd62f2d1d38826709836504e330db3e7b4713c3316d59",
+      "annotation_classes": [
+        "person",
+        "wine glass"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000328",
+      "source_group": "coco128:train2017:000000000328",
+      "split": "train",
+      "image_sha256": "8ba0ed80d34589221b1243e0764471d91716b3a267827cb37ecfc3cfae52cc90",
+      "annotation_classes": [
+        "backpack",
+        "bench",
+        "book",
+        "car",
+        "cell phone",
+        "person",
+        "tie"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000332",
+      "source_group": "coco128:train2017:000000000332",
+      "split": "train",
+      "image_sha256": "8d4946138c446940ed080738744214cd75948a98fd3a1933d0031bd14144f541",
+      "annotation_classes": [
+        "bowl",
+        "carrot",
+        "cup",
+        "fork"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000338",
+      "source_group": "coco128:train2017:000000000338",
+      "split": "train",
+      "image_sha256": "fdf5b5b2f8227082a5542fbc33b5f8740b040d345653c33bec6158d835542d6b",
+      "annotation_classes": [
+        "clock",
+        "handbag",
+        "oven",
+        "person",
+        "refrigerator"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000349",
+      "source_group": "coco128:train2017:000000000349",
+      "split": "train",
+      "image_sha256": "8ad9716416dc27aeff76bb09d936949f67627cb30948288b61c117df34501049",
+      "annotation_classes": [
+        "potted plant",
+        "train"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000357",
+      "source_group": "coco128:train2017:000000000357",
+      "split": "dev",
+      "image_sha256": "939b5473ea4787a01c2293a3e62979442eea5c9b3dcaab8803c07a5b6d47e087",
+      "annotation_classes": [
+        "baseball bat",
+        "baseball glove",
+        "person"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000359",
+      "source_group": "coco128:train2017:000000000359",
+      "split": "dev",
+      "image_sha256": "8da8a8320518a8adadbbd79615e066fd60b31c6025919665264ff9d0f746a5dd",
+      "annotation_classes": [
+        "car",
+        "traffic light"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000360",
+      "source_group": "coco128:train2017:000000000360",
+      "split": "train",
+      "image_sha256": "1a5d039418eacc09510efabcd466dc05701f0dac9ae0040b05a1b30b796ef96e",
+      "annotation_classes": [
+        "person",
+        "snowboard"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000368",
+      "source_group": "coco128:train2017:000000000368",
+      "split": "train",
+      "image_sha256": "a10be0a1beb5a34b50af22cc657dbf186a944db7ce8924e570295f35bd954036",
+      "annotation_classes": [
+        "person",
+        "sports ball"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000370",
+      "source_group": "coco128:train2017:000000000370",
+      "split": "train",
+      "image_sha256": "0d3719ec6f6f54229f498f7b01b113a864cd1eeccac196086741d98e23ae2455",
+      "annotation_classes": [
+        "broccoli",
+        "person"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000382",
+      "source_group": "coco128:train2017:000000000382",
+      "split": "dev",
+      "image_sha256": "9455b8af106ef7a2a3b6c4c7ceeda5f4e81b5e364a2aef8e6cf68abc1396f8bd",
+      "annotation_classes": [
+        "backpack",
+        "person",
+        "skis"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000384",
+      "source_group": "coco128:train2017:000000000384",
+      "split": "train",
+      "image_sha256": "dfbae064fadcaa79bd319410903bc92052349472115e2d515e0ecf3c944d1048",
+      "annotation_classes": [
+        "book",
+        "clock",
+        "couch",
+        "laptop",
+        "mouse",
+        "remote"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000387",
+      "source_group": "coco128:train2017:000000000387",
+      "split": "train",
+      "image_sha256": "079af237aafcdddfe5a528ef5e40f38ca449fce9ad5a49fbdaaeef068fac7c76",
+      "annotation_classes": [
+        "cell phone",
+        "laptop"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000389",
+      "source_group": "coco128:train2017:000000000389",
+      "split": "train",
+      "image_sha256": "f6d313afba47fe0747d1d78cd342f420eb305de8faadb5cb164de428522b40d6",
+      "annotation_classes": [
+        "backpack",
+        "person",
+        "tie"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000394",
+      "source_group": "coco128:train2017:000000000394",
+      "split": "train",
+      "image_sha256": "2cf78c1cfa98714d2ed8a643f931c39511bbb6085fddf157b27ed709089e0343",
+      "annotation_classes": [
+        "dog",
+        "frisbee"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000395",
+      "source_group": "coco128:train2017:000000000395",
+      "split": "train",
+      "image_sha256": "8d823d141724cc8656ccd48b49d6e44556ca399fbbd8458cc488f0d9816809a4",
+      "annotation_classes": [
+        "cell phone",
+        "person"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000397",
+      "source_group": "coco128:train2017:000000000397",
+      "split": "train",
+      "image_sha256": "5011e5e9eac564d30fa652281a7fd1d7693545077971741a241f400611e4c33e",
+      "annotation_classes": [
+        "chair",
+        "cup",
+        "dining table",
+        "fork",
+        "person",
+        "pizza"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000400",
+      "source_group": "coco128:train2017:000000000400",
+      "split": "train",
+      "image_sha256": "7b78338d4c7a30f7c38eb3bf11a7623a195e10926359adfd7281d6ce99e42dcb",
+      "annotation_classes": [
+        "boat",
+        "dog"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000404",
+      "source_group": "coco128:train2017:000000000404",
+      "split": "train",
+      "image_sha256": "c46b3242d195c8c81b6776f4bfa385ef886ff1e7cb814e2c29e03303b85403b2",
+      "annotation_classes": [
+        "boat"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000415",
+      "source_group": "coco128:train2017:000000000415",
+      "split": "train",
+      "image_sha256": "cc75d90eac7419395e81ddd7e33c81dbec387892e086b40cbf12dc3fe09f8bb1",
+      "annotation_classes": [
+        "person",
+        "tennis racket"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000419",
+      "source_group": "coco128:train2017:000000000419",
+      "split": "dev",
+      "image_sha256": "4b4e5c24a3aafa6d591ab385cc3756f90a804212a8e060ba374d1658b69b308e",
+      "annotation_classes": [
+        "car",
+        "person",
+        "sports ball",
+        "tennis racket"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000428",
+      "source_group": "coco128:train2017:000000000428",
+      "split": "train",
+      "image_sha256": "49e87dbacfb3911d83fde336b7c01b79cc7bc77a021a601f2eb8d861f170a466",
+      "annotation_classes": [
+        "cake",
+        "person",
+        "tie"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000431",
+      "source_group": "coco128:train2017:000000000431",
+      "split": "dev",
+      "image_sha256": "1ecf0c6810ad0972f867b0f53f94c03d3398fc6958af4cac60dde350533f7b8c",
+      "annotation_classes": [
+        "person",
+        "sports ball",
+        "tennis racket"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000436",
+      "source_group": "coco128:train2017:000000000436",
+      "split": "train",
+      "image_sha256": "84b778ac377b3fb394edee6f6c3e688c600a3ac440247b64942b1e6e116ff9a3",
+      "annotation_classes": [
+        "donut",
+        "person"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000438",
+      "source_group": "coco128:train2017:000000000438",
+      "split": "train",
+      "image_sha256": "ee66d39f65c8ce3421fda1ca85b1942f6dff29813c97b6fb4ea4ed015c3a822a",
+      "annotation_classes": [
+        "donut"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000443",
+      "source_group": "coco128:train2017:000000000443",
+      "split": "train",
+      "image_sha256": "f6483d57885c348a27dcdc272e4bd5296c75596d7c64fe638b24dbb503209902",
+      "annotation_classes": [
+        "cat",
+        "couch",
+        "person",
+        "remote"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000446",
+      "source_group": "coco128:train2017:000000000446",
+      "split": "train",
+      "image_sha256": "41f3d2ce74148a9628d29ac8ddb5eeed3a07394a55b72e75df5d418d5887ef50",
+      "annotation_classes": [
+        "book",
+        "couch",
+        "person",
+        "potted plant",
+        "remote"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000450",
+      "source_group": "coco128:train2017:000000000450",
+      "split": "train",
+      "image_sha256": "3b1fe58cb414f373c61990a5fed4f1a6418a02b2e8a3ed3ecef613f4e7198068",
+      "annotation_classes": [
+        "cup",
+        "dining table",
+        "pizza",
+        "wine glass"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000459",
+      "source_group": "coco128:train2017:000000000459",
+      "split": "train",
+      "image_sha256": "9dac859e6bc3eaf091e94593a005735f9c3c3e71c1c40a708b4c24da99b2e06c",
+      "annotation_classes": [
+        "person",
+        "tie"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000471",
+      "source_group": "coco128:train2017:000000000471",
+      "split": "train",
+      "image_sha256": "8f473ca6e651f74a74efea3673445230f6bb7d6ae92f76bf3c1e523853ec3995",
+      "annotation_classes": [
+        "bus",
+        "person"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000472",
+      "source_group": "coco128:train2017:000000000472",
+      "split": "train",
+      "image_sha256": "e86077ae0fa75248880ca12cdc9ef09bb68fa68083313ce280fd77082c780769",
+      "annotation_classes": [
+        "airplane"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000474",
+      "source_group": "coco128:train2017:000000000474",
+      "split": "train",
+      "image_sha256": "e5a6b72ea2fda1cd1ea969018036e6da16fa491f9a2ac974a7361b539b00a155",
+      "annotation_classes": [
+        "baseball glove",
+        "person"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000486",
+      "source_group": "coco128:train2017:000000000486",
+      "split": "train",
+      "image_sha256": "cb30e9ff9b1182fc9aa328f601f0ca640236eea29ec695b57edc11a572dfbfed",
+      "annotation_classes": [
+        "bottle",
+        "bowl",
+        "knife",
+        "oven",
+        "refrigerator"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000488",
+      "source_group": "coco128:train2017:000000000488",
+      "split": "train",
+      "image_sha256": "9e1c9d4c88d38e6a2cd2f775bea82c137c14dc3b13f8430bcdadcb89ab0b7022",
+      "annotation_classes": [
+        "baseball bat",
+        "baseball glove",
+        "person",
+        "sports ball"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000490",
+      "source_group": "coco128:train2017:000000000490",
+      "split": "train",
+      "image_sha256": "1274c3c4010d45ddd84faf1c56f7c997c0c2533e4f25c6ccea25e8233e5684e5",
+      "annotation_classes": [
+        "dog",
+        "skateboard"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000491",
+      "source_group": "coco128:train2017:000000000491",
+      "split": "train",
+      "image_sha256": "9d5732e879b066bfe8a38e3fcad64836fa1a5ac9f507625082c4b14fe449f993",
+      "annotation_classes": [
+        "teddy bear"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000502",
+      "source_group": "coco128:train2017:000000000502",
+      "split": "train",
+      "image_sha256": "f7ce0feeb7699cd56886c64ac4ea923c76be97b34ee3a2ea0909c45e08411ec0",
+      "annotation_classes": [
+        "bear"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000508",
+      "source_group": "coco128:train2017:000000000508",
+      "split": "train",
+      "image_sha256": "0fc73f660a10ed91c52f76a2b34b5fa252bf70ff84f7b2a35374726388528ca2",
+      "annotation_classes": null,
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000510",
+      "source_group": "coco128:train2017:000000000510",
+      "split": "train",
+      "image_sha256": "c2fcc1d44e81016f4c53e7e610c44dc28a2ca1bc5e73f73623129d261bff15e2",
+      "annotation_classes": [
+        "bench",
+        "person",
+        "traffic light"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000514",
+      "source_group": "coco128:train2017:000000000514",
+      "split": "train",
+      "image_sha256": "073520d67d44551b4e0bc24d4eb3a6bb68bf00481a8b15d9f34479e787d2cba9",
+      "annotation_classes": [
+        "bed"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000520",
+      "source_group": "coco128:train2017:000000000520",
+      "split": "train",
+      "image_sha256": "2b971302ba56e1049294f9e0b198f37316148c8257b8d7344002aed624c45844",
+      "annotation_classes": [
+        "bird",
+        "person"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000529",
+      "source_group": "coco128:train2017:000000000529",
+      "split": "train",
+      "image_sha256": "5d9958bdec3062b05090258293a19af01d231de69b943d1ff0bb4a7b943e6db3",
+      "annotation_classes": [
+        "motorcycle",
+        "person"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000531",
+      "source_group": "coco128:train2017:000000000531",
+      "split": "train",
+      "image_sha256": "111bb407e512f23fcc14bbc51ad4b312b0797332aab86ecd9373808286ed30b1",
+      "annotation_classes": [
+        "bicycle",
+        "person",
+        "sports ball",
+        "tennis racket"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000532",
+      "source_group": "coco128:train2017:000000000532",
+      "split": "train",
+      "image_sha256": "60745e50cb857e4683d3622ac6c1e7ade63bd73ee458eb76a70455badaee2869",
+      "annotation_classes": [
+        "bus",
+        "handbag",
+        "person"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000536",
+      "source_group": "coco128:train2017:000000000536",
+      "split": "train",
+      "image_sha256": "745e538b3979ffa93f63bb294163e173d9a99413bce6cf3289215b541c9f1eb1",
+      "annotation_classes": [
+        "cell phone",
+        "chair",
+        "handbag",
+        "person"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000540",
+      "source_group": "coco128:train2017:000000000540",
+      "split": "train",
+      "image_sha256": "32099f009fcb436bad1bd59b5d48b3e5620fa667a83db5a09879e158dd346103",
+      "annotation_classes": [
+        "airplane",
+        "bus",
+        "car",
+        "traffic light",
+        "truck"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000542",
+      "source_group": "coco128:train2017:000000000542",
+      "split": "dev",
+      "image_sha256": "ef93fd2248a41119a34a86d11478b87bd0c715ff3c2c65f3f5f54a3f31a3dedf",
+      "annotation_classes": [
+        "airplane",
+        "handbag",
+        "person",
+        "tie"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000544",
+      "source_group": "coco128:train2017:000000000544",
+      "split": "train",
+      "image_sha256": "f599082d9c87db6029fc3d6e468074d1294dc98a8755152ca7324811aa1d10cd",
+      "annotation_classes": [
+        "baseball bat",
+        "baseball glove",
+        "person",
+        "sports ball"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000560",
+      "source_group": "coco128:train2017:000000000560",
+      "split": "train",
+      "image_sha256": "96801af258ded041845af111c4535dcb12a512cf22f6fd9854e5723920532d60",
+      "annotation_classes": [
+        "cell phone",
+        "potted plant",
+        "sink",
+        "toilet"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000562",
+      "source_group": "coco128:train2017:000000000562",
+      "split": "dev",
+      "image_sha256": "e31320272d768add7113d41a9c65407fd4868da1229f8658fc877e9b07c4c794",
+      "annotation_classes": [
+        "cup",
+        "toothbrush"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000564",
+      "source_group": "coco128:train2017:000000000564",
+      "split": "train",
+      "image_sha256": "1f67bf49851ff43dba866f0cd6cc1b6f1d35ee75255a6092483550548584f477",
+      "annotation_classes": [
+        "chair",
+        "person",
+        "tennis racket"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000569",
+      "source_group": "coco128:train2017:000000000569",
+      "split": "train",
+      "image_sha256": "07655c58e2286ec5e8b74eee71a03841ccf732cbc502d6c380d894a14041ad5f",
+      "annotation_classes": [
+        "kite",
+        "person"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000572",
+      "source_group": "coco128:train2017:000000000572",
+      "split": "dev",
+      "image_sha256": "b779e782a66c196373580de6ede5c4faacabf05fb521eab8df4d11b71d8d2770",
+      "annotation_classes": [
+        "person",
+        "suitcase"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000575",
+      "source_group": "coco128:train2017:000000000575",
+      "split": "train",
+      "image_sha256": "839789fe6192bbd5776761d675aa76017b67810b556f3e25e2f3a31acffd86f3",
+      "annotation_classes": [
+        "cat"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000581",
+      "source_group": "coco128:train2017:000000000581",
+      "split": "train",
+      "image_sha256": "60ad7a794ae3032c302c4e1d5111099921ce7e8df23df4401f60bdc74dc83bf1",
+      "annotation_classes": [
+        "dog"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000584",
+      "source_group": "coco128:train2017:000000000584",
+      "split": "dev",
+      "image_sha256": "f1ae69b71470e4d4e88e342b69fa47187fe5c7a56882eac0e548107075f4716f",
+      "annotation_classes": [
+        "bowl",
+        "broccoli",
+        "carrot",
+        "spoon"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000589",
+      "source_group": "coco128:train2017:000000000589",
+      "split": "train",
+      "image_sha256": "b028805b2fb2c666ef72d4a7a01677bcf0ed56fb4d14cadc8646acdf379999c7",
+      "annotation_classes": [
+        "frisbee",
+        "person"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000590",
+      "source_group": "coco128:train2017:000000000590",
+      "split": "train",
+      "image_sha256": "dd687875b5ff4fd0a91dcc910690da36858271562ea908ff61661b4cec9b4cee",
+      "annotation_classes": [
+        "bowl",
+        "sink"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000595",
+      "source_group": "coco128:train2017:000000000595",
+      "split": "train",
+      "image_sha256": "8152ff314326c47105e065ec16ef28e1baa9dd640f40475fe385b612d5e65cf1",
+      "annotation_classes": [
+        "tv"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000597",
+      "source_group": "coco128:train2017:000000000597",
+      "split": "train",
+      "image_sha256": "f611f233ff6657baa61f32f573a213ef1b1af031e892f8b4e287c21a856497e7",
+      "annotation_classes": [
+        "elephant"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000599",
+      "source_group": "coco128:train2017:000000000599",
+      "split": "dev",
+      "image_sha256": "9d924b4353cca7295c149e3659866a18e78234f0dc701df119191152f4a31fec",
+      "annotation_classes": [
+        "cat",
+        "couch",
+        "potted plant",
+        "remote"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000605",
+      "source_group": "coco128:train2017:000000000605",
+      "split": "train",
+      "image_sha256": "9135dd0723240d2d4f64ce2173901a0f23a222dea98b72e1259c28f28fa2aab6",
+      "annotation_classes": [
+        "cup",
+        "dining table",
+        "spoon"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000612",
+      "source_group": "coco128:train2017:000000000612",
+      "split": "train",
+      "image_sha256": "9ee977eaa2947ffa1508dfc8b6e3c179a9945ee3a55529f91ede04689f00e667",
+      "annotation_classes": [
+        "bed",
+        "teddy bear"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000620",
+      "source_group": "coco128:train2017:000000000620",
+      "split": "train",
+      "image_sha256": "4c7d0e5b1ac23a287f95640c4aaab93a0e120c384558e3fff70b96f6f1eb80ce",
+      "annotation_classes": [
+        "pizza",
+        "refrigerator"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000623",
+      "source_group": "coco128:train2017:000000000623",
+      "split": "train",
+      "image_sha256": "c11d16bc49acabc2a52b990174110753dbe3a9a71eb7aa37af8f5fc4c616fb20",
+      "annotation_classes": [
+        "bench",
+        "chair",
+        "person",
+        "teddy bear"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000625",
+      "source_group": "coco128:train2017:000000000625",
+      "split": "train",
+      "image_sha256": "0938276afa762c367dac4968bc9a3d4abf9d83db1f4bea67262bff976568e24c",
+      "annotation_classes": [
+        "frisbee",
+        "person"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000626",
+      "source_group": "coco128:train2017:000000000626",
+      "split": "dev",
+      "image_sha256": "47b4a3b3fe24c6b1f77a9d89aa2e5d1a3b410b7ba611f54c252c2e13e975afc8",
+      "annotation_classes": [
+        "clock"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000629",
+      "source_group": "coco128:train2017:000000000629",
+      "split": "train",
+      "image_sha256": "be76e3e5bed8c8a9a0d8081844bfca7ce013093e746b66aad13922373644ad32",
+      "annotation_classes": [
+        "motorcycle"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000634",
+      "source_group": "coco128:train2017:000000000634",
+      "split": "dev",
+      "image_sha256": "d769636e9b9d22fa6fd4dcc2e683b2c95a5a9c247b3cc95df7367b1dba52f9bc",
+      "annotation_classes": [
+        "person",
+        "skateboard"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000636",
+      "source_group": "coco128:train2017:000000000636",
+      "split": "dev",
+      "image_sha256": "8e948d6888e7bf449e91883d3a2b0d61804308aada31fbf289add4da4dd978e8",
+      "annotation_classes": [
+        "toilet"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000641",
+      "source_group": "coco128:train2017:000000000641",
+      "split": "dev",
+      "image_sha256": "8eae4239a000d602acb4c58801a3c070e4bf3da608e57e7a3dcbd5ef719895cc",
+      "annotation_classes": [
+        "bicycle",
+        "bus",
+        "person"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000643",
+      "source_group": "coco128:train2017:000000000643",
+      "split": "train",
+      "image_sha256": "53d61e69ccf08b42a1cefa414c69a1c03d72aba2852e1fde35c4da3df8753b3f",
+      "annotation_classes": [
+        "book",
+        "bottle",
+        "bowl",
+        "mouse",
+        "teddy bear",
+        "tv"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    },
+    {
+      "id": "coco128-000000000650",
+      "source_group": "coco128:train2017:000000000650",
+      "split": "train",
+      "image_sha256": "9bb45795336c1d05189fe51a77e04270cd1da8929d62060926798f3dd2d25204",
+      "annotation_classes": [
+        "car",
+        "cat"
+      ],
+      "per_image_license_status": "unverified_not_provided_in_archive"
+    }
+  ]
+}

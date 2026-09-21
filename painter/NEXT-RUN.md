@@ -1,29 +1,13 @@
-# Next work after the diversity comparison
+# Current next work — 2026-09-21
 
-Implementation update: the shared preview/coordinate contract and automatic snapshot check are now in [CONTRACT.md](CONTRACT.md). Paint/finish SFT targets and rollout behavior are updated in the root implementation. Historical run code remains unchanged. Thirty pure/stubbed tests passed; actual node compiler/render parity and matched-model evaluation are pending. Use this contract for the next run, rather than copying a historical run harness unchanged.
+The [scaled curriculum plan](runs/scaled-curriculum-20260921/PLAN.md) supersedes the earlier small-pilot proposal. The [research index](../RESEARCH_LOG.md) remains the entry point. Do not restart a historical watcher or use old run-local harnesses as the active implementation.
 
-The diversity run is complete; read `runs/diversity-sft-20260918/RESULTS.md` and `FORENSICS.md`. Its GPU was released after all 26,617 final evidence files were hash-verified. Do not contact its endpoint, relaunch its pipeline, or duplicate completed Luna reviews. All four adapters are public. Neither evaluated new checkpoint should replace the recovery step72 parent recorded in `selected-checkpoint.json`.
+The completed [controlled comparison](runs/controlled-comparison-20260921/RESULTS.md) used the corrected shared native environment for both SFT and RL. It found no overall improvement from the four-update, two-reference RL checkpoint. Retain contract-quality step24 as the initializer; the 32-task repair pool is a small part of a much larger curriculum.
 
-The final checkpoint lost to the parent 32–13 in blinded Luna comparisons (2 ties, 1 uncertain). On new compositions it won only 4 of 24 pairs, losing 17, tying 2, with 1 uncertain. Lower NLL and fully valid final canvases did not track visual fidelity.
+The 2,400 training/240 development procedural references are rendered and locally hash-verified; 128 real photos (100 train/28 dev) are also imported. The preparation node is released. See the scaled run RESULTS.md for exact scope. Generated source count, successfully rendered image count, semantic diversity and optimizer-admitted reference count are different quantities. Use explicit source groups and image hashes; historic development cases do not become novel holdouts through renaming. Preparation is not a quality result.
 
-## Correct the demonstration contract
+First larger RL allocation: 128 updates × 32 episodes, with 8 samples per reference group, targeting 512 distinct group sources. Interleave families/difficulty before repeating references or opponents. Record actual optimizer admission and exclusions. Continue data preparation independently of judging/inference integration. Use the shared `native_painting` loop, and the current native RL integration after review, rather than the broken historical three-turn prompt.
 
-All 216 drawing/repair episodes finished immediately after their first successful painting. The additional turns repaired invalid execution; none inspected a successful render. Our positive demonstrations combine a complete program and FINISHED in one assistant response, and the rollout honors that declaration immediately.
+Luna low retains the approved holistic aesthetic A/B rubric and visible criticism of both candidates. Preserve missing/uncertain labels; do not invent scores to fill batches. The manual judge handoff has been a throughput bottleneck, so a larger data manifest alone does not make the trainer saturated. Record generation, judgment and trainer rates separately, and keep queues bounded by useful throughput and policy staleness.
 
-Use separate paint → actual canvas observation → revise or finish decisions. Supervise corrections to concrete visual mistakes from student states, with the reference and current canvas both visible. A correct existing canvas should still finish without gratuitous repainting. A preview requirement changes the scaffold, so compare the retained parent and any trained candidate under that same updated contract. More allowed turns alone is not a fix.
-
-## Isolate representation difficulty
-
-The expanded corpus introduced per-object affine frames and local-coordinate geometry. Preserved examples show tiny objects caused by combining small local geometry with another scale transform; other cases also have identity/shape errors. Compile an alternative teacher representation into one explicit canvas-coordinate system, verify matching teacher renders on a node, and test it independently. This is an ablation to test, not a demonstrated solution.
-
-Keep development references out of training. Use separate training references for new student-state corrections; do not consume the current development rollouts as SFT targets. Keep initializer, reference split and evaluation scaffold fixed when measuring a data change. Preserve complete targets and actual image/target binding checks.
-
-## Subsequent learning and judging
-
-Luna (`gpt-5.6-luna`) remains the requested visual judge. Preserve identities-hidden image reviews, uncertainty, absolute acceptability and category-specific errors. The 144-pair report covers painting reconstruction; repair quality still needs visual assessment. Agent review is not an already-integrated online RL reward endpoint.
-
-Once the corrected interface demonstrates useful visual revisions, adapt the existing Prime rollout/advantage integration to the exact contract. Preserve sampled-token masks and inference log probabilities, use identical state/anchor groups, and verify actual optimizer updates. Keep speed rewards off while quality is unreliable. No additional training or GPU rental is currently queued.
-
-## Avoid paying GPU rates for CPU rendering
-
-Render and cache the next reference/corruption corpus on a CPU node before renting the training GPU. Keep all rendering, inference and training off the user's Mac. Transfer verified source/PNG hashes to the training node. Continue using public, remotely hash-verified HF checkpoints, unique IDs for repeated sample draws, and a per-model evaluation producer lock.
+No speed reward yet. Matched evaluation uses identical prompts, turn limits and token/context limits. Public hash-verified HF checkpoints remain the output. Record hashes, actual configuration and source revision before launch. No new recurring automation is authorized.

@@ -52,9 +52,23 @@ def _resolve(root: Path, value: str | Path) -> Path:
 def _image(path: Path) -> vf.ImageUrlContentPart:
     if not path.is_file():
         raise FileNotFoundError(f"image is missing: {path}")
-    encoded = base64.b64encode(path.read_bytes()).decode("ascii")
+    payload = path.read_bytes()
+    if payload.startswith(b"\x89PNG\r\n\x1a\n"):
+        mime = "image/png"
+    elif payload.startswith(b"\xff\xd8\xff"):
+        mime = "image/jpeg"
+    else:
+        mime = {
+            ".png": "image/png",
+            ".jpg": "image/jpeg",
+            ".jpeg": "image/jpeg",
+            ".webp": "image/webp",
+        }.get(path.suffix.lower())
+        if mime is None:
+            raise ValueError(f"unsupported image type: {path}")
+    encoded = base64.b64encode(payload).decode("ascii")
     return vf.ImageUrlContentPart(
-        image_url=vf.ImageUrlSource(url="data:image/png;base64," + encoded)
+        image_url=vf.ImageUrlSource(url=f"data:{mime};base64," + encoded)
     )
 
 
@@ -72,6 +86,25 @@ def _rows(raw: Any) -> list[dict[str, Any]]:
     if not isinstance(values, list) or not all(isinstance(row, dict) for row in values):
         raise TypeError("evaluation manifest rows must be objects")
     return [dict(row) for row in values]
+
+
+def _read_manifest_rows(path: Path) -> list[dict[str, Any]]:
+    """Read the JSON and JSONL manifest forms accepted by the taskset."""
+
+    if path.suffix.lower() in {".jsonl", ".ndjson"}:
+        rows: list[dict[str, Any]] = []
+        for line_number, line in enumerate(path.read_text().splitlines(), 1):
+            if not line.strip():
+                continue
+            try:
+                value = json.loads(line)
+            except json.JSONDecodeError as exc:
+                raise ValueError(f"invalid JSON on line {line_number} of {path}") from exc
+            if not isinstance(value, dict):
+                raise ValueError(f"manifest line {line_number} must be an object")
+            rows.append(value)
+        return _rows(rows)
+    return _rows(json.loads(path.read_text()))
 
 
 def _is_finish(reply: str) -> bool:
@@ -115,7 +148,7 @@ class NativePaintingTaskset(vf.Taskset[NativePaintingTask, NativePaintingConfig]
     def load(self) -> Iterable[NativePaintingTask]:
         root = Path(self.config.root)
         manifest_path = _resolve(root, self.config.manifest)
-        rows = _rows(json.loads(manifest_path.read_text()))
+        rows = _read_manifest_rows(manifest_path)
         if len(rows) != self.config.expected_count:
             raise ValueError(f"expected {self.config.expected_count} evaluation rows, found {len(rows)}")
         groups: set[str] = set()

@@ -1,0 +1,95 @@
+{
+  "schema": 1,
+  "run_name": "scaled-curriculum-20260921",
+  "stage": "corpus_collected_preparation_node_released",
+  "hypothesis": "Broader optimizer-admitted reference coverage under the corrected shared environment improves holistic visual quality over contract-quality step24.",
+  "matched_baseline": {
+    "repo": "CK0607/qwen3.8-27b-brush-painting",
+    "revision": "b7103dd9923f19449ccf814f9b67bb2dcfed0909",
+    "prefix": "contract-quality-20260918/step_24",
+    "weights_sha256": "d10eeb3b7b53fc539aa9d5e71eb98bcfe1c59d6a4878c7a69c93b8b09b59bcfa"
+  },
+  "model": {
+    "repo": "Qwen/Qwen3.8-27B",
+    "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0"
+  },
+  "source_before_changes": "eb716f9",
+  "launched_generator_sha256": "fa27c85a734e6aa82ad7a8fa32b721d080f5fa9c604a7a4efab8b816addd3efc",
+  "curriculum_source_bundle_sha256": "4e8867205186587ddf2c2cdaf6de7a9a5b7cb13f00507b83a3d02990d572a3f0",
+  "configuration": "PLAN.md",
+  "preparation": {
+    "procedural_train_source_programs": 2400,
+    "procedural_dev_source_programs": 240,
+    "renderer_bundle_sha256": "3adc7b6b7904ebb63c1ea776a7976b99915a98b0154e214d3bcfd73b88f94929",
+    "node_role": "Linux corpus rendering only",
+    "rate_usd_per_hour": 0.59,
+    "no_model_download": true,
+    "new_optimizer_updates": 0,
+    "render_workers": 8,
+    "render_expected": 2640,
+    "render_started_utc": "2026-09-21T16:16:02Z",
+    "attempt_1_failure": "Renderer runner resolved the virtualenv Python symlink to the system interpreter, causing missing playwright before rendering. Failed receipts retained; no image-quality result.",
+    "real_photo_references": 128,
+    "real_photo_train": 100,
+    "real_photo_dev": 28,
+    "preparation_node_released": true,
+    "rental_window_utc": [
+      "2026-09-21T16:02:50Z",
+      "2026-09-21T17:07:14Z"
+    ],
+    "rental_estimate_usd_upper_approx": 0.65,
+    "cost_status": "elapsed rental estimate, not provider invoice",
+    "utilization": "CPU/SwiftShader corpus rendering only; no model/trainer, no measured GPU utilization interval; no saturation claim"
+  },
+  "results": {
+    "kind": "data_preparation_only",
+    "render_audit": {
+      "expected": 2640,
+      "completed": 2640,
+      "valid": 2640,
+      "failed": 0,
+      "verified_image_files": 2640,
+      "unique_images": 2640,
+      "split_rows": {
+        "dev": 240,
+        "train": 2400
+      },
+      "unique_image_hashes_by_split": {
+        "train": 2400,
+        "dev": 240
+      },
+      "cross_split_image_overlap": 0,
+      "manifest_sha256": "c828f5c3f5ae4004be976009790e252b8713c225c17520ef643fe7498173a218",
+      "results_sha256": "deeee0805ddf39000096620929d5bdab5159f85ebb1c60aec2785bee90a27b85",
+      "geometry_hashes": 2640,
+      "render_started_utc": "2026-09-21T16:16:02Z",
+      "retry_started_utc": "2026-09-21T16:19:29Z",
+      "render_finished_utc": "2026-09-21T17:02:19Z",
+      "rendered_final_references_only": true,
+      "new_optimizer_updates": 0
+    },
+    "archive_sha256": "bcc805df66e2da42ec8217c2e9fd6a21e25599e1d3dcf6bb5bbb22f03c12eb35",
+    "archive_bytes": 155836336,
+    "hash_verified_extracted_files": 15888,
+    "new_optimizer_updates": 0,
+    "model_quality_result": null,
+    "pure_tests_passed": 42,
+    "live_cli_judge_check": "CLI_BATCH_REVIEW.json"
+  },
+  "next_decision": "Generate frozen step-24 student opponents across the expanded reference selection, connect finite Luna batch execution to the live node queue, then launch the prepared 128-update shared-environment RL allocation. No further human approval is required within authorized scope.",
+  "resumed_renderer_source_sha256": "f82cb48cd2d5f33fc20100407afdd85e01c7aeb88d7c248e854d2b46041ca8bc",
+  "prepared_source_sha256": {
+    "painter/scaled_curriculum.py": "f82cb48cd2d5f33fc20100407afdd85e01c7aeb88d7c248e854d2b46041ca8bc",
+    "painter/native_painting.py": "dea9ea9cbba7da7249d2cbaaeb317dc3a645e34f72b50376677ea6e1fc51c43a",
+    "painter/native_painting_rl.py": "5bb6689833102af3a6096cabf6cb06782bf1f69718219c5daf1c9081e6f9ad7e",
+    "painter/native_painting_eval.py": "caf63c7c385e54583a0d4fb5865ab93157416ffe73b1252f62e0aebc9c285c92",
+    "painter/luna_cli_judge.py": "1c17b5cf3bacc3719852738bc6a2ba2a651a1d03a5c23aac3f64232ffa64e3ae",
+    "painter/prepare_scaled_native_rl.py": "ec3d5473546a89bfdbeafee8282032cf0b8dd091f6e1dd46a9a9d1288683a9fe",
+    "painter/import_reference_pool.py": "39f53357b5e42e8ef863210de3cc4016f0f95ce86ac5f3fed675e10e2adfaa7d",
+    "painter/data_inventory.py": "fe9e30d3a6c54a442c4f6ed70d7549c39342e2fb49f9941f4ff023cd78dac13b",
+    "painter/runs/scaled-curriculum-20260921/launch_native_rl.sh": "89afdbe229eda904b017ac6c5063be3cdce757ce6df5ff861081b33a55a36840",
+    "painter/runs/scaled-curriculum-20260921/run_from_sft.py": "080411d7eea0672c01bad071835c2eeff75eba2f55a6eaf5e3cb99fdb29fcd3d",
+    "painter/runs/scaled-curriculum-20260921/train_from_sft.py": "5db72d9c8b974322dd1c49946809e213e1db59580ccb5367d12bbc9c288a69dc"
+  },
+  "prepared_example_config_sha256": "92ad9709ed711ddded92dd6b54e5a98c0e851e057e16156ea08dee49af1f83a6"
+}

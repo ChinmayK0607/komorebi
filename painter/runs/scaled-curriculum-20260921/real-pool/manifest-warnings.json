@@ -1,0 +1,16 @@
+{
+  "count": 2,
+  "schema": "painter-real-reference-warnings-v1",
+  "warnings": [
+    {
+      "label_path": "painter/runs/scaled-curriculum-20260921/real-pool/raw/coco128/labels/train2017/000000000250.txt",
+      "reason": "missing_label_file",
+      "source_group": "coco128:train2017:000000000250"
+    },
+    {
+      "label_path": "painter/runs/scaled-curriculum-20260921/real-pool/raw/coco128/labels/train2017/000000000508.txt",
+      "reason": "missing_label_file",
+      "source_group": "coco128:train2017:000000000508"
+    }
+  ]
+}

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import base64
 import importlib
 import json
 import sys
@@ -165,6 +166,26 @@ class _Agents:
 
 
 class NativePaintingTests(unittest.TestCase):
+    def test_image_preserves_bytes_and_uses_png_or_jpeg_mime(self):
+        module = _load_module()
+        with TemporaryDirectory() as temp:
+            root = Path(temp)
+            png = root / "reference.png"
+            png_bytes = b"\x89PNG\r\n\x1a\nminimal-png"
+            png.write_bytes(png_bytes)
+            jpeg = root / "reference.jpg"
+            jpeg_bytes = b"\xff\xd8\xff\xe0minimal-jpeg"
+            jpeg.write_bytes(jpeg_bytes)
+            for path, expected_mime, expected_bytes in (
+                (png, "image/png", png_bytes),
+                (jpeg, "image/jpeg", jpeg_bytes),
+            ):
+                part = module._image(path)
+                url = part.image_url.url
+                prefix, encoded = url.split(",", 1)
+                self.assertEqual(prefix, f"data:{expected_mime};base64")
+                self.assertEqual(base64.b64decode(encoded), expected_bytes)
+
     def test_taskset_loads_cases_and_rejects_duplicate_groups(self):
         module = _load_module()
         with TemporaryDirectory() as temp:
@@ -184,6 +205,24 @@ class NativePaintingTests(unittest.TestCase):
             ]}))
             with self.assertRaises(ValueError):
                 list(module.NativePaintingTaskset(module.NativePaintingConfig(root=str(root), manifest="tasks.json", expected_count=2)).load())
+
+    def test_taskset_loads_two_jsonl_rows_with_declared_count(self):
+        module = _load_module()
+        with TemporaryDirectory() as temp:
+            root = Path(temp)
+            (root / "reference.jpg").write_bytes(b"\xff\xd8\xff\xe0reference")
+            manifest = root / "scaled.jsonl"
+            manifest.write_text("\n".join(json.dumps({
+                "id": f"scaled-{index}",
+                "source_group": f"group-{index}",
+                "reference": "reference.jpg",
+            }) for index in range(2)) + "\n")
+            config = module.NativePaintingConfig(
+                root=str(root), manifest=manifest.name, expected_count=2
+            )
+            tasks = list(module.NativePaintingTaskset(config).load())
+            self.assertEqual(len(tasks), 2)
+            self.assertEqual([task.data.task_id for task in tasks], ["scaled-0", "scaled-1"])
 
     def test_taskset_preserves_optional_correction_start(self):
         module = _load_module()

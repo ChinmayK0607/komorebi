@@ -1,0 +1,25 @@
+{
+  "expected": 2640,
+  "completed": 2640,
+  "valid": 2640,
+  "failed": 0,
+  "verified_image_files": 2640,
+  "unique_images": 2640,
+  "split_rows": {
+    "dev": 240,
+    "train": 2400
+  },
+  "unique_image_hashes_by_split": {
+    "train": 2400,
+    "dev": 240
+  },
+  "cross_split_image_overlap": 0,
+  "manifest_sha256": "c828f5c3f5ae4004be976009790e252b8713c225c17520ef643fe7498173a218",
+  "results_sha256": "deeee0805ddf39000096620929d5bdab5159f85ebb1c60aec2785bee90a27b85",
+  "geometry_hashes": 2640,
+  "render_started_utc": "2026-09-21T16:16:02Z",
+  "retry_started_utc": "2026-09-21T16:19:29Z",
+  "render_finished_utc": "2026-09-21T17:02:19Z",
+  "rendered_final_references_only": true,
+  "new_optimizer_updates": 0
+}

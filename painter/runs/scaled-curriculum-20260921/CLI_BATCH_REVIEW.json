@@ -1,0 +1,34 @@
+{
+  "schema": 1,
+  "purpose": "finite CLI worker test, not a training reward",
+  "model": "gpt-5.6-luna",
+  "reasoning_effort": "low",
+  "views": 2,
+  "schema_valid": 2,
+  "wall_seconds": 18.68807888031006,
+  "input_tokens": 28880,
+  "output_tokens": 476,
+  "parent_review": "One orientation correctly identified upper-left cropping; reversed orientation confused the full and cropped candidates and described the reference-like softness as a candidate property. Do not use this receipt for learning. Explicit neutral filename attachment binding is being tested.",
+  "used_for_training": false,
+  "artifacts": {
+    "execution-3e5d221b8658dd923c1cb42b90a457a886330a5a621d8e360e7ed8bdbcdc0a6a.json": "2c5e97d161c18fb3e70e1d92d993a8f8bb6394340b15974afc9e135d0ed0e5f4",
+    "execution-0cf4d5629e484b26ad7fba80a07b6f89808861a8148c16697f3152afcfa9c9c0.json": "414a26bd1b2ca57b83420677d9959426f87219c50e3f3daca621f023b5901e2e"
+  },
+  "neutral_filename_followup": {
+    "views": 6,
+    "schema_valid": 6,
+    "subjects": [
+      "cylinder",
+      "box",
+      "cup"
+    ],
+    "order_consistent_preferences": 2,
+    "total_subjects": 3,
+    "parent_review": "Both cylinder orders correctly identify cropped versus complete canvas. Both cup orders favor the attached loop handle over the disconnected fragment. Box preferences differ with order; descriptions distinguish the actual color/outline/geometry differences, and the parent regards both paintings as structurally flawed. No obvious candidate-role swap was found in these six responses. This is a small input-binding check, not broad judge accuracy validation.",
+    "cylinder_batch_wall_seconds": 20.293012857437134,
+    "input_tokens": 84282,
+    "output_tokens": 1501,
+    "used_for_training": false,
+    "source_sha256": "ca1dfa2e675754a1a91c91d0d9204dc5fe07645a1dc7551da49edfb23ed36b81"
+  }
+}

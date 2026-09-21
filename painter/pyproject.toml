@@ -14,5 +14,7 @@ py-modules = [
   "contract",
   "native_painting",
   "native_painting_eval",
+  "native_painting_rl",
   "native_painting_renderer",
+  "luna_cli_judge",
 ]

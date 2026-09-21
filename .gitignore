@@ -90,6 +90,11 @@ painter/runs/**
 !painter/runs/*/*manifest*.json
 !painter/runs/*/config*.json
 !painter/runs/*/receipt*.json
+# The scaled real-reference importer keeps a small reviewable manifest/doc
+# inside an ignored raw/image subtree; leave the source bytes out of Git.
+!painter/runs/*/real-pool/
+!painter/runs/*/real-pool/*.md
+!painter/runs/*/real-pool/*manifest*.json
 
 # Keep provider snapshots, connection details, queues, images and copied
 # inputs out of the tracked surface even if they sit at a run root.
@@ -129,3 +134,6 @@ painter/unreachable*.json
 painter/run-summary.json
 painter/visual-review.json
 painter/selected-checkpoint.json
+
+# Full source annotations remain reproducible from the pinned import.
+painter/runs/*/real-pool/reference-manifest.json

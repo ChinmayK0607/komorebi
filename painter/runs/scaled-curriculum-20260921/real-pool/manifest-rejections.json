@@ -1,0 +1,18 @@
+{
+  "count": 2,
+  "rejections": [
+    {
+      "annotation_path": "painter/runs/scaled-curriculum-20260921/real-pool/raw/coco128/labels/train2017/000000000656.txt",
+      "annotation_sha256": "6cb0910ac1e3232745fa3f6d735f2253573be3ddd78e78184f655bf3ffb264d9",
+      "reason": "orphan_annotation_no_image",
+      "source_id": "000000000656"
+    },
+    {
+      "annotation_path": "painter/runs/scaled-curriculum-20260921/real-pool/raw/coco128/labels/train2017/000000000659.txt",
+      "annotation_sha256": "f06a1e7e61372f279b748727d591c3cc4494e902eb9cb97e7e38ff17a9766d19",
+      "reason": "orphan_annotation_no_image",
+      "source_id": "000000000659"
+    }
+  ],
+  "schema": "painter-real-reference-rejections-v1"
+}
