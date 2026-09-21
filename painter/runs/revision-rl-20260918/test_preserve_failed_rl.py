@@ -54,6 +54,37 @@ class PreserveEvidenceTest(unittest.TestCase):
         if symlink is not None:
             self.assertNotIn('evaluation/linked-reference.png', names)
 
+    def test_native_handoff_rank_payload_is_retained_but_other_bins_are_excluded(self):
+        step = self.root / 'training-handoffs' / 'step_12'
+        step.mkdir(parents=True)
+        (step / 'rank_3.bin').write_bytes(b'native msgpack payload')
+        (step / 'rank_bad.bin').write_bytes(b'not a native rank path')
+        (step / 'adapter_model.safetensors').write_bytes(b'model weights')
+        (step / 'observation.json').write_text('{"status":"observed"}\n')
+        (self.root / 'training-handoff.json').write_text('{"native_batch":true}\n')
+        (self.root / 'training-state.json').write_text('{"status":"first_native_batch_observed"}\n')
+        (self.root / 'training-preflight.json').write_text('{"status":"source_verified"}\n')
+        (self.root / 'training-ready.json').write_text('{"setup_complete":true}\n')
+
+        elsewhere = self.root / 'async-output' / 'run' / 'weights'
+        elsewhere.mkdir(parents=True)
+        (elsewhere / 'model.bin').write_bytes(b'model weights')
+        (self.root / 'async-output' / 'run' / 'rank_0.bin').write_bytes(b'wrong location')
+
+        files = preserve.collect_evidence(self.root, 'run', self.output)
+        names = set(files)
+        self.assertIn('training-handoffs/step_12/rank_3.bin', names)
+        self.assertIn('training-handoffs/step_12/observation.json', names)
+        for name in (
+            'training-handoff.json', 'training-state.json',
+            'training-preflight.json', 'training-ready.json',
+        ):
+            self.assertIn(name, names)
+        self.assertNotIn('training-handoffs/step_12/rank_bad.bin', names)
+        self.assertNotIn('training-handoffs/step_12/adapter_model.safetensors', names)
+        self.assertNotIn('async-output/run/weights/model.bin', names)
+        self.assertNotIn('async-output/run/rank_0.bin', names)
+
 
 if __name__ == '__main__':
     unittest.main()

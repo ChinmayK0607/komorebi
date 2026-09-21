@@ -36,6 +36,8 @@ def main(root):
     experiment = json.loads((root/'EXPERIMENT.json').read_text())
     if experiment['judge'] != 'gpt-5.6-luna' or experiment.get('judge_reasoning_effort') != 'low':
         raise ValueError('This restart requires actual Luna low agents')
+    sys.path.insert(0, str(root))
+    from training_handoff import write_runtime_state
     train = None
     reason = 'interrupted'
     code = 1
@@ -50,6 +52,7 @@ def main(root):
         atomic(root/'supervisor-status.json', dict(status='running', started=time.time(),
                                                   training_pid=train.pid, judge='gpt-5.6-luna',
                                                   reasoning_effort='low', judge_mode='external_agents'))
+        write_runtime_state(root, launch_pid=train.pid)
         pending_since = None
         last_progress = time.time()
         previous_completed = 0
@@ -63,6 +66,7 @@ def main(root):
             atomic(root/'judge-service-status.json', dict(at=time.time(), judge_model='gpt-5.6-luna',
                 reasoning_effort='low', mode='external_agents', pending=pending,
                 completed=completed, last_success=last_progress))
+            write_runtime_state(root, launch_pid=train.pid)
             if pending:
                 pending_since = pending_since or time.time()
                 if time.time() - max(pending_since, last_progress) > 900:
@@ -78,6 +82,7 @@ def main(root):
         stop(train)
         atomic(root/'supervisor-status.json', dict(status='stopped', reason=reason, exit_code=code,
                                                   stopped=time.time()))
+        write_runtime_state(root, launch_pid=train.pid if train is not None else None)
         print('Supervisor stopped:', reason, flush=True)
     return code
 

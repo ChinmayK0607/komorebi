@@ -1,0 +1,52 @@
+{
+  "id": "reward-handoff-offline-20260921",
+  "hypothesis": "Separate relative improvement from absolute finish acceptability to recover useful comparisons without accepting known grounding errors; make visual request age immutable and capture native trainer payloads so async scoring can be audited and resumed.",
+  "matched_baseline": "Saved revision-rl-neutral-20260921 rollouts and original v1 receipts; identical evidence reprocessed under v2.",
+  "source_base_commit": "a4cfd20edc67ce8fff21c5b684af98f4a9a55fa0",
+  "prime_revision": "26b3131d2716a4f8210b165df584b83b4bc54f61",
+  "evidence_archive_sha256": "b00964e4e486b4ec7220738e7ae52fa72f63ba2380810ab2b3d93d9f8a38739a",
+  "model": "Qwen/Qwen3.8-27B",
+  "model_revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+  "initializer_revision": "b7103dd9923f19449ccf814f9b67bb2dcfed0909",
+  "initializer_prefix": "contract-quality-20260918/step_24",
+  "training_scope": "No ML or GPU run; offline artifact analysis and source/tests only.",
+  "gpu_spend_usd": 0,
+  "new_optimizer_updates": 0,
+  "status": "offline_review_complete_not_gpu_validated",
+  "validation": {
+    "local_unittest_suite": {
+      "passed": 61,
+      "command": "python -m unittest discover -s painter/runs/revision-rl-20260918 -p test_*.py"
+    },
+    "final_observer_tests_passed": 4,
+    "python_compile": "passed",
+    "shell_syntax": "passed",
+    "git_diff_check": "passed",
+    "native_cuda_smoke": "not run",
+    "archive_replay": "installed and supplemental scopes completed"
+  },
+  "source_sha256": {
+    "painter/runs/revision-rl-20260918/offline_reward_audit.py": "fec176248e0c73b30d646cae24dc022c958d80a88894cd40b652d988275fcd9e",
+    "painter/runs/revision-rl-20260918/quality_signal.py": "72caec9fc6924d0685a9dcf35772357069a385a3999ccff8268a96605347acc3",
+    "painter/runs/revision-rl-20260918/quality_signal_v2.py": "4bfda37be80b7df9f6686cdbb8a154eb3608ac221e66cc35f924ad35b5f917c4",
+    "painter/runs/revision-rl-20260918/training_handoff.py": "dba1f6cca34b24dea323ed1b326fb6fcabd7b83a865a9c53204f5c3dc9411713",
+    "painter/runs/revision-rl-20260918/taskset_impl.py": "6ee5720beaab6de011115ab5d6fd199bc2e5b19c6bc51b79824b360c27d3e530",
+    "painter/runs/revision-rl-20260918/train_from_sft.py": "eb459c2e4ddc22364ef9d6c9405c71ec144308906ed320639f5a7b856a3c35a3",
+    "painter/runs/revision-rl-20260918/prepare_async.py": "011aebf3971ed0fb9cb9d63b059de484540fe9666980c32a0caa828b583b826f",
+    "painter/runs/revision-rl-20260918/supervise_async.py": "b14980205c5edb632d8af0cb6ec09f7f6200f8fda0e1e775e87dc502478fbc1a",
+    "painter/runs/revision-rl-20260918/launch_async.sh": "6332c4a8c393cd79d4e30502989c2afde824092961bdb6ba33b6294ec1b3e452",
+    "painter/runs/revision-rl-20260918/setup_async_node.sh": "8e636c4468bd0b3bb4e16f97f4c8fc02c0af3487693ed5f33148ba4126776e6d",
+    "painter/runs/revision-rl-20260918/package_async.py": "ce6f1925985841255b6bce88f0260533753a0f90a3d2406bf20ad68a356fb8e7",
+    "painter/runs/revision-rl-20260918/preserve_failed_rl.py": "52c2acfd7fa1529cbc535585e67ad2b2b61ea062fa894bac31574aacfc45b083",
+    "painter/runs/revision-rl-20260918/test_offline_reward_audit.py": "9e639cfc4998f474e3977a8986b3548bbe089706eb86020c3bce3c8c59a19ec4",
+    "painter/runs/revision-rl-20260918/test_training_handoff.py": "58d150f3f3069b11511e1f4dd2775346ec8d8b7921da61596299b6186ebdd85c",
+    "painter/runs/revision-rl-20260918/test_preserve_failed_rl.py": "622f77c581fa0c3740c868720ae80d03feaa5f420463b1bdf9a798cbc9439e1f"
+  },
+  "grounding_exclusions_sha256": "e6a7f8e690b029a42b2c1fa44d5cd86fb63d5020089ff05db0856fddfb55ecd0",
+  "receipt_protocol": "luna-ab-ba-v1",
+  "reward_comparison": [
+    "quality_signal_v1",
+    "quality_signal_v2"
+  ],
+  "new_visual_label_admission": false
+}

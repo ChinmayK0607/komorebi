@@ -1,0 +1,92 @@
+{
+  "installed": {
+    "report_path": "painter/runs/reward-handoff-offline-20260921/evidence/installed-audit.json",
+    "report_sha256": "29d1832841121c5e48a5f7110bf9d03798f46cb91718852dd269c9976feab96c",
+    "attempts": 95,
+    "valid_rendered_transitions": 71,
+    "invalid_program_penalties": 24,
+    "receipt_source_request_counts": {
+      "judge-queue": 20
+    },
+    "receipt_join_count": 23,
+    "grounding_excluded_attempts": 5,
+    "visual_transitions_scored": {
+      "v1": 12,
+      "v2": 12
+    },
+    "total_transitions_scored": {
+      "v1": 36,
+      "v2": 36
+    },
+    "native_field_counts": {
+      "group_id": 63,
+      "logprobs": 63,
+      "mask": 63,
+      "token_ids": 63
+    },
+    "training_ready": false,
+    "mask_reasons": {
+      "v1": {
+        "grounding_exclusion": 5,
+        "v1_judgment_unavailable": 54
+      },
+      "v2": {
+        "grounding_exclusion": 5,
+        "v2_judgment_unavailable": 48,
+        "v2_relative_signal_unavailable": 6
+      }
+    },
+    "observed_groups": 12,
+    "complete_observed_groups": 5,
+    "nonzero_group_signal_counts": {
+      "v1": 2,
+      "v2": 2
+    }
+  },
+  "supplemental": {
+    "report_path": "painter/runs/reward-handoff-offline-20260921/evidence/supplemental-audit.json",
+    "report_sha256": "61594daec19795bb4f355de65c6fc4a88cc930e7a22c344bd61a13600da212cc",
+    "attempts": 95,
+    "valid_rendered_transitions": 71,
+    "invalid_program_penalties": 24,
+    "receipt_source_request_counts": {
+      "judge-queue": 20,
+      "receipts": 4
+    },
+    "receipt_join_count": 27,
+    "grounding_excluded_attempts": 5,
+    "visual_transitions_scored": {
+      "v1": 13,
+      "v2": 16
+    },
+    "total_transitions_scored": {
+      "v1": 37,
+      "v2": 40
+    },
+    "native_field_counts": {
+      "group_id": 63,
+      "logprobs": 63,
+      "mask": 63,
+      "token_ids": 63
+    },
+    "training_ready": false,
+    "mask_reasons": {
+      "v1": {
+        "grounding_exclusion": 5,
+        "v1_judgment_unavailable": 53
+      },
+      "v2": {
+        "grounding_exclusion": 5,
+        "v2_judgment_unavailable": 44,
+        "v2_relative_signal_unavailable": 6
+      }
+    },
+    "observed_groups": 12,
+    "complete_observed_groups": 5,
+    "nonzero_group_signal_counts": {
+      "v1": 2,
+      "v2": 3
+    }
+  },
+  "interpretation": "Coverage of original labels under alternative reward formulas; neither visual accuracy nor training improvement. Supplemental4 receipts completed after shutdown and were not installed. Five request exclusions include4 confirmed false descriptions/comparisons and1 ambiguous referencepart. Original labels unchanged."
+}

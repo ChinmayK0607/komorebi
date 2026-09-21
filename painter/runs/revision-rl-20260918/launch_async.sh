@@ -3,7 +3,8 @@ set -Eeuo pipefail
 ROOT=$(realpath "${1:?workspace}");cd "$ROOT"
 exec 8>async-launch.lock;flock -n 8
 rm -f async-launch.exit
-trap 'echo "$?" > async-launch.exit' EXIT
+rm -f training-launch.pid
+trap 'status=$?; echo "$status" > "$ROOT/async-launch.exit"; python3 "$ROOT/training_handoff.py" state "$ROOT" >/dev/null 2>&1 || true' EXIT
 source env.sh
 export PATH="$ROOT/bootstrap/bin:$PATH"
 export BRUSH_ROOT="$ROOT/source/brush-rl"
@@ -30,7 +31,10 @@ for f in quality_signal.py render_actions.py contract.py; do
   [[ -f "$ROOT/$f" ]] || { echo "missing scoring dependency: $ROOT/$f" >&2; exit 2; }
 done
 uv run --no-sync python "$ROOT/prepare_async.py"
+echo "$$" > "$ROOT/training-launch.pid"
+python3 "$ROOT/training_handoff.py" preflight "$ROOT"
+python3 "$ROOT/training_handoff.py" state "$ROOT"
 nvidia-smi --query-gpu=timestamp,index,name,utilization.gpu,memory.used,power.draw --format=csv -l 10 > "$ROOT/logs/gpu-telemetry.csv" &
 TELEMETRY_PID=$!
-trap 'status=$?; kill "$TELEMETRY_PID" || true; echo "$status" > "$ROOT/async-launch.exit"' EXIT
+trap 'status=$?; kill "$TELEMETRY_PID" || true; echo "$status" > "$ROOT/async-launch.exit"; python3 "$ROOT/training_handoff.py" state "$ROOT" >/dev/null 2>&1 || true' EXIT
 uv run --no-sync python "$ROOT/run_from_sft.py" @ "$ROOT/rl.toml"

@@ -35,6 +35,7 @@ def main():
     import tomli_w
     from hardware import detect
     from prime_rl.configs.rl import RLConfig
+    from training_handoff import write_static_preflight
     root = Path(__file__).resolve().parent
     experiment = json.loads((root/'EXPERIMENT.json').read_text())
     max_steps, checkpoint_interval = training_limits(experiment)
@@ -80,6 +81,10 @@ def main():
         max_inflight=32, max_off_policy_steps=2,
         support='Single-node CUDA with separate unsharded 27B trainer/inference replicas. Smaller memory and distributed trainer profiles are not yet validated.',
         objective='Native GRPO mean-centered rewards and native token-normalized IPO loss; no length penalty'),indent=2)+'\n')
+    # Static checks bind this run to the pinned Prime producer/consumer data
+    # path.  It deliberately remains ``awaiting_native_batch``: setup is not a
+    # training update and a fixture cannot stand in for a native payload.
+    write_static_preflight(root)
     print('Validated native async configuration:', resolved.run_dir)
 
 if __name__ == '__main__':

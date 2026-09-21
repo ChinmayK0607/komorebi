@@ -1,0 +1,68 @@
+{
+  "schema": "painter.grounding-exclusions.v1",
+  "reviewer": "parent AI visual audit",
+  "human_gold": false,
+  "scope": "Targeted review of newly admitted v2 relative signals and the reward-sign-change example; not exhaustive judge validation. Original labels preserved. No replacement rewards supplied.",
+  "exclusions": [
+    {
+      "request_id": "1253ef34bf13aa5bba328a35efb32f24bed37e8ea69d300b651ed0ae12d03e6c",
+      "reason": "The original candidate_A view describes a filled top plane on anchor82ab, but direct parent image inspection shows two filled side planes and no filled top plane.",
+      "kind": "confirmed_false_observation",
+      "receipt_path": "painter/runs/revision-rl-neutral-20260921/live/reward-batches/neutral-live-001/receipts/1253ef34bf13aa5bba328a35efb32f24bed37e8ea69d300b651ed0ae12d03e6c/receipt.json",
+      "receipt_sha256": "fcaf9ad158434aac104ee79cb8bdc04c6411f6c5254ae4cbe436a50fb9b1b77f",
+      "image_sha256": {
+        "reference": "dc7b388fca604ed29e065696b66d1160b30d8aca121f80d1c4fafccdba1c478d",
+        "anchor": "82ab6ae6b85205ce5de91a3cb167bb61513c4c4bcd87effa14113ccc377bc234",
+        "candidate": "0bd609aff5f4a6ee1ae07c8971f8c14c6a21f711ffe8abe04071eaffc0f95da8"
+      }
+    },
+    {
+      "request_id": "3aa67e5f9f745e56d79d1d25ab23d7ef7ee84306526d24d23066366415ce38c5",
+      "reason": "The original candidate_A view describes a filled top plane on anchor82ab, but direct parent image inspection shows two filled side planes and no filled top plane.",
+      "kind": "confirmed_false_observation",
+      "receipt_path": "painter/runs/revision-rl-neutral-20260921/live/reward-batches/neutral-live-001/receipts/3aa67e5f9f745e56d79d1d25ab23d7ef7ee84306526d24d23066366415ce38c5/receipt.json",
+      "receipt_sha256": "bcc7262875091a5dc8b0f5d2b215b01b5d93c1d9574575abf9286e25583ba060",
+      "image_sha256": {
+        "reference": "dc7b388fca604ed29e065696b66d1160b30d8aca121f80d1c4fafccdba1c478d",
+        "anchor": "82ab6ae6b85205ce5de91a3cb167bb61513c4c4bcd87effa14113ccc377bc234",
+        "candidate": "d85cb73717f0c62c873d9bb25b3065aeb1e0151c1b33a5c4132a41682ccf4d36"
+      }
+    },
+    {
+      "request_id": "6f414bb8823be4a6db0e7f8e0a36480fedb2cbf7ea212c0c597c2d0d68510b02",
+      "reason": "The original candidate_A view describes a filled top plane on anchor82ab, but direct parent image inspection shows two filled side planes and no filled top plane.",
+      "kind": "confirmed_false_observation",
+      "receipt_path": "painter/runs/revision-rl-neutral-20260921/live/reward-batches/neutral-live-002/receipts/6f414bb8823be4a6db0e7f8e0a36480fedb2cbf7ea212c0c597c2d0d68510b02/receipt.json",
+      "receipt_sha256": "382dea7191f7769a3c389711d3dafbd9f45919415f0aaf4d2c42f31b22c57c40",
+      "image_sha256": {
+        "reference": "dc7b388fca604ed29e065696b66d1160b30d8aca121f80d1c4fafccdba1c478d",
+        "anchor": "82ab6ae6b85205ce5de91a3cb167bb61513c4c4bcd87effa14113ccc377bc234",
+        "candidate": "d980c3ad92e7419193b3f3e0d31e35853bcf605a5c4dafc78032f5450e41cb89"
+      }
+    },
+    {
+      "request_id": "9254d72bb80eaf4b54fbd87ce9af51b56abfcf9d5826e9e7e2951b614775293b",
+      "reason": "Uncertain grounding: the original candidate_A view treats the gray oval as a required saucer and penalizes its absence; the reference visually supports a ground shadow interpretation. Exclude pending categorical resolution; this is not a proven wrong relative preference.",
+      "kind": "ambiguous_reference_part",
+      "receipt_path": "painter/runs/revision-rl-neutral-20260921/live/reward-batches/neutral-live-004/receipts/9254d72bb80eaf4b54fbd87ce9af51b56abfcf9d5826e9e7e2951b614775293b/receipt.json",
+      "receipt_sha256": "cef5b28270d82d5bc69f1841a0d25709ae2445a8d860ddff88c0a4c6f1e3b4b8",
+      "image_sha256": {
+        "reference": "97d9d9e85ff2cc55bc200d0d16de014f56f5e72758a2eb6ab5e7024e7270591a",
+        "anchor": "a62ee1ab9939733210ff621534d12cbb6965a49bf4cbbba1149ad25d04c6be62",
+        "candidate": "ded1ad81a6e9298291bc13d2a9fea4f9e5d0c904a7ed245fedaead83a8acd81d"
+      }
+    },
+    {
+      "request_id": "6f49a1b1e517b6267e4e32fdfa5a39dc814b896f70e6a2f2f22ba0fc44c4ffe4",
+      "reason": "Parent inspection of reference, candidate b33fa6 and anchor84747 confirms candidate is taller and more cube-like; anchor is vertically flattened. Reverse view incorrectly describes candidate as more vertically compressed and anchor as retaining proportions. Both views prefer anchor; agreement does not establish correct geometry.",
+      "kind": "confirmed_false_comparative_geometry",
+      "receipt_path": "painter/runs/revision-rl-neutral-20260921/live/reward-batches/neutral-live-002/receipts/6f49a1b1e517b6267e4e32fdfa5a39dc814b896f70e6a2f2f22ba0fc44c4ffe4/receipt.json",
+      "receipt_sha256": "a196d668f4df4541f825d282d8c85bdcb884929c5942a9a417b3c913a5f14f9f",
+      "image_sha256": {
+        "reference": "f07b4001ac4448fd2048b8af355852b6f27d66bea2f0607fd805c80f4b48c797",
+        "anchor": "84747d4af33a6f3b84f3c003714cacc3a6c1c09c555651359deaaf6527272824",
+        "candidate": "b33fa675f6edbcbdf03afb70298d2a4b9a3b419911b6f3773ce31fd2ac81c2e5"
+      }
+    }
+  ]
+}

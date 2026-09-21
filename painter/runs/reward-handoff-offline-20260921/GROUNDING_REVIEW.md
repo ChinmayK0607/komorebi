@@ -1,0 +1,13 @@
+# Targeted review of reward-v2 additions
+
+This is a parent AI audit of existing images and original receipts, not human gold and not an exhaustive validation of the judge. Original labels remain unchanged. The machine-readable exclusions include the original receipt hashes and image hashes.
+
+Three requests (`1253ef…`, `3aa67e…`, `6f414b…`) share anchor `82ab6a…`. The original candidate-A view describes a filled top face. Direct image inspection shows two filled side faces without the reference's filled top plane. The first request's candidate is mostly outline fragments; its relative preference can be sensible despite the false description. We exclude these old receipts rather than silently repairing their reasoning or treating order agreement as proof of grounding.
+
+Cup request `9254d7…` is excluded for ambiguity, separately from the confirmed cube observation errors. Its original candidate-A view treats the gray oval below the reference cup as a required saucer. Parent inspection supports a ground-shadow interpretation; the matching reference PNG hash is `97d9d9e85ff2cc55bc200d0d16de014f56f5e72758a2eb6ab5e7024e7270591a`. Both candidate images contain faint ground ellipses. Candidate A has a detached rectangular handle substitute; B has an attached angular handle. A fresh Luna-low audit displayed all three images and preferred B, but also described a saucer. That regrade is diagnostic evidence, not a replacement label or independent confirmation of the saucer claim.
+
+The cup reference hash matches `painter/runs/contract-quality-20260918/data/v2-cup-000/turn-3.png`. The corresponding source draws a low-opacity gray ellipse beneath the cup; source intent alone does not settle how the image is perceived. An uncertain part should not become a hard completeness requirement.
+
+Remaining receipts are not certified correct by their absence from this exclusion list. Report reward coverage separately from visual validity.
+
+A further review of request `6f49a1…` exposed an agreed but unreliable comparison. Candidate `b33fa6…` has substantially taller, more cube-like side faces than the flattened anchor `84747d…`. The reverse receipt calls the candidate more vertically compressed and the anchor proportionally faithful. Both original views prefer the anchor. This receipt is also excluded, without replacing its winner. Before viewing this pair, the parent described its v1 `+0.5` to v2 `-1` change as correcting a visually worse action; that was premature. The formula removes the positive offset for a judge-ranked regression, but this particular ranking is itself unreliable and cannot demonstrate a quality improvement.

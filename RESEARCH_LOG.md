@@ -1,8 +1,12 @@
 # Painter research index
 
-Updated 2026-09-20. This is a compact index of the current painter curriculum, recovery, diversity, contract, and revision-RL records that are present in this workspace. It is intentionally bounded: archived folders, tarballs, and unrelated upstream clones under `work/` are not an exhaustive historical record. Read the linked run documents for scope, raw labels, hashes, and limitations before treating a statement as a result.
+Updated 2026-09-21. This is a compact index of the current painter curriculum, recovery, diversity, contract, and revision-RL records that are present in this workspace. It is intentionally bounded: archived folders, tarballs, and unrelated upstream clones under `work/` are not an exhaustive historical record. Read the linked run documents for scope, raw labels, hashes, and limitations before treating a statement as a result.
 
 ## Current status
+
+The [offline reward and handoff repair](painter/runs/reward-handoff-offline-20260921/RESULTS.md) replays 95 saved attempts without renting GPUs. Five suspect visual requests are explicitly excluded. The installed receipts score 12 valid visual transitions under either reward version; adding four post-shutdown receipts yields 13 under v1 and 16 under v2. These are coverage counts, not accuracy or learning results. Native tokens, masks, log-probabilities and group IDs survive for 63 completed attempts; 32 lack saved native traces. The analysis does not claim a trainer-ready batch or a new optimizer update. This supersedes preliminary unfiltered reward-v2 coverage estimates for deciding whether to restart.
+
+The reviewed infrastructure changes preserve the first timestamp for duplicate visual requests, retain the native packed batch and its hash before forward execution, include that batch in the preservation archive, and report current-run launch/batch/update evidence separately. Prime retains responsibility for optimizer admission; no additional ready-batch gate was added. The 61-test local suite passes, with final observer and syntax checks also passing. No GPU smoke test or new rental ran in this phase.
 
 The [neutral-role judge check](painter/runs/judge-neutral-check-20260921/RESULTS.md) passed its limited-pilot criterion: 8/8 grounded views, 4/4 correct known-answer control views, and 2/3 reconciled real pairs. The [preceding fresh test](painter/runs/judge-fresh-check-20260921/RESULTS.md) still failed despite hash IDs; both results are preserved. Neutral filenames and immediate reference/A/B captions are now used together. This small check does not establish general judge accuracy.
 

@@ -29,11 +29,11 @@ python3 stage_model.py > logs/model-staging.log 2>&1
 wait "$RENDER_PID"
 export MODEL_DIR=$(cat model-path.txt)
 python3 - "$ROOT" <<'PY'
-import os,json,shlex,sys
+import os,shlex,sys
 from pathlib import Path
 p=Path(sys.argv[1]);keys=['HF_HOME','UV_CACHE_DIR','BRUSH_ROOT','PRIME_ROOT','MODEL_DIR','BRUSH_MODEL_PROFILE','HF_TOKEN_PATH']
 values={k:os.environ[k] for k in keys};values.update(PLAYWRIGHT_BROWSERS_PATH=str(p/'browsers'),WANDB_MODE='disabled',TOKENIZERS_PARALLELISM='false')
 (p/'env.sh').write_text('\n'.join('export '+k+'='+shlex.quote(v) for k,v in values.items())+'\n')
-(p/'training-ready.json').write_text(json.dumps({'setup_complete':True,'training_started':False})+'\n')
 PY
+python3 "$ROOT/training_handoff.py" bootstrap "$ROOT"
 printf 'Environment and rendered dataset ready; launch is separate.\n'

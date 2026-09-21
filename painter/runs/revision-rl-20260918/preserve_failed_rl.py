@@ -39,6 +39,14 @@ WEIGHT_DIR_PARTS = {
     "full_checkpoint",
     "checkpoints",
 }
+NATIVE_HANDOFF_BIN_RE = re.compile(r"^training-handoffs/step_\d+/rank_\d+\.bin$")
+HANDOFF_STEP_JSON_RE = re.compile(r"^training-handoffs/step_\d+/[^/]+\.json$")
+HANDOFF_ROOT_JSON_NAMES = frozenset({
+    "training-handoff.json",
+    "training-state.json",
+    "training-preflight.json",
+    "training-ready.json",
+})
 SENSITIVE_NAME_PARTS = {
     "token",
     "tokens",
@@ -130,7 +138,12 @@ def has_sensitive_content(path: Path, allow_blinded_reward_key: bool = False) ->
         return True
 
 
-def excluded_evidence_file(path: Path, output_dir: Path, allow_blinded_reward_key: bool = False) -> bool:
+def excluded_evidence_file(
+    path: Path,
+    output_dir: Path,
+    allow_blinded_reward_key: bool = False,
+    allow_native_transport: bool = False,
+) -> bool:
     if path.is_symlink() or not path.is_file():
         return True
     if is_within(path, output_dir):
@@ -139,7 +152,7 @@ def excluded_evidence_file(path: Path, output_dir: Path, allow_blinded_reward_ke
         return True
     if path.suffix.lower() in ARCHIVE_SUFFIXES or path.name.lower().endswith(".tar.gz"):
         return True
-    if path.suffix.lower() in WEIGHT_SUFFIXES:
+    if path.suffix.lower() in WEIGHT_SUFFIXES and not allow_native_transport:
         return True
     lower_parts = {part.lower() for part in path.parts}
     if lower_parts & WEIGHT_DIR_PARTS:
@@ -153,13 +166,15 @@ def add_evidence(
     arcname: str,
     output_dir: Path,
     allow_blinded_reward_key: bool = False,
+    allow_native_transport: bool = False,
 ) -> None:
     if source.is_symlink():
         return
     source = source.resolve()
-    if excluded_evidence_file(source, output_dir, allow_blinded_reward_key):
-        return
     arcname = str(Path(arcname))
+    allow_native_transport = allow_native_transport and bool(NATIVE_HANDOFF_BIN_RE.fullmatch(arcname))
+    if excluded_evidence_file(source, output_dir, allow_blinded_reward_key, allow_native_transport):
+        return
     if arcname.startswith("../") or "/../" in arcname or arcname.startswith("/"):
         raise ValueError(f"unsafe archive path: {arcname}")
     result.setdefault(arcname, EvidenceFile(source=source, arcname=arcname))
@@ -192,6 +207,29 @@ def collect_tree(
             add_evidence(result, path, str(Path(arc_prefix) / relative), output_dir, allow_blinded_reward_key)
 
 
+def collect_training_handoffs(
+    result: dict[str, EvidenceFile],
+    root: Path,
+    output_dir: Path,
+) -> None:
+    """Retain only native rank payloads and direct per-step JSON summaries."""
+    base = root / "training-handoffs"
+    if not base.is_dir() or base.is_symlink():
+        return
+    for step_dir in sorted(base.iterdir()):
+        if (not step_dir.is_dir() or step_dir.is_symlink()
+                or not re.fullmatch(r"step_\d+", step_dir.name)):
+            continue
+        for path in sorted(step_dir.iterdir()):
+            if path.is_symlink() or not path.is_file():
+                continue
+            arcname = str(path.relative_to(root))
+            if NATIVE_HANDOFF_BIN_RE.fullmatch(arcname):
+                add_evidence(result, path, arcname, output_dir, allow_native_transport=True)
+            elif HANDOFF_STEP_JSON_RE.fullmatch(arcname):
+                add_evidence(result, path, arcname, output_dir)
+
+
 def collect_evidence(root: Path, run_name: str, output_dir: Path) -> dict[str, EvidenceFile]:
     files: dict[str, EvidenceFile] = {}
 
@@ -208,6 +246,9 @@ def collect_evidence(root: Path, run_name: str, output_dir: Path) -> dict[str, E
     for directory in ("logs", "rl-rollouts", "judge-queue", "evaluation", "rl-states"):
         collect_tree(files, root / directory, directory, output_dir)
     collect_tree(files, root / "reward-batches", "reward-batches", output_dir, allow_blinded_reward_key=True)
+    collect_training_handoffs(files, root, output_dir)
+    for name in sorted(HANDOFF_ROOT_JSON_NAMES):
+        add_evidence(files, root / name, name, output_dir)
 
     async_root = root / "async-output" / run_name
     # The live layout has both `configs/attempt_N` and root-level metrics or

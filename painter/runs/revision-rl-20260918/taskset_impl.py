@@ -22,6 +22,50 @@ def atomic(path, value):
     temp.replace(path)
 
 
+def create_or_verify_request(path, value):
+    """Install one queue request exactly once and verify cache hits.
+
+    The request is content-addressed by its id, but its creation time is the
+    queue's FIFO age.  Replacing it on every identical rollout made a cache hit
+    look new and could race a judge assignment or receipt.  ``link`` gives us
+    an atomic no-clobber install on the local filesystem; a pre-existing file
+    is accepted only when its immutable request fields still match.
+    """
+    path.parent.mkdir(parents=True, exist_ok=True)
+    expected = dict(value)
+    temporary = path.with_name(path.name + '.' + uuid.uuid4().hex + '.tmp')
+    temporary.write_text(json.dumps(expected, indent=2) + '\n')
+    try:
+        try:
+            os.link(temporary, path)
+        except FileExistsError:
+            if path.is_symlink() or not path.is_file():
+                raise ValueError('Judge request path is not a regular file: ' + str(path))
+            try:
+                existing = json.loads(path.read_text())
+            except json.JSONDecodeError as exc:
+                raise ValueError('Existing judge request is invalid JSON: ' + str(path)) from exc
+            immutable = ('id', 'image_sha256', 'protocol')
+            if any(existing.get(key) != expected.get(key) for key in immutable):
+                raise ValueError('Existing judge request conflicts with the content-addressed request: ' + str(path))
+            # Same image-conditioned key may be reached from a different
+            # rollout directory.  Keep the first paths, but verify their
+            # bytes still match the immutable hashes before reusing the queue.
+            root = path.parent.parent.parent
+            for role, digest in existing.get('image_sha256', {}).items():
+                source = Path(existing.get('images', {}).get(role, ''))
+                if not source.is_absolute():
+                    source = root / source
+                if not source.is_file() or sha(source) != digest:
+                    raise ValueError('Existing judge request image changed: ' + str(source))
+            # Preserve the first timestamp and all queue state.  A request with
+            # a missing legacy timestamp remains valid and is not rewritten.
+            return existing
+        return expected
+    finally:
+        temporary.unlink(missing_ok=True)
+
+
 def sha(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
@@ -60,6 +104,11 @@ class PainterRevisionTask(vf.Task[PainterRevisionData]):
             score = reward(result, None)
             if score is None:
                 raise ValueError('Excluded operational failure: ' + result.get('error','unknown'))
+            raw = json.dumps(result, sort_keys=True, separators=(',', ':')).encode()
+            evidence = dict(status='scored', request_id='local-render-' + trace.id,
+                            receipt_sha256=hashlib.sha256(raw).hexdigest(), timeout=False, approval=False)
+            atomic(folder/'reward.json', dict(judgment=None, reward=score,
+                request_id=evidence['request_id'], score_evidence=evidence))
             return score
         paths = dict(reference=state['reference'], anchor=state['canvas'], candidate=result['canvas'])
         hashes = {k:sha(root/v) for k,v in paths.items()}
@@ -67,7 +116,7 @@ class PainterRevisionTask(vf.Task[PainterRevisionData]):
         queue = root/'judge-queue'/key
         # Reward cache is image-conditioned and independent of policy/version.
         # Each trace retains its exact raw response and native sampled logprobs.
-        atomic(queue/'request.json', dict(id=key, images=paths, image_sha256=hashes,
+        create_or_verify_request(queue/'request.json', dict(id=key, images=paths, image_sha256=hashes,
             created_at=time.time(), protocol='luna-ab-ba-v1'))
         trace.info['judge_request_id'] = key
         started = time.monotonic()
@@ -81,9 +130,12 @@ class PainterRevisionTask(vf.Task[PainterRevisionData]):
             raise ValueError('Luna receipt provenance mismatch')
         judgment = reconcile(receipt.get('candidate_A'), receipt.get('candidate_B'))
         score = reward(result, judgment)
+        evidence = dict(status='scored' if score is not None else 'excluded', request_id=key,
+                        receipt_sha256=sha(queue/'receipt.json'), timeout=False, approval=False)
         trace.info.update(judge_receipt=receipt, visual_reward=score,
                           judge_wait_seconds=time.monotonic()-started)
-        atomic(folder/'reward.json', dict(judgment=judgment,reward=score,request_id=key))
+        atomic(folder/'reward.json', dict(judgment=judgment, reward=score, request_id=key,
+            score_evidence=evidence))
         if score is None:
             raise ValueError('Uncertain or order-inconsistent Luna labels; excluded from learning')
         return score
