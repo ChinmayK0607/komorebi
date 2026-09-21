@@ -80,6 +80,33 @@ OLD_WRAPPERS = (
     "hardware.py",
 )
 
+# The run directory also accumulates live evidence while a node is running.
+# Overlay packaging is intentionally explicit: only reviewed runtime source,
+# configuration, and manifests are copied, plus the immutable anchor assets.
+# This prevents reward batches, collected evidence, attempts, and telemetry
+# from becoming accidental launch inputs or archive payloads.
+CURRENT_OVERLAY_FILES = frozenset(
+    {
+        "EXPERIMENT.json",
+        "JUDGE_PROMPT.md",
+        "activate_async.sh",
+        "aesthetic-data-receipt.json",
+        "aesthetic-states.json",
+        "aesthetic_judge.py",
+        "evaluate_matched.py",
+        "judge_queue.py",
+        "launch_async.sh",
+        "prepare_aesthetic_data.py",
+        "prepare_async.py",
+        "render_actions.py",
+        "rl-states.json",
+        "taskset_impl.py",
+        "train_from_sft.py",
+    }
+)
+ANCHOR_POOL = "aesthetic-anchor-pool"
+ANCHOR_SUFFIXES = frozenset({".js", ".png"})
+
 
 def _sha(path: Path) -> str:
     digest = hashlib.sha256()
@@ -93,6 +120,22 @@ def _safe_member(path: Path) -> bool:
     if path.is_symlink() or not path.is_file():
         return False
     if path.name in DENY_NAMES or path.suffix.lower() in DENY_SUFFIXES:
+        return False
+    if set(path.parts) & DENY_DIRS:
+        return False
+    return True
+
+
+def _safe_current_member(path: Path) -> bool:
+    """Validate an explicitly reviewed current file.
+
+    ``DENY_NAMES`` protects historical inputs.  A reviewed current
+    ``taskset_impl.py`` is intentionally allowed to replace that historical
+    name, while the path and payload safety checks remain in force.
+    """
+    if path.is_symlink() or not path.is_file():
+        return False
+    if path.suffix.lower() in DENY_SUFFIXES:
         return False
     if set(path.parts) & DENY_DIRS:
         return False
@@ -113,24 +156,27 @@ def _add_tree(files: dict[str, Path], tree: Path, *, prefix: str = "") -> None:
 
 
 def _add_current_overlay(files: dict[str, Path]) -> None:
-    """Add current-run source/config/data, omitting generated live artifacts."""
+    """Add only reviewed current-run files and immutable anchor assets."""
 
-    for path in ROOT.rglob("*"):
-        # Current taskset/reward sources are allowed to use names that are
-        # deliberately denied when traversing the historical run.  This is
-        # what prevents an old quality_signal/test_quality_signal pair from
-        # being silently reintroduced while still allowing the reviewed new
-        # taskset to be named taskset_impl.py.
-        if path.is_symlink() or not path.is_file():
+    for name in sorted(CURRENT_OVERLAY_FILES):
+        path = ROOT / name
+        if not path.is_file() or not _safe_current_member(path):
             continue
-        if path.suffix.lower() in DENY_SUFFIXES or set(path.parts) & DENY_DIRS:
+        # Current reviewed files intentionally replace same-named historical
+        # wrappers in full bundles.
+        files[name] = path
+
+    anchor_root = ROOT / ANCHOR_POOL
+    if not anchor_root.is_dir():
+        raise ValueError(f"required anchor pool missing: {anchor_root}")
+    for path in anchor_root.rglob("*"):
+        if path.is_dir():
             continue
-        relative = path.relative_to(ROOT)
-        # Full package output and historical bundle sidecars must never nest
-        # inside a later package.  Anchor assets are intentional data inputs.
-        if path.name.endswith(".manifest.json") or path.name.endswith(".tar.gz"):
-            continue
-        name = relative.as_posix()
+        if path.is_symlink() or path.suffix.lower() not in ANCHOR_SUFFIXES:
+            raise ValueError(f"unsupported anchor-pool member: {path.relative_to(ROOT)}")
+        if not _safe_current_member(path):
+            raise ValueError(f"unsafe anchor-pool member: {path.relative_to(ROOT)}")
+        name = path.relative_to(ROOT).as_posix()
         files[name] = path
 
 

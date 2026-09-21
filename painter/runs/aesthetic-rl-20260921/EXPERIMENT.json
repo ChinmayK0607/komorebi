@@ -80,12 +80,12 @@
   "judge_protocol": "aesthetic-pairwise-v1",
   "fresh_reward_queue": true,
   "optimizer_resume": false,
-  "source_commit": "c9b378fc40ce032088fc36b99ac2e44475c31093",
+  "source_commit": "7bb93511155f46b3f1deb2172d9b86d935ee7df6",
   "max_turns": 3,
   "hypothesis": "A single reference-conditioned aesthetic preference objective across actual paint-inspect-revise trajectories improves the final paintings relative to the step24 SFT initializer.",
   "matched_baseline": "Exact contract-quality step24 under same multi-turn scaffold, evaluation references and token budgets.",
   "scope": "Bounded first learning run; 4 native updates, live fresh policy rollouts, no speed reward. No automatic promotion.",
-  "status": "repairing_observer_for_retry",
+  "status": "complete_node_released",
   "continuous_training": true,
   "scheduling": "No app automation, heartbeat or recurring task.",
   "max_off_policy_steps": 1,
@@ -118,7 +118,14 @@
     "max_turns": 3,
     "max_tokens": 8192,
     "temperature": 1.0,
-    "note": "Same held-out fresh-reference harness for exact SFT baseline and resulting candidate; four samples are a directional check, not a generalization estimate."
+    "note": "Same held-out fresh-reference harness for exact SFT baseline and resulting candidate; four samples are a directional check, not a generalization estimate.",
+    "completed": true,
+    "baseline_valid_canvas": 3,
+    "candidate_valid_canvas": 4,
+    "baseline_explicit_finished": 0,
+    "candidate_explicit_finished": 0,
+    "quality_improvement_established": false,
+    "judge_note": "Box preferred in both orders; bus and vase order-disagree. Reverse-bus explanation falsely attributes the larger bus to A. Raw labels retained; not a validated overall quality win."
   },
   "data_identifiers": {
     "aesthetic-states.json": "08642eb35b41f009e46abbce302d1b4a48989f1a366bb9de1f832b01a1318c2b",
@@ -138,7 +145,50 @@
       0.5625
     ],
     "failure": "Observational get_batch wrapper accessed receiver.current_step before its try block; ZMQBatchReceiver exposes _current_step. Failed before native get_batch/forward/backward.",
-    "preservation": "Full native run directory retained on node under attempts/attempt-1; raw canvases/labels kept. Exact image-hash-bound valid judgments may be reused.",
+    "preservation": "Preserved under collected-final/attempts/attempt-1 with raw canvases and labels. Exact image-hash-bound valid judgments were reused in attempt 2.",
     "bundle_sha256": "4d8e45ebee21dfe752c480b7f1de67b98cfa7a957a885f39688cc594f25ca8c2"
+  },
+  "attempt_2": {
+    "launched_at_utc": "2026-09-21T10:37:43Z",
+    "bundle_sha256": "9e0e570132c6cab83203bb7919635c60eb521af0679e5ba9c7d654266fccacc3",
+    "source_commit": "7bb93511155f46b3f1deb2172d9b86d935ee7df6",
+    "first_optimizer_update_at_utc": "2026-09-21T10:49:13Z",
+    "first_update_changed_elements": 77814138,
+    "checkpoint_step2_revision": "2e26fbc4f05430d892d08a44fc3ea3cd60885fc6",
+    "packaging_note": "Retry bundle accidentally included generated reward-batches and collected baseline evidence. Runtime inputs use explicit paths. Packaging allowlist subsequently corrected and tested; it does not change the executed experiment.",
+    "completed_optimizer_updates": 4,
+    "finished_at_utc": "2026-09-21T11:02:27Z",
+    "exit_code": 0,
+    "checkpoint_step4_revision": "2fab61ebb52a00f7e1c9c3829bad1668719d07b3"
+  },
+  "training_scope": {
+    "optimizer_updates": 4,
+    "admitted_episodes": 32,
+    "references": [
+      "v2-box-000",
+      "v2-bus-000"
+    ],
+    "native_trace_records": 39,
+    "user_closed_records": 7,
+    "note": "Two opponent groups for each of two reference states. Available 12-family inventory is not actual training coverage."
+  },
+  "preservation": {
+    "archive_sha256": "654b50976c3d9cffdb7a3a1ff48c1b4853dded62cfa4466fbdfcc62f207b5a33",
+    "archive_bytes": 123703837,
+    "files_hash_verified": 5502,
+    "path": "collected-final/evidence.tar.gz",
+    "raw_local_judge_labels": "reward-batches/",
+    "heldout_labels": "heldout-judging/",
+    "node_released": true,
+    "no_active_pods_verified_at_utc": "2026-09-21T11:14:17Z",
+    "estimated_gpu_rental_usd": 3.02,
+    "cost_note": "Conservative elapsed-time estimate through no-active-pods verification, not provider final invoice; excludes judge quota."
+  },
+  "launched_config_sha256": "620b24353b4c6563835172a2af104bb2515a52f50f9daa02be74a4098098e012",
+  "launched_runtime_sha256": {
+    "taskset_impl.py": "ff5f91105a8be0ac72f34af7888b204e477d9a2432b81a1bac3d512dfb6773eb",
+    "train_from_sft.py": "0db770c2521e4fdb6b1b37023d82a88cd90b12f9ae381029bf8775960dc88b7a",
+    "judge_queue.py": "b3b8fdc7c33989fda98c4c162f72df5852e3e4c916d3d907f5687b689c093fd5",
+    "aesthetic_judge.py": "3565ba4bc731fc6b5b2528f3192c4e6b662484eae8f381f2c69ff6b435d80ea6"
   }
 }

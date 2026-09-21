@@ -1,0 +1,88 @@
+{
+  "run_name": "aesthetic-rl-20260921",
+  "source_commit": "7bb93511155f46b3f1deb2172d9b86d935ee7df6",
+  "optimizer_updates": 4,
+  "training_scope": {
+    "optimizer_updates": 4,
+    "admitted_episodes": 32,
+    "references": [
+      "v2-box-000",
+      "v2-bus-000"
+    ],
+    "native_trace_records": 39,
+    "user_closed_records": 7,
+    "note": "Two opponent groups for each of two reference states. Available 12-family inventory is not actual training coverage."
+  },
+  "heldout": {
+    "paired_results": [
+      {
+        "group": "v2-box-007",
+        "rl_win_fraction": 1.0,
+        "candidate_A_winner": "A",
+        "candidate_B_winner": "B",
+        "reasons": [
+          "A has the closest pink watercolor character and a clear cube silhouette matching the reference; B is grayer and less saturated.",
+          "B has a stronger, more luminous painted cube with clear plane separation and a grounded shadow; A is paler and flatter, with weaker contrast and presence."
+        ]
+      },
+      {
+        "group": "v2-bus-007",
+        "rl_win_fraction": 0.5,
+        "candidate_A_winner": "A",
+        "candidate_B_winner": "A",
+        "reasons": [
+          "A presents a complete, centered bus with stronger presence and closer scale to the reference; B is much smaller and washed out with an exaggerated detached shadow.",
+          "A is the more successful bus interpretation, preserving the large centered silhouette, readable windows, wheels, and restrained shadow; B is much smaller and washed out with reduced detail."
+        ]
+      },
+      {
+        "group": "v2-vase-007",
+        "rl_win_fraction": 0.5,
+        "candidate_A_winner": "A",
+        "candidate_B_winner": "A",
+        "reasons": [
+          "A better preserves the reference's blue vessel with a narrow neck, faceted body, and visible horizontal markings; B is too tall and loses the shoulder transition.",
+          "A better preserves the reference bottle\u2019s tall neck, faceted shoulders, translucent blue paint, and grounded shadow; B is squat and loses the reference\u2019s elongated silhouette."
+        ]
+      }
+    ],
+    "not_pairwise_comparable": [
+      "v2-flower-007"
+    ],
+    "valid_canvas_baseline": 3,
+    "valid_canvas_candidate": 4,
+    "sample_count": 4,
+    "generalization_claim": false,
+    "parent_review": {
+      "quality_gain_established": false,
+      "reverse_bus_grounding_failure": true,
+      "note": "Reverse bus explanation attributes the larger bus to A although A is the smaller SFT baseline; raw labels unchanged."
+    }
+  },
+  "preservation": {
+    "archive_sha256": "654b50976c3d9cffdb7a3a1ff48c1b4853dded62cfa4466fbdfcc62f207b5a33",
+    "archive_bytes": 123703837,
+    "files_hash_verified": 5502,
+    "path": "collected-final/evidence.tar.gz",
+    "raw_local_judge_labels": "reward-batches/",
+    "heldout_labels": "heldout-judging/",
+    "node_released": true,
+    "no_active_pods_verified_at_utc": "2026-09-21T11:14:17Z",
+    "estimated_gpu_rental_usd": 3.02,
+    "cost_note": "Conservative elapsed-time estimate through no-active-pods verification, not provider final invoice; excludes judge quota."
+  },
+  "utilization": {
+    "window_utc": [
+      "2026-09-21T10:37:47.490Z",
+      "2026-09-21T11:02:17.906Z"
+    ],
+    "samples_per_gpu": 148,
+    "sample_interval_seconds": 10,
+    "inference_mean_pct": 73.77,
+    "trainer_mean_pct": 14.06,
+    "busy_threshold_pct": 10,
+    "inference_busy_fraction": 0.7432,
+    "trainer_busy_fraction": 0.1757,
+    "saturated": false
+  }
+}
