@@ -80,12 +80,12 @@
   "judge_protocol": "aesthetic-pairwise-v1",
   "fresh_reward_queue": true,
   "optimizer_resume": false,
-  "source_commit": "4778d2fc99e18b06cdb930578916ba68c762713a",
+  "source_commit": "c9b378fc40ce032088fc36b99ac2e44475c31093",
   "max_turns": 3,
   "hypothesis": "A single reference-conditioned aesthetic preference objective across actual paint-inspect-revise trajectories improves the final paintings relative to the step24 SFT initializer.",
   "matched_baseline": "Exact contract-quality step24 under same multi-turn scaffold, evaluation references and token budgets.",
   "scope": "Bounded first learning run; 4 native updates, live fresh policy rollouts, no speed reward. No automatic promotion.",
-  "status": "ready_for_native_launch",
+  "status": "repairing_observer_for_retry",
   "continuous_training": true,
   "scheduling": "No app automation, heartbeat or recurring task.",
   "max_off_policy_steps": 1,
@@ -125,5 +125,20 @@
     "rl-states.json": "990a10e8a8b040926715045a554c7eaef9516368d73e3ed59145c4c235a16185",
     "aesthetic-data-receipt.json": "d8d7e310d7fcc3d1f931d959b6d372486bf3bf446f7f39300dd2afaa99d952fa"
   },
-  "judge_prompt_sha256": "12a0ce25a4f59ff56c7c1e0f8dc2b8627842797ade3c37eb31e7719004072c53"
+  "judge_prompt_sha256": "12a0ce25a4f59ff56c7c1e0f8dc2b8627842797ade3c37eb31e7719004072c53",
+  "attempt_1": {
+    "launched_at_utc": "2026-09-21T10:19:35Z",
+    "failed_at_utc": "2026-09-21T10:33:13Z",
+    "optimizer_updates": 0,
+    "native_scored_rollouts": 16,
+    "unique_judged_comparisons": 14,
+    "judge_views": 28,
+    "orchestrator_group_means": [
+      0.5625,
+      0.5625
+    ],
+    "failure": "Observational get_batch wrapper accessed receiver.current_step before its try block; ZMQBatchReceiver exposes _current_step. Failed before native get_batch/forward/backward.",
+    "preservation": "Full native run directory retained on node under attempts/attempt-1; raw canvases/labels kept. Exact image-hash-bound valid judgments may be reused.",
+    "bundle_sha256": "4d8e45ebee21dfe752c480b7f1de67b98cfa7a957a885f39688cc594f25ca8c2"
+  }
 }
