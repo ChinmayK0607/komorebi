@@ -1,0 +1,15 @@
+# What to scale next
+
+This is a proposed data expansion, not a launched training run or authorization to select a new paid API provider.
+
+The current student needs both complete real-photo paintings and successful corrections of its own mistakes. The existing COCO photos are references, not painting demonstrations. Procedural shape programs remain useful execution practice, but their presence does not make a real-photo teacher dataset.
+
+1. Generate full p5.brush programs from the training photographs with a stronger teacher. Use the same versioned canvas/API contract and actual Linux renderer that the student receives. Store the reference, complete response/program, rendered canvas and immutable source identity together. Make the renderer's deadline explicit and matched across policies: the capability check's 120-second cap rejected a valid baseball sketch that rendered in 155.7 seconds under the supported 180-second allowance. Do not mistake a timeout for a syntax failure or an aesthetic judgment.
+2. Use the API judge to compare rendered alternatives against the reference on beauty, visual coherence and preservation of the subject and composition. Require a critique of the chosen candidate's weaknesses as well as the rejected candidate's. A relative winner can still be poor; retain that distinction. Execution validity is a prerequisite for a painting example, not an aesthetic reward.
+3. Have the teacher improve actual weak student canvases and programs. Keep corrections that visibly improve the painting, including preserving correct structure. Retain the failing predecessor as context, not as the desired assistant output. Include genuine stop examples after a good observed canvas.
+4. Mix these trajectories with successful simpler paintings and code-repair examples. Grow distinct references and subjects, not just repeated variants of the same handful of scenes. The current 100-photo training pool is a starting batch; expansion can proceed across many more photographs once the teacher/judge API is selected.
+5. Start the next real-photo adapter comparison from the unadapted base. Save intermediate checkpoints and compare against that same base under the fixed inference contract. The current step24 adapter's procedural performance does not establish photo transfer.
+
+Keep all 28 existing development photos out of the demonstration pool. Twelve now have inspected capability results and are development examples, not an untouched final test. Preserve the other sixteen for a subsequent unrun comparison, and use source-level separation when importing more photographs. Do not train on the judge labels from this capability report.
+
+Use one visual preference signal for later RL rather than an additive collection of aesthetic proxies. During revision, retain the best judged canvas so a worse last attempt does not automatically become the delivered painting. This is a proposed intervention and must be compared with the current unselected revision loop. Continue quality-first training before adding speed/stroke budgets.

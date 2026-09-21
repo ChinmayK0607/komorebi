@@ -1,8 +1,8 @@
 {
   "run_name": "coco-capability-20260922",
-  "status": "primary_rerun_launched",
+  "status": "complete_node_released",
   "hypothesis": "The step-24 SFT painter can transfer the corrected paint-inspect-revise interface to real-photo references and improve over the unadapted base on recognizable structure and holistic visual quality.",
-  "source_commit": "fc00e3b",
+  "source_commit": "580ea60",
   "model": "Qwen/Qwen3.8-27B",
   "model_revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
   "policies": {
@@ -27,7 +27,7 @@
   },
   "scope": {
     "references": 12,
-    "selection": "deterministic diverse sample from existing28 COCOdev photos, selected beforeoutputs",
+    "selection": "Deterministic diverse sample from the existing 28 COCO development photos, selected before outputs.",
     "planned_episodes": 24,
     "training": false,
     "judge_during_generation": false
@@ -61,7 +61,7 @@
     "gpu_count": 1,
     "memory_gb": 96,
     "usd_per_hour": 1.29,
-    "release": "after localhashverifiedevidence"
+    "release": "After local hash-verified evidence."
   },
   "limitations": [
     "One sample perphoto/policy does not estimate best-of-k capability.",
@@ -69,7 +69,52 @@
     "Current evaluation defaults disable thinking; failure is not a claim that all prompting or planning configurations fail."
   ],
   "scheduling": "none",
-  "results": null,
+  "results": {
+    "episodes_per_policy": 12,
+    "turns_per_policy": 72,
+    "valid_retained_canvases": {
+      "base": 11,
+      "sft": 3
+    },
+    "valid_attempts": {
+      "base": 38,
+      "sft": 13
+    },
+    "no_accepted_javascript": {
+      "base": 2,
+      "sft": 35
+    },
+    "unchanged_valid_attempts": {
+      "base": 1,
+      "sft": 9
+    },
+    "completion_tokens": {
+      "base": 303491,
+      "sft": 68066
+    },
+    "finish_reason_counts": {
+      "base": {
+        "stop": 72
+      },
+      "sft": {
+        "stop": 72
+      }
+    },
+    "explicit_finishes": 0,
+    "training_updates": 0,
+    "luna_low_revision_preferences": {
+      "final": 4,
+      "first": 6,
+      "tie": 1,
+      "scope": "All eleven base trajectories with valid first/final canvases; single-pass neutral A/B review."
+    },
+    "luna_low_policy_preferences": {
+      "base": 2,
+      "sft": 1,
+      "scope": "Only three comparable valid-canvas pairs; parent disagrees on sink/skier."
+    },
+    "quality": "Recognizable rough layouts on some base cases; not consistently high-quality painting. Step24 transfers poorly to the tested photos."
+  },
   "data_manifest_sha256": "874695bf596b5cb7db8940e1dfb6a0f3d62ab3050524a392b763b4ac257b4e94",
   "data_bundle_sha256": "c92506c50fb8f6fdeb1a17cb3f464be376ace127a58b4a112ef80bfb7dfb52eb",
   "reference_ids": [
@@ -93,9 +138,10 @@
     "driver": "580.126.09",
     "price_usd_per_hour": 1.29,
     "rented_at_utc": "2026-09-21T19:06:14.493436Z",
-    "role": "inference_only"
+    "role": "inference_only",
+    "release_verified_utc": "2026-09-21T20:52:24.060702Z"
   },
-  "evaluation_start_utc": "2026-09-21T19:16:26Z",
+  "evaluation_start_utc": "2026-09-21T19:44:24Z",
   "node_config_sha256": {
     "base": "7a1af5bd9a0d661a18946b6dba8c329f305476a7ae433bc411e5bc227b786a3b",
     "sft": "0856533b976ca0181744027ade35b8d780e2f847a49cdb2560ac784988f5b13f"
@@ -116,17 +162,72 @@
       "context_tokens": 32768,
       "max_sequences": 4,
       "rollout_timeout_seconds": 1200,
-      "reason": "API context exhaustion on fourth request for long photo programs after earlier successful valid paintings; not a complete six-turn ability test. Preserve earlier no-code failures and successful renders; rerun same frozen cases with larger operational envelope."
+      "reason": "API context exhaustion on fourth request for long photo programs after earlier successful valid paintings; not a complete six-turn ability test. Preserve earlier no-code failures and successful renders; rerun same frozen cases with larger operational envelope.",
+      "start_utc": "2026-09-21T19:16:26Z",
+      "exit_codes": {
+        "base": 130,
+        "sft": 130
+      },
+      "node_config_sha256": {
+        "base": "8c0e4a365e3113f057c0ec3276b8e65a8d280c518089d7f30a28fcde25129cb6",
+        "sft": "7d7a64b2c2277edc88d5d7a44206a5dfc5f85d9770f1b4c77b24bfc73e8dc54c"
+      }
     },
     {
       "id": "primary-context96k",
-      "status": "launched",
+      "status": "complete",
       "context_tokens": 98304,
       "max_sequences": 8,
       "evaluation_concurrency_per_policy": 8,
       "rollout_timeout_seconds": 3600,
       "same_frozen_cases": true,
-      "same_model_pins_and_prompt": true
+      "same_model_pins_and_prompt": true,
+      "start_utc": "2026-09-21T19:44:24Z",
+      "exit_codes": {
+        "base": 0,
+        "sft": 0
+      }
     }
-  ]
+  ],
+  "bootstrap_source_commit": "fc00e3b",
+  "evaluation_end_utc": "2026-09-21T20:37:06Z",
+  "utilization": {
+    "role": "inference_only",
+    "gpu_count": 1,
+    "sample_interval_seconds": 10,
+    "sample_count": 317,
+    "start_utc": "2026-09-21T19:44:24.868Z",
+    "end_utc": "2026-09-21T20:37:05.581Z",
+    "mean_gpu_percent": 94.40694006309148,
+    "samples_at_least_90": 298,
+    "fraction_at_least_90": 0.9400630914826499,
+    "scope": "All primary finite-run telemetry including rendering and idle tail; no trainer."
+  },
+  "render_deadline_controls": {
+    "scope": "Post-hoc exact final-program replays, excluded from primary matched counts. No additional model generation. Renderer deadline180 rather than120 seconds.",
+    "baseball": {
+      "valid": true,
+      "elapsed_seconds": 155.652,
+      "program_sha256": "6940292430543e72be80d523b2003bac5ec9e4a9debbde899334dde737b862a5",
+      "png_sha256": "75ea0873f908d8aa757db998f005f7674f46e6c9807e835f884317977cb88b30"
+    },
+    "clock": {
+      "valid": true,
+      "elapsed_seconds": 134.797,
+      "program_sha256": "9f08f026243fb1cc79cabfb9cd5cc9f439b35a9c57e487da07788743ffcee59f",
+      "png_sha256": "8301c12fc1bad2a97898f6aaec678dff58af2d9b045d8203d660b6c249d9abb9"
+    },
+    "failed_operator_attempt": "A 300-second request was rejected by the CLI before rendering; log/protocol preserved. Corrected to supported 180 seconds."
+  },
+  "evidence_archive": {
+    "archive_sha256": "b7fe5003ddb5619ba2aeaf3ee3d8bd3c149bcf8417de97ad0e49f5f88f43bedc",
+    "archive_bytes": 96873901,
+    "listed_file_count": 525,
+    "listed_file_bytes": 112911825,
+    "verification": "All 525 listed files and archive hash verified locally; four latest directory aliases recorded without materializing duplicate paths."
+  },
+  "cost_actual_estimate": {
+    "usd_upper_estimate": 2.2824,
+    "basis": "Rental creation through verified absence at quoted $1.29/hour; includes bootstrap, interrupted attempt, primary evaluation, diagnostic renders and preservation. Not a final provider invoice."
+  }
 }

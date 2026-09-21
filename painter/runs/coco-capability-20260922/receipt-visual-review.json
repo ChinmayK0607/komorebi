@@ -1,0 +1,36 @@
+{
+  "judge_model": "gpt-5.6-luna",
+  "reasoning_effort": "low",
+  "ordering": "Neutral A/B, single pass, not order-reversed validation",
+  "labels": {
+    "blind-review": {
+      "sha256": "7c6f15a0ad332dda5d23fcfa7c45351cfa3269f0b93be00edfacde831965275e",
+      "cases": 3,
+      "path": "preview/blind-review/labels.json"
+    },
+    "revision-blind": {
+      "sha256": "c115e7c1e7391c394c64627b2400e51237ac631e4652a9750c42638346fb3336",
+      "cases": 11,
+      "path": "preview/revision-blind/labels.json"
+    }
+  },
+  "parent_review": "All twelve reference/first/final rows and both 180-second replays inspected. Disagreements in DIAGNOSTIC_NOTES.md.",
+  "revision_key": "collected/evidence/coco-capability/revision-judge-key.json",
+  "policy_key": {
+    "case-01": {
+      "task_suffix": "133",
+      "A": "base",
+      "B": "sft"
+    },
+    "case-02": {
+      "task_suffix": "208",
+      "A": "sft",
+      "B": "base"
+    },
+    "case-03": {
+      "task_suffix": "382",
+      "A": "sft",
+      "B": "base"
+    }
+  }
+}

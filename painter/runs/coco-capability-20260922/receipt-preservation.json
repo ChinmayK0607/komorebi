@@ -1,0 +1,11 @@
+{
+  "verified_utc": "2026-09-21T20:50:58.130361+00:00",
+  "archive_sha256": "b7fe5003ddb5619ba2aeaf3ee3d8bd3c149bcf8417de97ad0e49f5f88f43bedc",
+  "archive_bytes": 96873901,
+  "verified_files": 525,
+  "total_file_bytes": 112911825,
+  "all_extracted_hashes_match": true,
+  "evidence_path": "collected/evidence",
+  "interrupted_attempt_path": "collected/attempt-1-context32k",
+  "directory_aliases_recorded_not_materialized": 4
+}

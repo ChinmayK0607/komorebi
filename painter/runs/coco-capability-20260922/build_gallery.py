@@ -10,6 +10,7 @@ rendered, scored, or substituted from another turn.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import html
 import json
 import os
@@ -33,6 +34,10 @@ POLICY_KEYS = ("base", "sft")
 POLICY_LABELS = {"base": "base", "sft": "sft"}
 NATIVE_POLICY_KEYS = {"base": "rl", "sft": "sft"}
 DISPLAY_NAMES = {"base": "Base unadapted", "sft": "SFT step24"}
+POSTHOC_CONTROLS = (
+    ("render-deadline-control", "000000000357", "Photo 357 · baseball"),
+    ("render-deadline-clock", "000000000078", "Photo 078 · clock"),
+)
 
 
 def _existing(value: Any) -> str | None:
@@ -121,6 +126,117 @@ def _metadata_block(metadata: dict[str, Any]) -> str:
     return f"<details><summary>recorded metadata</summary><pre>{html.escape(compact)}</pre></details>"
 
 
+def _sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _posthoc_control_root(evidence_root: Path, name: str) -> Path:
+    # The collected bundle uses evidence/coco-capability/<control>.  The
+    # second candidate keeps this helper usable when handed that subdirectory
+    # directly during a local artifact smoke test.
+    nested = evidence_root / "coco-capability" / name
+    return nested if nested.is_dir() else evidence_root / name
+
+
+def _posthoc_checks(evidence_root: Path, cases: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Return only receipt-valid saved-program replay controls.
+
+    These controls are intentionally separate from the matched base/SFT case
+    records.  A receipt must mark the render valid and its recorded hashes must
+    match the local program.js and painting.png bytes before an image is shown.
+    """
+
+    included: list[dict[str, Any]] = []
+    for directory, suffix, label in POSTHOC_CONTROLS:
+        root = _posthoc_control_root(evidence_root, directory)
+        program = root / "program.js"
+        painting = root / "painting.png"
+        receipt_path = root / "painting.json"
+        protocol_path = root / "protocol.json"
+        if not all(path.is_file() for path in (program, painting, receipt_path, protocol_path)):
+            continue
+        try:
+            receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+            protocol = json.loads(protocol_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            continue
+        if not isinstance(receipt, dict) or not isinstance(protocol, dict):
+            continue
+        if receipt.get("valid") is not True or protocol.get("timeout_seconds") != 180:
+            continue
+        source_hash = receipt.get("source_sha256")
+        png_hash = receipt.get("png_sha256")
+        if not isinstance(source_hash, str) or not isinstance(png_hash, str):
+            continue
+        try:
+            program_hash = _sha256(program)
+            painting_hash = _sha256(painting)
+        except OSError:
+            continue
+        if source_hash.lower() != program_hash or png_hash.lower() != painting_hash:
+            continue
+        case = next((row for row in cases if str(row.get("id", "")).endswith(suffix)), None)
+        if case is None:
+            continue
+        base = (case.get("policies") or {}).get("base") or {}
+        included.append(
+            {
+                "id": directory,
+                "label": label,
+                "case_id": case.get("id"),
+                "reference": case.get("reference"),
+                "primary_base_canvas": base.get("final_canvas"),
+                "extended_canvas": str(painting.resolve()),
+                "program": str(program.resolve()),
+                "receipt": {
+                    "valid": True,
+                    "source_sha256": source_hash,
+                    "png_sha256": png_hash,
+                    "elapsed_seconds": receipt.get("elapsed_seconds"),
+                    "program_sha256_matches": True,
+                    "png_sha256_matches": True,
+                },
+                "protocol": {
+                    "timeout_seconds": protocol.get("timeout_seconds"),
+                    "source": protocol.get("source"),
+                    "primary_deadline_seconds": 120,
+                },
+            }
+        )
+    return included
+
+
+def _posthoc_html(checks: list[dict[str, Any]], outdir: Path) -> str:
+    if not checks:
+        return ""
+    rows: list[str] = []
+    for check in checks:
+        receipt = check.get("receipt") or {}
+        elapsed = receipt.get("elapsed_seconds")
+        elapsed_text = f"; elapsed {elapsed}s" if isinstance(elapsed, (int, float)) else ""
+        rows.append(
+            "<tr>"
+            f"<th><strong>{html.escape(str(check.get('label')))}</strong><br><small>{html.escape(str(check.get('case_id')))}</small>"
+            f"<div class=\"reference\">{_image(check.get('reference'), outdir, 'reference')}</div></th>"
+            f"<td>{_image(check.get('primary_base_canvas'), outdir, 'primary base retained canvas')}</td>"
+            f"<td>{_image(check.get('extended_canvas'), outdir, '180-second saved-program replay')}"
+            f"<p><small>valid receipt; saved program; 180s deadline{html.escape(elapsed_text)}</small></p></td>"
+            "</tr>"
+        )
+    return (
+        '<section class="posthoc">'
+        "<h2>Post-hoc render-deadline checks — excluded from matched results</h2>"
+        "<p>These optional controls rerender the same saved program with a 180-second renderer deadline (the primary run used 120 seconds). They use no new model generation and do not change the matched base/SFT counts or case pairs. Only receipt-valid images with matching program and PNG hashes are shown.</p>"
+        '<table><thead><tr><th>Reference</th><th>Primary base retained canvas</th><th>Extended deadline replay</th></tr></thead><tbody>'
+        + "".join(rows)
+        + "</tbody></table></section>"
+    )
+
+
 def build_gallery(
     *,
     evidence_root: Path,
@@ -196,6 +312,7 @@ def build_gallery(
             + "</tr>"
         )
 
+    posthoc_checks = _posthoc_checks(evidence_root, metadata_cases)
     metadata = {
         "schema": "coco-capability-gallery-v1",
         "report_schema": report.get("schema_version"),
@@ -216,6 +333,7 @@ def build_gallery(
         },
         "partial": report.get("partial"),
         "cases": metadata_cases,
+        "posthoc_render_deadline_checks": posthoc_checks,
         "notes": [
             "First and final links use only recorded valid canvases and native report final_canvas artifacts.",
             "Status, errors, flags, turn counts, and provider usage are copied from native traces.",
@@ -233,7 +351,9 @@ def build_gallery(
         "<p><a href=\"metadata.json\">gallery metadata JSON</a></p></div>"
         "<table><thead><tr><th>Reference</th><th>Base unadapted</th><th>SFT step24</th></tr></thead><tbody>"
         + "".join(html_rows)
-        + "</tbody></table></body></html>"
+        + "</tbody></table>"
+        + _posthoc_html(posthoc_checks, outdir)
+        + "</body></html>"
     )
     (outdir / "index.html").write_text(page, encoding="utf-8")
     return metadata
