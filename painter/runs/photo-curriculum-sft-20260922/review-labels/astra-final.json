@@ -1,0 +1,434 @@
+[
+  {
+    "id": "coco128-000000000025",
+    "label": "keep",
+    "reference_sha256": "9f016b98f31e4fe826910e56ee39fa0c2889f48d38cc5f4f6b6421c8c5fc7214",
+    "program_sha256": "e21e7314ec4d2cadd537e1a21ebdf1c32714ecde217e24cb6af45a91f013f5cc",
+    "render_sha256": "0ad881a4f2f7afc3affef85aa36e5fd824c7d812038b711dfc03042e656252ec",
+    "reason": "Reviewed prior label.",
+    "drawback": ""
+  },
+  {
+    "id": "coco128-000000000034",
+    "label": "keep",
+    "reference_sha256": "0e67e637241ac2fbf132aa2b6cc9775b474b520e1c9a99dbef377063a5a48b85",
+    "program_sha256": "8eb3f03f29a0be5becd5749d3f1057b758ccec05697759ee843b20e861e13de1",
+    "render_sha256": "85e819896c68b67360845541c0b8549e3f0cc46797757471f03a876677e020e5",
+    "reason": "Reviewed prior label.",
+    "drawback": ""
+  },
+  {
+    "id": "coco128-000000000036",
+    "label": "keep",
+    "reference_sha256": "2bb515b26d250fcdf16effa3a7280babe32ae9b6f7608563e53cd01f5cd66ad4",
+    "program_sha256": "0077b94bfc496996dd0f305f44dfa11a260ace2aedf6586ce5d943018c594eaa",
+    "render_sha256": "47108894efa25952d58258968b07d26572b1c48c470be8680c7c85c50affa9a0",
+    "reason": "Reviewed prior label.",
+    "drawback": ""
+  },
+  {
+    "id": "coco128-000000000061",
+    "label": "keep",
+    "reference_sha256": "a1a9ac88e4c5cfbdd1cd425a6d262b1e78bf32676a9c17a2861ca6a23a731955",
+    "program_sha256": "69849ab6b37db74cfde4aadae07511357dad2f3d963fbe31affdf9e1cd44c6ae",
+    "render_sha256": "474576b6bfc0c03c542486845f96d500b23839a48d0fd629d64a9ec2b844e4ac",
+    "reason": "Reviewed prior label.",
+    "drawback": ""
+  },
+  {
+    "id": "coco128-000000000064",
+    "label": "keep",
+    "reference_sha256": "406f84619f5197d416f60566d41ad4d58f1d10b0a182652bbda266eedbc3f1ab",
+    "program_sha256": "9c87df57f053d71b7e0a91e1bbfd8ce8656dbc5d219a156350676720d514057f",
+    "render_sha256": "c1566d2b029df5064cb060bedea38d616326aa2c6def3a56542d00216a2b8ad0",
+    "reason": "Clock/car street scene is preserved with a centered round clock, pole, tree, road and car; graphic simplification is coherent.",
+    "drawback": "Background signage and clock lettering are lost and the tree/road perspective is flatter."
+  },
+  {
+    "id": "coco128-000000000092",
+    "label": "keep",
+    "reference_sha256": "886950d096ad454f0bbb9a63167c795bd49eb9d4c0cb24a72888b3429d11900a",
+    "program_sha256": "725f30027a9fe67a61abcfbaa97360c66c9e500e2c63fab9949ba94911400a60",
+    "render_sha256": "c5d2d82b48a877f909dad9d435a9aa548067f079103aa151c23fbf92caaad720",
+    "reason": "Chocolate cake slice on a white plate with fork is clearly retained in composition and object identity.",
+    "drawback": "Layer texture and fork detail are simplified."
+  },
+  {
+    "id": "coco128-000000000094",
+    "label": "keep",
+    "reference_sha256": "143779e4a70bb6b6e10232aa02c2ce99a9a1246d763da344b424aba4ca71cd9f",
+    "program_sha256": "ed09ae03a52011d585318e354b9f0d348ed7ad6f9b6be916e36f34c4bcad143c",
+    "render_sha256": "51010b9146397c9f353481627f2c232061687037d2ba5f1f864f833bb845597d",
+    "reason": "Street perspective, buildings, utility wires, cars and central yellow vehicle remain readable.",
+    "drawback": "Signs and architectural texture are largely omitted."
+  },
+  {
+    "id": "coco128-000000000109",
+    "label": "keep",
+    "reference_sha256": "69edeeca53763fb2a4ee51739e4f9a4f053584b4f3ca4ff9911c49fa52ed2762",
+    "program_sha256": "d0cb876695fc4f0f39d32830860abbff436454328f737c6aaf44d86127fa40b0",
+    "render_sha256": "caf04680195393776fab831044c76e9156b033fa1a0772c3352eafff3f80cd2f",
+    "reason": "Riverside promenade, water, curved path, benches and lamps are preserved with an intentional simplified landscape.",
+    "drawback": "People and reflective water detail are sparse."
+  },
+  {
+    "id": "coco128-000000000110",
+    "label": "keep",
+    "reference_sha256": "39d967c7856965853e90b9283db4a6895a034eb17fe0c84581d17af4a59edcf2",
+    "program_sha256": "47a6931f9c0d71d01518218516e05d36fc6f14ec9723b79c707e7f1543e969ac",
+    "render_sha256": "fc56618a885e04186d148edd2a3db2afd4973269db98b3cd89e27114dd573700",
+    "reason": "Adult and child cutting pizza at a table are retained with the main pizza and two-person layout.",
+    "drawback": "Hands, utensil contact and facial detail are crude."
+  },
+  {
+    "id": "coco128-000000000138",
+    "label": "keep",
+    "reference_sha256": "0255bce78addf8d82e9f5d434ad2a98fccd5542cbb041980ce7ad00054a3227e",
+    "program_sha256": "251409ad01b4f7abe314e4c6694606f7979302e9fba8f0964198ca212642666e",
+    "render_sha256": "eb7551bc75e78c6b7c5d831f93bf46cadccc2b8e768750a9b9a864b7de8be0cf",
+    "reason": "Kitchen cabinetry, stove, refrigerator, tiled backsplash and countertop arrangement match strongly.",
+    "drawback": "Small appliance and prop details are reduced."
+  },
+  {
+    "id": "coco128-000000000142",
+    "label": "keep",
+    "reference_sha256": "3c852dc71abcf6cf06ed58202d1b2c850bb783553f05c63cd6ca511936b431aa",
+    "program_sha256": "6061c8ccc1bd3a35d138788ec903dafb7d07759188eb681540691591c85e19bc",
+    "render_sha256": "f122f2d91a31ed5d410c05f577f84d0da7e63739fa01207be4d4a666d28d8a11",
+    "reason": "Toast with banana slices on a plate and the milk/peanut-butter containers remain clear.",
+    "drawback": "Brand labels and photographic shadows are simplified."
+  },
+  {
+    "id": "coco128-000000000144",
+    "label": "keep",
+    "reference_sha256": "6740b5472043073062f46b253399a6bc2fe68ca77d429f652ad956c03d51b0fa",
+    "program_sha256": "89545f9d4afb2e9ce8e96b5f20c6fa26b8e9dfd28f92385d6a2b3fefdaf84e74",
+    "render_sha256": "27165968ff32952b54043c3c6adbf7b52e48922d705a8bbe906736e204b2f6a3",
+    "reason": "Reviewed prior label.",
+    "drawback": ""
+  },
+  {
+    "id": "coco128-000000000164",
+    "label": "keep",
+    "reference_sha256": "186a1427f32ce7e5cf17052f66d5ee7cd57d7f83762001891e16195a6bda586d",
+    "program_sha256": "85b1243bcb05e923c62337298469d84feef9d0ab6712f7c86235a243a01303f2",
+    "render_sha256": "00b843209e24b1aea722036cc445bf38299a7d62d631188da7bfbab01e45ff46",
+    "reason": "Kitchen window, shelves, microwave and counter are mapped into a readable interior.",
+    "drawback": "The original lighting and clutter are washed into pale blocks."
+  },
+  {
+    "id": "coco128-000000000165",
+    "label": "keep",
+    "reference_sha256": "2d3d9e0b4b165c0f783b97cd963097b13effa1af851c9576617fb7c910d63cd8",
+    "program_sha256": "92c15e73ca13ce2830f882097de2a36ea444dbf16e1545adfbcbb13e87628a3e",
+    "render_sha256": "a0f3173c7f96672084cce274df258de96710270e71faeaeee8d24c8e2e0cf09c",
+    "reason": "Reviewed prior label.",
+    "drawback": ""
+  },
+  {
+    "id": "coco128-000000000194",
+    "label": "keep",
+    "reference_sha256": "0713bcf193a25769b047e4dde7820e7fa857bab06f9140a4a64c78d94ed9b4a1",
+    "program_sha256": "f40d01c2ec143fb610054a5e95819d207c31e83fd2e4c201691aa229fb337317",
+    "render_sha256": "1ad55a9d84ecf637779a3e5e28af068f1c72a9e3dc71d93ed15e896ac23d665e",
+    "reason": "Reviewed prior label.",
+    "drawback": ""
+  },
+  {
+    "id": "coco128-000000000247",
+    "label": "keep",
+    "reference_sha256": "a57c40ee95f73bb493e573bbbd593d037fdf176a02f1d3f6a3f437c8f78f805a",
+    "program_sha256": "88effe4b713d04df7f77ca9de8431c713717d42cf36882735572156dc77cc8e7",
+    "render_sha256": "6d42e6620631144842800187c7429551b570aae3d9964e4fc363653e7ec62176",
+    "reason": "Frontal blue-white propeller airplane, tail, wings and runway are unmistakable.",
+    "drawback": "Cockpit and wing perspective are simplified."
+  },
+  {
+    "id": "coco128-000000000250",
+    "label": "keep",
+    "reference_sha256": "a4e4243da053d3a958a1f52fd8fe9cc264d39e07077266a7089b281597050a29",
+    "program_sha256": "79c237a61d06307b97a3bb0354fce680f39d1853fb054ce2d2d6499b560329d6",
+    "render_sha256": "c2f195c8693f63c80870326d2ed24f7b3cd7c5868cfbc611d6af36a76b22c92f",
+    "reason": "Reviewed prior label.",
+    "drawback": ""
+  },
+  {
+    "id": "coco128-000000000283",
+    "label": "keep",
+    "reference_sha256": "a668b293598b0097c9b38c136e54b8b43241df22d1c183f6f204a87eaf1f0724",
+    "program_sha256": "499030f17711e995f6fb7191decbb029edf00bee9f402e6fcee0203b6b6d30da",
+    "render_sha256": "cf14dbb8f9f4854045b6a8af441d17fb0c90cfe5e631e12bbf79b87d1e744716",
+    "reason": "Wine bottle and filled wine glass on reflective table retain placement and identity.",
+    "drawback": "Bottle label and reflection are abstracted."
+  },
+  {
+    "id": "coco128-000000000307",
+    "label": "keep",
+    "reference_sha256": "c839076b4fa14020f97c8a5909c84a1e85c912ca262a91c8c4648ebe27caf61f",
+    "program_sha256": "8830784434ac0e7f576401f475302e3bfb9762b8400c3fc565953ac0aea23c7d",
+    "render_sha256": "ec85f199247607057130bc769ffa775978fbbe66636b2290a5d7b07c204b421d",
+    "reason": "Dog running toward a blue/yellow ball across grass is preserved with clear action.",
+    "drawback": "Fur and distant landscape are reduced."
+  },
+  {
+    "id": "coco128-000000000309",
+    "label": "needs_repair",
+    "reference_sha256": "40087a8191fc80eba012c1ba4735402b4890aa0669a84ea0d3dac043ca543247",
+    "program_sha256": "7b33fc630f82b30c5f4e0195ab12d8aa56b880a1b8ba645f5df6f314872c7f14",
+    "render_sha256": "0d6ab50abf3e0b71dced2e660cc69c427731ea598dc8ebd76a3493c6f41c4869",
+    "reason": "Plush bear and green ground survive, but the reference's top-down toy/child context is ambiguous in the painting.",
+    "drawback": "Pose and object boundaries are muddy; repair the bear silhouette and surrounding context."
+  },
+  {
+    "id": "coco128-000000000312",
+    "label": "keep",
+    "reference_sha256": "cd2fac2dfdc17fb1af0d12228e344d2e828fbe28a7c1e32396a95cb0b129d096",
+    "program_sha256": "78dd88205f561e6bb7135466e54bf27f9b3bf93e3c1f2b06477472961e329ce3",
+    "render_sha256": "1071e804e699abd2a6656d3b55692a29eaf38610fbec1e077204fb78e68078b6",
+    "reason": "Reviewed prior label.",
+    "drawback": ""
+  },
+  {
+    "id": "coco128-000000000321",
+    "label": "keep",
+    "reference_sha256": "60f0acad099ad5cf55f44968cea66e125e0beb7eb20a1d78888ee9db34e28cd8",
+    "program_sha256": "cba20087b00217a8397a94e51a68e40532164c736d31b91fffee62bbb27071d7",
+    "render_sha256": "b9f4e3e56a26f7a2860ce91a5a63ecd0a5064b4825411cdb7e928f2a4e06650e",
+    "reason": "Reviewed prior label.",
+    "drawback": ""
+  },
+  {
+    "id": "coco128-000000000328",
+    "label": "keep",
+    "reference_sha256": "8ba0ed80d34589221b1243e0764471d91716b3a267827cb37ecfc3cfae52cc90",
+    "program_sha256": "44386eb2d6d9aae475b1b8e2cb24e4954815a466d8d14b3ce07879fa8f392314",
+    "render_sha256": "bf3f8d4905db5cf0dcfc72b356566b93289d4103716d20f7977f20068bf0e3c4",
+    "reason": "Three uniformed people seated on a bench with papers and circular foreground object remain well organized.",
+    "drawback": "Faces and camera/bench detail are generic."
+  },
+  {
+    "id": "coco128-000000000338",
+    "label": "keep",
+    "reference_sha256": "fdf5b5b2f8227082a5542fbc33b5f8740b040d345653c33bec6158d835542d6b",
+    "program_sha256": "93f3f37bd747ad193031dacce877a46405bcd87d35a58e461f7ddfa012e24bf0",
+    "render_sha256": "bc4c5256e130ea8314b1f244ddeb34c338bb97dd75136926b59a434cac884e9f",
+    "reason": "Reviewed prior label.",
+    "drawback": ""
+  },
+  {
+    "id": "coco128-000000000360",
+    "label": "keep",
+    "reference_sha256": "1a5d039418eacc09510efabcd466dc05701f0dac9ae0040b05a1b30b796ef96e",
+    "program_sha256": "dae7195b68e4f1287172a31e9d8c0741d9aa9b74707a40a468353e611b3017f2",
+    "render_sha256": "326263af31d21eb514cdc581895ff386a7758b9c5bc4c14b0502a34fe16c9c84",
+    "reason": "Reviewed prior label.",
+    "drawback": ""
+  },
+  {
+    "id": "coco128-000000000370",
+    "label": "keep",
+    "reference_sha256": "0d3719ec6f6f54229f498f7b01b113a864cd1eeccac196086741d98e23ae2455",
+    "program_sha256": "14e060e0c79921d63658b5ead4baae6207bae85dc4c613dc3eb0a42193567442",
+    "render_sha256": "ce46130dcb8d8e4475ecca1ba8622f1693e158f092ef751caa3f7e071bd219ea",
+    "reason": "Child presenting a large green broccoli toward camera is strongly preserved.",
+    "drawback": "Face, fingers and broccoli texture are simplified."
+  },
+  {
+    "id": "coco128-000000000387",
+    "label": "keep",
+    "reference_sha256": "079af237aafcdddfe5a528ef5e40f38ca449fce9ad5a49fbdaaeef068fac7c76",
+    "program_sha256": "b2fe16a3a71561ab3da4a38a5224d02b0d0fefcbfc5eaf4249b62fa39b052e96",
+    "render_sha256": "6d6f8d291139848971cb3edb549e30a3f606e13da634430335015ee88e56c95c",
+    "reason": "Top-down handheld device on a layered tabletop remains identifiable and compositionally aligned.",
+    "drawback": "Device controls and cables are reduced."
+  },
+  {
+    "id": "coco128-000000000397",
+    "label": "keep",
+    "reference_sha256": "5011e5e9eac564d30fa652281a7fd1d7693545077971741a241f400611e4c33e",
+    "program_sha256": "60315fdc0d2d653a4f373c29581c579ae2b714b43eb399690886977f7f3ffc1f",
+    "render_sha256": "9e41b8cb8a9b448d436f338a709c6c5358209a8af22b884ad2f8526b48832069",
+    "reason": "Large pizza on a plate with basil/toppings is clearly rendered in an appealing graphic style.",
+    "drawback": "Crust texture and table context are simplified."
+  },
+  {
+    "id": "coco128-000000000404",
+    "label": "keep",
+    "reference_sha256": "c46b3242d195c8c81b6776f4bfa385ef886ff1e7cb814e2c29e03303b85403b2",
+    "program_sha256": "534de1842836466b1667b37319551a9245684f73acf11b612844765073b84e70",
+    "render_sha256": "7c822d18e51346a9a4527cc2673dd0ab12af052855f36d8c0ba431ebef720cdd",
+    "reason": "Several colorful fishing boats, poles and horizon/water bands are preserved.",
+    "drawback": "Boat rigging and reflections are sparse."
+  },
+  {
+    "id": "coco128-000000000415",
+    "label": "needs_repair",
+    "reference_sha256": "cc75d90eac7419395e81ddd7e33c81dbec387892e086b40cbf12dc3fe09f8bb1",
+    "program_sha256": "04fc183bf65986ca71390eb4e436a36747ced9996a6d84cb6cbc2bc971ecd6dc",
+    "render_sha256": "f64b8b7ef7a9eb6ca7f0e35b4c840996728bc03d886603ffadb6931f8cdfef4f",
+    "reason": "Teacher captures snowy landscape and tall sign structures but omits the distinctive foreground airplane in the reference.",
+    "drawback": "Key object identity is missing; repair before training."
+  },
+  {
+    "id": "coco128-000000000436",
+    "label": "keep",
+    "reference_sha256": "84b778ac377b3fb394edee6f6c3e688c600a3ac440247b64942b1e6e116ff9a3",
+    "program_sha256": "09b09aaf8089bb3e6760faa3f5868175432032aa14f1683531e125103602a9b5",
+    "render_sha256": "185ab3a65e07d04f4da36717a891250e29bd7a5688946a3cc396d930c0e6684f",
+    "reason": "Seated man eating a bun, glasses, shirt and wristwatch retain the central action and pose.",
+    "drawback": "Hand-to-mouth gesture and room details are simplified."
+  },
+  {
+    "id": "coco128-000000000443",
+    "label": "keep",
+    "reference_sha256": "f6483d57885c348a27dcdc272e4bd5296c75596d7c64fe638b24dbb503209902",
+    "program_sha256": "1cce1770b0f7fd6374bc51d62d4db4fd519cd5b37ab630bd5cfc9d5fb9279182",
+    "render_sha256": "f5327b6d8e804d7ed4fff53867eb4c9df99a0bd1a4929a300c283de2c4173bd9",
+    "reason": "Cat lying on a person's lap with hands, remote and orange couch remains readable.",
+    "drawback": "Cat anatomy and surrounding hands are stylized and less natural."
+  },
+  {
+    "id": "coco128-000000000446",
+    "label": "keep",
+    "reference_sha256": "41f3d2ce74148a9628d29ac8ddb5eeed3a07394a55b72e75df5d418d5887ef50",
+    "program_sha256": "e180fb2217121c6f6d83c21622c210dd0d6285c9a772096158ac454cf1d380e3",
+    "render_sha256": "61f6495d72e5c87ea05ab77ebe50bf1ab5eb409d4bbce7958bc27706ec9a97d8",
+    "reason": "Woman standing indoors holding a long object, shelves and plants retain the scene's arrangement.",
+    "drawback": "Object identity and hand grip are somewhat ambiguous."
+  },
+  {
+    "id": "coco128-000000000471",
+    "label": "keep",
+    "reference_sha256": "8f473ca6e651f74a74efea3673445230f6bb7d6ae92f76bf3c1e523853ec3995",
+    "program_sha256": "bb636e6f65c9de7ced731541401ff543963ce67eabfd09fdc860dc0db4528791",
+    "render_sha256": "c4862af080d0e2206522af89d34ab7fb47013860c8e972346c27f0ecf53dcda5",
+    "reason": "Yellow school bus in side three-quarter view, wheels and open lot are strongly matched.",
+    "drawback": "Front details and distant scene are simplified."
+  },
+  {
+    "id": "coco128-000000000474",
+    "label": "keep",
+    "reference_sha256": "e5a6b72ea2fda1cd1ea969018036e6da16fa491f9a2ac974a7361b539b00a155",
+    "program_sha256": "6689b358cbde3b94fa8848d4c26d6bb6c0264b134eedc3d4018d1875500aea4d",
+    "render_sha256": "7d24700c004ba883d3e5edff05209bcdc52b1c365541bec38d3ea88691dbc4da",
+    "reason": "Child crouching with baseball glove on grass retains pose and object relationship.",
+    "drawback": "Glove and hand anatomy are simplified."
+  },
+  {
+    "id": "coco128-000000000488",
+    "label": "keep",
+    "reference_sha256": "9e1c9d4c88d38e6a2cd2f775bea82c137c14dc3b13f8430bcdadcb89ab0b7022",
+    "program_sha256": "0c2eead328d166f23073bd59d2705d6a47d2c906cf687bc46cb308a51f45f94b",
+    "render_sha256": "491c86ef89f116b95d2be3bf8223465c23a3587636b72f064059674e76a6cb32",
+    "reason": "Baseball batter, catcher, umpire, diamond and outfield are preserved in the same action layout.",
+    "drawback": "Player gestures and field markings are simplified."
+  },
+  {
+    "id": "coco128-000000000490",
+    "label": "keep",
+    "reference_sha256": "1274c3c4010d45ddd84faf1c56f7c997c0c2533e4f25c6ccea25e8233e5684e5",
+    "program_sha256": "3d3f446dfd093d18607305abcc6308d98ba3cef89c568b8a753c55117c417db9",
+    "render_sha256": "7dfbd3724cc8ce2dafbf10b9b4b0976e1343c474b67a974c096aecfb0f975ac0",
+    "reason": "Dog, skateboard and strong window shadow are retained with clear indoor layout.",
+    "drawback": "Dog/shadow interaction and skateboard perspective are simplified."
+  },
+  {
+    "id": "coco128-000000000491",
+    "label": "keep",
+    "reference_sha256": "9d5732e879b066bfe8a38e3fcad64836fa1a5ac9f507625082c4b14fe449f993",
+    "program_sha256": "e3016179fe32e9f4ef05f6137acba3c3556570c312a8804d3741555748ca61a7",
+    "render_sha256": "fe52cf6adab38ffdaf8582faf98c8d656afa42e56cd8ac93398a82706ee72f7f",
+    "reason": "Reviewed prior label.",
+    "drawback": ""
+  },
+  {
+    "id": "coco128-000000000514",
+    "label": "needs_repair",
+    "reference_sha256": "073520d67d44551b4e0bc24d4eb3a6bb68bf00481a8b15d9f34479e787d2cba9",
+    "program_sha256": "35c9ab38368bc3da9f4fec0d81f7f70b7d28d99e08aec61db610c8e057cf26a2",
+    "render_sha256": "febfeee5b31bff05a240008c88b29efda60bfa34a8e27ecbffc2d4f82dd7936f",
+    "reason": "Ornate canopy, curtains, framed panels and bed/platform remain, but the painting collapses the distinctive interior geometry.",
+    "drawback": "Repair canopy supports, curtains and panel placement for stronger room identity."
+  },
+  {
+    "id": "coco128-000000000520",
+    "label": "keep",
+    "reference_sha256": "2b971302ba56e1049294f9e0b198f37316148c8257b8d7344002aed624c45844",
+    "program_sha256": "e3903bc7664b31bf45629cd418d37bf5ee42ec312265f090c829ec89cb63e076",
+    "render_sha256": "0d4e96ac397c0e343d7f85b516b9906140448cb8daf84d844a6836859916bd21",
+    "reason": "Pier, water, skyline band and flock of birds are all retained in a coherent atmospheric composition.",
+    "drawback": "Bird shapes and pier texture are sparse."
+  },
+  {
+    "id": "coco128-000000000529",
+    "label": "keep",
+    "reference_sha256": "5d9958bdec3062b05090258293a19af01d231de69b943d1ff0bb4a7b943e6db3",
+    "program_sha256": "cf4e35f2ee5108082b751c10ca774d43e0ee564dd2fa3d573918ce571d78705d",
+    "render_sha256": "3bb7807a6d7ef8fe576f24339ed2666eed50d0a672b1d31b0e9c2b2831c2a483",
+    "reason": "Reviewed prior label.",
+    "drawback": ""
+  },
+  {
+    "id": "coco128-000000000531",
+    "label": "keep",
+    "reference_sha256": "111bb407e512f23fcc14bbc51ad4b312b0797332aab86ecd9373808286ed30b1",
+    "program_sha256": "5a879463435eb2c6b15e31e56d349ea7944ed78c0e372c7cf625d122ccad5b52",
+    "render_sha256": "cc0bb54fadd8c4d8a94ffb5d60b3bfb4b0ed70538aae5d30e61395b675a91d9f",
+    "reason": "Tennis court, net, players, red perimeter and housing backdrop match clearly.",
+    "drawback": "Player scale and court texture are simplified."
+  },
+  {
+    "id": "coco128-000000000536",
+    "label": "keep",
+    "reference_sha256": "745e538b3979ffa93f63bb294163e173d9a99413bce6cf3289215b541c9f1eb1",
+    "program_sha256": "c10028bfbb0cda9ef05ca69b9e1ea8894f785df201b51351c97c9b31fed95541",
+    "render_sha256": "f4bbeb45d3905d140610810a0cdd1b71e24ef2a65126bbb784304653acd97b09",
+    "reason": "Four women in dark dresses seated/standing indoors remain distinct and correctly arranged.",
+    "drawback": "Faces and dress details are generic."
+  },
+  {
+    "id": "coco128-000000000540",
+    "label": "keep",
+    "reference_sha256": "32099f009fcb436bad1bd59b5d48b3e5620fa667a83db5a09879e158dd346103",
+    "program_sha256": "bd3ca5e0325bba61f081dcc0cb02c4e7ae3c8c5e1bb05f7da159952fe7f7d156",
+    "render_sha256": "20d04366a39d3285099c1e1289caf62505dd24321b37f67fa09550d12bca6d35",
+    "reason": "Airliner on runway with terminal/roads and red tail is preserved in strong horizontal layout.",
+    "drawback": "Airport structures and aircraft windows are simplified."
+  },
+  {
+    "id": "coco128-000000000589",
+    "label": "keep",
+    "reference_sha256": "b028805b2fb2c666ef72d4a7a01677bcf0ed56fb4d14cadc8646acdf379999c7",
+    "program_sha256": "ec2388961792f4f6dbf7abb03fd3fa34ce538493ebe9fa309d1d0a8b5d3ee2c7",
+    "render_sha256": "54169f95639400c334c69ecee0112b2c46b8f7a14e770b95b1cd023ad58c9bb1",
+    "reason": "Reviewed prior label.",
+    "drawback": ""
+  },
+  {
+    "id": "coco128-000000000605",
+    "label": "keep",
+    "reference_sha256": "9135dd0723240d2d4f64ce2173901a0f23a222dea98b72e1259c28f28fa2aab6",
+    "program_sha256": "dae3ec3209bd86437681b3295b773721de877a19bf92db93d063f311f543b76e",
+    "render_sha256": "0dc11b3b757ee2d028ff440e5ced55a5edad8ddf6c298fdae494f8b2822bdaf9",
+    "reason": "Coffee cup, blue saucer, spoon, pastry and wood tabletop are clearly preserved.",
+    "drawback": "Foam detail and pastry texture are simplified."
+  },
+  {
+    "id": "coco128-000000000620",
+    "label": "keep",
+    "reference_sha256": "4c7d0e5b1ac23a287f95640c4aaab93a0e120c384558e3fff70b96f6f1eb80ce",
+    "program_sha256": "1720c82b39d76a3ba98aa7944939109c4f2b89e9d9fb6b9f71fb1377148a52e5",
+    "render_sha256": "69fd47b96ba1a1add2a492f8a51f59016f8eeabdb4f279f43b9a4c5a11bea1e7",
+    "reason": "Reviewed prior label.",
+    "drawback": ""
+  },
+  {
+    "id": "coco128-000000000623",
+    "label": "keep",
+    "reference_sha256": "c11d16bc49acabc2a52b990174110753dbe3a9a71eb7aa37af8f5fc4c616fb20",
+    "program_sha256": "a146b789287baf04d1bd85d5c26ba220740c6ddfccebdaeba668a10430cbcefd",
+    "render_sha256": "d2df560b75fc1a13c263a642f4476b178f1d9b6d1ffe3c839af267b3f0564922",
+    "reason": "Large teddy bear in pink apron and seated person at right retain dominant scale, overlap and pose.",
+    "drawback": "Bear/person anatomy and contact are simplified."
+  }
+]

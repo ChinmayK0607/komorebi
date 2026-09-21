@@ -1,0 +1,452 @@
+[
+  {
+    "id": "coco128-000000000042",
+    "reference_sha256": "9008ddd846fc6002ec47ea6067cb92cf70f294773cc15765b6a14ffb392f52fa",
+    "program_sha256": "d2a6372fae5971bd23e2fc3c8935d37b0aef5093fe2c1840697b73a29c682e92",
+    "render_sha256": "8a5ac85a39b0f977968ddf8fb610e1f3bf1e7dcf6f255206ac339cdff4e5ee86",
+    "decision": "reject",
+    "reason": "Teacher depicts a small animal on piano while reference is a dog curled among shoes; subject and setting mismatch.",
+    "drawback": "The main fidelity issue is described above and should be fixed before use."
+  },
+  {
+    "id": "coco128-000000000071",
+    "reference_sha256": "5393bf6575c435daa599c1272d9e61e99c099994ae4d3755311684663fed0917",
+    "program_sha256": "496daba217d16e0cc4d08dafb9d408b53356b8a2250c405befff6324bde7a525",
+    "render_sha256": "861ad630224b39d384df4c6754bb69cf2bac1ba29f0b43c3791cbff7cffa35e3",
+    "decision": "keep",
+    "reason": "Stylized rendering preserves the reference subject and main composition with acceptable abstraction.",
+    "drawback": "Fine details, texture, and exact photographic lighting are simplified by the graphic style."
+  },
+  {
+    "id": "coco128-000000000073",
+    "reference_sha256": "4a17dd87b487b4b6432d3aa60f6026a5349c8708834a3cae141ff16e0539a32c",
+    "program_sha256": "9f7fa9e3a79c8e6204a1144d697752b18a51836e0dbd87d7596e782e898b666a",
+    "render_sha256": "990d51fd46a1fc3ab7ebc252ec99a31ab9ecb85dc92c2a23944f0cee1b4267bf",
+    "decision": "keep",
+    "reason": "Stylized rendering preserves the reference subject and main composition with acceptable abstraction.",
+    "drawback": "Fine details, texture, and exact photographic lighting are simplified by the graphic style."
+  },
+  {
+    "id": "coco128-000000000074",
+    "reference_sha256": "99d864809a7355862032b54283bd4808971da5a2b976b20467203e6c192e755d",
+    "program_sha256": "9e8e272fb83dcaa48586b02bbd16cc50228b4bc85e3d322022db56f42871ba0d",
+    "render_sha256": "3e749404eb2a2a2750c6e58079d96064b560a594cedc1e669e52ef964d9f8dc3",
+    "decision": "reject",
+    "reason": "Teacher depicts a mouse in a barred interior while reference is a white dog lying on a street; gross subject and scene mismatch.",
+    "drawback": "The main fidelity issue is described above and should be fixed before use."
+  },
+  {
+    "id": "coco128-000000000086",
+    "reference_sha256": "f58a99916783cdf4a7619286dc46adedd4ea1143bcc2cd773c6504aa5280915a",
+    "program_sha256": "c7b078dd725c9ea6e7b8afa82fe5c2b9b133a3b34fe7cb28c02acf0e98b9ecc7",
+    "render_sha256": "7ccbf9903d19ac9138d3719d34bfd39ce5562b34947b60021b48cb1366bfe47e",
+    "decision": "keep",
+    "reason": "Stylized rendering preserves the reference subject and main composition with acceptable abstraction.",
+    "drawback": "Fine details, texture, and exact photographic lighting are simplified by the graphic style."
+  },
+  {
+    "id": "coco128-000000000136",
+    "reference_sha256": "e20c569a1e6174fd845a434a3fe3d50fb4f8a0e275fb348cc2c9b42a11600ccc",
+    "program_sha256": "cb6a8e5bb354d48afde7373b5ff922c6b3c646f358868acd457ef3c90be78476",
+    "render_sha256": "bd99fce958df939fb9369b339ff9b0d4ffb1448c1b424a94c01ed90cfc2d8e26",
+    "decision": "keep",
+    "reason": "Stylized rendering preserves the reference subject and main composition with acceptable abstraction.",
+    "drawback": "Fine details, texture, and exact photographic lighting are simplified by the graphic style."
+  },
+  {
+    "id": "coco128-000000000143",
+    "reference_sha256": "03d4d20019d5abdf6f9314a166f8f8cf582f1d0d2167beef7ec2400d0f1b629e",
+    "program_sha256": "1b3bd91a86eabe8b9d58405bc00dc4a4ac381f841bc3b7e7fba789bc9ca24c18",
+    "render_sha256": "18ce949d33f73d4be3a1b847e164e7eae4cfeeeb8194ffa54522e9f4e6709a5a",
+    "decision": "keep",
+    "reason": "Stylized rendering preserves the reference subject and main composition with acceptable abstraction.",
+    "drawback": "Fine details, texture, and exact photographic lighting are simplified by the graphic style."
+  },
+  {
+    "id": "coco128-000000000149",
+    "reference_sha256": "73a20e38429ba6c78f62a90df787360c4a9ae3d331b002b509a8ee15179788a4",
+    "program_sha256": "e64d59c8fc31b77f0e11286fdd5b6483a7181a318a931bedbbe1051ecd73f9f4",
+    "render_sha256": "265f95d5e39e139bd85fa0f1167d9a254dada5d60e43eb5175b24748d0d5ae79",
+    "decision": "keep",
+    "reason": "Stylized rendering preserves the reference subject and main composition with acceptable abstraction.",
+    "drawback": "Fine details, texture, and exact photographic lighting are simplified by the graphic style."
+  },
+  {
+    "id": "coco128-000000000151",
+    "reference_sha256": "b92d7d249e574fbd4ad8ba2fbc2c1879ca281b779f1276ac3daa0304b80039e4",
+    "program_sha256": "aee526f0860f27e691bd79e495c16abb3782389a45d8f59bbdbe5c03eb9a8286",
+    "render_sha256": "751038a382d81fd5f7e85ef4f902782747187afb52eaf635c7a7c49656fc82fe",
+    "decision": "keep",
+    "reason": "Stylized rendering preserves the reference subject and main composition with acceptable abstraction.",
+    "drawback": "Fine details, texture, and exact photographic lighting are simplified by the graphic style."
+  },
+  {
+    "id": "coco128-000000000154",
+    "reference_sha256": "2938c94a9b07cacf10a8343c35949b065ae868190a11020f458f50450bd13552",
+    "program_sha256": "376609ca3d580ed566df39e441d44a599acc45e4d1994a5e5008b25bf60dead5",
+    "render_sha256": "0f53c80ebb317d6229c27f359d75a5e13fd59d7763fa5de4c619c72203f0245b",
+    "decision": "keep",
+    "reason": "Stylized rendering preserves the reference subject and main composition with acceptable abstraction.",
+    "drawback": "Fine details, texture, and exact photographic lighting are simplified by the graphic style."
+  },
+  {
+    "id": "coco128-000000000192",
+    "reference_sha256": "93a9d9132aefccbb1f1bfb51198b5b427d1cf4a977ef259c9d0507ee5b0df732",
+    "program_sha256": "1b0c5b28d157d6a38a2febf20949c22cd0accc3b926f494180fadb972e36e07d",
+    "render_sha256": "47e3ba5f72c6fcd1e564371ddcd0db83cc0117de7c4f77cf9515703c7a7d9d34",
+    "decision": "keep",
+    "reason": "Stylized rendering preserves the reference subject and main composition with acceptable abstraction.",
+    "drawback": "Fine details, texture, and exact photographic lighting are simplified by the graphic style."
+  },
+  {
+    "id": "coco128-000000000196",
+    "reference_sha256": "1e1d801e63ed90d34ee666845ebcc17b56edef1f864d048ff588ce7073bc94a2",
+    "program_sha256": "fb8322c35e01f3202787e70e40a518211248e640c5dca18265a9b3a756eeb520",
+    "render_sha256": "fef8b393978a635a8fb5bc0fb8207d6fb589ddf5d32c9d36fe490c46b0a208ac",
+    "decision": "keep",
+    "reason": "Stylized rendering preserves the reference subject and main composition with acceptable abstraction.",
+    "drawback": "Fine details, texture, and exact photographic lighting are simplified by the graphic style."
+  },
+  {
+    "id": "coco128-000000000241",
+    "reference_sha256": "14007b87745069ed85c6412dffc8ad11a22de98d5f5c9ae896523e12622961c5",
+    "program_sha256": "3c5ddf51e2d92a3fc00ab414f46fb5ad96c84c4ef30c26de57717174c1915d9f",
+    "render_sha256": "bddc1b3f098f5cda1c47507a0845abfb44788d25cd0826b7d2bfb8573f325f32",
+    "decision": "keep",
+    "reason": "Stylized rendering preserves the reference subject and main composition with acceptable abstraction.",
+    "drawback": "Fine details, texture, and exact photographic lighting are simplified by the graphic style."
+  },
+  {
+    "id": "coco128-000000000257",
+    "reference_sha256": "ae711135026cbd548fa1e04edc0ee96bce57162587e0238e7f76b4dc46cf4208",
+    "program_sha256": "9278ba1e70cf8032cea5773af57cf2e934dca08bf284ceab8bb59604a5207d42",
+    "render_sha256": "47f0d01e357a13aa73736f15a24a8c4c0db493adafee544b7e9c58e0a11b2243",
+    "decision": "keep",
+    "reason": "Stylized rendering preserves the reference subject and main composition with acceptable abstraction.",
+    "drawback": "Fine details, texture, and exact photographic lighting are simplified by the graphic style."
+  },
+  {
+    "id": "coco128-000000000260",
+    "reference_sha256": "f70992bbd14794773e27801c4cf4ba34ca4f453eb2efded62c2a558c40e3885b",
+    "program_sha256": "6a419721f833e7a1a9a01469f8dbd9e272eb47c9fe97ea9336fb16cb96009a93",
+    "render_sha256": "848dc4e0d7021dc9ff6726019258d80792f030f0c527f4f83a4fe2ef5320b1ab",
+    "decision": "keep",
+    "reason": "Stylized rendering preserves the reference subject and main composition with acceptable abstraction.",
+    "drawback": "Fine details, texture, and exact photographic lighting are simplified by the graphic style."
+  },
+  {
+    "id": "coco128-000000000263",
+    "reference_sha256": "4abc27b830dedd072dab619c6b7f2467886f601e41b0cc8c2de888f57cf90d7b",
+    "program_sha256": "6faca3fb66b61537063f064646638017bbb4e29f5f16118e26ac6fe3b678f875",
+    "render_sha256": "02ccacf070b617d43be3f4598c6889c452f6da6c0c5db32a48eb9cd07106c44f",
+    "decision": "keep",
+    "reason": "Stylized rendering preserves the reference subject and main composition with acceptable abstraction.",
+    "drawback": "Fine details, texture, and exact photographic lighting are simplified by the graphic style."
+  },
+  {
+    "id": "coco128-000000000308",
+    "reference_sha256": "07c410e96a812351bf385add8645b8dc2ed064902ff2ef01072be6351b428393",
+    "program_sha256": "72a823f9ed7964fdd32e05d1f368413ca92c3aeeafa934f9ce2fd57cb2c0a683",
+    "render_sha256": "92174a92437347583ac549dc0e63090485596fae4333d2e3925adac94e4406f0",
+    "decision": "keep",
+    "reason": "Stylized rendering preserves the reference subject and main composition with acceptable abstraction.",
+    "drawback": "Fine details, texture, and exact photographic lighting are simplified by the graphic style."
+  },
+  {
+    "id": "coco128-000000000315",
+    "reference_sha256": "5804350236bc0d52715f9354498d52f8d260b0e3d8f965526cd85ca6a18b7caa",
+    "program_sha256": "ec99ea875ae4c5423bad453a0797e32125013a5336505f47e923ec1ba1b0c652",
+    "render_sha256": "a6d95c89290249c73beea94fd6a43fc6640d57cdf2e7869f9fd7955d4479a4ea",
+    "decision": "keep",
+    "reason": "Stylized rendering preserves the reference subject and main composition with acceptable abstraction.",
+    "drawback": "Fine details, texture, and exact photographic lighting are simplified by the graphic style."
+  },
+  {
+    "id": "coco128-000000000326",
+    "reference_sha256": "d8c9b6803795082707fcd62f2d1d38826709836504e330db3e7b4713c3316d59",
+    "program_sha256": "77ca8c047f8b7ce5bcd7209b4b94e66d3ccb0a3df0e3bcbac1062dfc3c43318d",
+    "render_sha256": "b3976bafc585cb4d882d67965c14443ee60c9dc41d7b29e1cfd3c16dfbd96c62",
+    "decision": "needs_repair",
+    "reason": "Person and raised glass are represented, but the distinctive wine pouring action and dark close composition are simplified into a different pose.",
+    "drawback": "The main fidelity issue is described above and should be fixed before use."
+  },
+  {
+    "id": "coco128-000000000349",
+    "reference_sha256": "8ad9716416dc27aeff76bb09d936949f67627cb30948288b61c117df34501049",
+    "program_sha256": "873f995b114ba75a5b09b973ce5ddc84f7bd20f0ef88909d3e3591c8dbfce05b",
+    "render_sha256": "b150287fb98e9846fa3af0b4f2a1c9dd49303a2350c5829130128ffc33d3e0be",
+    "decision": "keep",
+    "reason": "Stylized rendering preserves the reference subject and main composition with acceptable abstraction.",
+    "drawback": "Fine details, texture, and exact photographic lighting are simplified by the graphic style."
+  },
+  {
+    "id": "coco128-000000000368",
+    "reference_sha256": "a10be0a1beb5a34b50af22cc657dbf186a944db7ce8924e570295f35bd954036",
+    "program_sha256": "6061c680a8cff9c938890f3216e807f903a77425aefc012a24102de4d1d74294",
+    "render_sha256": "23c476f74bbf32f5ce32256a2efd387d5c2b3e2871c1827e9dd17ecca56a1b7b",
+    "decision": "keep",
+    "reason": "Stylized rendering preserves the reference subject and main composition with acceptable abstraction.",
+    "drawback": "Fine details, texture, and exact photographic lighting are simplified by the graphic style."
+  },
+  {
+    "id": "coco128-000000000384",
+    "reference_sha256": "dfbae064fadcaa79bd319410903bc92052349472115e2d515e0ecf3c944d1048",
+    "program_sha256": "7cb7951c4a5df4b9f2463ccceb57705bf955225603c1a41e1f3d4b1bbe7eaf6f",
+    "render_sha256": "609597863f94c434b9f3ace2136c10c7a7865167c1fd3f2e7038f4893001cf1a",
+    "decision": "keep",
+    "reason": "Stylized rendering preserves the reference subject and main composition with acceptable abstraction.",
+    "drawback": "Fine details, texture, and exact photographic lighting are simplified by the graphic style."
+  },
+  {
+    "id": "coco128-000000000389",
+    "reference_sha256": "f6d313afba47fe0747d1d78cd342f420eb305de8faadb5cb164de428522b40d6",
+    "program_sha256": "81dc2330ac74585d7bb46145b90e35b46705269de4ce278053173adba5f4a2ef",
+    "render_sha256": "4b57a9762af4acd7297ec635dc4aa2dc40102d849cd42bff585db5c885a51943",
+    "decision": "keep",
+    "reason": "Stylized rendering preserves the reference subject and main composition with acceptable abstraction.",
+    "drawback": "Fine details, texture, and exact photographic lighting are simplified by the graphic style."
+  },
+  {
+    "id": "coco128-000000000394",
+    "reference_sha256": "2cf78c1cfa98714d2ed8a643f931c39511bbb6085fddf157b27ed709089e0343",
+    "program_sha256": "2b5ddcc33c757484278fa11ef58d91553f6f0ffdbf334068a8b56bc207fe6684",
+    "render_sha256": "a3deb50105d77d0e49ae1af114ff954e3a9dec9f6fc3369c375567d2a43ac4dd",
+    "decision": "keep",
+    "reason": "Stylized rendering preserves the reference subject and main composition with acceptable abstraction.",
+    "drawback": "Fine details, texture, and exact photographic lighting are simplified by the graphic style."
+  },
+  {
+    "id": "coco128-000000000395",
+    "reference_sha256": "8d823d141724cc8656ccd48b49d6e44556ca399fbbd8458cc488f0d9816809a4",
+    "program_sha256": "a9f7082ccfa095cd1e5f4fe1514f3d3ac2cad777948b24d516cc6e0a3579a749",
+    "render_sha256": "d4405c5b283a205e0e26e336b5739094b1e714ac02b963a3c92b378eda858c31",
+    "decision": "needs_repair",
+    "reason": "Red jacket and phone scene are present, but crucial hand-to-ear phone gesture is missing.",
+    "drawback": "The main fidelity issue is described above and should be fixed before use."
+  },
+  {
+    "id": "coco128-000000000400",
+    "reference_sha256": "7b78338d4c7a30f7c38eb3bf11a7623a195e10926359adfd7281d6ce99e42dcb",
+    "program_sha256": "714567825c4666b458194a4ca2f9833fe4e5c68e44af4cd15c67acf0516262f8",
+    "render_sha256": "37e5998b6ddd7a2cc452b9881df77fd7b09bcfa550e1746348288e71e9bc6d37",
+    "decision": "needs_repair",
+    "reason": "Boat and dog are only loosely related: teacher depicts a boat with indistinct figure rather than dog peeking over rail.",
+    "drawback": "The main fidelity issue is described above and should be fixed before use."
+  },
+  {
+    "id": "coco128-000000000428",
+    "reference_sha256": "49e87dbacfb3911d83fde336b7c01b79cc7bc77a021a601f2eb8d861f170a466",
+    "program_sha256": "836084b9942a8c5232e303fef32206f4a7903bf348898faf18dd736f84e154dd",
+    "render_sha256": "d08f2b94246eb9a505f2d0fc12fe0eeaa6232799958ebb10cab26a2f005c9442",
+    "decision": "needs_repair",
+    "reason": "Baby and cake are present, but reference's raised hand and balloon interaction are omitted.",
+    "drawback": "The main fidelity issue is described above and should be fixed before use."
+  },
+  {
+    "id": "coco128-000000000438",
+    "reference_sha256": "ee66d39f65c8ce3421fda1ca85b1942f6dff29813c97b6fb4ea4ed015c3a822a",
+    "program_sha256": "d39eaa69cefe2e7d2ea52de86b74048a00376a26581b06f2d1fb8bbe4ba231a3",
+    "render_sha256": "b414e8c3bdf53fe3e4cc01be3a04b69a667b85d645ad4baab1215af6d76820d1",
+    "decision": "reject",
+    "reason": "The varied overlapping pastry assortment is replaced by a generic neat donut grid, losing reference arrangement and object diversity.",
+    "drawback": "The main fidelity issue is described above and should be fixed before use."
+  },
+  {
+    "id": "coco128-000000000450",
+    "reference_sha256": "3b1fe58cb414f373c61990a5fed4f1a6418a02b2e8a3ed3ecef613f4e7198068",
+    "program_sha256": "f73ac7e0310cf1aa75df68f66ebda84d62a391644440c263933b6acb0cba32c9",
+    "render_sha256": "e5462b1a59060a3b2d1965b63260f0d0163a055babdaf0871ef03865444069ae",
+    "decision": "keep",
+    "reason": "Stylized rendering preserves the reference subject and main composition with acceptable abstraction.",
+    "drawback": "Fine details, texture, and exact photographic lighting are simplified by the graphic style."
+  },
+  {
+    "id": "coco128-000000000459",
+    "reference_sha256": "9dac859e6bc3eaf091e94593a005735f9c3c3e71c1c40a708b4c24da99b2e06c",
+    "program_sha256": "157964fadd55f1f28f7b0f3fde722637f61d162851d854b6f9090899c426264e",
+    "render_sha256": "85a5561e9e237c42c3a548d1681c63f54f10c880c60b98498ded3a04aaab72d4",
+    "decision": "keep",
+    "reason": "Stylized rendering preserves the reference subject and main composition with acceptable abstraction.",
+    "drawback": "Fine details, texture, and exact photographic lighting are simplified by the graphic style."
+  },
+  {
+    "id": "coco128-000000000472",
+    "reference_sha256": "e86077ae0fa75248880ca12cdc9ef09bb68fa68083313ce280fd77082c780769",
+    "program_sha256": "861b2d4063af3f3f3069f2e53b16b6726ca8aca06ece81750e406a76bcca1fa6",
+    "render_sha256": "aabc4c499bc4a1581e20e9d5c6f99b35df38d2abe81ee4f9809365c67445d2d6",
+    "decision": "keep",
+    "reason": "Stylized rendering preserves the reference subject and main composition with acceptable abstraction.",
+    "drawback": "Fine details, texture, and exact photographic lighting are simplified by the graphic style."
+  },
+  {
+    "id": "coco128-000000000486",
+    "reference_sha256": "cb30e9ff9b1182fc9aa328f601f0ca640236eea29ec695b57edc11a572dfbfed",
+    "program_sha256": "b11fb6882e9f43017a8f0641012e66eed7c43a4c4da840110271ac498880dc2b",
+    "render_sha256": "b365a9140a058c307ffe24e3b862f1fc11f6889953fd951b359594144c36ac69",
+    "decision": "keep",
+    "reason": "Stylized rendering preserves the reference subject and main composition with acceptable abstraction.",
+    "drawback": "Fine details, texture, and exact photographic lighting are simplified by the graphic style."
+  },
+  {
+    "id": "coco128-000000000502",
+    "reference_sha256": "f7ce0feeb7699cd56886c64ac4ea923c76be97b34ee3a2ea0909c45e08411ec0",
+    "program_sha256": "0b8436977580e97a46a109be2f3b817672707a8e62efccb0141140f6330e9810",
+    "render_sha256": "e74877a555c978fb686384e266b766792ec96002ecc27c9e16c3216617afd300",
+    "decision": "keep",
+    "reason": "Stylized rendering preserves the reference subject and main composition with acceptable abstraction.",
+    "drawback": "Fine details, texture, and exact photographic lighting are simplified by the graphic style."
+  },
+  {
+    "id": "coco128-000000000508",
+    "reference_sha256": "0fc73f660a10ed91c52f76a2b34b5fa252bf70ff84f7b2a35374726388528ca2",
+    "program_sha256": "c07dc8752013e31e9a0c9720e06d744cd5993ac2e9a34483207ec7aa42927e9b",
+    "render_sha256": "377806375668c6421e2164e57c38284927be7b201839fa5b22364c0897f22141",
+    "decision": "keep",
+    "reason": "Stylized rendering preserves the reference subject and main composition with acceptable abstraction.",
+    "drawback": "Fine details, texture, and exact photographic lighting are simplified by the graphic style."
+  },
+  {
+    "id": "coco128-000000000510",
+    "reference_sha256": "c2fcc1d44e81016f4c53e7e610c44dc28a2ca1bc5e73f73623129d261bff15e2",
+    "program_sha256": "daa559fc3af6cb6cb73ed7cade041720040977150356cc006f81079363331564",
+    "render_sha256": "a06d8e841e1d70234aa4f21cc1fa2b57d786f12c3a385bd1397c94ad8bfc91b8",
+    "decision": "keep",
+    "reason": "Stylized rendering preserves the reference subject and main composition with acceptable abstraction.",
+    "drawback": "Fine details, texture, and exact photographic lighting are simplified by the graphic style."
+  },
+  {
+    "id": "coco128-000000000532",
+    "reference_sha256": "60745e50cb857e4683d3622ac6c1e7ade63bd73ee458eb76a70455badaee2869",
+    "program_sha256": "443acee81037b63711f4026a5a73fec5ded83ea698ec28f07c57e1d4d1079837",
+    "render_sha256": "3c4e382b9e5d29513ac809955a0383f8e94da6ee57645d5d6279afa2ea832e72",
+    "decision": "keep",
+    "reason": "Stylized rendering preserves the reference subject and main composition with acceptable abstraction.",
+    "drawback": "Fine details, texture, and exact photographic lighting are simplified by the graphic style."
+  },
+  {
+    "id": "coco128-000000000544",
+    "reference_sha256": "f599082d9c87db6029fc3d6e468074d1294dc98a8755152ca7324811aa1d10cd",
+    "program_sha256": "4c7f5b4f45b0523f112b67b11c62a39d96e963b07132dab5700bb1e735659a7b",
+    "render_sha256": "85c33d1979ae3f384a86d98d2aa8257f5320caa8244254e0c946781ce8cb867a",
+    "decision": "keep",
+    "reason": "Stylized rendering preserves the reference subject and main composition with acceptable abstraction.",
+    "drawback": "Fine details, texture, and exact photographic lighting are simplified by the graphic style."
+  },
+  {
+    "id": "coco128-000000000560",
+    "reference_sha256": "96801af258ded041845af111c4535dcb12a512cf22f6fd9854e5723920532d60",
+    "program_sha256": "41a29c6c97b637f5bbae9b25c097b1d9f9642f768c9a3af0dd1867ab12b7c645",
+    "render_sha256": "6f13a5432623466a83bce5a483924a70c821ff4d2518c57524035609f24ca2b5",
+    "decision": "keep",
+    "reason": "Stylized rendering preserves the reference subject and main composition with acceptable abstraction.",
+    "drawback": "Fine details, texture, and exact photographic lighting are simplified by the graphic style."
+  },
+  {
+    "id": "coco128-000000000564",
+    "reference_sha256": "1f67bf49851ff43dba866f0cd6cc1b6f1d35ee75255a6092483550548584f477",
+    "program_sha256": "158c4d075a6c188242497234cd7f3ab33c5c1d48b8db6c9d64c56a233f6bfb3f",
+    "render_sha256": "afffb79d28e80848f905deacf7c42f37a62fbb11b4c23c99764644727ee61c3c",
+    "decision": "keep",
+    "reason": "Stylized rendering preserves the reference subject and main composition with acceptable abstraction.",
+    "drawback": "Fine details, texture, and exact photographic lighting are simplified by the graphic style."
+  },
+  {
+    "id": "coco128-000000000569",
+    "reference_sha256": "07655c58e2286ec5e8b74eee71a03841ccf732cbc502d6c380d894a14041ad5f",
+    "program_sha256": "0cde0b52588d15bde92cfd5a22777d19b3e6a6b47a6bbc56818ea916ef36a205",
+    "render_sha256": "f04eff89973b1075bc9f96c1046848c2b25f83b0fdecabf6dfc593c68aeb566e",
+    "decision": "needs_repair",
+    "reason": "Teacher preserves a person and garden context but loses the reference's overhead composition, waving pose, and flower-bed layout.",
+    "drawback": "The main fidelity issue is described above and should be fixed before use."
+  },
+  {
+    "id": "coco128-000000000575",
+    "reference_sha256": "839789fe6192bbd5776761d675aa76017b67810b556f3e25e2f3a31acffd86f3",
+    "program_sha256": "fd054bba38ee6c29c5f29375cf80320ee4952892e458e388a559054317841e42",
+    "render_sha256": "dc08698097c9a4a099185789f027d9a01086b282ab6e44725d76f59cc65dcffc",
+    "decision": "keep",
+    "reason": "Stylized rendering preserves the reference subject and main composition with acceptable abstraction.",
+    "drawback": "Fine details, texture, and exact photographic lighting are simplified by the graphic style."
+  },
+  {
+    "id": "coco128-000000000581",
+    "reference_sha256": "60ad7a794ae3032c302c4e1d5111099921ce7e8df23df4401f60bdc74dc83bf1",
+    "program_sha256": "32458fc20fc1a178c6893cff968954eb4f9f4d33fece0a48deb77d366557e953",
+    "render_sha256": "9cf2b22c3e1b2793f4f43e593c9c37c8b913ad37d993c54bdb0eff71a71ce01f",
+    "decision": "keep",
+    "reason": "Stylized rendering preserves the reference subject and main composition with acceptable abstraction.",
+    "drawback": "Fine details, texture, and exact photographic lighting are simplified by the graphic style."
+  },
+  {
+    "id": "coco128-000000000590",
+    "reference_sha256": "dd687875b5ff4fd0a91dcc910690da36858271562ea908ff61661b4cec9b4cee",
+    "program_sha256": "1718ab838b91515cdb93dc454c8d111c6b24d065964bd3319ac8176cacaaa80a",
+    "render_sha256": "c02c732fb6c94b1fb4f898416e16abc6e3efc2ca3c6b3724f4ddaf03a83449d5",
+    "decision": "keep",
+    "reason": "Stylized rendering preserves the reference subject and main composition with acceptable abstraction.",
+    "drawback": "Fine details, texture, and exact photographic lighting are simplified by the graphic style."
+  },
+  {
+    "id": "coco128-000000000595",
+    "reference_sha256": "8152ff314326c47105e065ec16ef28e1baa9dd640f40475fe385b612d5e65cf1",
+    "program_sha256": "be0a6edcbc5022d6a96e3d1f27b24ae06bddf332edcd3d30d98c3690eb0424ce",
+    "render_sha256": "a7b07b63fa1da0746a3b7a1557cbf4515ec3c4b64237aef57cc2c8593d11b4f8",
+    "decision": "keep",
+    "reason": "Stylized rendering preserves the reference subject and main composition with acceptable abstraction.",
+    "drawback": "Fine details, texture, and exact photographic lighting are simplified by the graphic style."
+  },
+  {
+    "id": "coco128-000000000597",
+    "reference_sha256": "f611f233ff6657baa61f32f573a213ef1b1af031e892f8b4e287c21a856497e7",
+    "program_sha256": "332b805c0007c317bdccc06bb8fe6fb0ef64baf034cb8bd99982ed1270468937",
+    "render_sha256": "b02b2d313221a4d1baf192d8d61866d1011212fc5a68ff028317caa21957a49b",
+    "decision": "reject",
+    "reason": "Teacher shows a generic tree line and omits the defining herd of elephants in the reference.",
+    "drawback": "The main fidelity issue is described above and should be fixed before use."
+  },
+  {
+    "id": "coco128-000000000612",
+    "reference_sha256": "9ee977eaa2947ffa1508dfc8b6e3c179a9945ee3a55529f91ede04689f00e667",
+    "program_sha256": "e0079068a1273df92d202a3f065f35ee08984738405298de3e24162298371b84",
+    "render_sha256": "01bbe0099af1090edeaa52178af337fb229468690eb884c20d772bddec1b4e5e",
+    "decision": "keep",
+    "reason": "Stylized rendering preserves the reference subject and main composition with acceptable abstraction.",
+    "drawback": "Fine details, texture, and exact photographic lighting are simplified by the graphic style."
+  },
+  {
+    "id": "coco128-000000000625",
+    "reference_sha256": "0938276afa762c367dac4968bc9a3d4abf9d83db1f4bea67262bff976568e24c",
+    "program_sha256": "c8a1e100e55c7307fbce8f861b0457460d5cb8d3af80c77a2c9a1f851f42b797",
+    "render_sha256": "fd926d707ed57a0eb7d2d865855bf1b77c9d74a14b1fcdceb32a1145dd486280",
+    "decision": "keep",
+    "reason": "Stylized rendering preserves the reference subject and main composition with acceptable abstraction.",
+    "drawback": "Fine details, texture, and exact photographic lighting are simplified by the graphic style."
+  },
+  {
+    "id": "coco128-000000000629",
+    "reference_sha256": "be76e3e5bed8c8a9a0d8081844bfca7ce013093e746b66aad13922373644ad32",
+    "program_sha256": "6af1c2c09ab3ea248defd17cf18828a8ec3718de868f912918979b6ff8072509",
+    "render_sha256": "6b69f1fc8989c82722dbfcc1d355ac1219c63ab0f18bc67c566d0fa60c6dd46e",
+    "decision": "keep",
+    "reason": "Stylized rendering preserves the reference subject and main composition with acceptable abstraction.",
+    "drawback": "Fine details, texture, and exact photographic lighting are simplified by the graphic style."
+  },
+  {
+    "id": "coco128-000000000643",
+    "reference_sha256": "53d61e69ccf08b42a1cefa414c69a1c03d72aba2852e1fde35c4da3df8753b3f",
+    "program_sha256": "c9e99fa5d64e3bb45d747d96fc8ae99efd403efc1dd5290ef59bbc50a3abcbbf",
+    "render_sha256": "69bbcf1e3fd8a2e241c3bf89531f108f8e81e82a6e530d7426f10edd338398ae",
+    "decision": "keep",
+    "reason": "Stylized rendering preserves the reference subject and main composition with acceptable abstraction.",
+    "drawback": "Fine details, texture, and exact photographic lighting are simplified by the graphic style."
+  },
+  {
+    "id": "coco128-000000000650",
+    "reference_sha256": "9bb45795336c1d05189fe51a77e04270cd1da8929d62060926798f3dd2d25204",
+    "program_sha256": "ee6437cc0991c5c7e006d5fc1cd0ebb8e7f3b4e7d50c072777a5921cd7b84e34",
+    "render_sha256": "6c5b30623cdb8387d9fab71e1f1e2084c3d2936d40f769177da2ac9b69bc5319",
+    "decision": "keep",
+    "reason": "Stylized rendering preserves the reference subject and main composition with acceptable abstraction.",
+    "drawback": "Fine details, texture, and exact photographic lighting are simplified by the graphic style."
+  }
+]
