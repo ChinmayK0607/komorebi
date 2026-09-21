@@ -1,0 +1,1060 @@
+[
+  {
+    "id": "state-00",
+    "source_group": "v2-box-000",
+    "family": "box",
+    "split": "train",
+    "reference": "rl-states/state-00/reference.png",
+    "canvas": "rl-states/state-00/canvas.png",
+    "program": "rl-states/state-00/program.js",
+    "initial_canvas": "rl-states/state-00/canvas.png",
+    "initial_program": "rl-states/state-00/program.js",
+    "anchors": [
+      "aesthetic-anchor-pool/state-00/early/painting.png",
+      "aesthetic-anchor-pool/state-00/final/painting.png"
+    ],
+    "anchor_records": [
+      {
+        "id": "state-00-anchor-early",
+        "role": "early",
+        "turn": 1,
+        "canvas": "aesthetic-anchor-pool/state-00/early/painting.png",
+        "program": "aesthetic-anchor-pool/state-00/early/program.js",
+        "canvas_sha256": "84747d4af33a6f3b84f3c003714cacc3a6c1c09c555651359deaaf6527272824",
+        "program_sha256": "669813f9f78152b2547929e81e7c046b2f4607d629d7055bca86350c9e8696b0",
+        "source_artifact": "contract-quality-20260918/collected-final/evidence/training-states/parent/v2-box-000-paint/sample-00/turn-1/painting.png",
+        "source_program_artifact": "contract-quality-20260918/collected-final/evidence/training-states/parent/v2-box-000-paint/sample-00/turn-1/program.js"
+      },
+      {
+        "id": "state-00-anchor-final",
+        "role": "final",
+        "turn": 8,
+        "canvas": "aesthetic-anchor-pool/state-00/final/painting.png",
+        "program": "aesthetic-anchor-pool/state-00/final/program.js",
+        "canvas_sha256": "cab83631678a0708aba6e89169914155851d374fd321c9ce83ec2cc40d90becf",
+        "program_sha256": "f83dac9ef3468bc2e9c78b09a8dce6a27084d88eb0ed96ef9792fde097c2044a",
+        "source_artifact": "contract-quality-20260918/collected-final/evidence/training-states/parent/v2-box-000-paint/sample-00/turn-8/painting.png",
+        "source_program_artifact": "contract-quality-20260918/collected-final/evidence/training-states/parent/v2-box-000-paint/sample-00/turn-8/program.js"
+      }
+    ],
+    "anchor_source": {
+      "run": "contract-quality-20260918",
+      "policy": "parent",
+      "task": "v2-box-000-paint",
+      "sample": "sample-00",
+      "summary": "contract-quality-20260918/collected-final/evidence/training-states/parent/v2-box-000-paint/sample-00/summary.json"
+    },
+    "selection_note": "first and last distinct actual student paintings"
+  },
+  {
+    "id": "state-01",
+    "source_group": "v2-box-001",
+    "family": "box",
+    "split": "train",
+    "reference": "rl-states/state-01/reference.png",
+    "canvas": "rl-states/state-01/canvas.png",
+    "program": "rl-states/state-01/program.js",
+    "initial_canvas": "rl-states/state-01/canvas.png",
+    "initial_program": "rl-states/state-01/program.js",
+    "anchors": [
+      "aesthetic-anchor-pool/state-01/early/painting.png",
+      "aesthetic-anchor-pool/state-01/final/painting.png"
+    ],
+    "anchor_records": [
+      {
+        "id": "state-01-anchor-early",
+        "role": "early",
+        "turn": 2,
+        "canvas": "aesthetic-anchor-pool/state-01/early/painting.png",
+        "program": "aesthetic-anchor-pool/state-01/early/program.js",
+        "canvas_sha256": "607a5986084ab6d8a9c696caef81aa8dec8866fb154f476c14630055bf7d5e07",
+        "program_sha256": "10cae066f4795a16461f757ab9a7e63bfad8b4f460b8d007bb574fadaaf585cb",
+        "source_artifact": "contract-quality-20260918/collected-final/evidence/training-states/parent/v2-box-001-paint/sample-00/turn-2/painting.png",
+        "source_program_artifact": "contract-quality-20260918/collected-final/evidence/training-states/parent/v2-box-001-paint/sample-00/turn-2/program.js"
+      },
+      {
+        "id": "state-01-anchor-final",
+        "role": "final",
+        "turn": 3,
+        "canvas": "aesthetic-anchor-pool/state-01/final/painting.png",
+        "program": "aesthetic-anchor-pool/state-01/final/program.js",
+        "canvas_sha256": "82ab6ae6b85205ce5de91a3cb167bb61513c4c4bcd87effa14113ccc377bc234",
+        "program_sha256": "29aee8490d5993f70859bce0d9cb9d1a14e062359e9f6d988f4011bbcd3770db",
+        "source_artifact": "contract-quality-20260918/collected-final/evidence/training-states/parent/v2-box-001-paint/sample-00/turn-3/painting.png",
+        "source_program_artifact": "contract-quality-20260918/collected-final/evidence/training-states/parent/v2-box-001-paint/sample-00/turn-3/program.js"
+      }
+    ],
+    "anchor_source": {
+      "run": "contract-quality-20260918",
+      "policy": "parent",
+      "task": "v2-box-001-paint",
+      "sample": "sample-00",
+      "summary": "contract-quality-20260918/collected-final/evidence/training-states/parent/v2-box-001-paint/sample-00/summary.json"
+    },
+    "selection_note": "first and last distinct actual student paintings"
+  },
+  {
+    "id": "state-02",
+    "source_group": "v2-bus-000",
+    "family": "bus",
+    "split": "train",
+    "reference": "rl-states/state-02/reference.png",
+    "canvas": "rl-states/state-02/canvas.png",
+    "program": "rl-states/state-02/program.js",
+    "initial_canvas": "rl-states/state-02/canvas.png",
+    "initial_program": "rl-states/state-02/program.js",
+    "anchors": [
+      "aesthetic-anchor-pool/state-02/observed/painting.png",
+      "aesthetic-anchor-pool/state-02/archived-teacher/painting.png"
+    ],
+    "anchor_records": [
+      {
+        "id": "state-02-anchor-observed",
+        "role": "observed",
+        "turn": 1,
+        "canvas": "aesthetic-anchor-pool/state-02/observed/painting.png",
+        "program": "aesthetic-anchor-pool/state-02/observed/program.js",
+        "canvas_sha256": "d09fad68559a92d23a7b2f554e91578b44d4646a59b90abe3d35edcc01342c43",
+        "program_sha256": "598c392683464f29cc6ba6f2c769a7ffe10ed54532860ba6fbafd77097c16342",
+        "source_artifact": "contract-quality-20260918/collected-final/evidence/training-states/parent/v2-bus-000-paint/sample-00/turn-1/painting.png",
+        "source_program_artifact": "contract-quality-20260918/collected-final/evidence/training-states/parent/v2-bus-000-paint/sample-00/turn-1/program.js"
+      },
+      {
+        "id": "state-02-anchor-archived-teacher",
+        "role": "archived-teacher",
+        "turn": 2,
+        "canvas": "aesthetic-anchor-pool/state-02/archived-teacher/painting.png",
+        "program": "aesthetic-anchor-pool/state-02/archived-teacher/program.js",
+        "canvas_sha256": "c2c588461ba86b373e2f470ddcd9785c6e8054372da962f42c6b52a0361981cf",
+        "program_sha256": "eaca78750d98cd1be48e48b49e9ecbac585e6c1293bf8b757350b3faa27adb63",
+        "source_artifact": "contract-quality-20260918/collected-final/evidence//Users/chinmay/Documents/Codex/2026-09-07/if-they-did-speed-painting-type/painter/runs/revision-rl-20260918/inputs/data/v2-bus-000/turn-2.png",
+        "source_program_artifact": "contract-quality-20260918/collected-final/evidence//Users/chinmay/Documents/Codex/2026-09-07/if-they-did-speed-painting-type/painter/runs/revision-rl-20260918/inputs/data/v2-bus-000/turn-2.js",
+        "render_receipt_artifact": "contract-quality-20260918/collected-final/evidence/data/v2-bus-000/turn-2.json",
+        "render_receipt_sha256": "892c89e2f554bf16dd9046cbca8ce0af57fecea3f8be76c3f7e3516bb3b4ca44",
+        "verified_source_sha256": "eaca78750d98cd1be48e48b49e9ecbac585e6c1293bf8b757350b3faa27adb63",
+        "verified_png_sha256": "c2c588461ba86b373e2f470ddcd9785c6e8054372da962f42c6b52a0361981cf",
+        "renderer_sha256": "ad7ba24d632f0f16989741560c3af0fe42e426275c1df01954b60ddd69b63395",
+        "source_kind": "archived_teacher_render",
+        "selection_reason": "parent-inspected visible bus body and windows"
+      }
+    ],
+    "anchor_source": {
+      "run": "contract-quality-20260918",
+      "policy": "parent",
+      "task": "v2-bus-000-paint",
+      "sample": "sample-00",
+      "summary": "contract-quality-20260918/collected-final/evidence/training-states/parent/v2-bus-000-paint/sample-00/summary.json"
+    },
+    "selection_note": "only one unique actual student painting was available"
+  },
+  {
+    "id": "state-03",
+    "source_group": "v2-bus-001",
+    "family": "bus",
+    "split": "train",
+    "reference": "rl-states/state-03/reference.png",
+    "canvas": "rl-states/state-03/canvas.png",
+    "program": "rl-states/state-03/program.js",
+    "initial_canvas": "rl-states/state-03/canvas.png",
+    "initial_program": "rl-states/state-03/program.js",
+    "anchors": [
+      "aesthetic-anchor-pool/state-03/observed/painting.png"
+    ],
+    "anchor_records": [
+      {
+        "id": "state-03-anchor-observed",
+        "role": "observed",
+        "turn": 1,
+        "canvas": "aesthetic-anchor-pool/state-03/observed/painting.png",
+        "program": "aesthetic-anchor-pool/state-03/observed/program.js",
+        "canvas_sha256": "b1b6ecd6cc19aa40031ef5709ecc458dafa91087456ce653c002500f08b0078b",
+        "program_sha256": "fca7cb587ed28f018b5fb830894cde6eb2bd3f6bf6c554136e9d23bbeeb8f842",
+        "source_artifact": "contract-quality-20260918/collected-final/evidence/training-states/parent/v2-bus-001-paint/sample-00/turn-1/painting.png",
+        "source_program_artifact": "contract-quality-20260918/collected-final/evidence/training-states/parent/v2-bus-001-paint/sample-00/turn-1/program.js"
+      }
+    ],
+    "anchor_source": {
+      "run": "contract-quality-20260918",
+      "policy": "parent",
+      "task": "v2-bus-001-paint",
+      "sample": "sample-00",
+      "summary": "contract-quality-20260918/collected-final/evidence/training-states/parent/v2-bus-001-paint/sample-00/summary.json"
+    },
+    "selection_note": "only one unique actual student painting was available"
+  },
+  {
+    "id": "state-04",
+    "source_group": "v2-cup-000",
+    "family": "cup",
+    "split": "train",
+    "reference": "rl-states/state-04/reference.png",
+    "canvas": "rl-states/state-04/canvas.png",
+    "program": "rl-states/state-04/program.js",
+    "initial_canvas": "rl-states/state-04/canvas.png",
+    "initial_program": "rl-states/state-04/program.js",
+    "anchors": [
+      "aesthetic-anchor-pool/state-04/observed/painting.png"
+    ],
+    "anchor_records": [
+      {
+        "id": "state-04-anchor-observed",
+        "role": "observed",
+        "turn": 1,
+        "canvas": "aesthetic-anchor-pool/state-04/observed/painting.png",
+        "program": "aesthetic-anchor-pool/state-04/observed/program.js",
+        "canvas_sha256": "a62ee1ab9939733210ff621534d12cbb6965a49bf4cbbba1149ad25d04c6be62",
+        "program_sha256": "b7c3cff9a544ab3fb5017e4bd3e23b85ccdaac24d493bc15a881c755bbd7b9da",
+        "source_artifact": "contract-quality-20260918/collected-final/evidence/training-states/parent/v2-cup-000-paint/sample-00/turn-1/painting.png",
+        "source_program_artifact": "contract-quality-20260918/collected-final/evidence/training-states/parent/v2-cup-000-paint/sample-00/turn-1/program.js"
+      }
+    ],
+    "anchor_source": {
+      "run": "contract-quality-20260918",
+      "policy": "parent",
+      "task": "v2-cup-000-paint",
+      "sample": "sample-00",
+      "summary": "contract-quality-20260918/collected-final/evidence/training-states/parent/v2-cup-000-paint/sample-00/summary.json"
+    },
+    "selection_note": "only one unique actual student painting was available"
+  },
+  {
+    "id": "state-05",
+    "source_group": "v2-cup-001",
+    "family": "cup",
+    "split": "train",
+    "reference": "rl-states/state-05/reference.png",
+    "canvas": "rl-states/state-05/canvas.png",
+    "program": "rl-states/state-05/program.js",
+    "initial_canvas": "rl-states/state-05/canvas.png",
+    "initial_program": "rl-states/state-05/program.js",
+    "anchors": [
+      "aesthetic-anchor-pool/state-05/observed/painting.png"
+    ],
+    "anchor_records": [
+      {
+        "id": "state-05-anchor-observed",
+        "role": "observed",
+        "turn": 1,
+        "canvas": "aesthetic-anchor-pool/state-05/observed/painting.png",
+        "program": "aesthetic-anchor-pool/state-05/observed/program.js",
+        "canvas_sha256": "f09299254f6a13bbf16031f3d2bbd60737e56bed3ed69903e1fa7e934c2e7611",
+        "program_sha256": "0c71e2c3b4612dd91cda61f12262681031aaebffeb722094498ace12d8849c57",
+        "source_artifact": "contract-quality-20260918/collected-final/evidence/training-states/parent/v2-cup-001-paint/sample-00/turn-1/painting.png",
+        "source_program_artifact": "contract-quality-20260918/collected-final/evidence/training-states/parent/v2-cup-001-paint/sample-00/turn-1/program.js"
+      }
+    ],
+    "anchor_source": {
+      "run": "contract-quality-20260918",
+      "policy": "parent",
+      "task": "v2-cup-001-paint",
+      "sample": "sample-00",
+      "summary": "contract-quality-20260918/collected-final/evidence/training-states/parent/v2-cup-001-paint/sample-00/summary.json"
+    },
+    "selection_note": "only one unique actual student painting was available"
+  },
+  {
+    "id": "state-06",
+    "source_group": "v2-cylinder-000",
+    "family": "cylinder",
+    "split": "train",
+    "reference": "rl-states/state-06/reference.png",
+    "canvas": "rl-states/state-06/canvas.png",
+    "program": "rl-states/state-06/program.js",
+    "initial_canvas": "rl-states/state-06/canvas.png",
+    "initial_program": "rl-states/state-06/program.js",
+    "anchors": [
+      "aesthetic-anchor-pool/state-06/early/painting.png",
+      "aesthetic-anchor-pool/state-06/final/painting.png"
+    ],
+    "anchor_records": [
+      {
+        "id": "state-06-anchor-early",
+        "role": "early",
+        "turn": 2,
+        "canvas": "aesthetic-anchor-pool/state-06/early/painting.png",
+        "program": "aesthetic-anchor-pool/state-06/early/program.js",
+        "canvas_sha256": "8d8efc55739f80d8a809cb174e6750dcf8f63287822c8d227950a9400455955e",
+        "program_sha256": "e6f76baed1f616e368e8bd4c573c4108d81a46b40a193f83dfc8081aa623b13e",
+        "source_artifact": "contract-quality-20260918/collected-final/evidence/training-states/parent/v2-cylinder-000-paint/sample-00/turn-2/painting.png",
+        "source_program_artifact": "contract-quality-20260918/collected-final/evidence/training-states/parent/v2-cylinder-000-paint/sample-00/turn-2/program.js"
+      },
+      {
+        "id": "state-06-anchor-final",
+        "role": "final",
+        "turn": 8,
+        "canvas": "aesthetic-anchor-pool/state-06/final/painting.png",
+        "program": "aesthetic-anchor-pool/state-06/final/program.js",
+        "canvas_sha256": "f124cf47ad86f1d4dd5952378f5f25ee422c52d4df22bd8cfd3e2a5c1ae8c575",
+        "program_sha256": "a983ea51eebb35d54d9b4617e7643dd5bd8fb30eaea3d27fe22a8ad002800808",
+        "source_artifact": "contract-quality-20260918/collected-final/evidence/training-states/parent/v2-cylinder-000-paint/sample-00/turn-8/painting.png",
+        "source_program_artifact": "contract-quality-20260918/collected-final/evidence/training-states/parent/v2-cylinder-000-paint/sample-00/turn-8/program.js"
+      }
+    ],
+    "anchor_source": {
+      "run": "contract-quality-20260918",
+      "policy": "parent",
+      "task": "v2-cylinder-000-paint",
+      "sample": "sample-00",
+      "summary": "contract-quality-20260918/collected-final/evidence/training-states/parent/v2-cylinder-000-paint/sample-00/summary.json"
+    },
+    "selection_note": "first and last distinct actual student paintings"
+  },
+  {
+    "id": "state-07",
+    "source_group": "v2-cylinder-001",
+    "family": "cylinder",
+    "split": "train",
+    "reference": "rl-states/state-07/reference.png",
+    "canvas": "rl-states/state-07/canvas.png",
+    "program": "rl-states/state-07/program.js",
+    "initial_canvas": "rl-states/state-07/canvas.png",
+    "initial_program": "rl-states/state-07/program.js",
+    "anchors": [
+      "aesthetic-anchor-pool/state-07/early/painting.png",
+      "aesthetic-anchor-pool/state-07/final/painting.png"
+    ],
+    "anchor_records": [
+      {
+        "id": "state-07-anchor-early",
+        "role": "early",
+        "turn": 2,
+        "canvas": "aesthetic-anchor-pool/state-07/early/painting.png",
+        "program": "aesthetic-anchor-pool/state-07/early/program.js",
+        "canvas_sha256": "f50eb141bb3a67639b9f9af7951e09dbb87036888dcf1efb5fa83c597cbd971d",
+        "program_sha256": "df2c0fc6c0e586d19bdd041718bf1f57e3ec19936d283d131320ff6f35b72eba",
+        "source_artifact": "contract-quality-20260918/collected-final/evidence/training-states/parent/v2-cylinder-001-paint/sample-00/turn-2/painting.png",
+        "source_program_artifact": "contract-quality-20260918/collected-final/evidence/training-states/parent/v2-cylinder-001-paint/sample-00/turn-2/program.js"
+      },
+      {
+        "id": "state-07-anchor-final",
+        "role": "final",
+        "turn": 5,
+        "canvas": "aesthetic-anchor-pool/state-07/final/painting.png",
+        "program": "aesthetic-anchor-pool/state-07/final/program.js",
+        "canvas_sha256": "bfe4d2fa160ea5c169896a34e20f76199a81175f533df4446bdc25bed7015fac",
+        "program_sha256": "c409a70467684c6c357316c9ffd2e6dae1220081da3e2b4e9209fca1013f2b58",
+        "source_artifact": "contract-quality-20260918/collected-final/evidence/training-states/parent/v2-cylinder-001-paint/sample-00/turn-5/painting.png",
+        "source_program_artifact": "contract-quality-20260918/collected-final/evidence/training-states/parent/v2-cylinder-001-paint/sample-00/turn-5/program.js"
+      }
+    ],
+    "anchor_source": {
+      "run": "contract-quality-20260918",
+      "policy": "parent",
+      "task": "v2-cylinder-001-paint",
+      "sample": "sample-00",
+      "summary": "contract-quality-20260918/collected-final/evidence/training-states/parent/v2-cylinder-001-paint/sample-00/summary.json"
+    },
+    "selection_note": "first and last distinct actual student paintings"
+  },
+  {
+    "id": "state-08",
+    "source_group": "v2-flower-000",
+    "family": "flower",
+    "split": "train",
+    "reference": "rl-states/state-08/reference.png",
+    "canvas": "rl-states/state-08/canvas.png",
+    "program": "rl-states/state-08/program.js",
+    "initial_canvas": "rl-states/state-08/canvas.png",
+    "initial_program": "rl-states/state-08/program.js",
+    "anchors": [
+      "aesthetic-anchor-pool/state-08/early/painting.png",
+      "aesthetic-anchor-pool/state-08/final/painting.png",
+      "aesthetic-anchor-pool/state-08/archived-teacher/painting.png"
+    ],
+    "anchor_records": [
+      {
+        "id": "state-08-anchor-early",
+        "role": "early",
+        "turn": 1,
+        "canvas": "aesthetic-anchor-pool/state-08/early/painting.png",
+        "program": "aesthetic-anchor-pool/state-08/early/program.js",
+        "canvas_sha256": "c52e849a5d77916ab466b9c54517f975564c2c542e5f3fefe6fffe5bf98b32f5",
+        "program_sha256": "b3f85fea8d4e0e826929be070d63d8d947a936ef24ddbd2813acada4b35e3f89",
+        "source_artifact": "contract-quality-20260918/collected-final/evidence/training-states/parent/v2-flower-000-paint/sample-00/turn-1/painting.png",
+        "source_program_artifact": "contract-quality-20260918/collected-final/evidence/training-states/parent/v2-flower-000-paint/sample-00/turn-1/program.js"
+      },
+      {
+        "id": "state-08-anchor-final",
+        "role": "final",
+        "turn": 2,
+        "canvas": "aesthetic-anchor-pool/state-08/final/painting.png",
+        "program": "aesthetic-anchor-pool/state-08/final/program.js",
+        "canvas_sha256": "47d2280f3521455d29556c230ec355ffb20c6d59490d7b5a70bc431e82df7f31",
+        "program_sha256": "f205707be3eb1e8745da8fe6c2a6be76326e0ab6d9dfa7aa1b5ff49f7d83071a",
+        "source_artifact": "contract-quality-20260918/collected-final/evidence/training-states/parent/v2-flower-000-paint/sample-00/turn-2/painting.png",
+        "source_program_artifact": "contract-quality-20260918/collected-final/evidence/training-states/parent/v2-flower-000-paint/sample-00/turn-2/program.js"
+      },
+      {
+        "id": "state-08-anchor-archived-teacher",
+        "role": "archived-teacher",
+        "turn": 2,
+        "canvas": "aesthetic-anchor-pool/state-08/archived-teacher/painting.png",
+        "program": "aesthetic-anchor-pool/state-08/archived-teacher/program.js",
+        "canvas_sha256": "dfac3682586450c29bd684cb02bbe12b421cc3a4ae6c212e29d8467c72e7efd4",
+        "program_sha256": "36b8be4d77478bacbf6b75c1752cd35df4fe567da0b45e94b9b5012eb0de6e91",
+        "source_artifact": "contract-quality-20260918/collected-final/evidence//Users/chinmay/Documents/Codex/2026-09-07/if-they-did-speed-painting-type/painter/runs/revision-rl-20260918/inputs/data/v2-flower-000/turn-2.png",
+        "source_program_artifact": "contract-quality-20260918/collected-final/evidence//Users/chinmay/Documents/Codex/2026-09-07/if-they-did-speed-painting-type/painter/runs/revision-rl-20260918/inputs/data/v2-flower-000/turn-2.js",
+        "render_receipt_artifact": "contract-quality-20260918/collected-final/evidence/data/v2-flower-000/turn-2.json",
+        "render_receipt_sha256": "fac8493bd24264fd0ded4e3c9c23187b298e670b08cfd08777464f0979396b62",
+        "verified_source_sha256": "36b8be4d77478bacbf6b75c1752cd35df4fe567da0b45e94b9b5012eb0de6e91",
+        "verified_png_sha256": "dfac3682586450c29bd684cb02bbe12b421cc3a4ae6c212e29d8467c72e7efd4",
+        "renderer_sha256": "ad7ba24d632f0f16989741560c3af0fe42e426275c1df01954b60ddd69b63395",
+        "source_kind": "archived_teacher_render",
+        "selection_reason": "parent-inspected visible flower structure"
+      }
+    ],
+    "anchor_source": {
+      "run": "contract-quality-20260918",
+      "policy": "parent",
+      "task": "v2-flower-000-paint",
+      "sample": "sample-00",
+      "summary": "contract-quality-20260918/collected-final/evidence/training-states/parent/v2-flower-000-paint/sample-00/summary.json"
+    },
+    "selection_note": "first and last distinct actual student paintings"
+  },
+  {
+    "id": "state-09",
+    "source_group": "v2-flower-001",
+    "family": "flower",
+    "split": "train",
+    "reference": "rl-states/state-09/reference.png",
+    "canvas": "rl-states/state-09/canvas.png",
+    "program": "rl-states/state-09/program.js",
+    "initial_canvas": "rl-states/state-09/canvas.png",
+    "initial_program": "rl-states/state-09/program.js",
+    "anchors": [
+      "aesthetic-anchor-pool/state-09/observed/painting.png"
+    ],
+    "anchor_records": [
+      {
+        "id": "state-09-anchor-observed",
+        "role": "observed",
+        "turn": 1,
+        "canvas": "aesthetic-anchor-pool/state-09/observed/painting.png",
+        "program": "aesthetic-anchor-pool/state-09/observed/program.js",
+        "canvas_sha256": "aaaa3693eaea21e95d695bdaff4ac0ce7070eed1067ee71840602e7f1777d4fc",
+        "program_sha256": "bf06da82fe061d2ad1ab7f561a8f301f83e024c3bf7867d5baa2d8ca10f37e1b",
+        "source_artifact": "contract-quality-20260918/collected-final/evidence/training-states/parent/v2-flower-001-paint/sample-00/turn-1/painting.png",
+        "source_program_artifact": "contract-quality-20260918/collected-final/evidence/training-states/parent/v2-flower-001-paint/sample-00/turn-1/program.js"
+      }
+    ],
+    "anchor_source": {
+      "run": "contract-quality-20260918",
+      "policy": "parent",
+      "task": "v2-flower-001-paint",
+      "sample": "sample-00",
+      "summary": "contract-quality-20260918/collected-final/evidence/training-states/parent/v2-flower-001-paint/sample-00/summary.json"
+    },
+    "selection_note": "only one unique actual student painting was available"
+  },
+  {
+    "id": "state-10",
+    "source_group": "v2-house-000",
+    "family": "house",
+    "split": "train",
+    "reference": "rl-states/state-10/reference.png",
+    "canvas": "rl-states/state-10/canvas.png",
+    "program": "rl-states/state-10/program.js",
+    "initial_canvas": "rl-states/state-10/canvas.png",
+    "initial_program": "rl-states/state-10/program.js",
+    "anchors": [
+      "aesthetic-anchor-pool/state-10/early/painting.png",
+      "aesthetic-anchor-pool/state-10/final/painting.png"
+    ],
+    "anchor_records": [
+      {
+        "id": "state-10-anchor-early",
+        "role": "early",
+        "turn": 2,
+        "canvas": "aesthetic-anchor-pool/state-10/early/painting.png",
+        "program": "aesthetic-anchor-pool/state-10/early/program.js",
+        "canvas_sha256": "fd47b9e378bf2fe3afb9820719e0ef38637a82bc235b63d8c23caf66c3db0e6a",
+        "program_sha256": "b12133c5022b26695384f6b5026e438c76cd64395dfd50aa1e8ab67ba3e46d29",
+        "source_artifact": "contract-quality-20260918/collected-final/evidence/training-states/parent/v2-house-000-paint/sample-00/turn-2/painting.png",
+        "source_program_artifact": "contract-quality-20260918/collected-final/evidence/training-states/parent/v2-house-000-paint/sample-00/turn-2/program.js"
+      },
+      {
+        "id": "state-10-anchor-final",
+        "role": "final",
+        "turn": 6,
+        "canvas": "aesthetic-anchor-pool/state-10/final/painting.png",
+        "program": "aesthetic-anchor-pool/state-10/final/program.js",
+        "canvas_sha256": "e07c6d16c9f5fbb7273702b8f437ef7bba55ae285bcf855964105c0ba9a61c82",
+        "program_sha256": "34cd08f509228c32636181ef07d17c108c6ec99b43571f8ece32ea40929baa4f",
+        "source_artifact": "contract-quality-20260918/collected-final/evidence/training-states/parent/v2-house-000-paint/sample-00/turn-6/painting.png",
+        "source_program_artifact": "contract-quality-20260918/collected-final/evidence/training-states/parent/v2-house-000-paint/sample-00/turn-6/program.js"
+      }
+    ],
+    "anchor_source": {
+      "run": "contract-quality-20260918",
+      "policy": "parent",
+      "task": "v2-house-000-paint",
+      "sample": "sample-00",
+      "summary": "contract-quality-20260918/collected-final/evidence/training-states/parent/v2-house-000-paint/sample-00/summary.json"
+    },
+    "selection_note": "first and last distinct actual student paintings"
+  },
+  {
+    "id": "state-11",
+    "source_group": "v2-house-001",
+    "family": "house",
+    "split": "train",
+    "reference": "rl-states/state-11/reference.png",
+    "canvas": "rl-states/state-11/canvas.png",
+    "program": "rl-states/state-11/program.js",
+    "initial_canvas": "rl-states/state-11/canvas.png",
+    "initial_program": "rl-states/state-11/program.js",
+    "anchors": [
+      "aesthetic-anchor-pool/state-11/observed/painting.png"
+    ],
+    "anchor_records": [
+      {
+        "id": "state-11-anchor-observed",
+        "role": "observed",
+        "turn": 1,
+        "canvas": "aesthetic-anchor-pool/state-11/observed/painting.png",
+        "program": "aesthetic-anchor-pool/state-11/observed/program.js",
+        "canvas_sha256": "4a882353d9b6aa95a3ff9de5544225f24c57448448da41f10ef576c2b45857ed",
+        "program_sha256": "d12dd2c83c2c2666f6d50290e3f8ddef5d3d363cd4322f7141e0af46e160089f",
+        "source_artifact": "contract-quality-20260918/collected-final/evidence/training-states/parent/v2-house-001-paint/sample-00/turn-1/painting.png",
+        "source_program_artifact": "contract-quality-20260918/collected-final/evidence/training-states/parent/v2-house-001-paint/sample-00/turn-1/program.js"
+      }
+    ],
+    "anchor_source": {
+      "run": "contract-quality-20260918",
+      "policy": "parent",
+      "task": "v2-house-001-paint",
+      "sample": "sample-00",
+      "summary": "contract-quality-20260918/collected-final/evidence/training-states/parent/v2-house-001-paint/sample-00/summary.json"
+    },
+    "selection_note": "only one unique actual student painting was available"
+  },
+  {
+    "id": "state-12",
+    "source_group": "v2-ribbons-000",
+    "family": "ribbons",
+    "split": "train",
+    "reference": "rl-states/state-12/reference.png",
+    "canvas": "rl-states/state-12/canvas.png",
+    "program": "rl-states/state-12/program.js",
+    "initial_canvas": "rl-states/state-12/canvas.png",
+    "initial_program": "rl-states/state-12/program.js",
+    "anchors": [
+      "aesthetic-anchor-pool/state-12/early/painting.png",
+      "aesthetic-anchor-pool/state-12/final/painting.png"
+    ],
+    "anchor_records": [
+      {
+        "id": "state-12-anchor-early",
+        "role": "early",
+        "turn": 1,
+        "canvas": "aesthetic-anchor-pool/state-12/early/painting.png",
+        "program": "aesthetic-anchor-pool/state-12/early/program.js",
+        "canvas_sha256": "27559827a35a2c583d50f558bb0f27473ac95069ff7d591c8304703778702015",
+        "program_sha256": "7538a82acfd2a96b282c34c9933ab1e871721656cc89741b07e59b0594e411a4",
+        "source_artifact": "contract-quality-20260918/collected-final/evidence/training-states/parent/v2-ribbons-000-paint/sample-00/turn-1/painting.png",
+        "source_program_artifact": "contract-quality-20260918/collected-final/evidence/training-states/parent/v2-ribbons-000-paint/sample-00/turn-1/program.js"
+      },
+      {
+        "id": "state-12-anchor-final",
+        "role": "final",
+        "turn": 7,
+        "canvas": "aesthetic-anchor-pool/state-12/final/painting.png",
+        "program": "aesthetic-anchor-pool/state-12/final/program.js",
+        "canvas_sha256": "633e0dd2fe1c80e47107fd7686b1dd826ec8be341643ccc580740854e85a9683",
+        "program_sha256": "1d76987aed080e2b7aeb1cebc0c999db2f2b74d0b52dfa48a4fafa49504b887c",
+        "source_artifact": "contract-quality-20260918/collected-final/evidence/training-states/parent/v2-ribbons-000-paint/sample-00/turn-7/painting.png",
+        "source_program_artifact": "contract-quality-20260918/collected-final/evidence/training-states/parent/v2-ribbons-000-paint/sample-00/turn-7/program.js"
+      }
+    ],
+    "anchor_source": {
+      "run": "contract-quality-20260918",
+      "policy": "parent",
+      "task": "v2-ribbons-000-paint",
+      "sample": "sample-00",
+      "summary": "contract-quality-20260918/collected-final/evidence/training-states/parent/v2-ribbons-000-paint/sample-00/summary.json"
+    },
+    "selection_note": "first and last distinct actual student paintings"
+  },
+  {
+    "id": "state-13",
+    "source_group": "v2-ribbons-001",
+    "family": "ribbons",
+    "split": "train",
+    "reference": "rl-states/state-13/reference.png",
+    "canvas": "rl-states/state-13/canvas.png",
+    "program": "rl-states/state-13/program.js",
+    "initial_canvas": "rl-states/state-13/canvas.png",
+    "initial_program": "rl-states/state-13/program.js",
+    "anchors": [
+      "aesthetic-anchor-pool/state-13/early/painting.png",
+      "aesthetic-anchor-pool/state-13/final/painting.png"
+    ],
+    "anchor_records": [
+      {
+        "id": "state-13-anchor-early",
+        "role": "early",
+        "turn": 3,
+        "canvas": "aesthetic-anchor-pool/state-13/early/painting.png",
+        "program": "aesthetic-anchor-pool/state-13/early/program.js",
+        "canvas_sha256": "5840d5c50a8b101d011388141d6cde95167419d20d402146b1014e4feb27ac66",
+        "program_sha256": "6766c3ad0aea40907d090354ba9945ed23c8dfb1d6ec1fc3b23147f2c89accd9",
+        "source_artifact": "contract-quality-20260918/collected-final/evidence/training-states/parent/v2-ribbons-001-paint/sample-00/turn-3/painting.png",
+        "source_program_artifact": "contract-quality-20260918/collected-final/evidence/training-states/parent/v2-ribbons-001-paint/sample-00/turn-3/program.js"
+      },
+      {
+        "id": "state-13-anchor-final",
+        "role": "final",
+        "turn": 7,
+        "canvas": "aesthetic-anchor-pool/state-13/final/painting.png",
+        "program": "aesthetic-anchor-pool/state-13/final/program.js",
+        "canvas_sha256": "fd50a4d0b9abaca2ca7c0c01d96c3cbcc8e425169e520366b48f33f3210515cd",
+        "program_sha256": "1a63dcb93cbef80a074446be161544692c4c5506ba5a32280fae343b10aa4d21",
+        "source_artifact": "contract-quality-20260918/collected-final/evidence/training-states/parent/v2-ribbons-001-paint/sample-00/turn-7/painting.png",
+        "source_program_artifact": "contract-quality-20260918/collected-final/evidence/training-states/parent/v2-ribbons-001-paint/sample-00/turn-7/program.js"
+      }
+    ],
+    "anchor_source": {
+      "run": "contract-quality-20260918",
+      "policy": "parent",
+      "task": "v2-ribbons-001-paint",
+      "sample": "sample-00",
+      "summary": "contract-quality-20260918/collected-final/evidence/training-states/parent/v2-ribbons-001-paint/sample-00/summary.json"
+    },
+    "selection_note": "first and last distinct actual student paintings"
+  },
+  {
+    "id": "state-14",
+    "source_group": "v2-sailboat-000",
+    "family": "sailboat",
+    "split": "train",
+    "reference": "rl-states/state-14/reference.png",
+    "canvas": "rl-states/state-14/canvas.png",
+    "program": "rl-states/state-14/program.js",
+    "initial_canvas": "rl-states/state-14/canvas.png",
+    "initial_program": "rl-states/state-14/program.js",
+    "anchors": [
+      "aesthetic-anchor-pool/state-14/observed/painting.png"
+    ],
+    "anchor_records": [
+      {
+        "id": "state-14-anchor-observed",
+        "role": "observed",
+        "turn": 2,
+        "canvas": "aesthetic-anchor-pool/state-14/observed/painting.png",
+        "program": "aesthetic-anchor-pool/state-14/observed/program.js",
+        "canvas_sha256": "a00d60bd9bfbdba421a8c321c90aa8af14f70c04aa7af3b19c44fe46aaf7b579",
+        "program_sha256": "a7613d0a28f9bc136124c7c031f9e951fe7d7ed8c007d618c58ea82aa333520c",
+        "source_artifact": "contract-quality-20260918/collected-final/evidence/training-states/parent/v2-sailboat-000-paint/sample-00/turn-2/painting.png",
+        "source_program_artifact": "contract-quality-20260918/collected-final/evidence/training-states/parent/v2-sailboat-000-paint/sample-00/turn-2/program.js"
+      }
+    ],
+    "anchor_source": {
+      "run": "contract-quality-20260918",
+      "policy": "parent",
+      "task": "v2-sailboat-000-paint",
+      "sample": "sample-00",
+      "summary": "contract-quality-20260918/collected-final/evidence/training-states/parent/v2-sailboat-000-paint/sample-00/summary.json"
+    },
+    "selection_note": "only one unique actual student painting was available"
+  },
+  {
+    "id": "state-15",
+    "source_group": "v2-sailboat-001",
+    "family": "sailboat",
+    "split": "train",
+    "reference": "rl-states/state-15/reference.png",
+    "canvas": "rl-states/state-15/canvas.png",
+    "program": "rl-states/state-15/program.js",
+    "initial_canvas": "rl-states/state-15/canvas.png",
+    "initial_program": "rl-states/state-15/program.js",
+    "anchors": [
+      "aesthetic-anchor-pool/state-15/early/painting.png",
+      "aesthetic-anchor-pool/state-15/final/painting.png"
+    ],
+    "anchor_records": [
+      {
+        "id": "state-15-anchor-early",
+        "role": "early",
+        "turn": 1,
+        "canvas": "aesthetic-anchor-pool/state-15/early/painting.png",
+        "program": "aesthetic-anchor-pool/state-15/early/program.js",
+        "canvas_sha256": "ab85980f2737f252ce6a62ba781ea9f5469405b3bf596ac8671773010c018d1d",
+        "program_sha256": "28f4ac5e76d79d48ad3ee129a2caf5d20057de01462dd18719b59808c41a4387",
+        "source_artifact": "contract-quality-20260918/collected-final/evidence/training-states/parent/v2-sailboat-001-paint/sample-00/turn-1/painting.png",
+        "source_program_artifact": "contract-quality-20260918/collected-final/evidence/training-states/parent/v2-sailboat-001-paint/sample-00/turn-1/program.js"
+      },
+      {
+        "id": "state-15-anchor-final",
+        "role": "final",
+        "turn": 6,
+        "canvas": "aesthetic-anchor-pool/state-15/final/painting.png",
+        "program": "aesthetic-anchor-pool/state-15/final/program.js",
+        "canvas_sha256": "02e0024557d6efd56f98b8f0b9401c5a56f5f69e905da2d490a37b2ba4195e2e",
+        "program_sha256": "67bc248e9d13607dee1780ec34f40b9ffa2dc14ed4fef68d2c70f561af50eee1",
+        "source_artifact": "contract-quality-20260918/collected-final/evidence/training-states/parent/v2-sailboat-001-paint/sample-00/turn-6/painting.png",
+        "source_program_artifact": "contract-quality-20260918/collected-final/evidence/training-states/parent/v2-sailboat-001-paint/sample-00/turn-6/program.js"
+      }
+    ],
+    "anchor_source": {
+      "run": "contract-quality-20260918",
+      "policy": "parent",
+      "task": "v2-sailboat-001-paint",
+      "sample": "sample-00",
+      "summary": "contract-quality-20260918/collected-final/evidence/training-states/parent/v2-sailboat-001-paint/sample-00/summary.json"
+    },
+    "selection_note": "first and last distinct actual student paintings"
+  },
+  {
+    "id": "state-16",
+    "source_group": "v2-sphere-000",
+    "family": "sphere",
+    "split": "train",
+    "reference": "rl-states/state-16/reference.png",
+    "canvas": "rl-states/state-16/canvas.png",
+    "program": "rl-states/state-16/program.js",
+    "initial_canvas": "rl-states/state-16/canvas.png",
+    "initial_program": "rl-states/state-16/program.js",
+    "anchors": [
+      "aesthetic-anchor-pool/state-16/early/painting.png",
+      "aesthetic-anchor-pool/state-16/final/painting.png"
+    ],
+    "anchor_records": [
+      {
+        "id": "state-16-anchor-early",
+        "role": "early",
+        "turn": 1,
+        "canvas": "aesthetic-anchor-pool/state-16/early/painting.png",
+        "program": "aesthetic-anchor-pool/state-16/early/program.js",
+        "canvas_sha256": "c0eb8580b468d73c971ffd3233819636f8725f9131f7c6d9864c5704d4213f23",
+        "program_sha256": "9218d18b84abd2438e0ae732a8e6ddeba6a384aea743b0bdc4ef16dad5d119d6",
+        "source_artifact": "contract-quality-20260918/collected-final/evidence/training-states/parent/v2-sphere-000-paint/sample-00/turn-1/painting.png",
+        "source_program_artifact": "contract-quality-20260918/collected-final/evidence/training-states/parent/v2-sphere-000-paint/sample-00/turn-1/program.js"
+      },
+      {
+        "id": "state-16-anchor-final",
+        "role": "final",
+        "turn": 6,
+        "canvas": "aesthetic-anchor-pool/state-16/final/painting.png",
+        "program": "aesthetic-anchor-pool/state-16/final/program.js",
+        "canvas_sha256": "3dee67f9129dc625e3ee9aed6e820188a0326cd9e935bfec426c31c5ef3bc243",
+        "program_sha256": "8ba9f0fb92e9f0cf0b947d1f26315e1ee9f0e90ccecf282b99aa65486c88ad23",
+        "source_artifact": "contract-quality-20260918/collected-final/evidence/training-states/parent/v2-sphere-000-paint/sample-00/turn-6/painting.png",
+        "source_program_artifact": "contract-quality-20260918/collected-final/evidence/training-states/parent/v2-sphere-000-paint/sample-00/turn-6/program.js"
+      }
+    ],
+    "anchor_source": {
+      "run": "contract-quality-20260918",
+      "policy": "parent",
+      "task": "v2-sphere-000-paint",
+      "sample": "sample-00",
+      "summary": "contract-quality-20260918/collected-final/evidence/training-states/parent/v2-sphere-000-paint/sample-00/summary.json"
+    },
+    "selection_note": "first and last distinct actual student paintings"
+  },
+  {
+    "id": "state-17",
+    "source_group": "v2-sphere-001",
+    "family": "sphere",
+    "split": "train",
+    "reference": "rl-states/state-17/reference.png",
+    "canvas": "rl-states/state-17/canvas.png",
+    "program": "rl-states/state-17/program.js",
+    "initial_canvas": "rl-states/state-17/canvas.png",
+    "initial_program": "rl-states/state-17/program.js",
+    "anchors": [
+      "aesthetic-anchor-pool/state-17/early/painting.png",
+      "aesthetic-anchor-pool/state-17/final/painting.png"
+    ],
+    "anchor_records": [
+      {
+        "id": "state-17-anchor-early",
+        "role": "early",
+        "turn": 3,
+        "canvas": "aesthetic-anchor-pool/state-17/early/painting.png",
+        "program": "aesthetic-anchor-pool/state-17/early/program.js",
+        "canvas_sha256": "07010cfee3f4624cda705828c8080be115632cc0330264426e9993cab3b4ff84",
+        "program_sha256": "ac9d0428f8dd8973d7faebd7596d5dad98b24238b154e6efd113251d6e54bb32",
+        "source_artifact": "contract-quality-20260918/collected-final/evidence/training-states/parent/v2-sphere-001-paint/sample-00/turn-3/painting.png",
+        "source_program_artifact": "contract-quality-20260918/collected-final/evidence/training-states/parent/v2-sphere-001-paint/sample-00/turn-3/program.js"
+      },
+      {
+        "id": "state-17-anchor-final",
+        "role": "final",
+        "turn": 5,
+        "canvas": "aesthetic-anchor-pool/state-17/final/painting.png",
+        "program": "aesthetic-anchor-pool/state-17/final/program.js",
+        "canvas_sha256": "4bc9206a9ef021b3038ec3e452bf5fd4dca541b8c6bdb942b8f187e9dcda48a8",
+        "program_sha256": "ba05cf39df338388e5f40a294d1021727c17ed620f37eb9963a0dc2f66e01fc9",
+        "source_artifact": "contract-quality-20260918/collected-final/evidence/training-states/parent/v2-sphere-001-paint/sample-00/turn-5/painting.png",
+        "source_program_artifact": "contract-quality-20260918/collected-final/evidence/training-states/parent/v2-sphere-001-paint/sample-00/turn-5/program.js"
+      }
+    ],
+    "anchor_source": {
+      "run": "contract-quality-20260918",
+      "policy": "parent",
+      "task": "v2-sphere-001-paint",
+      "sample": "sample-00",
+      "summary": "contract-quality-20260918/collected-final/evidence/training-states/parent/v2-sphere-001-paint/sample-00/summary.json"
+    },
+    "selection_note": "first and last distinct actual student paintings"
+  },
+  {
+    "id": "state-18",
+    "source_group": "v2-still_life-000",
+    "family": "still_life",
+    "split": "train",
+    "reference": "rl-states/state-18/reference.png",
+    "canvas": "rl-states/state-18/canvas.png",
+    "program": "rl-states/state-18/program.js",
+    "initial_canvas": "rl-states/state-18/canvas.png",
+    "initial_program": "rl-states/state-18/program.js",
+    "anchors": [
+      "aesthetic-anchor-pool/state-18/early/painting.png",
+      "aesthetic-anchor-pool/state-18/final/painting.png"
+    ],
+    "anchor_records": [
+      {
+        "id": "state-18-anchor-early",
+        "role": "early",
+        "turn": 1,
+        "canvas": "aesthetic-anchor-pool/state-18/early/painting.png",
+        "program": "aesthetic-anchor-pool/state-18/early/program.js",
+        "canvas_sha256": "925eedbcef11f8662d1e210f5f0401b6b04896584ce98b619d6b717d2bf988f5",
+        "program_sha256": "51efbacaf05d296dc40828d1013314df1aa79187a205ab1ba38471868dea4a78",
+        "source_artifact": "contract-quality-20260918/collected-final/evidence/training-states/parent/v2-still_life-000-paint/sample-00/turn-1/painting.png",
+        "source_program_artifact": "contract-quality-20260918/collected-final/evidence/training-states/parent/v2-still_life-000-paint/sample-00/turn-1/program.js"
+      },
+      {
+        "id": "state-18-anchor-final",
+        "role": "final",
+        "turn": 8,
+        "canvas": "aesthetic-anchor-pool/state-18/final/painting.png",
+        "program": "aesthetic-anchor-pool/state-18/final/program.js",
+        "canvas_sha256": "242ee025b404d233a95fa009fc3b07051c4adc6f16be08af0130970eac44a1e0",
+        "program_sha256": "6316ca5fb63b9521d1f87c865408234ec51cec85d0950fe1a049cd1e3e047262",
+        "source_artifact": "contract-quality-20260918/collected-final/evidence/training-states/parent/v2-still_life-000-paint/sample-00/turn-8/painting.png",
+        "source_program_artifact": "contract-quality-20260918/collected-final/evidence/training-states/parent/v2-still_life-000-paint/sample-00/turn-8/program.js"
+      }
+    ],
+    "anchor_source": {
+      "run": "contract-quality-20260918",
+      "policy": "parent",
+      "task": "v2-still_life-000-paint",
+      "sample": "sample-00",
+      "summary": "contract-quality-20260918/collected-final/evidence/training-states/parent/v2-still_life-000-paint/sample-00/summary.json"
+    },
+    "selection_note": "first and last distinct actual student paintings"
+  },
+  {
+    "id": "state-19",
+    "source_group": "v2-still_life-001",
+    "family": "still_life",
+    "split": "train",
+    "reference": "rl-states/state-19/reference.png",
+    "canvas": "rl-states/state-19/canvas.png",
+    "program": "rl-states/state-19/program.js",
+    "initial_canvas": "rl-states/state-19/canvas.png",
+    "initial_program": "rl-states/state-19/program.js",
+    "anchors": [
+      "aesthetic-anchor-pool/state-19/early/painting.png",
+      "aesthetic-anchor-pool/state-19/final/painting.png"
+    ],
+    "anchor_records": [
+      {
+        "id": "state-19-anchor-early",
+        "role": "early",
+        "turn": 1,
+        "canvas": "aesthetic-anchor-pool/state-19/early/painting.png",
+        "program": "aesthetic-anchor-pool/state-19/early/program.js",
+        "canvas_sha256": "1a6a222a2d3c9d80022df6fba3dbc4ddee8a79773df92ed7ae0094a94c3c2003",
+        "program_sha256": "a978dbb4cdab8ee5a83eaa93abaecb9269244df84d093985225ecc1c71cd0eaf",
+        "source_artifact": "contract-quality-20260918/collected-final/evidence/training-states/parent/v2-still_life-001-paint/sample-00/turn-1/painting.png",
+        "source_program_artifact": "contract-quality-20260918/collected-final/evidence/training-states/parent/v2-still_life-001-paint/sample-00/turn-1/program.js"
+      },
+      {
+        "id": "state-19-anchor-final",
+        "role": "final",
+        "turn": 5,
+        "canvas": "aesthetic-anchor-pool/state-19/final/painting.png",
+        "program": "aesthetic-anchor-pool/state-19/final/program.js",
+        "canvas_sha256": "5f8615f43c1d1f75f12c3cf649e0c4f10afc91314bf5a3c46acb815e1cbc459d",
+        "program_sha256": "89c22f31f5861ecd1fe475c8a922318bf9d6e7448c12f8906a5b50b1a0a65f58",
+        "source_artifact": "contract-quality-20260918/collected-final/evidence/training-states/parent/v2-still_life-001-paint/sample-00/turn-5/painting.png",
+        "source_program_artifact": "contract-quality-20260918/collected-final/evidence/training-states/parent/v2-still_life-001-paint/sample-00/turn-5/program.js"
+      }
+    ],
+    "anchor_source": {
+      "run": "contract-quality-20260918",
+      "policy": "parent",
+      "task": "v2-still_life-001-paint",
+      "sample": "sample-00",
+      "summary": "contract-quality-20260918/collected-final/evidence/training-states/parent/v2-still_life-001-paint/sample-00/summary.json"
+    },
+    "selection_note": "first and last distinct actual student paintings"
+  },
+  {
+    "id": "state-20",
+    "source_group": "v2-tree-000",
+    "family": "tree",
+    "split": "train",
+    "reference": "rl-states/state-20/reference.png",
+    "canvas": "rl-states/state-20/canvas.png",
+    "program": "rl-states/state-20/program.js",
+    "initial_canvas": "rl-states/state-20/canvas.png",
+    "initial_program": "rl-states/state-20/program.js",
+    "anchors": [
+      "aesthetic-anchor-pool/state-20/observed/painting.png"
+    ],
+    "anchor_records": [
+      {
+        "id": "state-20-anchor-observed",
+        "role": "observed",
+        "turn": 1,
+        "canvas": "aesthetic-anchor-pool/state-20/observed/painting.png",
+        "program": "aesthetic-anchor-pool/state-20/observed/program.js",
+        "canvas_sha256": "bb50df91929a9b6a0b438019e67fe8ba2407fc1c78753d0f27d032494bab7bc8",
+        "program_sha256": "11a31926ed6a0abe7e8ad38e2c207f9578411150d9bef6b142a10bb08fefec08",
+        "source_artifact": "contract-quality-20260918/collected-final/evidence/training-states/parent/v2-tree-000-paint/sample-00/turn-1/painting.png",
+        "source_program_artifact": "contract-quality-20260918/collected-final/evidence/training-states/parent/v2-tree-000-paint/sample-00/turn-1/program.js"
+      }
+    ],
+    "anchor_source": {
+      "run": "contract-quality-20260918",
+      "policy": "parent",
+      "task": "v2-tree-000-paint",
+      "sample": "sample-00",
+      "summary": "contract-quality-20260918/collected-final/evidence/training-states/parent/v2-tree-000-paint/sample-00/summary.json"
+    },
+    "selection_note": "only one unique actual student painting was available"
+  },
+  {
+    "id": "state-21",
+    "source_group": "v2-tree-001",
+    "family": "tree",
+    "split": "train",
+    "reference": "rl-states/state-21/reference.png",
+    "canvas": "rl-states/state-21/canvas.png",
+    "program": "rl-states/state-21/program.js",
+    "initial_canvas": "rl-states/state-21/canvas.png",
+    "initial_program": "rl-states/state-21/program.js",
+    "anchors": [
+      "aesthetic-anchor-pool/state-21/early/painting.png",
+      "aesthetic-anchor-pool/state-21/final/painting.png"
+    ],
+    "anchor_records": [
+      {
+        "id": "state-21-anchor-early",
+        "role": "early",
+        "turn": 1,
+        "canvas": "aesthetic-anchor-pool/state-21/early/painting.png",
+        "program": "aesthetic-anchor-pool/state-21/early/program.js",
+        "canvas_sha256": "69d2961adcbbb4b5bc79867a8532422109986ddb0fa2886e0d06f70f44fc307a",
+        "program_sha256": "17bd5e44cb8f1e854704281d5f70c9af30ed14ea1e37b8985cc0721e90b7c783",
+        "source_artifact": "contract-quality-20260918/collected-final/evidence/training-states/parent/v2-tree-001-paint/sample-00/turn-1/painting.png",
+        "source_program_artifact": "contract-quality-20260918/collected-final/evidence/training-states/parent/v2-tree-001-paint/sample-00/turn-1/program.js"
+      },
+      {
+        "id": "state-21-anchor-final",
+        "role": "final",
+        "turn": 7,
+        "canvas": "aesthetic-anchor-pool/state-21/final/painting.png",
+        "program": "aesthetic-anchor-pool/state-21/final/program.js",
+        "canvas_sha256": "f8b248574c470fef59007dd296cfa74224da3eb66b12c0af42089b6ee09dc781",
+        "program_sha256": "68ede9a41b4482a9a238277c30ccce9b56c24ad136aa67bd5d7eb82fa536f5a6",
+        "source_artifact": "contract-quality-20260918/collected-final/evidence/training-states/parent/v2-tree-001-paint/sample-00/turn-7/painting.png",
+        "source_program_artifact": "contract-quality-20260918/collected-final/evidence/training-states/parent/v2-tree-001-paint/sample-00/turn-7/program.js"
+      }
+    ],
+    "anchor_source": {
+      "run": "contract-quality-20260918",
+      "policy": "parent",
+      "task": "v2-tree-001-paint",
+      "sample": "sample-00",
+      "summary": "contract-quality-20260918/collected-final/evidence/training-states/parent/v2-tree-001-paint/sample-00/summary.json"
+    },
+    "selection_note": "first and last distinct actual student paintings"
+  },
+  {
+    "id": "state-22",
+    "source_group": "v2-vase-000",
+    "family": "vase",
+    "split": "train",
+    "reference": "rl-states/state-22/reference.png",
+    "canvas": "rl-states/state-22/canvas.png",
+    "program": "rl-states/state-22/program.js",
+    "initial_canvas": "rl-states/state-22/canvas.png",
+    "initial_program": "rl-states/state-22/program.js",
+    "anchors": [
+      "aesthetic-anchor-pool/state-22/early/painting.png",
+      "aesthetic-anchor-pool/state-22/final/painting.png"
+    ],
+    "anchor_records": [
+      {
+        "id": "state-22-anchor-early",
+        "role": "early",
+        "turn": 1,
+        "canvas": "aesthetic-anchor-pool/state-22/early/painting.png",
+        "program": "aesthetic-anchor-pool/state-22/early/program.js",
+        "canvas_sha256": "13a33b915eaa47dca48d4669690a0447815d8b528289c30a288dbe2ff9ddaeb0",
+        "program_sha256": "00713d76e94b5fafefd6b40f19a6c2fcfbff050029e176ce0bd8e9b4f79e4ae9",
+        "source_artifact": "contract-quality-20260918/collected-final/evidence/training-states/parent/v2-vase-000-paint/sample-00/turn-1/painting.png",
+        "source_program_artifact": "contract-quality-20260918/collected-final/evidence/training-states/parent/v2-vase-000-paint/sample-00/turn-1/program.js"
+      },
+      {
+        "id": "state-22-anchor-final",
+        "role": "final",
+        "turn": 2,
+        "canvas": "aesthetic-anchor-pool/state-22/final/painting.png",
+        "program": "aesthetic-anchor-pool/state-22/final/program.js",
+        "canvas_sha256": "dcb3ce57475bddc8c6a9bc1d3bb88542121962164f84cb2583dacc552696c920",
+        "program_sha256": "3dc8fb8270857564874620826a91fcaa94b634b0eba9da5e65fa0d72ed5fcea0",
+        "source_artifact": "contract-quality-20260918/collected-final/evidence/training-states/parent/v2-vase-000-paint/sample-00/turn-2/painting.png",
+        "source_program_artifact": "contract-quality-20260918/collected-final/evidence/training-states/parent/v2-vase-000-paint/sample-00/turn-2/program.js"
+      }
+    ],
+    "anchor_source": {
+      "run": "contract-quality-20260918",
+      "policy": "parent",
+      "task": "v2-vase-000-paint",
+      "sample": "sample-00",
+      "summary": "contract-quality-20260918/collected-final/evidence/training-states/parent/v2-vase-000-paint/sample-00/summary.json"
+    },
+    "selection_note": "first and last distinct actual student paintings"
+  },
+  {
+    "id": "state-23",
+    "source_group": "v2-vase-001",
+    "family": "vase",
+    "split": "train",
+    "reference": "rl-states/state-23/reference.png",
+    "canvas": "rl-states/state-23/canvas.png",
+    "program": "rl-states/state-23/program.js",
+    "initial_canvas": "rl-states/state-23/canvas.png",
+    "initial_program": "rl-states/state-23/program.js",
+    "anchors": [
+      "aesthetic-anchor-pool/state-23/observed/painting.png"
+    ],
+    "anchor_records": [
+      {
+        "id": "state-23-anchor-observed",
+        "role": "observed",
+        "turn": 2,
+        "canvas": "aesthetic-anchor-pool/state-23/observed/painting.png",
+        "program": "aesthetic-anchor-pool/state-23/observed/program.js",
+        "canvas_sha256": "166ab1ddb27ece05153a5da3ab052596e201856dc59cd92a399cb245c0e2b3d5",
+        "program_sha256": "a08f3f60b2e5de6102b826cdf15233471fe15059ee9c6f5e099a48052d6297bb",
+        "source_artifact": "contract-quality-20260918/collected-final/evidence/training-states/parent/v2-vase-001-paint/sample-00/turn-2/painting.png",
+        "source_program_artifact": "contract-quality-20260918/collected-final/evidence/training-states/parent/v2-vase-001-paint/sample-00/turn-2/program.js"
+      }
+    ],
+    "anchor_source": {
+      "run": "contract-quality-20260918",
+      "policy": "parent",
+      "task": "v2-vase-001-paint",
+      "sample": "sample-00",
+      "summary": "contract-quality-20260918/collected-final/evidence/training-states/parent/v2-vase-001-paint/sample-00/summary.json"
+    },
+    "selection_note": "only one unique actual student painting was available"
+  }
+]
