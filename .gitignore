@@ -90,6 +90,10 @@ painter/runs/**
 !painter/runs/*/*manifest*.json
 !painter/runs/*/config*.json
 !painter/runs/*/receipt*.json
+# The bounded COCO capability run keeps its two reviewed native-eval TOML
+# configs alongside the manifest so a Linux node can stage them verbatim.
+!painter/runs/coco-capability-20260922/base.toml
+!painter/runs/coco-capability-20260922/sft.toml
 # The scaled real-reference importer keeps a small reviewable manifest/doc
 # inside an ignored raw/image subtree; leave the source bytes out of Git.
 !painter/runs/*/real-pool/

@@ -90,7 +90,7 @@ if [[ "$MODE" == minimal ]]; then
     'gepa>=0.0.6' 'math-verify>=0.8.0' 'anthropic>=1.0.0' \
     'prime-tunnel>=0.1.8' 'prime-sandboxes>=0.2.39' \
     'prime-pydantic-config>=0.4.3' 'tiktoken' 'jinja2' \
-    'openai-harmony>=0.0.4' 'typing_extensions' 'tomli-w' \
+    'openai-harmony>=0.0.4' 'typing_extensions' 'tomli==2.2.1' 'tomli-w' \
     > "$ROOT/logs/inference-install.log" 2>&1
   "$UV" pip install --python "$INFERENCE_PY" --no-deps \
     "$PRIME_ROOT/deps/pydantic-config" \

@@ -40,7 +40,16 @@ CONCURRENCY=${EVAL_CONCURRENCY:-4}
 }
 PORT=${EVAL_PORT:-8000}
 HOST=${EVAL_HOST:-127.0.0.1}
+MAX_MODEL_LEN=${EVAL_MAX_MODEL_LEN:-32768}
+[[ "$MAX_MODEL_LEN" =~ ^[1-9][0-9]*$ ]] || {
+  echo "EVAL_MAX_MODEL_LEN must be a positive integer" >&2
+  exit 1
+}
 MAX_BATCHED=${EVAL_MAX_BATCHED_TOKENS:-32768}
+[[ "$MAX_BATCHED" =~ ^[1-9][0-9]*$ ]] || {
+  echo "EVAL_MAX_BATCHED_TOKENS must be a positive integer" >&2
+  exit 1
+}
 
 # Confirm the serving runtime before consuming GPU memory.  The Prime lock
 # supports this exact pair; this catches an accidental global/host environment
@@ -65,7 +74,7 @@ exec "$INFERENCE_ROOT/bin/vllm" serve "$MODEL_DIR" \
   --served-model-name base \
   --host "$HOST" --port "$PORT" \
   --dtype bfloat16 \
-  --max-model-len 32768 \
+  --max-model-len "$MAX_MODEL_LEN" \
   --max-num-seqs "$CONCURRENCY" \
   --max-num-batched-tokens "$MAX_BATCHED" \
   --gpu-memory-utilization "${EVAL_GPU_MEMORY_UTILIZATION:-0.90}" \

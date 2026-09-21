@@ -1,0 +1,132 @@
+{
+  "run_name": "coco-capability-20260922",
+  "status": "primary_rerun_launched",
+  "hypothesis": "The step-24 SFT painter can transfer the corrected paint-inspect-revise interface to real-photo references and improve over the unadapted base on recognizable structure and holistic visual quality.",
+  "source_commit": "fc00e3b",
+  "model": "Qwen/Qwen3.8-27B",
+  "model_revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+  "policies": {
+    "base": {
+      "adapter": null
+    },
+    "sft": {
+      "repo": "CK0607/qwen3.8-27b-brush-painting",
+      "revision": "b7103dd9923f19449ccf814f9b67bb2dcfed0909",
+      "prefix": "contract-quality-20260918/step_24",
+      "sha256": "d10eeb3b7b53fc539aa9d5e71eb98bcfe1c59d6a4878c7a69c93b8b09b59bcfa"
+    }
+  },
+  "sampling": {
+    "seed": 918200,
+    "temperature": 1.0,
+    "max_turns": 6,
+    "max_tokens_per_turn": 8192,
+    "context": 98304,
+    "enable_thinking": false,
+    "samples_per_reference": 1
+  },
+  "scope": {
+    "references": 12,
+    "selection": "deterministic diverse sample from existing28 COCOdev photos, selected beforeoutputs",
+    "planned_episodes": 24,
+    "training": false,
+    "judge_during_generation": false
+  },
+  "runtime": {
+    "prime_commit": "26b3131d2716a4f8210b165df584b83b4bc54f61",
+    "verifiers_commit": "828488fffe31aa3332b9d1bd4bd9ee320e375cf1",
+    "vllm": "0.28.0",
+    "transformers": "5.6.2",
+    "torch": "2.13.0+cu130",
+    "base_precision": "bfloat16",
+    "inference_max_sequences": 8,
+    "evaluation_concurrency_per_policy": 8,
+    "bootstrap_fix": "Installed tomli==2.2.1 before launch after minimal eval runtime dry-run exposed a missing TOML parser; both jobs use the corrected environment.",
+    "rollout_timeout_seconds": 3600
+  },
+  "bootstrap_bundle_sha256": "21775a9beac67fcbf8022274a2ce625a1c1dcbc66cae6c7c887ef111db47848f",
+  "source_sha256": {
+    "painter/native_painting.py": "dea9ea9cbba7da7249d2cbaaeb317dc3a645e34f72b50376677ea6e1fc51c43a",
+    "painter/native_painting_renderer.py": "2bd050e9f43ac347b549e98c06816166443ca7cf1f43b232ae4f4d89fb642d9e",
+    "painter/native_painting_eval.py": "caf63c7c385e54583a0d4fb5865ab93157416ffe73b1252f62e0aebc9c285c92",
+    "painter/eval_node.sh": "e1f1faeb94a29566a1189e769537df895bddb00736d9d4423eddd217b4f988f5",
+    "painter/eval_serve.sh": "1dd9568b15d9388bbfc64c4ec088b89013b4660fcf85ae0dae9ec84e5ab935a1",
+    "painter/eval_model_receipt.py": "b9ea4371ca482994d9852964edf776f31d8fad441e86b11a9fddf675371ba69b",
+    "painter/eval_node.sh_postfix": "80876c07969d1699d83652628cda92f27ea4fa99c77060074ba6b861a8ac3e56",
+    "painter/eval_serve.sh_attempt2": "21109f8bf7bbda75a64011cf57119c6fa527218912b60074a33aa40d2559f546",
+    "painter/native_painting_eval.py_attempt2": "0fa57989d0534bdb886e2b6c5f0ee340de008fe852b8d4a349548fe969cd4f3c"
+  },
+  "cost_plan": {
+    "role": "inference_only",
+    "gpu_count": 1,
+    "memory_gb": 96,
+    "usd_per_hour": 1.29,
+    "release": "after localhashverifiedevidence"
+  },
+  "limitations": [
+    "One sample perphoto/policy does not estimate best-of-k capability.",
+    "COCO is widely used; no unseen-pretraining claim.",
+    "Current evaluation defaults disable thinking; failure is not a claim that all prompting or planning configurations fail."
+  ],
+  "scheduling": "none",
+  "results": null,
+  "data_manifest_sha256": "874695bf596b5cb7db8940e1dfb6a0f3d62ab3050524a392b763b4ac257b4e94",
+  "data_bundle_sha256": "c92506c50fb8f6fdeb1a17cb3f464be376ace127a58b4a112ef80bfb7dfb52eb",
+  "reference_ids": [
+    "coco-capability-20260922-000000000127",
+    "coco-capability-20260922-000000000009",
+    "coco-capability-20260922-000000000419",
+    "coco-capability-20260922-000000000599",
+    "coco-capability-20260922-000000000133",
+    "coco-capability-20260922-000000000089",
+    "coco-capability-20260922-000000000208",
+    "coco-capability-20260922-000000000357",
+    "coco-capability-20260922-000000000382",
+    "coco-capability-20260922-000000000542",
+    "coco-capability-20260922-000000000641",
+    "coco-capability-20260922-000000000078"
+  ],
+  "hardware": {
+    "gpu": "RTX PRO 6000 Blackwell Server Edition",
+    "count": 1,
+    "memory_mib": 97887,
+    "driver": "580.126.09",
+    "price_usd_per_hour": 1.29,
+    "rented_at_utc": "2026-09-21T19:06:14.493436Z",
+    "role": "inference_only"
+  },
+  "evaluation_start_utc": "2026-09-21T19:16:26Z",
+  "node_config_sha256": {
+    "base": "7a1af5bd9a0d661a18946b6dba8c329f305476a7ae433bc411e5bc227b786a3b",
+    "sft": "0856533b976ca0181744027ade35b8d780e2f847a49cdb2560ac784988f5b13f"
+  },
+  "local_replay_manifest_sha256": "8a23d11ce59d65cc84b2c595177cc37b6803768c60c8c704b1b5a5e5e5f45cf7",
+  "local_replay_manifest_note": "Same frozen case records as node input; only model/label metadata corrected to actual served base/sft IDs.",
+  "interim_observations": {
+    "at_utc": "2026-09-21T19:30:00Z",
+    "not_final": true,
+    "base": "Photo009 and599 first valid renders at turn2 after API/global-name failures. Parent visually inspected: recognizable layout but weak proportions, tone, opacity and detail.",
+    "sft": "Completed photo009/127/599 emit repeated no-code planning sentences on all six turns; photo208 has a valid first canvas with coarse layout and oversimplified dinosaur.",
+    "preview_warning": "Renderer writes diagnostic PNGs for invalid programs too. First preview canvases were initially described incorrectly as valid in commentary, corrected after receipts were read. Gallery uses only recorded valid canvases."
+  },
+  "attempts": [
+    {
+      "id": "attempt-1-context32k",
+      "status": "operator_interrupted",
+      "context_tokens": 32768,
+      "max_sequences": 4,
+      "rollout_timeout_seconds": 1200,
+      "reason": "API context exhaustion on fourth request for long photo programs after earlier successful valid paintings; not a complete six-turn ability test. Preserve earlier no-code failures and successful renders; rerun same frozen cases with larger operational envelope."
+    },
+    {
+      "id": "primary-context96k",
+      "status": "launched",
+      "context_tokens": 98304,
+      "max_sequences": 8,
+      "evaluation_concurrency_per_policy": 8,
+      "rollout_timeout_seconds": 3600,
+      "same_frozen_cases": true,
+      "same_model_pins_and_prompt": true
+    }
+  ]
+}
