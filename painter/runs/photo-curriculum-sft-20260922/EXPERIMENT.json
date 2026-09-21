@@ -1,0 +1,117 @@
+{
+  "run": "photo-curriculum-sft-20260922",
+  "status": "final_visual_admission_before_training",
+  "training_started": false,
+  "hypothesis": "Complete, rendered, reference-specific demonstrations with diverse structural foundations improve fresh-base photo painting.",
+  "base": {
+    "repo": "Qwen/Qwen3.8-27B",
+    "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+    "config_sha256": "191e0af232104ed8b65258cf3fb2b842e288008baca7633c11b82a1ac7203aab"
+  },
+  "initial_adapter": null,
+  "prime_revision": "26b3131d2716a4f8210b165df584b83b4bc54f61",
+  "teacher_models": [
+    {
+      "name": "gpt-6-astra",
+      "reasoning_effort": "high"
+    },
+    {
+      "name": "gpt-5.6-sol",
+      "reasoning_effort": "high"
+    }
+  ],
+  "visual_reviewer": {
+    "name": "gpt-5.6-luna",
+    "reasoning_effort": "low"
+  },
+  "planned_data": {
+    "photo_train_candidates": 100,
+    "procedural_train_sources": 2400,
+    "general_retention_train_examples": 192,
+    "procedural_validation_sources": 240,
+    "photo_development_only_sources": 28,
+    "requested_supervised_token_fractions": {
+      "photo": 0.4,
+      "foundation": 0.5,
+      "retention": 0.1
+    },
+    "accepted_photo_count": null
+  },
+  "proposed_training": {
+    "steps": 512,
+    "global_batch_size": 8,
+    "micro_batch_size": 1,
+    "gpus": 2,
+    "seq_len": 16384,
+    "learning_rate": 1e-05,
+    "lora_rank": 16,
+    "lora_alpha": 32,
+    "checkpoint_interval": 64,
+    "validation_interval": 64,
+    "vision_frozen": true,
+    "data_exposures": 4096,
+    "full_target_no_truncation": true,
+    "dp_replicate": 2,
+    "dp_shard": 1
+  },
+  "matched_first_paint_eval": {
+    "reference_count": 28,
+    "turns": 1,
+    "max_tokens_per_response": 8192,
+    "context": 16384,
+    "temperature": 1.0,
+    "seed": 918200,
+    "thinking": false,
+    "renderer_deadline_seconds": 180,
+    "baseline": "immutable_base",
+    "manifest_sha256": "9943878cc43d48f1cf9ff60e5af633089bf2bd8d45141216531363cad8f1c878",
+    "base_config_sha256": "503c4e49ac6b1da37a70486426a5f7b613a5ef1dd06595626a61cf67ccff02e0",
+    "base_result": {
+      "episodes": 28,
+      "http_responses": 28,
+      "valid_renders": 4,
+      "render_receipts": 23,
+      "note": "Remaining five require trace categorization; visual quality not inferred from validity."
+    }
+  },
+  "hardware": {
+    "gpu_type": "RTX PRO 6000 Blackwell Server Edition",
+    "count": 2,
+    "memory_per_gpu_gb": 96,
+    "advertised_total_usd_per_hour": 2.38
+  },
+  "checkpoints": {
+    "public_hf_repo": "CK0607/qwen3.8-27b-brush-painting",
+    "namespace": "photo-curriculum-sft-20260922",
+    "remote_hash_verification": true,
+    "native_temporary_keep_last": 2,
+    "optimizer_resume": "same_node_native_checkpoints_only"
+  },
+  "assignment_sha256": {
+    "teacher-assignment-astra.json": "cc921d56b03426c3136e6db0c0e3c00007ad34c10654baf56fe3a4b1a439b662",
+    "teacher-assignment-sol.json": "3ff27b4bfab523a029923ebebe1e5d1553cac2c446937870bd2b8095ddc29968"
+  },
+  "foundation_lock_sha256": "e602bfcb038683015f30a61c4c31a5be1cc679b9f783784e8423bbe075dc18ab",
+  "source_parent_commit_before_run": "29273d8",
+  "final_data_hashes": null,
+  "results": null,
+  "scheduled_tasks_created": false,
+  "teacher_generation": {
+    "candidates": 100,
+    "valid_rendered": 98,
+    "failed_render_ids": [
+      "coco128-000000000294",
+      "coco128-000000000332"
+    ],
+    "quality_review": "all_complete_pairs_Luna_low_in_progress"
+  },
+  "processor_audit": {
+    "train_candidates": 2690,
+    "validation_rows": 240,
+    "max_sequence_tokens": 6039,
+    "max_assistant_tokens": 5258,
+    "assistant_mask": "exact_target_plus_im_end",
+    "truncation": false,
+    "candidate_sha256": "fab8d6bc987a543b66cf52966bb248e7e9af181452393e305b276f6abdd0a690"
+  }
+}

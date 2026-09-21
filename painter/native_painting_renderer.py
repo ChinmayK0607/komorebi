@@ -16,6 +16,9 @@ import subprocess
 from pathlib import Path
 from typing import Any
 
+DEFAULT_RENDER_TIMEOUT_SECONDS = 180
+MAX_RENDER_TIMEOUT_SECONDS = 180
+
 
 def extract_sketch(reply: str) -> str:
     blocks = re.findall(
@@ -28,6 +31,17 @@ def extract_sketch(reply: str) -> str:
 
 def _sha(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def render_timeout_seconds() -> int:
+    raw = os.environ.get("PAINTER_RENDER_TIMEOUT_SECONDS", str(DEFAULT_RENDER_TIMEOUT_SECONDS))
+    try:
+        value = int(raw)
+    except ValueError as exc:
+        raise ValueError("PAINTER_RENDER_TIMEOUT_SECONDS must be an integer from 1 to 180") from exc
+    if not 1 <= value <= MAX_RENDER_TIMEOUT_SECONDS:
+        raise ValueError("PAINTER_RENDER_TIMEOUT_SECONDS must be an integer from 1 to 180")
+    return value
 
 
 def render_action(
@@ -69,10 +83,13 @@ def render_action(
     renderer_python = renderer_python or root / "renderer-env/bin/python"
     if not renderer.is_file() or not renderer_python.is_file():
         raise RuntimeError(f"renderer runtime is missing under {root}")
+    deadline_seconds = render_timeout_seconds()
+    row["render_timeout_seconds"] = deadline_seconds
+    row["render_process_timeout_seconds"] = deadline_seconds + 20
     output = folder / "painting.png"
     command = [
         "/usr/sbin/runuser", "-u", "painter", "--", str(renderer_python),
-        str(renderer), str(source), "--output", str(output), "--timeout", "120",
+        str(renderer), str(source), "--output", str(output), "--timeout", str(deadline_seconds),
         "--backend", "swiftshader",
     ]
     child_env = os.environ.copy()
@@ -80,7 +97,7 @@ def render_action(
     # pass that location so eval workers launched by vf/Prime do not fall back
     # to a per-user cache under /tmp.
     child_env.setdefault("PLAYWRIGHT_BROWSERS_PATH", str(root / "browsers"))
-    completed = subprocess.run(command, capture_output=True, text=True, timeout=140, check=False, env=child_env)
+    completed = subprocess.run(command, capture_output=True, text=True, timeout=deadline_seconds + 20, check=False, env=child_env)
     receipt_path = output.with_suffix(".json")
     if not receipt_path.is_file():
         raise RuntimeError("renderer produced no receipt: " + completed.stderr[-1000:])
@@ -110,4 +127,4 @@ def render_action(
     return row
 
 
-__all__ = ["extract_sketch", "render_action"]
+__all__ = ["DEFAULT_RENDER_TIMEOUT_SECONDS", "extract_sketch", "render_action", "render_timeout_seconds"]
