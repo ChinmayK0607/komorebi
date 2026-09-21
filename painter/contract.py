@@ -7,7 +7,7 @@ import hashlib
 import json
 import re
 
-VERSION = "canvas-pixels-preview-v1"
+VERSION = "canvas-pixels-preview-v2"
 CANVAS_SIZE = 600
 P5_VERSION = "2.3.2"
 BRUSH_VERSION = "2.2.1"
@@ -28,13 +28,15 @@ Do not repeat an unchanged sketch as a revision. Preserve correct parts and fix 
 
 NEXT_VERSION='Inspect the images and paint the next complete version.'
 NO_CHANGE='Your previous revision made no change to the current canvas. Inspect the reference and current canvas. If the painting is already complete, keep it and respond FINISHED without code. Otherwise identify a specific visual mismatch and change the sketch to fix it; do not repeat the same program.'
+FINISH_WITHOUT_CANVAS='Do not respond FINISHED yet: this task has no observed canvas. Return a complete JavaScript sketch in a javascript code block so it can be rendered, then inspect the actual canvas before deciding whether to finish.'
 
 
 def identity():
     return {"version": VERSION, "sha256": hashlib.sha256(
         json.dumps({"version": VERSION, "canvas": CANVAS_SIZE,
                     "p5": P5_VERSION, "brush": BRUSH_VERSION,
-                    "system": SYSTEM, "next": NEXT_VERSION, "no_change": NO_CHANGE},
+                    "system": SYSTEM, "next": NEXT_VERSION, "no_change": NO_CHANGE,
+                    "finish_without_canvas": FINISH_WITHOUT_CANVAS},
                    sort_keys=True).encode()).hexdigest()}
 
 

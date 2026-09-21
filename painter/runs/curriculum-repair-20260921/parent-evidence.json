@@ -1,0 +1,150 @@
+{
+  "previous_run": "aesthetic-rl-20260921",
+  "native_system_prompt": "Paint the supplied reference as an attractive p5.brush JavaScript sketch on a 600x600 canvas. Inspect the actual current canvas after each render. Return a complete sketch in a javascript code block; return FINISHED alone only after the visible canvas is complete.",
+  "native_system_prompt_sha256": "190181e36405cf0e82c88fda8519bd7e8807b31ce191c8f4c1fb5eeb58087063",
+  "shared_contract_source_sha256": "ed748ac78970e3205896093c13f9a607da0c8f30c74b654d2fa1df02f7cab165",
+  "initial_state_count": 24,
+  "translations_before_draw": [
+    {
+      "group": "v2-bus-000",
+      "program": "painter/runs/aesthetic-rl-20260921/collected-final/rl-states/state-02/program.js",
+      "program_sha256": "598c392683464f29cc6ba6f2c769a7ffe10ed54532860ba6fbafd77097c16342"
+    },
+    {
+      "group": "v2-bus-001",
+      "program": "painter/runs/aesthetic-rl-20260921/collected-final/rl-states/state-03/program.js",
+      "program_sha256": "fca7cb587ed28f018b5fb830894cde6eb2bd3f6bf6c554136e9d23bbeeb8f842"
+    },
+    {
+      "group": "v2-cup-001",
+      "program": "painter/runs/aesthetic-rl-20260921/collected-final/rl-states/state-05/program.js",
+      "program_sha256": "ea232c19ef25e5c0e2670964ef9a206793c418d0f43c0d737286db81be77b1d6"
+    },
+    {
+      "group": "v2-flower-000",
+      "program": "painter/runs/aesthetic-rl-20260921/collected-final/rl-states/state-08/program.js",
+      "program_sha256": "b3f85fea8d4e0e826929be070d63d8d947a936ef24ddbd2813acada4b35e3f89"
+    },
+    {
+      "group": "v2-house-001",
+      "program": "painter/runs/aesthetic-rl-20260921/collected-final/rl-states/state-11/program.js",
+      "program_sha256": "d12dd2c83c2c2666f6d50290e3f8ddef5d3d363cd4322f7141e0af46e160089f"
+    },
+    {
+      "group": "v2-sailboat-000",
+      "program": "painter/runs/aesthetic-rl-20260921/collected-final/rl-states/state-14/program.js",
+      "program_sha256": "a7613d0a28f9bc136124c7c031f9e951fe7d7ed8c007d618c58ea82aa333520c"
+    },
+    {
+      "group": "v2-sphere-001",
+      "program": "painter/runs/aesthetic-rl-20260921/collected-final/rl-states/state-17/program.js",
+      "program_sha256": "7d1221dd54e2950b134082a9f89bb7b0f0e6d9d62afc24e039bfa8ffb79ee56d"
+    },
+    {
+      "group": "v2-vase-000",
+      "program": "painter/runs/aesthetic-rl-20260921/collected-final/rl-states/state-22/program.js",
+      "program_sha256": "00713d76e94b5fafefd6b40f19a6c2fcfbff050029e176ce0bd8e9b4f79e4ae9"
+    }
+  ],
+  "admitted_coverage": [
+    {
+      "update": 1,
+      "episodes": 8,
+      "references": [
+        "v2-box-000"
+      ]
+    },
+    {
+      "update": 2,
+      "episodes": 8,
+      "references": [
+        "v2-box-000"
+      ]
+    },
+    {
+      "update": 3,
+      "episodes": 8,
+      "references": [
+        "v2-bus-000"
+      ]
+    },
+    {
+      "update": 4,
+      "episodes": 8,
+      "references": [
+        "v2-bus-000"
+      ]
+    }
+  ],
+  "evaluation_behavior": {
+    "simplebaseline": [
+      {
+        "group": "v2-box-007",
+        "valid_canvas": true,
+        "finished": false,
+        "turns": 3,
+        "unchanged_turns": 2,
+        "failed_turns": 0
+      },
+      {
+        "group": "v2-bus-007",
+        "valid_canvas": true,
+        "finished": false,
+        "turns": 3,
+        "unchanged_turns": 1,
+        "failed_turns": 0
+      },
+      {
+        "group": "v2-flower-007",
+        "valid_canvas": false,
+        "finished": false,
+        "turns": 3,
+        "unchanged_turns": 0,
+        "failed_turns": 3
+      },
+      {
+        "group": "v2-vase-007",
+        "valid_canvas": true,
+        "finished": false,
+        "turns": 3,
+        "unchanged_turns": 2,
+        "failed_turns": 0
+      }
+    ],
+    "candidate": [
+      {
+        "group": "v2-box-007",
+        "valid_canvas": true,
+        "finished": false,
+        "turns": 3,
+        "unchanged_turns": 2,
+        "failed_turns": 0
+      },
+      {
+        "group": "v2-bus-007",
+        "valid_canvas": true,
+        "finished": false,
+        "turns": 3,
+        "unchanged_turns": 0,
+        "failed_turns": 0
+      },
+      {
+        "group": "v2-flower-007",
+        "valid_canvas": true,
+        "finished": false,
+        "turns": 3,
+        "unchanged_turns": 0,
+        "failed_turns": 1
+      },
+      {
+        "group": "v2-vase-007",
+        "valid_canvas": true,
+        "finished": false,
+        "turns": 3,
+        "unchanged_turns": 1,
+        "failed_turns": 0
+      }
+    ]
+  },
+  "p5_reference": "https://p5js.org/reference/p5/translate/"
+}

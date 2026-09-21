@@ -1,0 +1,1920 @@
+{
+  "contract_snapshot": {
+    "file_sha256": "0c77f0ed4bd5cad3121918d27495e3aef780dcb84ff0dd51cf61c3ffdd2ffaa0",
+    "identity": {
+      "sha256": "dd99279a5f3f6e98126e82db8b026c1ba726500cc8efb3fde53633772b5c65fb",
+      "version": "canvas-pixels-preview-v2"
+    },
+    "path": "contract.py"
+  },
+  "first_cycle": {
+    "correction": 8,
+    "fresh": 24
+  },
+  "max_turns": 6,
+  "modes": {
+    "correction": {
+      "contract_snapshot": {
+        "file_sha256": "0c77f0ed4bd5cad3121918d27495e3aef780dcb84ff0dd51cf61c3ffdd2ffaa0",
+        "identity": {
+          "sha256": "dd99279a5f3f6e98126e82db8b026c1ba726500cc8efb3fde53633772b5c65fb",
+          "version": "canvas-pixels-preview-v2"
+        },
+        "path": "contract.py"
+      },
+      "counts": {
+        "families": 8,
+        "source_groups": 8,
+        "tasks": 8
+      },
+      "coverage": {
+        "first_n": 12,
+        "first_n_families": [
+          "bus",
+          "cup",
+          "cylinder",
+          "flower",
+          "house",
+          "ribbons",
+          "sailboat",
+          "still_life"
+        ],
+        "first_n_groups": [
+          "v2-bus-000",
+          "v2-cup-000",
+          "v2-cylinder-000",
+          "v2-flower-000",
+          "v2-house-000",
+          "v2-ribbons-000",
+          "v2-sailboat-000",
+          "v2-still_life-000"
+        ],
+        "prefixes": [
+          {
+            "families": [
+              "bus"
+            ],
+            "groups": [
+              "v2-bus-000"
+            ],
+            "n": 1
+          },
+          {
+            "families": [
+              "bus",
+              "cup"
+            ],
+            "groups": [
+              "v2-bus-000",
+              "v2-cup-000"
+            ],
+            "n": 2
+          },
+          {
+            "families": [
+              "bus",
+              "cup",
+              "cylinder"
+            ],
+            "groups": [
+              "v2-bus-000",
+              "v2-cup-000",
+              "v2-cylinder-000"
+            ],
+            "n": 3
+          },
+          {
+            "families": [
+              "bus",
+              "cup",
+              "cylinder",
+              "flower"
+            ],
+            "groups": [
+              "v2-bus-000",
+              "v2-cup-000",
+              "v2-cylinder-000",
+              "v2-flower-000"
+            ],
+            "n": 4
+          },
+          {
+            "families": [
+              "bus",
+              "cup",
+              "cylinder",
+              "flower",
+              "house"
+            ],
+            "groups": [
+              "v2-bus-000",
+              "v2-cup-000",
+              "v2-cylinder-000",
+              "v2-flower-000",
+              "v2-house-000"
+            ],
+            "n": 5
+          },
+          {
+            "families": [
+              "bus",
+              "cup",
+              "cylinder",
+              "flower",
+              "house",
+              "ribbons"
+            ],
+            "groups": [
+              "v2-bus-000",
+              "v2-cup-000",
+              "v2-cylinder-000",
+              "v2-flower-000",
+              "v2-house-000",
+              "v2-ribbons-000"
+            ],
+            "n": 6
+          },
+          {
+            "families": [
+              "bus",
+              "cup",
+              "cylinder",
+              "flower",
+              "house",
+              "ribbons",
+              "sailboat"
+            ],
+            "groups": [
+              "v2-bus-000",
+              "v2-cup-000",
+              "v2-cylinder-000",
+              "v2-flower-000",
+              "v2-house-000",
+              "v2-ribbons-000",
+              "v2-sailboat-000"
+            ],
+            "n": 7
+          },
+          {
+            "families": [
+              "bus",
+              "cup",
+              "cylinder",
+              "flower",
+              "house",
+              "ribbons",
+              "sailboat",
+              "still_life"
+            ],
+            "groups": [
+              "v2-bus-000",
+              "v2-cup-000",
+              "v2-cylinder-000",
+              "v2-flower-000",
+              "v2-house-000",
+              "v2-ribbons-000",
+              "v2-sailboat-000",
+              "v2-still_life-000"
+            ],
+            "n": 8
+          }
+        ]
+      },
+      "max_turns": 6,
+      "mode": "correction",
+      "policy": {
+        "family_round_robin": true,
+        "fresh_one_task_per_source_group": false,
+        "repeated_anchor_protection": true,
+        "selection_limit": 8,
+        "source_group_round_robin": true
+      },
+      "schema": "painter.curriculum-order.v1",
+      "source_manifest_schema": null,
+      "source_manifest_sha256": "d27bd1cb1e1529c6cecad6bc4a08dbef1ef0240cc55aef3c147a640af4d12282",
+      "tasks": [
+        {
+          "anchor": "../recovery-quality-20260918/collected-final/evidence/data/v2-bus-000/turn-2.png",
+          "anchor_id": "../recovery-quality-20260918/collected-final/evidence/data/v2-bus-000/turn-2.png",
+          "defect": "Intermediate canvas has the body, five passenger windows and two wheels but lacks the final lower contour/detail line and small front window; turn-3 completes those visible details.",
+          "distinct_input_target": true,
+          "family": "bus",
+          "id": "v2-bus-000-repair-turn-2",
+          "initial_canvas": "../recovery-quality-20260918/collected-final/evidence/data/v2-bus-000/turn-2.png",
+          "initial_program": "../recovery-quality-20260918/collected-final/evidence/data/v2-bus-000/turn-2.js",
+          "input_png": "../recovery-quality-20260918/collected-final/evidence/data/v2-bus-000/turn-2.png",
+          "input_program": "../recovery-quality-20260918/collected-final/evidence/data/v2-bus-000/turn-2.js",
+          "input_program_sha256": "eaca78750d98cd1be48e48b49e9ecbac585e6c1293bf8b757350b3faa27adb63",
+          "input_receipt": "../recovery-quality-20260918/collected-final/evidence/data/v2-bus-000/turn-2.json",
+          "input_receipt_sha256": "892c89e2f554bf16dd9046cbca8ce0af57fecea3f8be76c3f7e3516bb3b4ca44",
+          "input_role": "teacher_intermediate_repair_input",
+          "input_sha256": "c2c588461ba86b373e2f470ddcd9785c6e8054372da962f42c6b52a0361981cf",
+          "input_stage": "turn-2",
+          "mode": "correction",
+          "order": 0,
+          "reference": "../recovery-quality-20260918/collected-final/evidence/data/v2-bus-000/turn-3.png",
+          "reference_as_rl_opponent": false,
+          "repair_id": "v2-bus-000-repair-turn-2",
+          "review": {
+            "basis": "direct side-by-side view_image comparison of input and complete target",
+            "no_heldout_reuse": true,
+            "status": "foundation_repair_ready"
+          },
+          "source_group": "v2-bus-000",
+          "split": "train_repair",
+          "target_png": "../recovery-quality-20260918/collected-final/evidence/data/v2-bus-000/turn-3.png",
+          "target_program": "../recovery-quality-20260918/collected-final/evidence/data/v2-bus-000/turn-3.js",
+          "target_program_sha256": "94d6e92d2f9a8162cc0445a1284b03f9123ebbdce11046a4f6c50057b53d746c",
+          "target_receipt": "../recovery-quality-20260918/collected-final/evidence/data/v2-bus-000/turn-3.json",
+          "target_receipt_sha256": "6cf2a44222ee9cbe3e63671a78388173e48e6ac7a8aec70409ac5a62dfc05dcb",
+          "target_role": "procedural_teacher_complete_target",
+          "target_sha256": "75ed686a136dbc70244b2eec6882798cc9319203601d3ca58d813e45b295daba",
+          "target_stage": "turn-3",
+          "task_id": "v2-bus-000-repair-turn-2"
+        },
+        {
+          "anchor": "../recovery-quality-20260918/collected-final/evidence/data/v2-cup-000/turn-1.png",
+          "anchor_id": "../recovery-quality-20260918/collected-final/evidence/data/v2-cup-000/turn-1.png",
+          "defect": "Turn-1 shows only the handle and cast shadow; the cup body and open rim are absent. Turn-3 supplies the connected body, rim and complete handle.",
+          "distinct_input_target": true,
+          "family": "cup",
+          "id": "v2-cup-000-repair-turn-1",
+          "initial_canvas": "../recovery-quality-20260918/collected-final/evidence/data/v2-cup-000/turn-1.png",
+          "initial_program": "../recovery-quality-20260918/collected-final/evidence/data/v2-cup-000/turn-1.js",
+          "input_png": "../recovery-quality-20260918/collected-final/evidence/data/v2-cup-000/turn-1.png",
+          "input_program": "../recovery-quality-20260918/collected-final/evidence/data/v2-cup-000/turn-1.js",
+          "input_program_sha256": "205b7691157428dc16ee3675490c7ba4fc92118cd15ec153e0f7c5ce02378d29",
+          "input_receipt": "../recovery-quality-20260918/collected-final/evidence/data/v2-cup-000/turn-1.json",
+          "input_receipt_sha256": "a183e1e43fa53a547e122c79bd758b3935033babf6cfeb3683d949e9e2d9bc23",
+          "input_role": "teacher_intermediate_repair_input",
+          "input_sha256": "77f7eaba89f932af43a300f8f7b35c5a486131908abeba2b86e608ed13e410bf",
+          "input_stage": "turn-1",
+          "mode": "correction",
+          "order": 1,
+          "reference": "../recovery-quality-20260918/collected-final/evidence/data/v2-cup-000/turn-3.png",
+          "reference_as_rl_opponent": false,
+          "repair_id": "v2-cup-000-repair-turn-1",
+          "review": {
+            "basis": "direct side-by-side view_image comparison of input and complete target",
+            "no_heldout_reuse": true,
+            "status": "foundation_repair_ready"
+          },
+          "source_group": "v2-cup-000",
+          "split": "train_repair",
+          "target_png": "../recovery-quality-20260918/collected-final/evidence/data/v2-cup-000/turn-3.png",
+          "target_program": "../recovery-quality-20260918/collected-final/evidence/data/v2-cup-000/turn-3.js",
+          "target_program_sha256": "12f51ffc53a6353eda08ae978b76047b4825d7771cc202051004bcbcefefc03a",
+          "target_receipt": "../recovery-quality-20260918/collected-final/evidence/data/v2-cup-000/turn-3.json",
+          "target_receipt_sha256": "ca4242cac64bdd91007d0fda5aa6d269e1837e0ad31eb6d609521813b8571e42",
+          "target_role": "procedural_teacher_complete_target",
+          "target_sha256": "97d9d9e85ff2cc55bc200d0d16de014f56f5e72758a2eb6ab5e7024e7270591a",
+          "target_stage": "turn-3",
+          "task_id": "v2-cup-000-repair-turn-1"
+        },
+        {
+          "anchor": "../recovery-quality-20260918/collected-final/evidence/data/v2-cylinder-000/turn-1.png",
+          "anchor_id": "../recovery-quality-20260918/collected-final/evidence/data/v2-cylinder-000/turn-1.png",
+          "defect": "Turn-1 has a filled body and bottom ellipse but lacks the open upper rim/highlight needed to read as a cylinder; turn-3 completes the rim and shading.",
+          "distinct_input_target": true,
+          "family": "cylinder",
+          "id": "v2-cylinder-000-repair-turn-1",
+          "initial_canvas": "../recovery-quality-20260918/collected-final/evidence/data/v2-cylinder-000/turn-1.png",
+          "initial_program": "../recovery-quality-20260918/collected-final/evidence/data/v2-cylinder-000/turn-1.js",
+          "input_png": "../recovery-quality-20260918/collected-final/evidence/data/v2-cylinder-000/turn-1.png",
+          "input_program": "../recovery-quality-20260918/collected-final/evidence/data/v2-cylinder-000/turn-1.js",
+          "input_program_sha256": "ef45f433bc713493425fb5a717e5e2c50379bc458c0d715eeef12a558fd6ab9b",
+          "input_receipt": "../recovery-quality-20260918/collected-final/evidence/data/v2-cylinder-000/turn-1.json",
+          "input_receipt_sha256": "e33a9826423cd8885ad812801be2910ab89dfa618abe42f3a0b4be4914569d11",
+          "input_role": "teacher_intermediate_repair_input",
+          "input_sha256": "1e6180f7a963bf6a086e96158458963e729e1a88988a07ee7a44ea51686f5dd8",
+          "input_stage": "turn-1",
+          "mode": "correction",
+          "order": 2,
+          "reference": "../recovery-quality-20260918/collected-final/evidence/data/v2-cylinder-000/turn-3.png",
+          "reference_as_rl_opponent": false,
+          "repair_id": "v2-cylinder-000-repair-turn-1",
+          "review": {
+            "basis": "direct side-by-side view_image comparison of input and complete target",
+            "no_heldout_reuse": true,
+            "status": "foundation_repair_ready"
+          },
+          "source_group": "v2-cylinder-000",
+          "split": "train_repair",
+          "target_png": "../recovery-quality-20260918/collected-final/evidence/data/v2-cylinder-000/turn-3.png",
+          "target_program": "../recovery-quality-20260918/collected-final/evidence/data/v2-cylinder-000/turn-3.js",
+          "target_program_sha256": "c02709fab86dbb77d54e12afdec7896a156ac56b8392691208fbe4df38665a49",
+          "target_receipt": "../recovery-quality-20260918/collected-final/evidence/data/v2-cylinder-000/turn-3.json",
+          "target_receipt_sha256": "d5ec55b6bfe0474eab845b8e7ced4efbd937b08510ca9c1395290d34abfdc813",
+          "target_role": "procedural_teacher_complete_target",
+          "target_sha256": "15a9896963aab005103575d4154b5af5f753298d6db2a4abdd7f64d651b29638",
+          "target_stage": "turn-3",
+          "task_id": "v2-cylinder-000-repair-turn-1"
+        },
+        {
+          "anchor": "../recovery-quality-20260918/collected-final/evidence/data/v2-flower-000/turn-2.png",
+          "anchor_id": "../recovery-quality-20260918/collected-final/evidence/data/v2-flower-000/turn-2.png",
+          "defect": "Turn-2 has the radial petals, leaf and stem but lacks the final central disk/seed detail; turn-3 adds the central disk marks.",
+          "distinct_input_target": true,
+          "family": "flower",
+          "id": "v2-flower-000-repair-turn-2",
+          "initial_canvas": "../recovery-quality-20260918/collected-final/evidence/data/v2-flower-000/turn-2.png",
+          "initial_program": "../recovery-quality-20260918/collected-final/evidence/data/v2-flower-000/turn-2.js",
+          "input_png": "../recovery-quality-20260918/collected-final/evidence/data/v2-flower-000/turn-2.png",
+          "input_program": "../recovery-quality-20260918/collected-final/evidence/data/v2-flower-000/turn-2.js",
+          "input_program_sha256": "36b8be4d77478bacbf6b75c1752cd35df4fe567da0b45e94b9b5012eb0de6e91",
+          "input_receipt": "../recovery-quality-20260918/collected-final/evidence/data/v2-flower-000/turn-2.json",
+          "input_receipt_sha256": "fac8493bd24264fd0ded4e3c9c23187b298e670b08cfd08777464f0979396b62",
+          "input_role": "teacher_intermediate_repair_input",
+          "input_sha256": "dfac3682586450c29bd684cb02bbe12b421cc3a4ae6c212e29d8467c72e7efd4",
+          "input_stage": "turn-2",
+          "mode": "correction",
+          "order": 3,
+          "reference": "../recovery-quality-20260918/collected-final/evidence/data/v2-flower-000/turn-3.png",
+          "reference_as_rl_opponent": false,
+          "repair_id": "v2-flower-000-repair-turn-2",
+          "review": {
+            "basis": "direct side-by-side view_image comparison of input and complete target",
+            "no_heldout_reuse": true,
+            "status": "foundation_repair_ready"
+          },
+          "source_group": "v2-flower-000",
+          "split": "train_repair",
+          "target_png": "../recovery-quality-20260918/collected-final/evidence/data/v2-flower-000/turn-3.png",
+          "target_program": "../recovery-quality-20260918/collected-final/evidence/data/v2-flower-000/turn-3.js",
+          "target_program_sha256": "9b39bb1ca122b24ab5e412d0cb21273d2e0514c28720bf83040bcc86af6f3e70",
+          "target_receipt": "../recovery-quality-20260918/collected-final/evidence/data/v2-flower-000/turn-3.json",
+          "target_receipt_sha256": "ad21feb473b589fd374cd8b18233c3988e83d6ce4ada824d5d7acf4c0d5c60b4",
+          "target_role": "procedural_teacher_complete_target",
+          "target_sha256": "31ce7b9a6e5d32285095ba405a640ac6d351146b16daee266e1517b94b567637",
+          "target_stage": "turn-3",
+          "task_id": "v2-flower-000-repair-turn-2"
+        },
+        {
+          "anchor": "../recovery-quality-20260918/collected-final/evidence/data/v2-house-000/turn-2.png",
+          "anchor_id": "../recovery-quality-20260918/collected-final/evidence/data/v2-house-000/turn-2.png",
+          "defect": "Turn-2 has the roof and connected walls but no window or door; turn-3 adds the two wall details and preserves the ground contact.",
+          "distinct_input_target": true,
+          "family": "house",
+          "id": "v2-house-000-repair-turn-2",
+          "initial_canvas": "../recovery-quality-20260918/collected-final/evidence/data/v2-house-000/turn-2.png",
+          "initial_program": "../recovery-quality-20260918/collected-final/evidence/data/v2-house-000/turn-2.js",
+          "input_png": "../recovery-quality-20260918/collected-final/evidence/data/v2-house-000/turn-2.png",
+          "input_program": "../recovery-quality-20260918/collected-final/evidence/data/v2-house-000/turn-2.js",
+          "input_program_sha256": "cb590c46ecaf38fda75e94ff96069af8f5559ac7c73972125caa8d2a359d0e3c",
+          "input_receipt": "../recovery-quality-20260918/collected-final/evidence/data/v2-house-000/turn-2.json",
+          "input_receipt_sha256": "884b7e1a451c52e1655b108a44d7459c0d39a979ef55cd385910bb6943903e38",
+          "input_role": "teacher_intermediate_repair_input",
+          "input_sha256": "339eb44b9295b2034b3b8d90e14a2cbc6405974a43d76a19b8865281abf5549b",
+          "input_stage": "turn-2",
+          "mode": "correction",
+          "order": 4,
+          "reference": "../recovery-quality-20260918/collected-final/evidence/data/v2-house-000/turn-3.png",
+          "reference_as_rl_opponent": false,
+          "repair_id": "v2-house-000-repair-turn-2",
+          "review": {
+            "basis": "direct side-by-side view_image comparison of input and complete target",
+            "no_heldout_reuse": true,
+            "status": "foundation_repair_ready"
+          },
+          "source_group": "v2-house-000",
+          "split": "train_repair",
+          "target_png": "../recovery-quality-20260918/collected-final/evidence/data/v2-house-000/turn-3.png",
+          "target_program": "../recovery-quality-20260918/collected-final/evidence/data/v2-house-000/turn-3.js",
+          "target_program_sha256": "a7d1507218846e75d3fb7c27113e89a1c9dce30848b01ae5a833e2daa24ee9ae",
+          "target_receipt": "../recovery-quality-20260918/collected-final/evidence/data/v2-house-000/turn-3.json",
+          "target_receipt_sha256": "bed6074ec8965aa6a237400c0148b57b4362398ba0738b614e52c84b539e43a4",
+          "target_role": "procedural_teacher_complete_target",
+          "target_sha256": "4794b75377d7cf232ec82e46ab8d9837079d1623786e10b3884188aeb974a6d2",
+          "target_stage": "turn-3",
+          "task_id": "v2-house-000-repair-turn-2"
+        },
+        {
+          "anchor": "../recovery-quality-20260918/collected-final/evidence/data/v2-ribbons-000/turn-1.png",
+          "anchor_id": "../recovery-quality-20260918/collected-final/evidence/data/v2-ribbons-000/turn-1.png",
+          "defect": "Turn-1 has three flowing bands but no pencil contour lines; turn-3 adds the three interior contours that clarify band edges.",
+          "distinct_input_target": true,
+          "family": "ribbons",
+          "id": "v2-ribbons-000-repair-turn-1",
+          "initial_canvas": "../recovery-quality-20260918/collected-final/evidence/data/v2-ribbons-000/turn-1.png",
+          "initial_program": "../recovery-quality-20260918/collected-final/evidence/data/v2-ribbons-000/turn-1.js",
+          "input_png": "../recovery-quality-20260918/collected-final/evidence/data/v2-ribbons-000/turn-1.png",
+          "input_program": "../recovery-quality-20260918/collected-final/evidence/data/v2-ribbons-000/turn-1.js",
+          "input_program_sha256": "c73c2de1ffa50a994d89c4824c5b68c854cbc2b497ba5b90b4c6342a5b9b56fa",
+          "input_receipt": "../recovery-quality-20260918/collected-final/evidence/data/v2-ribbons-000/turn-1.json",
+          "input_receipt_sha256": "f582250a3dbb8e800a1cd3e4425d3ba848693f783e828c36f4545ace67ec6728",
+          "input_role": "teacher_intermediate_repair_input",
+          "input_sha256": "567f52ca94a1aeb763440c682be25630fae98c9ad4eb1e95a6e7fae58eab5221",
+          "input_stage": "turn-1",
+          "mode": "correction",
+          "order": 5,
+          "reference": "../recovery-quality-20260918/collected-final/evidence/data/v2-ribbons-000/turn-3.png",
+          "reference_as_rl_opponent": false,
+          "repair_id": "v2-ribbons-000-repair-turn-1",
+          "review": {
+            "basis": "direct side-by-side view_image comparison of input and complete target",
+            "no_heldout_reuse": true,
+            "status": "foundation_repair_ready"
+          },
+          "source_group": "v2-ribbons-000",
+          "split": "train_repair",
+          "target_png": "../recovery-quality-20260918/collected-final/evidence/data/v2-ribbons-000/turn-3.png",
+          "target_program": "../recovery-quality-20260918/collected-final/evidence/data/v2-ribbons-000/turn-3.js",
+          "target_program_sha256": "0701b4ad819d211e498268da522688efc500f115d44624067b09a3af541392a6",
+          "target_receipt": "../recovery-quality-20260918/collected-final/evidence/data/v2-ribbons-000/turn-3.json",
+          "target_receipt_sha256": "be37a0e4a85ddf6547e9e110093eed70ef3d44e825aa2a70d7f508c38ace76dc",
+          "target_role": "procedural_teacher_complete_target",
+          "target_sha256": "6a17a08bec1bcb6b308bef44cedbca72705d0c2b6291cc31a99661df73a72122",
+          "target_stage": "turn-3",
+          "task_id": "v2-ribbons-000-repair-turn-1"
+        },
+        {
+          "anchor": "../recovery-quality-20260918/collected-final/evidence/data/v2-sailboat-000/turn-2.png",
+          "anchor_id": "../recovery-quality-20260918/collected-final/evidence/data/v2-sailboat-000/turn-2.png",
+          "defect": "Turn-2 has mast, two sails and hull but lacks the hull contour and water-line details; turn-3 adds those finishing structure cues.",
+          "distinct_input_target": true,
+          "family": "sailboat",
+          "id": "v2-sailboat-000-repair-turn-2",
+          "initial_canvas": "../recovery-quality-20260918/collected-final/evidence/data/v2-sailboat-000/turn-2.png",
+          "initial_program": "../recovery-quality-20260918/collected-final/evidence/data/v2-sailboat-000/turn-2.js",
+          "input_png": "../recovery-quality-20260918/collected-final/evidence/data/v2-sailboat-000/turn-2.png",
+          "input_program": "../recovery-quality-20260918/collected-final/evidence/data/v2-sailboat-000/turn-2.js",
+          "input_program_sha256": "478e5a0d0bc47e73f3f297cc715bc2cd6596c60ed80afa466b6571ec3aacf3e2",
+          "input_receipt": "../recovery-quality-20260918/collected-final/evidence/data/v2-sailboat-000/turn-2.json",
+          "input_receipt_sha256": "5205460f5cb9c418450368f7a3902b108deede80a9b399d2eb8fe46c12471522",
+          "input_role": "teacher_intermediate_repair_input",
+          "input_sha256": "7c4e30125389929e2e80bb3997c6409ed0f22ade1c464d7e14fd3c4777979891",
+          "input_stage": "turn-2",
+          "mode": "correction",
+          "order": 6,
+          "reference": "../recovery-quality-20260918/collected-final/evidence/data/v2-sailboat-000/turn-3.png",
+          "reference_as_rl_opponent": false,
+          "repair_id": "v2-sailboat-000-repair-turn-2",
+          "review": {
+            "basis": "direct side-by-side view_image comparison of input and complete target",
+            "no_heldout_reuse": true,
+            "status": "foundation_repair_ready"
+          },
+          "source_group": "v2-sailboat-000",
+          "split": "train_repair",
+          "target_png": "../recovery-quality-20260918/collected-final/evidence/data/v2-sailboat-000/turn-3.png",
+          "target_program": "../recovery-quality-20260918/collected-final/evidence/data/v2-sailboat-000/turn-3.js",
+          "target_program_sha256": "a2c1d5e1ba58506044ba0a078181868cc3a1620b86e826a12d1f2a992675d9cf",
+          "target_receipt": "../recovery-quality-20260918/collected-final/evidence/data/v2-sailboat-000/turn-3.json",
+          "target_receipt_sha256": "4038c8146224753c20caaebd10150af00e1a8cce478dd86011764622af9cf729",
+          "target_role": "procedural_teacher_complete_target",
+          "target_sha256": "2817a229b3e580fab1c019e589212805b7341dbf801aa3d607fe8c92fddca568",
+          "target_stage": "turn-3",
+          "task_id": "v2-sailboat-000-repair-turn-2"
+        },
+        {
+          "anchor": "../recovery-quality-20260918/collected-final/evidence/data/v2-still_life-000/turn-1.png",
+          "anchor_id": "../recovery-quality-20260918/collected-final/evidence/data/v2-still_life-000/turn-1.png",
+          "defect": "Turn-1 has only the taller open vessel and ground wash; the fruit is absent. Turn-3 adds the separate fruit and keeps the vessel connected.",
+          "distinct_input_target": true,
+          "family": "still_life",
+          "id": "v2-still_life-000-repair-turn-1",
+          "initial_canvas": "../recovery-quality-20260918/collected-final/evidence/data/v2-still_life-000/turn-1.png",
+          "initial_program": "../recovery-quality-20260918/collected-final/evidence/data/v2-still_life-000/turn-1.js",
+          "input_png": "../recovery-quality-20260918/collected-final/evidence/data/v2-still_life-000/turn-1.png",
+          "input_program": "../recovery-quality-20260918/collected-final/evidence/data/v2-still_life-000/turn-1.js",
+          "input_program_sha256": "b7c1cabf126d41d27ef13206bfe14af1bb769aca3b93e8ce482345650be49853",
+          "input_receipt": "../recovery-quality-20260918/collected-final/evidence/data/v2-still_life-000/turn-1.json",
+          "input_receipt_sha256": "104850f9da40de0de7613523fd70d9e160a0b38fedb11cd68db126ce93f46aff",
+          "input_role": "teacher_intermediate_repair_input",
+          "input_sha256": "558f6bf65062032a32d65acc770cc834c2a1f9b76fd3aa283a7ac22b01d505d8",
+          "input_stage": "turn-1",
+          "mode": "correction",
+          "order": 7,
+          "reference": "../recovery-quality-20260918/collected-final/evidence/data/v2-still_life-000/turn-3.png",
+          "reference_as_rl_opponent": false,
+          "repair_id": "v2-still_life-000-repair-turn-1",
+          "review": {
+            "basis": "direct side-by-side view_image comparison of input and complete target",
+            "no_heldout_reuse": true,
+            "status": "foundation_repair_ready"
+          },
+          "source_group": "v2-still_life-000",
+          "split": "train_repair",
+          "target_png": "../recovery-quality-20260918/collected-final/evidence/data/v2-still_life-000/turn-3.png",
+          "target_program": "../recovery-quality-20260918/collected-final/evidence/data/v2-still_life-000/turn-3.js",
+          "target_program_sha256": "e4734678e3ab249b94da556a0631c216065943569c616905c567efc40bc7f6b1",
+          "target_receipt": "../recovery-quality-20260918/collected-final/evidence/data/v2-still_life-000/turn-3.json",
+          "target_receipt_sha256": "2080b1cad22b0006de8d1e6a3506e82ed75a3ce74400c0771feb9a3a62dbeb87",
+          "target_role": "procedural_teacher_complete_target",
+          "target_sha256": "2505eed5d172a228fe296baee23ae6c93696091d08cd5dc6696faba0c9fd3a61",
+          "target_stage": "turn-3",
+          "task_id": "v2-still_life-000-repair-turn-1"
+        }
+      ]
+    },
+    "fresh": {
+      "contract_snapshot": {
+        "file_sha256": "0c77f0ed4bd5cad3121918d27495e3aef780dcb84ff0dd51cf61c3ffdd2ffaa0",
+        "identity": {
+          "sha256": "dd99279a5f3f6e98126e82db8b026c1ba726500cc8efb3fde53633772b5c65fb",
+          "version": "canvas-pixels-preview-v2"
+        },
+        "path": "contract.py"
+      },
+      "counts": {
+        "families": 12,
+        "source_groups": 24,
+        "tasks": 24
+      },
+      "coverage": {
+        "first_n": 12,
+        "first_n_families": [
+          "box",
+          "bus",
+          "cup",
+          "cylinder",
+          "flower",
+          "house",
+          "ribbons",
+          "sailboat",
+          "sphere",
+          "still_life",
+          "tree",
+          "vase"
+        ],
+        "first_n_groups": [
+          "v2-box-000",
+          "v2-bus-000",
+          "v2-cup-000",
+          "v2-cylinder-000",
+          "v2-flower-000",
+          "v2-house-000",
+          "v2-ribbons-000",
+          "v2-sailboat-000",
+          "v2-sphere-000",
+          "v2-still_life-000",
+          "v2-tree-000",
+          "v2-vase-000"
+        ],
+        "prefixes": [
+          {
+            "families": [
+              "box"
+            ],
+            "groups": [
+              "v2-box-000"
+            ],
+            "n": 1
+          },
+          {
+            "families": [
+              "box",
+              "bus"
+            ],
+            "groups": [
+              "v2-box-000",
+              "v2-bus-000"
+            ],
+            "n": 2
+          },
+          {
+            "families": [
+              "box",
+              "bus",
+              "cup"
+            ],
+            "groups": [
+              "v2-box-000",
+              "v2-bus-000",
+              "v2-cup-000"
+            ],
+            "n": 3
+          },
+          {
+            "families": [
+              "box",
+              "bus",
+              "cup",
+              "cylinder"
+            ],
+            "groups": [
+              "v2-box-000",
+              "v2-bus-000",
+              "v2-cup-000",
+              "v2-cylinder-000"
+            ],
+            "n": 4
+          },
+          {
+            "families": [
+              "box",
+              "bus",
+              "cup",
+              "cylinder",
+              "flower"
+            ],
+            "groups": [
+              "v2-box-000",
+              "v2-bus-000",
+              "v2-cup-000",
+              "v2-cylinder-000",
+              "v2-flower-000"
+            ],
+            "n": 5
+          },
+          {
+            "families": [
+              "box",
+              "bus",
+              "cup",
+              "cylinder",
+              "flower",
+              "house"
+            ],
+            "groups": [
+              "v2-box-000",
+              "v2-bus-000",
+              "v2-cup-000",
+              "v2-cylinder-000",
+              "v2-flower-000",
+              "v2-house-000"
+            ],
+            "n": 6
+          },
+          {
+            "families": [
+              "box",
+              "bus",
+              "cup",
+              "cylinder",
+              "flower",
+              "house",
+              "ribbons"
+            ],
+            "groups": [
+              "v2-box-000",
+              "v2-bus-000",
+              "v2-cup-000",
+              "v2-cylinder-000",
+              "v2-flower-000",
+              "v2-house-000",
+              "v2-ribbons-000"
+            ],
+            "n": 7
+          },
+          {
+            "families": [
+              "box",
+              "bus",
+              "cup",
+              "cylinder",
+              "flower",
+              "house",
+              "ribbons",
+              "sailboat"
+            ],
+            "groups": [
+              "v2-box-000",
+              "v2-bus-000",
+              "v2-cup-000",
+              "v2-cylinder-000",
+              "v2-flower-000",
+              "v2-house-000",
+              "v2-ribbons-000",
+              "v2-sailboat-000"
+            ],
+            "n": 8
+          },
+          {
+            "families": [
+              "box",
+              "bus",
+              "cup",
+              "cylinder",
+              "flower",
+              "house",
+              "ribbons",
+              "sailboat",
+              "sphere"
+            ],
+            "groups": [
+              "v2-box-000",
+              "v2-bus-000",
+              "v2-cup-000",
+              "v2-cylinder-000",
+              "v2-flower-000",
+              "v2-house-000",
+              "v2-ribbons-000",
+              "v2-sailboat-000",
+              "v2-sphere-000"
+            ],
+            "n": 9
+          },
+          {
+            "families": [
+              "box",
+              "bus",
+              "cup",
+              "cylinder",
+              "flower",
+              "house",
+              "ribbons",
+              "sailboat",
+              "sphere",
+              "still_life"
+            ],
+            "groups": [
+              "v2-box-000",
+              "v2-bus-000",
+              "v2-cup-000",
+              "v2-cylinder-000",
+              "v2-flower-000",
+              "v2-house-000",
+              "v2-ribbons-000",
+              "v2-sailboat-000",
+              "v2-sphere-000",
+              "v2-still_life-000"
+            ],
+            "n": 10
+          },
+          {
+            "families": [
+              "box",
+              "bus",
+              "cup",
+              "cylinder",
+              "flower",
+              "house",
+              "ribbons",
+              "sailboat",
+              "sphere",
+              "still_life",
+              "tree"
+            ],
+            "groups": [
+              "v2-box-000",
+              "v2-bus-000",
+              "v2-cup-000",
+              "v2-cylinder-000",
+              "v2-flower-000",
+              "v2-house-000",
+              "v2-ribbons-000",
+              "v2-sailboat-000",
+              "v2-sphere-000",
+              "v2-still_life-000",
+              "v2-tree-000"
+            ],
+            "n": 11
+          },
+          {
+            "families": [
+              "box",
+              "bus",
+              "cup",
+              "cylinder",
+              "flower",
+              "house",
+              "ribbons",
+              "sailboat",
+              "sphere",
+              "still_life",
+              "tree",
+              "vase"
+            ],
+            "groups": [
+              "v2-box-000",
+              "v2-bus-000",
+              "v2-cup-000",
+              "v2-cylinder-000",
+              "v2-flower-000",
+              "v2-house-000",
+              "v2-ribbons-000",
+              "v2-sailboat-000",
+              "v2-sphere-000",
+              "v2-still_life-000",
+              "v2-tree-000",
+              "v2-vase-000"
+            ],
+            "n": 12
+          }
+        ]
+      },
+      "max_turns": 6,
+      "mode": "fresh",
+      "policy": {
+        "family_round_robin": true,
+        "fresh_one_task_per_source_group": true,
+        "repeated_anchor_protection": true,
+        "selection_limit": 24,
+        "source_group_round_robin": true
+      },
+      "schema": "painter.curriculum-order.v1",
+      "source_manifest_schema": null,
+      "source_manifest_sha256": "d27bd1cb1e1529c6cecad6bc4a08dbef1ef0240cc55aef3c147a640af4d12282",
+      "tasks": [
+        {
+          "anchor_id": "v2-box-000",
+          "family": "box",
+          "id": "v2-box-000",
+          "mode": "fresh",
+          "order": 0,
+          "photo_reference": false,
+          "program_checks": {
+            "canvas_contract": [
+              600,
+              600
+            ],
+            "draw_starts_with_top_left_translate": true,
+            "errors": [],
+            "finished": true,
+            "valid_receipt": true
+          },
+          "program_sha256": "ba48dae0811ea56971b4649313314785ba04a54bdc0c467936a5d4b76535cca0",
+          "receipt_sha256": "a0c38542667f55c693b0a38e3058aae1e9f2673396924053f6567ae0dbc17576",
+          "reference": "../recovery-quality-20260918/collected-final/evidence/data/v2-box-000/turn-3.png",
+          "reference_kind": "procedural_known_program",
+          "reference_png": "../recovery-quality-20260918/collected-final/evidence/data/v2-box-000/turn-3.png",
+          "reference_program": "../recovery-quality-20260918/collected-final/evidence/data/v2-box-000/turn-3.js",
+          "reference_sha256": "f07b4001ac4448fd2048b8af355852b6f27d66bea2f0607fd805c80f4b48c797",
+          "render_receipt": "../recovery-quality-20260918/collected-final/evidence/data/v2-box-000/turn-3.json",
+          "rl_roles": {
+            "opponent_status": "needs_distinct_student_or_correction_artifact",
+            "reason": "exact teacher/reference equality is valid SFT supervision but a trivial RL ceiling",
+            "reference_as_anchor_allowed": false,
+            "reference_as_opponent_allowed": false
+          },
+          "source_group": "v2-box-000",
+          "source_type": "synthetic_procedural_painted_target",
+          "split": "train",
+          "task_id": "v2-box-000",
+          "teacher_target": {
+            "exact_reference_render": true,
+            "provenance": "assistant-authored expanded recipe; source receipt verifies this program rendered this PNG",
+            "role": "procedural_teacher_target"
+          },
+          "visual_review": {
+            "basis": "direct image inspection via view_image",
+            "notes": "Three connected faces, stable silhouette, soft attached cast shadow; 000 is smaller, 001/008 have stronger scale.",
+            "status": "foundation_ready"
+          }
+        },
+        {
+          "anchor_id": "v2-bus-000",
+          "family": "bus",
+          "id": "v2-bus-000",
+          "mode": "fresh",
+          "order": 1,
+          "photo_reference": false,
+          "program_checks": {
+            "canvas_contract": [
+              600,
+              600
+            ],
+            "draw_starts_with_top_left_translate": true,
+            "errors": [],
+            "finished": true,
+            "valid_receipt": true
+          },
+          "program_sha256": "94d6e92d2f9a8162cc0445a1284b03f9123ebbdce11046a4f6c50057b53d746c",
+          "receipt_sha256": "6cf2a44222ee9cbe3e63671a78388173e48e6ac7a8aec70409ac5a62dfc05dcb",
+          "reference": "../recovery-quality-20260918/collected-final/evidence/data/v2-bus-000/turn-3.png",
+          "reference_kind": "procedural_known_program",
+          "reference_png": "../recovery-quality-20260918/collected-final/evidence/data/v2-bus-000/turn-3.png",
+          "reference_program": "../recovery-quality-20260918/collected-final/evidence/data/v2-bus-000/turn-3.js",
+          "reference_sha256": "75ed686a136dbc70244b2eec6882798cc9319203601d3ca58d813e45b295daba",
+          "render_receipt": "../recovery-quality-20260918/collected-final/evidence/data/v2-bus-000/turn-3.json",
+          "rl_roles": {
+            "opponent_status": "needs_distinct_student_or_correction_artifact",
+            "reason": "exact teacher/reference equality is valid SFT supervision but a trivial RL ceiling",
+            "reference_as_anchor_allowed": false,
+            "reference_as_opponent_allowed": false
+          },
+          "source_group": "v2-bus-000",
+          "source_type": "synthetic_procedural_painted_target",
+          "split": "train",
+          "task_id": "v2-bus-000",
+          "teacher_target": {
+            "exact_reference_render": true,
+            "provenance": "assistant-authored expanded recipe; source receipt verifies this program rendered this PNG",
+            "role": "procedural_teacher_target"
+          },
+          "visual_review": {
+            "basis": "direct image inspection via view_image",
+            "notes": "Long body, aligned windows and two attached wheels; 000/008 are especially legible, with modest wash dimensionality.",
+            "status": "foundation_ready"
+          }
+        },
+        {
+          "anchor_id": "v2-cup-000",
+          "family": "cup",
+          "id": "v2-cup-000",
+          "mode": "fresh",
+          "order": 2,
+          "photo_reference": false,
+          "program_checks": {
+            "canvas_contract": [
+              600,
+              600
+            ],
+            "draw_starts_with_top_left_translate": true,
+            "errors": [],
+            "finished": true,
+            "valid_receipt": true
+          },
+          "program_sha256": "12f51ffc53a6353eda08ae978b76047b4825d7771cc202051004bcbcefefc03a",
+          "receipt_sha256": "ca4242cac64bdd91007d0fda5aa6d269e1837e0ad31eb6d609521813b8571e42",
+          "reference": "../recovery-quality-20260918/collected-final/evidence/data/v2-cup-000/turn-3.png",
+          "reference_kind": "procedural_known_program",
+          "reference_png": "../recovery-quality-20260918/collected-final/evidence/data/v2-cup-000/turn-3.png",
+          "reference_program": "../recovery-quality-20260918/collected-final/evidence/data/v2-cup-000/turn-3.js",
+          "reference_sha256": "97d9d9e85ff2cc55bc200d0d16de014f56f5e72758a2eb6ab5e7024e7270591a",
+          "render_receipt": "../recovery-quality-20260918/collected-final/evidence/data/v2-cup-000/turn-3.json",
+          "rl_roles": {
+            "opponent_status": "needs_distinct_student_or_correction_artifact",
+            "reason": "exact teacher/reference equality is valid SFT supervision but a trivial RL ceiling",
+            "reference_as_anchor_allowed": false,
+            "reference_as_opponent_allowed": false
+          },
+          "source_group": "v2-cup-000",
+          "source_type": "synthetic_procedural_painted_target",
+          "split": "train",
+          "task_id": "v2-cup-000",
+          "teacher_target": {
+            "exact_reference_render": true,
+            "provenance": "assistant-authored expanded recipe; source receipt verifies this program rendered this PNG",
+            "role": "procedural_teacher_target"
+          },
+          "visual_review": {
+            "basis": "direct image inspection via view_image",
+            "notes": "Open elliptical rim and handle visibly attached to the body; 000/001/008 are clean foundation targets.",
+            "status": "foundation_ready"
+          }
+        },
+        {
+          "anchor_id": "v2-cylinder-000",
+          "family": "cylinder",
+          "id": "v2-cylinder-000",
+          "mode": "fresh",
+          "order": 3,
+          "photo_reference": false,
+          "program_checks": {
+            "canvas_contract": [
+              600,
+              600
+            ],
+            "draw_starts_with_top_left_translate": true,
+            "errors": [],
+            "finished": true,
+            "valid_receipt": true
+          },
+          "program_sha256": "c02709fab86dbb77d54e12afdec7896a156ac56b8392691208fbe4df38665a49",
+          "receipt_sha256": "d5ec55b6bfe0474eab845b8e7ced4efbd937b08510ca9c1395290d34abfdc813",
+          "reference": "../recovery-quality-20260918/collected-final/evidence/data/v2-cylinder-000/turn-3.png",
+          "reference_kind": "procedural_known_program",
+          "reference_png": "../recovery-quality-20260918/collected-final/evidence/data/v2-cylinder-000/turn-3.png",
+          "reference_program": "../recovery-quality-20260918/collected-final/evidence/data/v2-cylinder-000/turn-3.js",
+          "reference_sha256": "15a9896963aab005103575d4154b5af5f753298d6db2a4abdd7f64d651b29638",
+          "render_receipt": "../recovery-quality-20260918/collected-final/evidence/data/v2-cylinder-000/turn-3.json",
+          "rl_roles": {
+            "opponent_status": "needs_distinct_student_or_correction_artifact",
+            "reason": "exact teacher/reference equality is valid SFT supervision but a trivial RL ceiling",
+            "reference_as_anchor_allowed": false,
+            "reference_as_opponent_allowed": false
+          },
+          "source_group": "v2-cylinder-000",
+          "source_type": "synthetic_procedural_painted_target",
+          "split": "train",
+          "task_id": "v2-cylinder-000",
+          "teacher_target": {
+            "exact_reference_render": true,
+            "provenance": "assistant-authored expanded recipe; source receipt verifies this program rendered this PNG",
+            "role": "procedural_teacher_target"
+          },
+          "visual_review": {
+            "basis": "direct image inspection via view_image",
+            "notes": "Open rim, vertical sides and grounded shadow are visible; 001 is strongest of the reviewed pair.",
+            "status": "foundation_ready"
+          }
+        },
+        {
+          "anchor_id": "v2-flower-000",
+          "family": "flower",
+          "id": "v2-flower-000",
+          "mode": "fresh",
+          "order": 4,
+          "photo_reference": false,
+          "program_checks": {
+            "canvas_contract": [
+              600,
+              600
+            ],
+            "draw_starts_with_top_left_translate": true,
+            "errors": [],
+            "finished": true,
+            "valid_receipt": true
+          },
+          "program_sha256": "9b39bb1ca122b24ab5e412d0cb21273d2e0514c28720bf83040bcc86af6f3e70",
+          "receipt_sha256": "ad21feb473b589fd374cd8b18233c3988e83d6ce4ada824d5d7acf4c0d5c60b4",
+          "reference": "../recovery-quality-20260918/collected-final/evidence/data/v2-flower-000/turn-3.png",
+          "reference_kind": "procedural_known_program",
+          "reference_png": "../recovery-quality-20260918/collected-final/evidence/data/v2-flower-000/turn-3.png",
+          "reference_program": "../recovery-quality-20260918/collected-final/evidence/data/v2-flower-000/turn-3.js",
+          "reference_sha256": "31ce7b9a6e5d32285095ba405a640ac6d351146b16daee266e1517b94b567637",
+          "render_receipt": "../recovery-quality-20260918/collected-final/evidence/data/v2-flower-000/turn-3.json",
+          "rl_roles": {
+            "opponent_status": "needs_distinct_student_or_correction_artifact",
+            "reason": "exact teacher/reference equality is valid SFT supervision but a trivial RL ceiling",
+            "reference_as_anchor_allowed": false,
+            "reference_as_opponent_allowed": false
+          },
+          "source_group": "v2-flower-000",
+          "source_type": "synthetic_procedural_painted_target",
+          "split": "train",
+          "task_id": "v2-flower-000",
+          "teacher_target": {
+            "exact_reference_render": true,
+            "provenance": "assistant-authored expanded recipe; source receipt verifies this program rendered this PNG",
+            "role": "procedural_teacher_target"
+          },
+          "visual_review": {
+            "basis": "direct image inspection via view_image",
+            "notes": "Radial petals meet a central disk, with attached leaf/stem; petal count varies by source and should stay explicit in prompts.",
+            "status": "foundation_ready"
+          }
+        },
+        {
+          "anchor_id": "v2-house-000",
+          "family": "house",
+          "id": "v2-house-000",
+          "mode": "fresh",
+          "order": 5,
+          "photo_reference": false,
+          "program_checks": {
+            "canvas_contract": [
+              600,
+              600
+            ],
+            "draw_starts_with_top_left_translate": true,
+            "errors": [],
+            "finished": true,
+            "valid_receipt": true
+          },
+          "program_sha256": "a7d1507218846e75d3fb7c27113e89a1c9dce30848b01ae5a833e2daa24ee9ae",
+          "receipt_sha256": "bed6074ec8965aa6a237400c0148b57b4362398ba0738b614e52c84b539e43a4",
+          "reference": "../recovery-quality-20260918/collected-final/evidence/data/v2-house-000/turn-3.png",
+          "reference_kind": "procedural_known_program",
+          "reference_png": "../recovery-quality-20260918/collected-final/evidence/data/v2-house-000/turn-3.png",
+          "reference_program": "../recovery-quality-20260918/collected-final/evidence/data/v2-house-000/turn-3.js",
+          "reference_sha256": "4794b75377d7cf232ec82e46ab8d9837079d1623786e10b3884188aeb974a6d2",
+          "render_receipt": "../recovery-quality-20260918/collected-final/evidence/data/v2-house-000/turn-3.json",
+          "rl_roles": {
+            "opponent_status": "needs_distinct_student_or_correction_artifact",
+            "reason": "exact teacher/reference equality is valid SFT supervision but a trivial RL ceiling",
+            "reference_as_anchor_allowed": false,
+            "reference_as_opponent_allowed": false
+          },
+          "source_group": "v2-house-000",
+          "source_type": "synthetic_procedural_painted_target",
+          "split": "train",
+          "task_id": "v2-house-000",
+          "teacher_target": {
+            "exact_reference_render": true,
+            "provenance": "assistant-authored expanded recipe; source receipt verifies this program rendered this PNG",
+            "role": "procedural_teacher_target"
+          },
+          "visual_review": {
+            "basis": "direct image inspection via view_image",
+            "notes": "Roof seats on connected walls, window and ground-touching door are visible; 001/008 have good coverage.",
+            "status": "foundation_ready"
+          }
+        },
+        {
+          "anchor_id": "v2-ribbons-000",
+          "family": "ribbons",
+          "id": "v2-ribbons-000",
+          "mode": "fresh",
+          "order": 6,
+          "photo_reference": false,
+          "program_checks": {
+            "canvas_contract": [
+              600,
+              600
+            ],
+            "draw_starts_with_top_left_translate": true,
+            "errors": [],
+            "finished": true,
+            "valid_receipt": true
+          },
+          "program_sha256": "0701b4ad819d211e498268da522688efc500f115d44624067b09a3af541392a6",
+          "receipt_sha256": "be37a0e4a85ddf6547e9e110093eed70ef3d44e825aa2a70d7f508c38ace76dc",
+          "reference": "../recovery-quality-20260918/collected-final/evidence/data/v2-ribbons-000/turn-3.png",
+          "reference_kind": "procedural_known_program",
+          "reference_png": "../recovery-quality-20260918/collected-final/evidence/data/v2-ribbons-000/turn-3.png",
+          "reference_program": "../recovery-quality-20260918/collected-final/evidence/data/v2-ribbons-000/turn-3.js",
+          "reference_sha256": "6a17a08bec1bcb6b308bef44cedbca72705d0c2b6291cc31a99661df73a72122",
+          "render_receipt": "../recovery-quality-20260918/collected-final/evidence/data/v2-ribbons-000/turn-3.json",
+          "rl_roles": {
+            "opponent_status": "needs_distinct_student_or_correction_artifact",
+            "reason": "exact teacher/reference equality is valid SFT supervision but a trivial RL ceiling",
+            "reference_as_anchor_allowed": false,
+            "reference_as_opponent_allowed": false
+          },
+          "source_group": "v2-ribbons-000",
+          "source_type": "synthetic_procedural_painted_target",
+          "split": "train",
+          "task_id": "v2-ribbons-000",
+          "teacher_target": {
+            "exact_reference_render": true,
+            "provenance": "assistant-authored expanded recipe; source receipt verifies this program rendered this PNG",
+            "role": "procedural_teacher_target"
+          },
+          "visual_review": {
+            "basis": "direct image inspection via view_image",
+            "notes": "Three complete, separated flowing bands with consistent spacing; strongest paint-handling examples in this set.",
+            "status": "foundation_ready"
+          }
+        },
+        {
+          "anchor_id": "v2-sailboat-000",
+          "family": "sailboat",
+          "id": "v2-sailboat-000",
+          "mode": "fresh",
+          "order": 7,
+          "photo_reference": false,
+          "program_checks": {
+            "canvas_contract": [
+              600,
+              600
+            ],
+            "draw_starts_with_top_left_translate": true,
+            "errors": [],
+            "finished": true,
+            "valid_receipt": true
+          },
+          "program_sha256": "a2c1d5e1ba58506044ba0a078181868cc3a1620b86e826a12d1f2a992675d9cf",
+          "receipt_sha256": "4038c8146224753c20caaebd10150af00e1a8cce478dd86011764622af9cf729",
+          "reference": "../recovery-quality-20260918/collected-final/evidence/data/v2-sailboat-000/turn-3.png",
+          "reference_kind": "procedural_known_program",
+          "reference_png": "../recovery-quality-20260918/collected-final/evidence/data/v2-sailboat-000/turn-3.png",
+          "reference_program": "../recovery-quality-20260918/collected-final/evidence/data/v2-sailboat-000/turn-3.js",
+          "reference_sha256": "2817a229b3e580fab1c019e589212805b7341dbf801aa3d607fe8c92fddca568",
+          "render_receipt": "../recovery-quality-20260918/collected-final/evidence/data/v2-sailboat-000/turn-3.json",
+          "rl_roles": {
+            "opponent_status": "needs_distinct_student_or_correction_artifact",
+            "reason": "exact teacher/reference equality is valid SFT supervision but a trivial RL ceiling",
+            "reference_as_anchor_allowed": false,
+            "reference_as_opponent_allowed": false
+          },
+          "source_group": "v2-sailboat-000",
+          "source_type": "synthetic_procedural_painted_target",
+          "split": "train",
+          "task_id": "v2-sailboat-000",
+          "teacher_target": {
+            "exact_reference_render": true,
+            "provenance": "assistant-authored expanded recipe; source receipt verifies this program rendered this PNG",
+            "role": "procedural_teacher_target"
+          },
+          "visual_review": {
+            "basis": "direct image inspection via view_image",
+            "notes": "Two sails attach to a mast above a complete hull; water strokes sit below as a deliberate ground cue.",
+            "status": "foundation_ready"
+          }
+        },
+        {
+          "anchor_id": "v2-sphere-000",
+          "family": "sphere",
+          "id": "v2-sphere-000",
+          "mode": "fresh",
+          "order": 8,
+          "photo_reference": false,
+          "program_checks": {
+            "canvas_contract": [
+              600,
+              600
+            ],
+            "draw_starts_with_top_left_translate": true,
+            "errors": [],
+            "finished": true,
+            "valid_receipt": true
+          },
+          "program_sha256": "137f581da4ceb05987c95b52b933fbe269c8635601675f802ac2368dd907dd74",
+          "receipt_sha256": "1544c94124645fb4287e4ec1de1f54b1cd4e388ce6dced62b35131c8756956e2",
+          "reference": "../recovery-quality-20260918/collected-final/evidence/data/v2-sphere-000/turn-3.png",
+          "reference_kind": "procedural_known_program",
+          "reference_png": "../recovery-quality-20260918/collected-final/evidence/data/v2-sphere-000/turn-3.png",
+          "reference_program": "../recovery-quality-20260918/collected-final/evidence/data/v2-sphere-000/turn-3.js",
+          "reference_sha256": "773fc53aba57e9a50f6c88425a9da60c944c6843304d92cd62a26f3f7f110ee6",
+          "render_receipt": "../recovery-quality-20260918/collected-final/evidence/data/v2-sphere-000/turn-3.json",
+          "rl_roles": {
+            "opponent_status": "needs_distinct_student_or_correction_artifact",
+            "reason": "exact teacher/reference equality is valid SFT supervision but a trivial RL ceiling",
+            "reference_as_anchor_allowed": false,
+            "reference_as_opponent_allowed": false
+          },
+          "source_group": "v2-sphere-000",
+          "source_type": "synthetic_procedural_painted_target",
+          "split": "train",
+          "task_id": "v2-sphere-000",
+          "teacher_target": {
+            "exact_reference_render": true,
+            "provenance": "assistant-authored expanded recipe; source receipt verifies this program rendered this PNG",
+            "role": "procedural_teacher_target"
+          },
+          "visual_review": {
+            "basis": "direct image inspection via view_image",
+            "notes": "Clean round silhouette, subtle upper-left light, lower-right volume and attached shadow.",
+            "status": "foundation_ready"
+          }
+        },
+        {
+          "anchor_id": "v2-still_life-000",
+          "family": "still_life",
+          "id": "v2-still_life-000",
+          "mode": "fresh",
+          "order": 9,
+          "photo_reference": false,
+          "program_checks": {
+            "canvas_contract": [
+              600,
+              600
+            ],
+            "draw_starts_with_top_left_translate": true,
+            "errors": [],
+            "finished": true,
+            "valid_receipt": true
+          },
+          "program_sha256": "e4734678e3ab249b94da556a0631c216065943569c616905c567efc40bc7f6b1",
+          "receipt_sha256": "2080b1cad22b0006de8d1e6a3506e82ed75a3ce74400c0771feb9a3a62dbeb87",
+          "reference": "../recovery-quality-20260918/collected-final/evidence/data/v2-still_life-000/turn-3.png",
+          "reference_kind": "procedural_known_program",
+          "reference_png": "../recovery-quality-20260918/collected-final/evidence/data/v2-still_life-000/turn-3.png",
+          "reference_program": "../recovery-quality-20260918/collected-final/evidence/data/v2-still_life-000/turn-3.js",
+          "reference_sha256": "2505eed5d172a228fe296baee23ae6c93696091d08cd5dc6696faba0c9fd3a61",
+          "render_receipt": "../recovery-quality-20260918/collected-final/evidence/data/v2-still_life-000/turn-3.json",
+          "rl_roles": {
+            "opponent_status": "needs_distinct_student_or_correction_artifact",
+            "reason": "exact teacher/reference equality is valid SFT supervision but a trivial RL ceiling",
+            "reference_as_anchor_allowed": false,
+            "reference_as_opponent_allowed": false
+          },
+          "source_group": "v2-still_life-000",
+          "source_type": "synthetic_procedural_painted_target",
+          "split": "train",
+          "task_id": "v2-still_life-000",
+          "teacher_target": {
+            "exact_reference_render": true,
+            "provenance": "assistant-authored expanded recipe; source receipt verifies this program rendered this PNG",
+            "role": "procedural_teacher_target"
+          },
+          "visual_review": {
+            "basis": "direct image inspection via view_image",
+            "notes": "Fruit and taller open vessel are separated but share a grounded wash; stem and rim are visible.",
+            "status": "foundation_ready"
+          }
+        },
+        {
+          "anchor_id": "v2-tree-000",
+          "family": "tree",
+          "id": "v2-tree-000",
+          "mode": "fresh",
+          "order": 10,
+          "photo_reference": false,
+          "program_checks": {
+            "canvas_contract": [
+              600,
+              600
+            ],
+            "draw_starts_with_top_left_translate": true,
+            "errors": [],
+            "finished": true,
+            "valid_receipt": true
+          },
+          "program_sha256": "f8a784e50cfff838185dbd9cf1cef0280df020736e2819772f24d82039ea71bf",
+          "receipt_sha256": "96ca50da684c7d3317ff0334733a10ba408f3c28838f7967c81f7f80bbaba65f",
+          "reference": "../recovery-quality-20260918/collected-final/evidence/data/v2-tree-000/turn-3.png",
+          "reference_kind": "procedural_known_program",
+          "reference_png": "../recovery-quality-20260918/collected-final/evidence/data/v2-tree-000/turn-3.png",
+          "reference_program": "../recovery-quality-20260918/collected-final/evidence/data/v2-tree-000/turn-3.js",
+          "reference_sha256": "419b617efba005065e2405caa20be5d5e49ac9c70ff6cdd7f7cc0148f2671f19",
+          "render_receipt": "../recovery-quality-20260918/collected-final/evidence/data/v2-tree-000/turn-3.json",
+          "rl_roles": {
+            "opponent_status": "needs_distinct_student_or_correction_artifact",
+            "reason": "exact teacher/reference equality is valid SFT supervision but a trivial RL ceiling",
+            "reference_as_anchor_allowed": false,
+            "reference_as_opponent_allowed": false
+          },
+          "source_group": "v2-tree-000",
+          "source_type": "synthetic_procedural_painted_target",
+          "split": "train",
+          "task_id": "v2-tree-000",
+          "teacher_target": {
+            "exact_reference_render": true,
+            "provenance": "assistant-authored expanded recipe; source receipt verifies this program rendered this PNG",
+            "role": "procedural_teacher_target"
+          },
+          "visual_review": {
+            "basis": "direct image inspection via view_image",
+            "notes": "Overlapping canopy masses connect through branches to a rooted trunk; soft composition, limited dimensionality.",
+            "status": "foundation_ready"
+          }
+        },
+        {
+          "anchor_id": "v2-vase-000",
+          "family": "vase",
+          "id": "v2-vase-000",
+          "mode": "fresh",
+          "order": 11,
+          "photo_reference": false,
+          "program_checks": {
+            "canvas_contract": [
+              600,
+              600
+            ],
+            "draw_starts_with_top_left_translate": true,
+            "errors": [],
+            "finished": true,
+            "valid_receipt": true
+          },
+          "program_sha256": "c7920ce80c64eabbb043c90a1658c857b84d34c54b918d62e4f83b403ee54481",
+          "receipt_sha256": "a7882ea3f450b4d8efe131980a1ae4669cf84428caf51257ccc163e389952bfa",
+          "reference": "../recovery-quality-20260918/collected-final/evidence/data/v2-vase-000/turn-3.png",
+          "reference_kind": "procedural_known_program",
+          "reference_png": "../recovery-quality-20260918/collected-final/evidence/data/v2-vase-000/turn-3.png",
+          "reference_program": "../recovery-quality-20260918/collected-final/evidence/data/v2-vase-000/turn-3.js",
+          "reference_sha256": "1e5921b27adea56000de3b12c23166f620fa15b0f34fd435437b37ed1338de71",
+          "render_receipt": "../recovery-quality-20260918/collected-final/evidence/data/v2-vase-000/turn-3.json",
+          "rl_roles": {
+            "opponent_status": "needs_distinct_student_or_correction_artifact",
+            "reason": "exact teacher/reference equality is valid SFT supervision but a trivial RL ceiling",
+            "reference_as_anchor_allowed": false,
+            "reference_as_opponent_allowed": false
+          },
+          "source_group": "v2-vase-000",
+          "source_type": "synthetic_procedural_painted_target",
+          "split": "train",
+          "task_id": "v2-vase-000",
+          "teacher_target": {
+            "exact_reference_render": true,
+            "provenance": "assistant-authored expanded recipe; source receipt verifies this program rendered this PNG",
+            "role": "procedural_teacher_target"
+          },
+          "visual_review": {
+            "basis": "direct image inspection via view_image",
+            "notes": "Open neck connects to shoulders and wider body, with grounded shadow; suitable for connectivity repair.",
+            "status": "foundation_ready"
+          }
+        },
+        {
+          "anchor_id": "v2-box-001",
+          "family": "box",
+          "id": "v2-box-001",
+          "mode": "fresh",
+          "order": 12,
+          "photo_reference": false,
+          "program_checks": {
+            "canvas_contract": [
+              600,
+              600
+            ],
+            "draw_starts_with_top_left_translate": true,
+            "errors": [],
+            "finished": true,
+            "valid_receipt": true
+          },
+          "program_sha256": "2237aea63b40dd4923fa4e5e0e8e9596915ce3afef71e3281cae53915887573a",
+          "receipt_sha256": "0d73678eed2cce825cc5ec5b92c8e650dd7927e2574a42c5b2e946eea4b4dae2",
+          "reference": "../recovery-quality-20260918/collected-final/evidence/data/v2-box-001/turn-3.png",
+          "reference_kind": "procedural_known_program",
+          "reference_png": "../recovery-quality-20260918/collected-final/evidence/data/v2-box-001/turn-3.png",
+          "reference_program": "../recovery-quality-20260918/collected-final/evidence/data/v2-box-001/turn-3.js",
+          "reference_sha256": "dc7b388fca604ed29e065696b66d1160b30d8aca121f80d1c4fafccdba1c478d",
+          "render_receipt": "../recovery-quality-20260918/collected-final/evidence/data/v2-box-001/turn-3.json",
+          "rl_roles": {
+            "opponent_status": "needs_distinct_student_or_correction_artifact",
+            "reason": "exact teacher/reference equality is valid SFT supervision but a trivial RL ceiling",
+            "reference_as_anchor_allowed": false,
+            "reference_as_opponent_allowed": false
+          },
+          "source_group": "v2-box-001",
+          "source_type": "synthetic_procedural_painted_target",
+          "split": "train",
+          "task_id": "v2-box-001",
+          "teacher_target": {
+            "exact_reference_render": true,
+            "provenance": "assistant-authored expanded recipe; source receipt verifies this program rendered this PNG",
+            "role": "procedural_teacher_target"
+          },
+          "visual_review": {
+            "basis": "direct image inspection via view_image",
+            "notes": "Three connected faces, stable silhouette, soft attached cast shadow; 000 is smaller, 001/008 have stronger scale.",
+            "status": "foundation_ready"
+          }
+        },
+        {
+          "anchor_id": "v2-bus-001",
+          "family": "bus",
+          "id": "v2-bus-001",
+          "mode": "fresh",
+          "order": 13,
+          "photo_reference": false,
+          "program_checks": {
+            "canvas_contract": [
+              600,
+              600
+            ],
+            "draw_starts_with_top_left_translate": true,
+            "errors": [],
+            "finished": true,
+            "valid_receipt": true
+          },
+          "program_sha256": "5d50c8a883d02946e7b939f36989c3be7231308983896875bca9b168fbb8f0eb",
+          "receipt_sha256": "8846781fc4ac46b70b96d3bcb4a12a7db941317f659a08e666c62e2a12842750",
+          "reference": "../recovery-quality-20260918/collected-final/evidence/data/v2-bus-001/turn-3.png",
+          "reference_kind": "procedural_known_program",
+          "reference_png": "../recovery-quality-20260918/collected-final/evidence/data/v2-bus-001/turn-3.png",
+          "reference_program": "../recovery-quality-20260918/collected-final/evidence/data/v2-bus-001/turn-3.js",
+          "reference_sha256": "67e4b253deb00ca207182bbccde7e980436a49e4a1833d04655ff236a1f459cf",
+          "render_receipt": "../recovery-quality-20260918/collected-final/evidence/data/v2-bus-001/turn-3.json",
+          "rl_roles": {
+            "opponent_status": "needs_distinct_student_or_correction_artifact",
+            "reason": "exact teacher/reference equality is valid SFT supervision but a trivial RL ceiling",
+            "reference_as_anchor_allowed": false,
+            "reference_as_opponent_allowed": false
+          },
+          "source_group": "v2-bus-001",
+          "source_type": "synthetic_procedural_painted_target",
+          "split": "train",
+          "task_id": "v2-bus-001",
+          "teacher_target": {
+            "exact_reference_render": true,
+            "provenance": "assistant-authored expanded recipe; source receipt verifies this program rendered this PNG",
+            "role": "procedural_teacher_target"
+          },
+          "visual_review": {
+            "basis": "direct image inspection via view_image",
+            "notes": "Long body, aligned windows and two attached wheels; 000/008 are especially legible, with modest wash dimensionality.",
+            "status": "foundation_ready"
+          }
+        },
+        {
+          "anchor_id": "v2-cup-001",
+          "family": "cup",
+          "id": "v2-cup-001",
+          "mode": "fresh",
+          "order": 14,
+          "photo_reference": false,
+          "program_checks": {
+            "canvas_contract": [
+              600,
+              600
+            ],
+            "draw_starts_with_top_left_translate": true,
+            "errors": [],
+            "finished": true,
+            "valid_receipt": true
+          },
+          "program_sha256": "4b3f230484af7846faf676aaedb743617038d2035a0595ac674d333796eac837",
+          "receipt_sha256": "6c155c2e72649a151e4a2eca614ccdb3498f936597d7c9597619fe9a586d9ac8",
+          "reference": "../recovery-quality-20260918/collected-final/evidence/data/v2-cup-001/turn-3.png",
+          "reference_kind": "procedural_known_program",
+          "reference_png": "../recovery-quality-20260918/collected-final/evidence/data/v2-cup-001/turn-3.png",
+          "reference_program": "../recovery-quality-20260918/collected-final/evidence/data/v2-cup-001/turn-3.js",
+          "reference_sha256": "57a2dd4ff6b405911a56cb7b889f447820a9e517dd9a1d16732452836b6f2678",
+          "render_receipt": "../recovery-quality-20260918/collected-final/evidence/data/v2-cup-001/turn-3.json",
+          "rl_roles": {
+            "opponent_status": "needs_distinct_student_or_correction_artifact",
+            "reason": "exact teacher/reference equality is valid SFT supervision but a trivial RL ceiling",
+            "reference_as_anchor_allowed": false,
+            "reference_as_opponent_allowed": false
+          },
+          "source_group": "v2-cup-001",
+          "source_type": "synthetic_procedural_painted_target",
+          "split": "train",
+          "task_id": "v2-cup-001",
+          "teacher_target": {
+            "exact_reference_render": true,
+            "provenance": "assistant-authored expanded recipe; source receipt verifies this program rendered this PNG",
+            "role": "procedural_teacher_target"
+          },
+          "visual_review": {
+            "basis": "direct image inspection via view_image",
+            "notes": "Open elliptical rim and handle visibly attached to the body; 000/001/008 are clean foundation targets.",
+            "status": "foundation_ready"
+          }
+        },
+        {
+          "anchor_id": "v2-cylinder-001",
+          "family": "cylinder",
+          "id": "v2-cylinder-001",
+          "mode": "fresh",
+          "order": 15,
+          "photo_reference": false,
+          "program_checks": {
+            "canvas_contract": [
+              600,
+              600
+            ],
+            "draw_starts_with_top_left_translate": true,
+            "errors": [],
+            "finished": true,
+            "valid_receipt": true
+          },
+          "program_sha256": "b408165e5359d2b9b1ff75aa6ea3dcc115dd296369ef3d21d9619c174e064663",
+          "receipt_sha256": "cef7b3f0cc0a7716b4555e610efc6f098e154fe6f8f6e2066085b1ae4344df5e",
+          "reference": "../recovery-quality-20260918/collected-final/evidence/data/v2-cylinder-001/turn-3.png",
+          "reference_kind": "procedural_known_program",
+          "reference_png": "../recovery-quality-20260918/collected-final/evidence/data/v2-cylinder-001/turn-3.png",
+          "reference_program": "../recovery-quality-20260918/collected-final/evidence/data/v2-cylinder-001/turn-3.js",
+          "reference_sha256": "3abe4a4c32cc1f3aa6a4d33975dd0c977f294518c0e49caf8894a609c658540f",
+          "render_receipt": "../recovery-quality-20260918/collected-final/evidence/data/v2-cylinder-001/turn-3.json",
+          "rl_roles": {
+            "opponent_status": "needs_distinct_student_or_correction_artifact",
+            "reason": "exact teacher/reference equality is valid SFT supervision but a trivial RL ceiling",
+            "reference_as_anchor_allowed": false,
+            "reference_as_opponent_allowed": false
+          },
+          "source_group": "v2-cylinder-001",
+          "source_type": "synthetic_procedural_painted_target",
+          "split": "train",
+          "task_id": "v2-cylinder-001",
+          "teacher_target": {
+            "exact_reference_render": true,
+            "provenance": "assistant-authored expanded recipe; source receipt verifies this program rendered this PNG",
+            "role": "procedural_teacher_target"
+          },
+          "visual_review": {
+            "basis": "direct image inspection via view_image",
+            "notes": "Open rim, vertical sides and grounded shadow are visible; 001 is strongest of the reviewed pair.",
+            "status": "foundation_ready"
+          }
+        },
+        {
+          "anchor_id": "v2-flower-001",
+          "family": "flower",
+          "id": "v2-flower-001",
+          "mode": "fresh",
+          "order": 16,
+          "photo_reference": false,
+          "program_checks": {
+            "canvas_contract": [
+              600,
+              600
+            ],
+            "draw_starts_with_top_left_translate": true,
+            "errors": [],
+            "finished": true,
+            "valid_receipt": true
+          },
+          "program_sha256": "6ef982f4e2a4545dbb7f5d8de9a2c6207986215eba4eca23122bc5e4e1777ac1",
+          "receipt_sha256": "2579b5741024e02591c0feea74c5087a2369385de417122e02becea20c773962",
+          "reference": "../recovery-quality-20260918/collected-final/evidence/data/v2-flower-001/turn-3.png",
+          "reference_kind": "procedural_known_program",
+          "reference_png": "../recovery-quality-20260918/collected-final/evidence/data/v2-flower-001/turn-3.png",
+          "reference_program": "../recovery-quality-20260918/collected-final/evidence/data/v2-flower-001/turn-3.js",
+          "reference_sha256": "4575f630dde98eb3b6f32aa07c221b0368581f61d801f6f3fdb683a8f755879c",
+          "render_receipt": "../recovery-quality-20260918/collected-final/evidence/data/v2-flower-001/turn-3.json",
+          "rl_roles": {
+            "opponent_status": "needs_distinct_student_or_correction_artifact",
+            "reason": "exact teacher/reference equality is valid SFT supervision but a trivial RL ceiling",
+            "reference_as_anchor_allowed": false,
+            "reference_as_opponent_allowed": false
+          },
+          "source_group": "v2-flower-001",
+          "source_type": "synthetic_procedural_painted_target",
+          "split": "train",
+          "task_id": "v2-flower-001",
+          "teacher_target": {
+            "exact_reference_render": true,
+            "provenance": "assistant-authored expanded recipe; source receipt verifies this program rendered this PNG",
+            "role": "procedural_teacher_target"
+          },
+          "visual_review": {
+            "basis": "direct image inspection via view_image",
+            "notes": "Radial petals meet a central disk, with attached leaf/stem; petal count varies by source and should stay explicit in prompts.",
+            "status": "foundation_ready"
+          }
+        },
+        {
+          "anchor_id": "v2-house-001",
+          "family": "house",
+          "id": "v2-house-001",
+          "mode": "fresh",
+          "order": 17,
+          "photo_reference": false,
+          "program_checks": {
+            "canvas_contract": [
+              600,
+              600
+            ],
+            "draw_starts_with_top_left_translate": true,
+            "errors": [],
+            "finished": true,
+            "valid_receipt": true
+          },
+          "program_sha256": "3c37140a1aa4782e4b0550f6ac7ee7c0386391b7a963325a234ffe3774f4fe40",
+          "receipt_sha256": "2b3ab4ca67128d4910aa655bd1d556ec603164e94f5cd6a7f15faed18bec0918",
+          "reference": "../recovery-quality-20260918/collected-final/evidence/data/v2-house-001/turn-3.png",
+          "reference_kind": "procedural_known_program",
+          "reference_png": "../recovery-quality-20260918/collected-final/evidence/data/v2-house-001/turn-3.png",
+          "reference_program": "../recovery-quality-20260918/collected-final/evidence/data/v2-house-001/turn-3.js",
+          "reference_sha256": "df00ff0afbe351d0df38c43abd4bdcbd17e2acafb0ffddec8c5ffed32b7ffeb9",
+          "render_receipt": "../recovery-quality-20260918/collected-final/evidence/data/v2-house-001/turn-3.json",
+          "rl_roles": {
+            "opponent_status": "needs_distinct_student_or_correction_artifact",
+            "reason": "exact teacher/reference equality is valid SFT supervision but a trivial RL ceiling",
+            "reference_as_anchor_allowed": false,
+            "reference_as_opponent_allowed": false
+          },
+          "source_group": "v2-house-001",
+          "source_type": "synthetic_procedural_painted_target",
+          "split": "train",
+          "task_id": "v2-house-001",
+          "teacher_target": {
+            "exact_reference_render": true,
+            "provenance": "assistant-authored expanded recipe; source receipt verifies this program rendered this PNG",
+            "role": "procedural_teacher_target"
+          },
+          "visual_review": {
+            "basis": "direct image inspection via view_image",
+            "notes": "Roof seats on connected walls, window and ground-touching door are visible; 001/008 have good coverage.",
+            "status": "foundation_ready"
+          }
+        },
+        {
+          "anchor_id": "v2-ribbons-001",
+          "family": "ribbons",
+          "id": "v2-ribbons-001",
+          "mode": "fresh",
+          "order": 18,
+          "photo_reference": false,
+          "program_checks": {
+            "canvas_contract": [
+              600,
+              600
+            ],
+            "draw_starts_with_top_left_translate": true,
+            "errors": [],
+            "finished": true,
+            "valid_receipt": true
+          },
+          "program_sha256": "e49c9abab9d26136c3efbf29d08a14c5f809caed592661a298b32d65f6c98198",
+          "receipt_sha256": "4c0d2e4a339c52003f5ec37135307f4a12fa8912fd50a4ce4cb6f0abddadb1f0",
+          "reference": "../recovery-quality-20260918/collected-final/evidence/data/v2-ribbons-001/turn-3.png",
+          "reference_kind": "procedural_known_program",
+          "reference_png": "../recovery-quality-20260918/collected-final/evidence/data/v2-ribbons-001/turn-3.png",
+          "reference_program": "../recovery-quality-20260918/collected-final/evidence/data/v2-ribbons-001/turn-3.js",
+          "reference_sha256": "e87b4563a4fd5e46023fd08b04dfdd265f397998dd46775fe9064f33ad4bcbc6",
+          "render_receipt": "../recovery-quality-20260918/collected-final/evidence/data/v2-ribbons-001/turn-3.json",
+          "rl_roles": {
+            "opponent_status": "needs_distinct_student_or_correction_artifact",
+            "reason": "exact teacher/reference equality is valid SFT supervision but a trivial RL ceiling",
+            "reference_as_anchor_allowed": false,
+            "reference_as_opponent_allowed": false
+          },
+          "source_group": "v2-ribbons-001",
+          "source_type": "synthetic_procedural_painted_target",
+          "split": "train",
+          "task_id": "v2-ribbons-001",
+          "teacher_target": {
+            "exact_reference_render": true,
+            "provenance": "assistant-authored expanded recipe; source receipt verifies this program rendered this PNG",
+            "role": "procedural_teacher_target"
+          },
+          "visual_review": {
+            "basis": "direct image inspection via view_image",
+            "notes": "Three complete, separated flowing bands with consistent spacing; strongest paint-handling examples in this set.",
+            "status": "foundation_ready"
+          }
+        },
+        {
+          "anchor_id": "v2-sailboat-001",
+          "family": "sailboat",
+          "id": "v2-sailboat-001",
+          "mode": "fresh",
+          "order": 19,
+          "photo_reference": false,
+          "program_checks": {
+            "canvas_contract": [
+              600,
+              600
+            ],
+            "draw_starts_with_top_left_translate": true,
+            "errors": [],
+            "finished": true,
+            "valid_receipt": true
+          },
+          "program_sha256": "67a972cf2b8e7d7eda7748333c364887c3312e1d96950b54f4a7394189b5296d",
+          "receipt_sha256": "7225381eca473cfde5dd06ea9c228f45d42faf41b9809295cf1b546f99a2821f",
+          "reference": "../recovery-quality-20260918/collected-final/evidence/data/v2-sailboat-001/turn-3.png",
+          "reference_kind": "procedural_known_program",
+          "reference_png": "../recovery-quality-20260918/collected-final/evidence/data/v2-sailboat-001/turn-3.png",
+          "reference_program": "../recovery-quality-20260918/collected-final/evidence/data/v2-sailboat-001/turn-3.js",
+          "reference_sha256": "efdc5962e1acfa9890d2e660eef1d29c3c1678d0b85f5949a86c6e9d227de513",
+          "render_receipt": "../recovery-quality-20260918/collected-final/evidence/data/v2-sailboat-001/turn-3.json",
+          "rl_roles": {
+            "opponent_status": "needs_distinct_student_or_correction_artifact",
+            "reason": "exact teacher/reference equality is valid SFT supervision but a trivial RL ceiling",
+            "reference_as_anchor_allowed": false,
+            "reference_as_opponent_allowed": false
+          },
+          "source_group": "v2-sailboat-001",
+          "source_type": "synthetic_procedural_painted_target",
+          "split": "train",
+          "task_id": "v2-sailboat-001",
+          "teacher_target": {
+            "exact_reference_render": true,
+            "provenance": "assistant-authored expanded recipe; source receipt verifies this program rendered this PNG",
+            "role": "procedural_teacher_target"
+          },
+          "visual_review": {
+            "basis": "direct image inspection via view_image",
+            "notes": "Two sails attach to a mast above a complete hull; water strokes sit below as a deliberate ground cue.",
+            "status": "foundation_ready"
+          }
+        },
+        {
+          "anchor_id": "v2-sphere-001",
+          "family": "sphere",
+          "id": "v2-sphere-001",
+          "mode": "fresh",
+          "order": 20,
+          "photo_reference": false,
+          "program_checks": {
+            "canvas_contract": [
+              600,
+              600
+            ],
+            "draw_starts_with_top_left_translate": true,
+            "errors": [],
+            "finished": true,
+            "valid_receipt": true
+          },
+          "program_sha256": "d7cfcfb230c59bf2d12ef83b63e97fb87c2c04ccdeffedf5d8c55ef3b70428ae",
+          "receipt_sha256": "d50a29c4a6de8a421a8c3fa172c5e0a9a7c6e4c7a69781b53f3b1ea2aee5f1fd",
+          "reference": "../recovery-quality-20260918/collected-final/evidence/data/v2-sphere-001/turn-3.png",
+          "reference_kind": "procedural_known_program",
+          "reference_png": "../recovery-quality-20260918/collected-final/evidence/data/v2-sphere-001/turn-3.png",
+          "reference_program": "../recovery-quality-20260918/collected-final/evidence/data/v2-sphere-001/turn-3.js",
+          "reference_sha256": "aa61f4a7380ca6a73cb008305e0b6a21535676f117be7c245258b87873c3868a",
+          "render_receipt": "../recovery-quality-20260918/collected-final/evidence/data/v2-sphere-001/turn-3.json",
+          "rl_roles": {
+            "opponent_status": "needs_distinct_student_or_correction_artifact",
+            "reason": "exact teacher/reference equality is valid SFT supervision but a trivial RL ceiling",
+            "reference_as_anchor_allowed": false,
+            "reference_as_opponent_allowed": false
+          },
+          "source_group": "v2-sphere-001",
+          "source_type": "synthetic_procedural_painted_target",
+          "split": "train",
+          "task_id": "v2-sphere-001",
+          "teacher_target": {
+            "exact_reference_render": true,
+            "provenance": "assistant-authored expanded recipe; source receipt verifies this program rendered this PNG",
+            "role": "procedural_teacher_target"
+          },
+          "visual_review": {
+            "basis": "direct image inspection via view_image",
+            "notes": "Clean round silhouette, subtle upper-left light, lower-right volume and attached shadow.",
+            "status": "foundation_ready"
+          }
+        },
+        {
+          "anchor_id": "v2-still_life-001",
+          "family": "still_life",
+          "id": "v2-still_life-001",
+          "mode": "fresh",
+          "order": 21,
+          "photo_reference": false,
+          "program_checks": {
+            "canvas_contract": [
+              600,
+              600
+            ],
+            "draw_starts_with_top_left_translate": true,
+            "errors": [],
+            "finished": true,
+            "valid_receipt": true
+          },
+          "program_sha256": "92c69c1618770252a88c29c868a58d4ef1a9380798755ae00fdd63ca7fc016e4",
+          "receipt_sha256": "268c14e52ff5c61f7ff4463553bbb922c6afa77470c177642be3821f2fe728c6",
+          "reference": "../recovery-quality-20260918/collected-final/evidence/data/v2-still_life-001/turn-3.png",
+          "reference_kind": "procedural_known_program",
+          "reference_png": "../recovery-quality-20260918/collected-final/evidence/data/v2-still_life-001/turn-3.png",
+          "reference_program": "../recovery-quality-20260918/collected-final/evidence/data/v2-still_life-001/turn-3.js",
+          "reference_sha256": "b0cb60dc786b5518df3304461352e0f0f4c88ff7590ac254798b0f1da79a95c3",
+          "render_receipt": "../recovery-quality-20260918/collected-final/evidence/data/v2-still_life-001/turn-3.json",
+          "rl_roles": {
+            "opponent_status": "needs_distinct_student_or_correction_artifact",
+            "reason": "exact teacher/reference equality is valid SFT supervision but a trivial RL ceiling",
+            "reference_as_anchor_allowed": false,
+            "reference_as_opponent_allowed": false
+          },
+          "source_group": "v2-still_life-001",
+          "source_type": "synthetic_procedural_painted_target",
+          "split": "train",
+          "task_id": "v2-still_life-001",
+          "teacher_target": {
+            "exact_reference_render": true,
+            "provenance": "assistant-authored expanded recipe; source receipt verifies this program rendered this PNG",
+            "role": "procedural_teacher_target"
+          },
+          "visual_review": {
+            "basis": "direct image inspection via view_image",
+            "notes": "Fruit and taller open vessel are separated but share a grounded wash; stem and rim are visible.",
+            "status": "foundation_ready"
+          }
+        },
+        {
+          "anchor_id": "v2-tree-001",
+          "family": "tree",
+          "id": "v2-tree-001",
+          "mode": "fresh",
+          "order": 22,
+          "photo_reference": false,
+          "program_checks": {
+            "canvas_contract": [
+              600,
+              600
+            ],
+            "draw_starts_with_top_left_translate": true,
+            "errors": [],
+            "finished": true,
+            "valid_receipt": true
+          },
+          "program_sha256": "dd15e09fc9a88bf895e416003b0a7caf361ea2d1dd611d48ff065397840603c9",
+          "receipt_sha256": "4d395e26246bff4af2c538e54e8ac96de3c5e3152700dd76e7e0e3e0c441bcaa",
+          "reference": "../recovery-quality-20260918/collected-final/evidence/data/v2-tree-001/turn-3.png",
+          "reference_kind": "procedural_known_program",
+          "reference_png": "../recovery-quality-20260918/collected-final/evidence/data/v2-tree-001/turn-3.png",
+          "reference_program": "../recovery-quality-20260918/collected-final/evidence/data/v2-tree-001/turn-3.js",
+          "reference_sha256": "9c5fc2de10419af25a9ab12d6b41e57b5caa9f35a377ef6b243540d8c900018d",
+          "render_receipt": "../recovery-quality-20260918/collected-final/evidence/data/v2-tree-001/turn-3.json",
+          "rl_roles": {
+            "opponent_status": "needs_distinct_student_or_correction_artifact",
+            "reason": "exact teacher/reference equality is valid SFT supervision but a trivial RL ceiling",
+            "reference_as_anchor_allowed": false,
+            "reference_as_opponent_allowed": false
+          },
+          "source_group": "v2-tree-001",
+          "source_type": "synthetic_procedural_painted_target",
+          "split": "train",
+          "task_id": "v2-tree-001",
+          "teacher_target": {
+            "exact_reference_render": true,
+            "provenance": "assistant-authored expanded recipe; source receipt verifies this program rendered this PNG",
+            "role": "procedural_teacher_target"
+          },
+          "visual_review": {
+            "basis": "direct image inspection via view_image",
+            "notes": "Overlapping canopy masses connect through branches to a rooted trunk; soft composition, limited dimensionality.",
+            "status": "foundation_ready"
+          }
+        },
+        {
+          "anchor_id": "v2-vase-001",
+          "family": "vase",
+          "id": "v2-vase-001",
+          "mode": "fresh",
+          "order": 23,
+          "photo_reference": false,
+          "program_checks": {
+            "canvas_contract": [
+              600,
+              600
+            ],
+            "draw_starts_with_top_left_translate": true,
+            "errors": [],
+            "finished": true,
+            "valid_receipt": true
+          },
+          "program_sha256": "601357500f2864d0cecd78368f2ea5fe10c77af6c3d090ed7dcbc5f6a4275290",
+          "receipt_sha256": "5ebc549a1e237d6a64fb1289d2cd3c2301b5a4ed10066a683e7068f6a89a7239",
+          "reference": "../recovery-quality-20260918/collected-final/evidence/data/v2-vase-001/turn-3.png",
+          "reference_kind": "procedural_known_program",
+          "reference_png": "../recovery-quality-20260918/collected-final/evidence/data/v2-vase-001/turn-3.png",
+          "reference_program": "../recovery-quality-20260918/collected-final/evidence/data/v2-vase-001/turn-3.js",
+          "reference_sha256": "ceca049a7f7833d0e58a72d3d5d8ba07c6b49fa2d889b78a33360802130c4a5e",
+          "render_receipt": "../recovery-quality-20260918/collected-final/evidence/data/v2-vase-001/turn-3.json",
+          "rl_roles": {
+            "opponent_status": "needs_distinct_student_or_correction_artifact",
+            "reason": "exact teacher/reference equality is valid SFT supervision but a trivial RL ceiling",
+            "reference_as_anchor_allowed": false,
+            "reference_as_opponent_allowed": false
+          },
+          "source_group": "v2-vase-001",
+          "source_type": "synthetic_procedural_painted_target",
+          "split": "train",
+          "task_id": "v2-vase-001",
+          "teacher_target": {
+            "exact_reference_render": true,
+            "provenance": "assistant-authored expanded recipe; source receipt verifies this program rendered this PNG",
+            "role": "procedural_teacher_target"
+          },
+          "visual_review": {
+            "basis": "direct image inspection via view_image",
+            "notes": "Open neck connects to shoulders and wider body, with grounded shadow; suitable for connectivity repair.",
+            "status": "foundation_ready"
+          }
+        }
+      ]
+    }
+  },
+  "schema": "painter.curriculum-order.v1",
+  "source_manifest_schema": null,
+  "source_manifest_sha256": "d27bd1cb1e1529c6cecad6bc4a08dbef1ef0240cc55aef3c147a640af4d12282"
+}

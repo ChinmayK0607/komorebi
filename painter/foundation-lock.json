@@ -1,11 +1,11 @@
 {
   "schema": 1,
   "contract": {
-    "version": "canvas-pixels-preview-v1",
-    "sha256": "456ba50d34ed27e62024e21faec91ce9623764582fe76b8228c11c3130623f9e"
+    "version": "canvas-pixels-preview-v2",
+    "sha256": "dd99279a5f3f6e98126e82db8b026c1ba726500cc8efb3fde53633772b5c65fb"
   },
   "files": {
-    "contract.py": "ed748ac78970e3205896093c13f9a607da0c8f30c74b654d2fa1df02f7cab165",
+    "contract.py": "0c77f0ed4bd5cad3121918d27495e3aef780dcb84ff0dd51cf61c3ffdd2ffaa0",
     "client.py": "3497ab6d382f8e76a4500b6f962421496b4ce258f91f628c35418294e8c5e5dd",
     "rollout.py": "704b350e2c763bb44b7eccb7fc2a03fbe3e3ed60b0d7f17dedc9681c907a703c",
     "render_demos.py": "968d8a89e8843ea54a227bda4cc24ec991084d0419a4d4713e21cbfca629ef0b",

@@ -1,0 +1,75 @@
+{
+  "schema": "painter.reward-audit.v1",
+  "source_run": "aesthetic-rl-20260921",
+  "scope": {
+    "admitted_trajectories": 32,
+    "groups": 4,
+    "unique_used_request_ids": 23,
+    "visual_inspection": "selected representatives; not exhaustive",
+    "labels_changed": false
+  },
+  "receipt_reuse": {
+    "cache_semantics": "repeated requests are exact content-addressed hits with identical reference, anchor, and candidate hashes",
+    "trajectory_rows_and_receipts_are_distinct": true,
+    "step_3_used_receipt_row_mean": 0.59375,
+    "reported_optimizer_group_reward": 0.75,
+    "aggregation_denominator_reconciled": false
+  },
+  "trace_level": {
+    "observed_turns": 86,
+    "valid_changed_turns": 39,
+    "no_change_turns": 8,
+    "invalid_turns": 39,
+    "traces_with_valid_changed_render": 19,
+    "traces_without_valid_changed_render": 13,
+    "traces_with_any_no_change": 6,
+    "all_turns_invalid": 9,
+    "explicit_finish": 5
+  },
+  "groups": {
+    "step_1": {"task": "box", "rows": 8, "reward_rows": {"1": 4, "0.5": 3, "0": 1}, "valid_changed_traces": 5, "no_change_traces": 1, "all_invalid_traces": 2, "order_disagreement_rows": 3},
+    "step_2": {"task": "box", "rows": 8, "reward_rows": {"1": 3, "0.5": 4, "0": 1}, "valid_changed_traces": 6, "no_change_traces": 0, "all_invalid_traces": 2, "order_disagreement_rows": 2},
+    "step_3": {"task": "bus", "rows": 8, "reward_rows": {"0.75": 1, "0.5": 6, "1": 1}, "valid_changed_traces": 2, "no_change_traces": 3, "all_invalid_traces": 3, "order_disagreement_rows": 1},
+    "step_4": {"task": "bus", "rows": 8, "reward_rows": {"0.5": 2, "0": 6}, "valid_changed_traces": 6, "no_change_traces": 2, "all_invalid_traces": 2, "order_disagreement_rows": 2}
+  },
+  "order_disagreement": {
+    "strict_unique_receipts": 4,
+    "tie_vs_win_unique_receipts": 1,
+    "unique_used_receipts": 23,
+    "strict_rows": 7,
+    "tie_vs_win_rows": 1,
+    "disagreement_rows": 8,
+    "disagreement_row_fraction": 0.25,
+    "request_ids": [
+      "fa6f2d8f0417de99f4040e998360d656b3bed6e83c79e9b53934f05775d32338",
+      "9b47ae1535631f6487722e028bef3bb88a544b3e377cf27accfdf5bdea6faef4",
+      "2c7cd2928cff8c8a058be007c1596ca1393e78486ec73b4623cdd6fc9cfbb35b",
+      "ff637df50b0c5fd0b3f94943021ad3d18bde0b39d92df9ed6a31c196668893a1",
+      "666be7f579afa532a7170940aea459a2ea2532388347c2265a5aa6b2cd5a1587"
+    ]
+  },
+  "bus_translate": {
+    "count_is_initial_programs": false,
+    "count_is_first_generated_turn_programs": true,
+    "source_field": "traces[*].info.turns[0].program in async-output/.../traces/stream/00000.jsonl.zst",
+    "bus_rows": 16,
+    "setup_translate_minus_300": 11,
+    "draw_translate_minus_300": 0,
+    "setup_translate_zero": 1,
+    "no_translate": 4,
+    "offcanvas_translate_moved_to_draw": 0,
+    "visually_confirmed_offcanvas_repair": false
+  },
+  "selected_examples": [
+    {"trace_id": "e13c8de40a7e4ffcaaf978ec1ae10fd2", "request_id": "3f1af9ddd4e899d0a3fd8feb6ca1d3a76e30f9e457718a68e56180ea01aec003", "reward": 1, "observation": "selected positive box repair and recovery; turn 1 upright, turn 2 gray smear, turn 3 clean upright box"},
+    {"trace_id": "00392a6f0d3e4734831aa9e8cb7a543e", "request_id": "ff637df50b0c5fd0b3f94943021ad3d18bde0b39d92df9ed6a31c196668893a1", "reward": 0.75, "observation": "three valid turns remain a lower-right clipped bus fragment"},
+    {"trace_id": "c53f7836ba3449b1a02a5bb7e41323eb", "request_id": "b74e49ec04c73242fa68bdc7e12f9a02ca58641632f298cc72bacaa1c6573cae", "reward": 0, "observation": "valid changed turns remain clipped; middle turn is no_change"},
+    {"trace_id": "6458a7e5a91f4beb9794d0b9cc759385", "request_id": "666be7f579afa532a7170940aea459a2ea2532388347c2265a5aa6b2cd5a1587", "reward": 0.5, "observation": "all three turns invalid; unchanged clipped starting canvas receives a split pairwise judgment, with first-orientation candidate grounding error"}
+  ],
+  "next_decision": [
+    "Keep simple pairwise beauty preference and record cache keys plus trajectory evidence separately.",
+    "Fix the WEBGL coordinate contract in prompts or starting programs before another judged run.",
+    "Use explicit clipped-bus and inverted-box repair tasks with small pre-import visual QA.",
+    "Preserve raw order and grounding labels; do not add validity, finish, occupancy, or quarantine gates."
+  ]
+}
