@@ -1,0 +1,20 @@
+{
+  "schema": "painter.reviewed-replay-scores.v1",
+  "group_id": "ff9c7975-6f4c-42b8-9fe6-a3912c1c45c5",
+  "scores": {
+    "104865ea947745389c54080ea088e465": 1.0
+  },
+  "allow_invalid_program_penalty": true,
+  "invalid_program_reward": -2.0,
+  "expected_scored_members": 5,
+  "group_original_members": 8,
+  "review": "Parent displayed all3 existingimages; bothcanvases severelycropped, candidatecontainsmorebusbody/window thananchor. Original twoLunalow views agreecandidatebetter, bothunacceptable. +1isrelativegainonly, not goodfinishedpainting.",
+  "receipt_path": "painter/runs/revision-rl-neutral-20260921/live/reward-batches/neutral-live-001/receipts/56f24bc4433467a7082fd7a57d135e011cf045c47c5903124e5e9f93f2bf57fc/receipt.json",
+  "receipt_sha256": "19629a0c8028f26a446a17b4addcb9549a8b51c64f1399c62c588c59732b513b",
+  "image_sha256": {
+    "reference": "67e4b253deb00ca207182bbccde7e980436a49e4a1833d04655ff236a1f459cf",
+    "anchor": "b1b6ecd6cc19aa40031ef5709ecc458dafa91087456ce653c002500f08b0078b",
+    "candidate": "69f63da5519e532c0bba9092d5d0b1b692bc9502824813ea32a1a29357553f92"
+  },
+  "scope": "One-update mechanicalsmoke only. Four deterministic programfailure penalties plus one reviewed relative visual improvement. Three remaining groupmembers excluded; no fabricatedscores, noqualitygainclaim."
+}

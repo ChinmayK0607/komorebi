@@ -1,0 +1,77 @@
+{
+  "protocol": "geometry-first-v1",
+  "scope": "Targeted diagnostic on three previously reviewed failure cases; not held-out generalization",
+  "cases": [
+    {
+      "case": "proportions",
+      "assets_root": "painter/runs/revision-rl-neutral-20260921/live/reward-batches/neutral-live-002/assets",
+      "reference": "f07b4001ac4448fd2048b8af355852b6f27d66bea2f0607fd805c80f4b48c797",
+      "A": "b33fa675f6edbcbdf03afb70298d2a4b9a3b419911b6f3773ce31fd2ac81c2e5",
+      "B": "84747d4af33a6f3b84f3c003714cacc3a6c1c09c555651359deaaf6527272824",
+      "first_winner": "A",
+      "reverse_winner": "B",
+      "order_consistent": true,
+      "parent_reviewed_major_geometry_correct": [
+        true,
+        true
+      ],
+      "model": "gpt-5.6-luna",
+      "reasoning_effort": "low",
+      "agent_tasks": [
+        "luna_geometry_ab",
+        "luna_geometry_ba"
+      ]
+    },
+    {
+      "case": "faces",
+      "assets_root": "painter/runs/revision-rl-neutral-20260921/live/reward-batches/neutral-live-001/assets",
+      "reference": "dc7b388fca604ed29e065696b66d1160b30d8aca121f80d1c4fafccdba1c478d",
+      "A": "82ab6ae6b85205ce5de91a3cb167bb61513c4c4bcd87effa14113ccc377bc234",
+      "B": "0bd609aff5f4a6ee1ae07c8971f8c14c6a21f711ffe8abe04071eaffc0f95da8",
+      "first_winner": "A",
+      "reverse_winner": "B",
+      "order_consistent": true,
+      "parent_reviewed_major_geometry_correct": [
+        true,
+        false
+      ],
+      "model": "gpt-5.6-luna",
+      "reasoning_effort": "low",
+      "agent_tasks": [
+        "luna_faces_ab",
+        "luna_faces_ba"
+      ]
+    },
+    {
+      "case": "handle",
+      "assets_root": "painter/runs/revision-rl-neutral-20260921/live/reward-batches/neutral-live-004/assets",
+      "reference": "97d9d9e85ff2cc55bc200d0d16de014f56f5e72758a2eb6ab5e7024e7270591a",
+      "A": "ded1ad81a6e9298291bc13d2a9fea4f9e5d0c904a7ed245fedaead83a8acd81d",
+      "B": "a62ee1ab9939733210ff621534d12cbb6965a49bf4cbbba1149ad25d04c6be62",
+      "first_winner": "B",
+      "reverse_winner": "A",
+      "order_consistent": true,
+      "parent_reviewed_major_geometry_correct": [
+        true,
+        true
+      ],
+      "model": "gpt-5.6-luna",
+      "reasoning_effort": "low",
+      "agent_tasks": [
+        "luna_handle_ab",
+        "luna_handle_ba"
+      ]
+    }
+  ],
+  "summary": {
+    "order_consistent_pairs": 3,
+    "pairs": 3,
+    "parent_confirmed_relative_winners": 6,
+    "views": 6,
+    "major_geometry_descriptions_without_reviewed_error": 5,
+    "remaining_false_surface_description": 1
+  },
+  "remaining_failure": "faces reverse view claims three filled planes on asset82ab even though only two side planes are filled. Relative winner remains correct.",
+  "label_provenance": "Structured result transcription by parent from six first-pass collaboration-agent final JSON outputs in this task; no replacement grades, no human gold.",
+  "training_use": "These new labels are diagnostic only and do not replace preserved receipts. Native smoke uses a separate reviewed whitelist."
+}
