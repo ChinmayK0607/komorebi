@@ -1,0 +1,58 @@
+{
+  "source_commit": "c5d713a",
+  "train_candidates": 2678,
+  "photo_teachers": 86,
+  "validation_rows": 240,
+  "admission": {
+    "schema": 1,
+    "status": "balanced_schedule_ready",
+    "steps": 1024,
+    "batch_size": 8,
+    "row_count": 8192,
+    "finite": true,
+    "requested_token_mass": {
+      "real": 0.4,
+      "foundation": 0.5,
+      "retention": 0.1
+    },
+    "actual_token_mass": {
+      "real": 0.40011521284682633,
+      "foundation": 0.499898516276522,
+      "retention": 0.09998627087665168
+    },
+    "assistant_tokens_by_bucket": {
+      "real": 2290682,
+      "foundation": 2861947,
+      "retention": 572427
+    },
+    "unique_source_examples": 2678,
+    "repeated_source_examples": 688,
+    "coverage_required": true,
+    "coverage_satisfied": true,
+    "uncovered_source_examples": [],
+    "final_exposure_count_by_bucket": {
+      "real": 913,
+      "foundation": 2810,
+      "retention": 4469
+    },
+    "train_sha256": "2624fc117394d25031b1d091b28266e6f17df3b592e64d8d74fcbb923036c88c",
+    "candidate_train_sha256": "58afca749a373fdce5d420b4b27f169c196d3c93304fdaedde2c59f16296b60d",
+    "candidate_validation_sha256": "688fd4ef610f4ced168b171a528eabc8611497fb886be1b11e8d488fead8bbc4",
+    "validation_sha256": "c62dffd5934a1b755cba3c45949df0f022d2e69a273eb59ed51eb67e0ae82889",
+    "note": "Admission repeats are explicit; source-group and unique-reference counts are not inflated."
+  },
+  "files": {
+    "sft.toml": "a2178c59d891dfcfe32d64e12abde6937155d251f6e9fd1932ff43456310f22a",
+    "data/candidates-train.jsonl": "58afca749a373fdce5d420b4b27f169c196d3c93304fdaedde2c59f16296b60d",
+    "data/candidates-validation.jsonl": "688fd4ef610f4ced168b171a528eabc8611497fb886be1b11e8d488fead8bbc4",
+    "data/train.jsonl": "2624fc117394d25031b1d091b28266e6f17df3b592e64d8d74fcbb923036c88c",
+    "data/validation.jsonl": "c62dffd5934a1b755cba3c45949df0f022d2e69a273eb59ed51eb67e0ae82889",
+    "data/balanced-receipt.json": "31a259f7a122d2e13b4965d98a6902c0f16a70beaee83b7e6a19552046904693",
+    "data/token-audit.json": "28ca17b510fda89edc19af0d946ed3d47eab55e558f842c72ca9183105f2f06c",
+    "review-labels/astra-final.json": "e9e8d93e8b5ccca16eb6658597424d207a204077b76f7984e7940e8f0210b142",
+    "review-labels/sol-batch.json": "8af1f6970a6f275e00e9c4939c3324bb52f1f15dd553fb14c181a311a01b4d17"
+  },
+  "hypothesis": "Complete reference-specific teacher programs improve fresh base first-paint validity and visual quality",
+  "matched_baseline": "base-one-turn28photos immutable Qwen3.8-27B revision1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+  "previous_attempt": "512update process stopped during initial startup to correct unachievable token mix; preserved separately"
+}

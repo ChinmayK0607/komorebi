@@ -16,7 +16,7 @@ The matched baseline is `Qwen/Qwen3.8-27B` revision `1d4bf0f2ff6012fd82039f2fa52
 
 The planned 100 new teacher programs are candidates until rendering and review. Final accepted counts, data hashes, mixture, sequence limit and training hyperparameters will be recorded before launch. Teacher plans alone and reference-equals-canvas finish rows are excluded.
 
-The proposed finite schedule is 512 updates × global batch 8 = 4,096 example exposures, covering every eligible source once before adding repeats and then deterministically interleaving the complete schedule. Requested supervised token proportions are 40% photo, 50% procedural and 10% general retention; actual fractions and exposure counts are authoritative. The planned optimizer uses rank-16/alpha-32 LoRA, BF16, a frozen vision encoder, 16,384-token full-sequence capacity and learning rate 1e-5. These settings remain subject to the actual full-target processor audit; no truncation is permitted.
+The proposed finite schedule is 1,024 updates × global batch 8 = 8,192 example exposures, covering every eligible source once before adding repeats and then deterministically interleaving the complete schedule. Requested supervised token proportions are 40% photo, 50% procedural and 10% general retention; actual fractions and exposure counts are authoritative. The planned optimizer uses rank-16/alpha-32 LoRA, BF16, a frozen vision encoder, 16,384-token full-sequence capacity and learning rate 1e-5. These settings remain subject to the actual full-target processor audit; no truncation is permitted.
 
 The first matched visual comparison uses **all 28 COCO development photos, one painting response each**, 8,192 output tokens, temperature 1, seed 918200, thinking disabled, 16,384 context and a 180-second renderer deadline. This measures direct photo-to-program learning without confounding it with a weak revision policy. It is distinct from the preceding six-turn study. Base inference can run while teacher data is prepared; the same first-paint protocol will evaluate saved checkpoints. Multi-turn revision quality remains a separate subsequent measurement, not something inferred from first-paint scores.
 
@@ -31,3 +31,7 @@ Native optimizer/model/data checkpoints are retained temporarily on the node (la
 ## Decision
 
 Evaluate intermediate and final checkpoints against base on held-out reference-to-painting tasks, including failures in the denominator. Inspect whether successful revisions improve rather than merely consume more turns. Promote a checkpoint only on measured visual evidence; if an intermediate checkpoint is stronger, preserve and select it instead of treating the last update as inherently best.
+
+## Launch admission adjustment
+
+All 98 rendered photo candidates received Luna-low visual review. Admit 86 and exclude 12 weak targets; two additional candidates failed rendering. The initial 512-update launch was stopped during startup because coverage of every source made the requested token mix infeasible (21.62% photo, 72.97% foundation, 5.41% retention). Preserve that attempt separately. Increase the finite exposure budget to 1,024 updates and verify the actual token fractions before relaunch. No new optimizer result is inferred from initial adapter export.

@@ -1,7 +1,7 @@
 {
   "run": "photo-curriculum-sft-20260922",
-  "status": "final_visual_admission_before_training",
-  "training_started": false,
+  "status": "training_in_progress",
+  "training_started": true,
   "hypothesis": "Complete, rendered, reference-specific demonstrations with diverse structural foundations improve fresh-base photo painting.",
   "base": {
     "repo": "Qwen/Qwen3.8-27B",
@@ -35,10 +35,10 @@
       "foundation": 0.5,
       "retention": 0.1
     },
-    "accepted_photo_count": null
+    "accepted_photo_count": 86
   },
   "proposed_training": {
-    "steps": 512,
+    "steps": 1024,
     "global_batch_size": 8,
     "micro_batch_size": 1,
     "gpus": 2,
@@ -49,7 +49,7 @@
     "checkpoint_interval": 64,
     "validation_interval": 64,
     "vision_frozen": true,
-    "data_exposures": 4096,
+    "data_exposures": 8192,
     "full_target_no_truncation": true,
     "dp_replicate": 2,
     "dp_shard": 1
@@ -71,7 +71,12 @@
       "http_responses": 28,
       "valid_renders": 4,
       "render_receipts": 23,
-      "note": "Remaining five require trace categorization; visual quality not inferred from validity."
+      "note": "4/28valid first-paint canvases; five missing completecode blocks (two response-length cutoffs), nineteen runtime/JS errors; allfailuresincluded.",
+      "finish_reasons": {
+        "stop": 26,
+        "length": 2
+      },
+      "no_complete_code_block": 5
     }
   },
   "hardware": {
@@ -82,7 +87,7 @@
   },
   "checkpoints": {
     "public_hf_repo": "CK0607/qwen3.8-27b-brush-painting",
-    "namespace": "photo-curriculum-sft-20260922",
+    "namespace": "photo-curriculum-sft-20260922-balanced",
     "remote_hash_verification": true,
     "native_temporary_keep_last": 2,
     "optimizer_resume": "same_node_native_checkpoints_only"
@@ -93,8 +98,30 @@
   },
   "foundation_lock_sha256": "e602bfcb038683015f30a61c4c31a5be1cc679b9f783784e8423bbe075dc18ab",
   "source_parent_commit_before_run": "29273d8",
-  "final_data_hashes": null,
-  "results": null,
+  "final_data_hashes": {
+    "train": "2624fc117394d25031b1d091b28266e6f17df3b592e64d8d74fcbb923036c88c",
+    "candidates_train": "58afca749a373fdce5d420b4b27f169c196d3c93304fdaedde2c59f16296b60d",
+    "validation": "c62dffd5934a1b755cba3c45949df0f022d2e69a273eb59ed51eb67e0ae82889",
+    "sft.toml": "a2178c59d891dfcfe32d64e12abde6937155d251f6e9fd1932ff43456310f22a",
+    "data/candidates-train.jsonl": "58afca749a373fdce5d420b4b27f169c196d3c93304fdaedde2c59f16296b60d",
+    "data/candidates-validation.jsonl": "688fd4ef610f4ced168b171a528eabc8611497fb886be1b11e8d488fead8bbc4",
+    "data/train.jsonl": "2624fc117394d25031b1d091b28266e6f17df3b592e64d8d74fcbb923036c88c",
+    "data/validation.jsonl": "c62dffd5934a1b755cba3c45949df0f022d2e69a273eb59ed51eb67e0ae82889",
+    "data/balanced-receipt.json": "31a259f7a122d2e13b4965d98a6902c0f16a70beaee83b7e6a19552046904693",
+    "data/token-audit.json": "28ca17b510fda89edc19af0d946ed3d47eab55e558f842c72ca9183105f2f06c",
+    "review-labels/astra-final.json": "e9e8d93e8b5ccca16eb6658597424d207a204077b76f7984e7940e8f0210b142",
+    "review-labels/sol-batch.json": "8af1f6970a6f275e00e9c4939c3324bb52f1f15dd553fb14c181a311a01b4d17"
+  },
+  "results": {
+    "completed_updates_observed": 68,
+    "finite_gradients": true,
+    "loss_nan_count": 0,
+    "visual_improvement": null,
+    "evaluation_pending": true,
+    "first_trained_checkpoint_step": 64,
+    "all_992_adapter_tensors_changed": true,
+    "all_496_B_tensors_nonzero": true
+  },
   "scheduled_tasks_created": false,
   "teacher_generation": {
     "candidates": 100,
@@ -103,7 +130,9 @@
       "coco128-000000000294",
       "coco128-000000000332"
     ],
-    "quality_review": "all_complete_pairs_Luna_low_in_progress"
+    "quality_review": "all98completepairsreviewedLunaLow",
+    "quality_kept": 86,
+    "quality_excluded": 12
   },
   "processor_audit": {
     "train_candidates": 2690,
@@ -113,5 +142,233 @@
     "assistant_mask": "exact_target_plus_im_end",
     "truncation": false,
     "candidate_sha256": "fab8d6bc987a543b66cf52966bb248e7e9af181452393e305b276f6abdd0a690"
+  },
+  "source_commit_at_launch": "c5d713a",
+  "launch_adjustment": "512update coverage forced21.6/73.0/5.4 tokenfractions; stopped initial startup and increased finitebudget1024updates.",
+  "final_token_mixture": {
+    "photo": 0.40011521284682633,
+    "foundation": 0.499898516276522,
+    "retention": 0.09998627087665168
+  },
+  "final_exposures": {
+    "photo": 913,
+    "foundation": 2810,
+    "retention": 4469
+  },
+  "unique_training_examples": 2678,
+  "launch_record_sha256": "2d7cd74ddbbe3692a3098dbf1a694d75500cacd388be1e67331086083102a384",
+  "initial_checkpoint": {
+    "public": true,
+    "verified": true,
+    "step": 0,
+    "repo": "CK0607/qwen3.8-27b-brush-painting",
+    "commit": "c8063b8df4fc4c38a0fd05051791cdce32f51573",
+    "path": "photo-curriculum-sft-20260922-balanced/step_0"
+  },
+  "early_training_evidence": {
+    "status": "training_in_progress",
+    "max_completed_step": 13,
+    "optimizer_metrics": [
+      {
+        "step": 1,
+        "time": 1790028952.5404413,
+        "val/loss": 0.8708562254905701,
+        "optim/grad_norm": 0.326171875,
+        "loss/mean": 0.9505681395530701,
+        "loss/perplexity": 2.5871791206360815,
+        "loss/nan_count": 0,
+        "time/step": 195.64549937471747,
+        "time/forward_backward": 111.46294404286891
+      },
+      {
+        "step": 2,
+        "time": 1790028966.2090616,
+        "optim/grad_norm": 0.4140625,
+        "loss/mean": 0.8067574501037598,
+        "loss/perplexity": 2.2406308375032373,
+        "loss/nan_count": 0,
+        "time/step": 13.664806876331568,
+        "time/forward_backward": 13.591506958939135
+      },
+      {
+        "step": 3,
+        "time": 1790028976.3590047,
+        "optim/grad_norm": 0.9296875,
+        "loss/mean": 0.9788047075271606,
+        "loss/perplexity": 2.6612733400675053,
+        "loss/nan_count": 0,
+        "time/step": 10.146417249925435,
+        "time/forward_backward": 10.098208911716938
+      },
+      {
+        "step": 4,
+        "time": 1790029004.4768295,
+        "optim/grad_norm": 0.43359375,
+        "loss/mean": 0.8983777761459351,
+        "loss/perplexity": 2.4556163189275333,
+        "loss/nan_count": 0,
+        "time/step": 28.11404401808977,
+        "time/forward_backward": 26.02998912334442
+      },
+      {
+        "step": 5,
+        "time": 1790029011.0021007,
+        "optim/grad_norm": 1.4296875,
+        "loss/mean": 0.9025302529335022,
+        "loss/perplexity": 2.4658344091997915,
+        "loss/nan_count": 0,
+        "time/step": 6.522718695923686,
+        "time/forward_backward": 6.371113806962967
+      },
+      {
+        "step": 6,
+        "time": 1790029020.5735052,
+        "optim/grad_norm": 0.27734375,
+        "loss/mean": 0.9569603204727173,
+        "loss/perplexity": 2.6037698064882804,
+        "loss/nan_count": 0,
+        "time/step": 9.568109164014459,
+        "time/forward_backward": 9.513589948415756
+      },
+      {
+        "step": 7,
+        "time": 1790029027.0664074,
+        "optim/grad_norm": 0.486328125,
+        "loss/mean": 0.8478413224220276,
+        "loss/perplexity": 2.3346017560531664,
+        "loss/nan_count": 0,
+        "time/step": 6.4900535475462675,
+        "time/forward_backward": 6.431982705369592
+      },
+      {
+        "step": 8,
+        "time": 1790029035.7573225,
+        "optim/grad_norm": 0.302734375,
+        "loss/mean": 0.9546290040016174,
+        "loss/perplexity": 2.597706665347981,
+        "loss/nan_count": 0,
+        "time/step": 8.688200697302818,
+        "time/forward_backward": 8.6336549827829
+      },
+      {
+        "step": 9,
+        "time": 1790029042.7785904,
+        "optim/grad_norm": 4.25,
+        "loss/mean": 1.1405258178710938,
+        "loss/perplexity": 3.128412908198503,
+        "loss/nan_count": 0,
+        "time/step": 7.018160077743232,
+        "time/forward_backward": 6.9634858053177595
+      },
+      {
+        "step": 10,
+        "time": 1790029051.9956388,
+        "optim/grad_norm": 0.828125,
+        "loss/mean": 0.922853410243988,
+        "loss/perplexity": 2.516460649821596,
+        "loss/nan_count": 0,
+        "time/step": 9.213781788013875,
+        "time/forward_backward": 9.159737074747682
+      },
+      {
+        "step": 11,
+        "time": 1790029058.819934,
+        "optim/grad_norm": 0.5078125,
+        "loss/mean": 0.7780739665031433,
+        "loss/perplexity": 2.177274720446178,
+        "loss/nan_count": 0,
+        "time/step": 6.821802036836743,
+        "time/forward_backward": 6.768043829128146
+      },
+      {
+        "step": 12,
+        "time": 1790029067.7793322,
+        "optim/grad_norm": 0.361328125,
+        "loss/mean": 0.9246907234191895,
+        "loss/perplexity": 2.5210884261637725,
+        "loss/nan_count": 0,
+        "time/step": 8.95626781322062,
+        "time/forward_backward": 8.49881668202579
+      },
+      {
+        "step": 13,
+        "time": 1790029075.7465065,
+        "optim/grad_norm": 0.6015625,
+        "loss/mean": 0.9216700196266174,
+        "loss/perplexity": 2.5134844552473075,
+        "loss/nan_count": 0,
+        "time/step": 7.964030257426202,
+        "time/forward_backward": 7.912594200111926
+      }
+    ],
+    "utilization": {
+      "window_start_utc": "2026-09-21T22:15:54.060284+00:00",
+      "window_end_utc": "2026-09-21T22:17:54.555133+00:00",
+      "scope": "post-initial-step active training interval; two GPUs, no inference server",
+      "per_gpu": {
+        "0": {
+          "samples": 13,
+          "mean_gpu_util_percent": 78.0,
+          "busy_fraction_at_least10percent": 1.0
+        },
+        "1": {
+          "samples": 13,
+          "mean_gpu_util_percent": 72.92307692307692,
+          "busy_fraction_at_least10percent": 1.0
+        }
+      }
+    },
+    "limitations": [
+      "Startup compilation excluded from this selected interval; startup CSV retained",
+      "Prime reported MFU above100percent so those estimates are invalid and not used",
+      "GPU busy is not kernel efficiency or proof of visual improvement"
+    ]
+  },
+  "validation_loss_observed": {
+    "initial": 0.8708562254905701,
+    "step_64": 0.6106,
+    "scope": "240 held-out procedural targets; teacher-forced token prediction, not visual evaluation"
+  },
+  "first_trained_checkpoint": {
+    "initial_step": 0,
+    "trained_step": 64,
+    "tensor_count": 992,
+    "changed_tensors": 992,
+    "nonzero_B_tensors": 496,
+    "all_finite": true,
+    "public_checkpoint": {
+      "repo_id": "CK0607/qwen3.8-27b-brush-painting",
+      "private": false,
+      "commit": "b08effd090f8aa8ea5e05094f08588fb5237e950",
+      "path": "photo-curriculum-sft-20260922-balanced/step_64",
+      "url": "https://huggingface.co/CK0607/qwen3.8-27b-brush-painting/tree/b08effd090f8aa8ea5e05094f08588fb5237e950/photo-curriculum-sft-20260922-balanced/step_64",
+      "verified": true,
+      "files": {
+        "adapter_config.json": {
+          "sha256": "1bb3ad53b417ad64b90adba4faa05cc1a93d7725468ce529c015135fc602d942",
+          "bytes": 479
+        },
+        "adapter_model.safetensors": {
+          "sha256": "cbd4af889534218466369330727c4c08cacec667b65b028918046c954d68810a",
+          "bytes": 233590600
+        },
+        "validation.json": {
+          "sha256": "11a5cfe0d944e72d41e278d562e3e9bec1f505ed8752e47ee65efa49e219c9b1",
+          "bytes": 481
+        },
+        "upload-manifest.json": {
+          "sha256": "fb16bbaeead12bb42a54f375e6cdcdf926c95f43357c01dea2d0fd3a5f758d62",
+          "bytes": 609
+        }
+      }
+    },
+    "visual_quality_claim": false
+  },
+  "cost_snapshot": {
+    "advertised_total_usd_per_hour": 2.38,
+    "elapsed_rental_approx_hours": 1.43,
+    "accrued_estimate_usd": 3.41,
+    "scope": "allocation including setup, baseline inference and early training; not final billed cost",
+    "as_of_utc": "2026-09-21T22:30:00Z"
   }
 }

@@ -1,0 +1,510 @@
+{
+  "episodes": 28,
+  "valid": 4,
+  "failure_kinds": {
+    "no_valid_canvas_at_cap": 24,
+    "None": 4
+  },
+  "finish_reasons": {
+    "stop": 26,
+    "length": 2
+  },
+  "records": [
+    {
+      "id": "coco-capability-20260922-000000000208",
+      "valid": false,
+      "failure_kind": "no_valid_canvas_at_cap",
+      "operational_cutoff": true,
+      "finish_reason": [
+        "stop"
+      ],
+      "turns": [
+        {
+          "valid": false,
+          "action": "paint",
+          "error": "No complete JavaScript code block",
+          "failure_kind": "program"
+        }
+      ]
+    },
+    {
+      "id": "coco-capability-20260922-000000000133",
+      "valid": false,
+      "failure_kind": "no_valid_canvas_at_cap",
+      "operational_cutoff": true,
+      "finish_reason": [
+        "stop"
+      ],
+      "turns": [
+        {
+          "valid": false,
+          "action": "paint",
+          "render_timeout_seconds": 180,
+          "error": "['brush.reset is not a function', 'TypeError: brush.reset is not a function']",
+          "failure_kind": "program"
+        }
+      ]
+    },
+    {
+      "id": "coco-capability-20260922-000000000357",
+      "valid": false,
+      "failure_kind": "no_valid_canvas_at_cap",
+      "operational_cutoff": true,
+      "finish_reason": [
+        "stop"
+      ],
+      "turns": [
+        {
+          "valid": false,
+          "action": "paint",
+          "render_timeout_seconds": 180,
+          "error": "['brush.noFillTexture is not a function', 'TypeError: brush.noFillTexture is not a function']",
+          "failure_kind": "program"
+        }
+      ]
+    },
+    {
+      "id": "coco-capability-20260922-000000000419",
+      "valid": false,
+      "failure_kind": "no_valid_canvas_at_cap",
+      "operational_cutoff": true,
+      "finish_reason": [
+        "stop"
+      ],
+      "turns": [
+        {
+          "valid": false,
+          "action": "paint",
+          "render_timeout_seconds": 180,
+          "error": "['brush.ellipse is not a function', 'TypeError: brush.ellipse is not a function']",
+          "failure_kind": "program"
+        }
+      ]
+    },
+    {
+      "id": "coco-capability-20260922-000000000089",
+      "valid": true,
+      "failure_kind": null,
+      "operational_cutoff": true,
+      "finish_reason": [
+        "stop"
+      ],
+      "turns": [
+        {
+          "valid": true,
+          "action": "paint",
+          "render_timeout_seconds": 180,
+          "render_seconds": 41.28698907699436
+        }
+      ]
+    },
+    {
+      "id": "coco-capability-20260922-000000000127",
+      "valid": true,
+      "failure_kind": null,
+      "operational_cutoff": true,
+      "finish_reason": [
+        "stop"
+      ],
+      "turns": [
+        {
+          "valid": true,
+          "action": "paint",
+          "render_timeout_seconds": 180,
+          "render_seconds": 89.59554829169065
+        }
+      ]
+    },
+    {
+      "id": "coco-capability-20260922-000000000009",
+      "valid": false,
+      "failure_kind": "no_valid_canvas_at_cap",
+      "operational_cutoff": true,
+      "finish_reason": [
+        "stop"
+      ],
+      "turns": [
+        {
+          "valid": false,
+          "action": "paint",
+          "render_timeout_seconds": 180,
+          "error": "['Brush is not defined', 'ReferenceError: Brush is not defined']",
+          "failure_kind": "program"
+        }
+      ]
+    },
+    {
+      "id": "coco-capability-20260922-000000000542",
+      "valid": false,
+      "failure_kind": "no_valid_canvas_at_cap",
+      "operational_cutoff": true,
+      "finish_reason": [
+        "stop"
+      ],
+      "turns": [
+        {
+          "valid": false,
+          "action": "paint",
+          "render_timeout_seconds": 180,
+          "error": "['p5.brush is not a constructor', 'TypeError: p5.brush is not a constructor']",
+          "failure_kind": "program"
+        }
+      ]
+    },
+    {
+      "id": "coco-capability-20260922-000000000599",
+      "valid": false,
+      "failure_kind": "no_valid_canvas_at_cap",
+      "operational_cutoff": true,
+      "finish_reason": [
+        "length"
+      ],
+      "turns": [
+        {
+          "valid": false,
+          "action": "paint",
+          "error": "No complete JavaScript code block",
+          "failure_kind": "program"
+        }
+      ]
+    },
+    {
+      "id": "coco-capability-20260922-000000000382",
+      "valid": true,
+      "failure_kind": null,
+      "operational_cutoff": true,
+      "finish_reason": [
+        "stop"
+      ],
+      "turns": [
+        {
+          "valid": true,
+          "action": "paint",
+          "render_timeout_seconds": 180,
+          "render_seconds": 42.400022296234965
+        }
+      ]
+    },
+    {
+      "id": "coco-capability-20260922-000000000641",
+      "valid": false,
+      "failure_kind": "no_valid_canvas_at_cap",
+      "operational_cutoff": true,
+      "finish_reason": [
+        "stop"
+      ],
+      "turns": [
+        {
+          "valid": false,
+          "action": "paint",
+          "render_timeout_seconds": 180,
+          "error": "['p5.brush is not a constructor', 'TypeError: p5.brush is not a constructor']",
+          "failure_kind": "program"
+        }
+      ]
+    },
+    {
+      "id": "coco-capability-20260922-000000000078",
+      "valid": false,
+      "failure_kind": "no_valid_canvas_at_cap",
+      "operational_cutoff": true,
+      "finish_reason": [
+        "stop"
+      ],
+      "turns": [
+        {
+          "valid": false,
+          "action": "paint",
+          "render_timeout_seconds": 180,
+          "error": "['Brush \"wash\" not found. Available brushes: pen, rotring, 2B, HB, 2H, cpencil, pastel, crayon, charcoal, spray, marker.', 'Error: Brush \"wash\" not found. Available brushes: pen, rotring, 2B, HB, 2H, cpencil, pastel, crayon, charcoal, spray, marker.']",
+          "failure_kind": "program"
+        }
+      ]
+    },
+    {
+      "id": "coco-capability-20260922-000000000030",
+      "valid": false,
+      "failure_kind": "no_valid_canvas_at_cap",
+      "operational_cutoff": true,
+      "finish_reason": [
+        "stop"
+      ],
+      "turns": [
+        {
+          "valid": false,
+          "action": "paint",
+          "render_timeout_seconds": 180,
+          "error": "['brush.ellipse is not a function', 'TypeError: brush.ellipse is not a function']",
+          "failure_kind": "program"
+        }
+      ]
+    },
+    {
+      "id": "coco-capability-20260922-000000000072",
+      "valid": false,
+      "failure_kind": "no_valid_canvas_at_cap",
+      "operational_cutoff": true,
+      "finish_reason": [
+        "stop"
+      ],
+      "turns": [
+        {
+          "valid": false,
+          "action": "paint",
+          "render_timeout_seconds": 180,
+          "error": "['p5.brush is not a constructor', 'TypeError: p5.brush is not a constructor']",
+          "failure_kind": "program"
+        }
+      ]
+    },
+    {
+      "id": "coco-capability-20260922-000000000077",
+      "valid": false,
+      "failure_kind": "no_valid_canvas_at_cap",
+      "operational_cutoff": true,
+      "finish_reason": [
+        "stop"
+      ],
+      "turns": [
+        {
+          "valid": false,
+          "action": "paint",
+          "render_timeout_seconds": 180,
+          "error": "[\"Uncaught SyntaxError: Failed to execute 'write' on 'Document': Identifier 's' has already been declared\", 'No canvas produced']",
+          "failure_kind": "program"
+        }
+      ]
+    },
+    {
+      "id": "coco-capability-20260922-000000000636",
+      "valid": false,
+      "failure_kind": "no_valid_canvas_at_cap",
+      "operational_cutoff": true,
+      "finish_reason": [
+        "stop"
+      ],
+      "turns": [
+        {
+          "valid": false,
+          "action": "paint",
+          "render_timeout_seconds": 180,
+          "error": "['p5.brush is not a constructor', 'TypeError: p5.brush is not a constructor']",
+          "failure_kind": "program"
+        }
+      ]
+    },
+    {
+      "id": "coco-capability-20260922-000000000359",
+      "valid": false,
+      "failure_kind": "no_valid_canvas_at_cap",
+      "operational_cutoff": true,
+      "finish_reason": [
+        "stop"
+      ],
+      "turns": [
+        {
+          "valid": false,
+          "action": "paint",
+          "render_timeout_seconds": 180,
+          "error": "['ground is not defined', 'ReferenceError: ground is not defined']",
+          "failure_kind": "program"
+        }
+      ]
+    },
+    {
+      "id": "coco-capability-20260922-000000000322",
+      "valid": false,
+      "failure_kind": "no_valid_canvas_at_cap",
+      "operational_cutoff": true,
+      "finish_reason": [
+        "stop"
+      ],
+      "turns": [
+        {
+          "valid": false,
+          "action": "paint",
+          "render_timeout_seconds": 180,
+          "error": "['brush.ellipse is not a function', 'TypeError: brush.ellipse is not a function']",
+          "failure_kind": "program"
+        }
+      ]
+    },
+    {
+      "id": "coco-capability-20260922-000000000049",
+      "valid": false,
+      "failure_kind": "no_valid_canvas_at_cap",
+      "operational_cutoff": true,
+      "finish_reason": [
+        "stop"
+      ],
+      "turns": [
+        {
+          "valid": false,
+          "action": "paint",
+          "render_timeout_seconds": 180,
+          "error": "['brush.reset is not a function', 'TypeError: brush.reset is not a function']",
+          "failure_kind": "program"
+        }
+      ]
+    },
+    {
+      "id": "coco-capability-20260922-000000000201",
+      "valid": false,
+      "failure_kind": "no_valid_canvas_at_cap",
+      "operational_cutoff": true,
+      "finish_reason": [
+        "stop"
+      ],
+      "turns": [
+        {
+          "valid": false,
+          "action": "paint",
+          "render_timeout_seconds": 180,
+          "error": "['Brush is not defined', 'ReferenceError: Brush is not defined']",
+          "failure_kind": "program"
+        }
+      ]
+    },
+    {
+      "id": "coco-capability-20260922-000000000562",
+      "valid": false,
+      "failure_kind": "no_valid_canvas_at_cap",
+      "operational_cutoff": true,
+      "finish_reason": [
+        "stop"
+      ],
+      "turns": [
+        {
+          "valid": false,
+          "action": "paint",
+          "render_timeout_seconds": 180,
+          "error": "['p5.brush is not a constructor', 'TypeError: p5.brush is not a constructor']",
+          "failure_kind": "program"
+        }
+      ]
+    },
+    {
+      "id": "coco-capability-20260922-000000000113",
+      "valid": false,
+      "failure_kind": "no_valid_canvas_at_cap",
+      "operational_cutoff": true,
+      "finish_reason": [
+        "length"
+      ],
+      "turns": [
+        {
+          "valid": false,
+          "action": "paint",
+          "error": "No complete JavaScript code block",
+          "failure_kind": "program"
+        }
+      ]
+    },
+    {
+      "id": "coco-capability-20260922-000000000431",
+      "valid": false,
+      "failure_kind": "no_valid_canvas_at_cap",
+      "operational_cutoff": true,
+      "finish_reason": [
+        "stop"
+      ],
+      "turns": [
+        {
+          "valid": false,
+          "action": "paint",
+          "render_timeout_seconds": 180,
+          "error": "['Cannot redefine property: line', 'TypeError: Cannot redefine property: line', 'No canvas produced']",
+          "failure_kind": "program"
+        }
+      ]
+    },
+    {
+      "id": "coco-capability-20260922-000000000081",
+      "valid": false,
+      "failure_kind": "no_valid_canvas_at_cap",
+      "operational_cutoff": true,
+      "finish_reason": [
+        "stop"
+      ],
+      "turns": [
+        {
+          "valid": false,
+          "action": "paint",
+          "render_timeout_seconds": 180,
+          "error": "['brush.ellipse is not a function', 'Uncaught ReferenceError: require is not defined']",
+          "failure_kind": "program"
+        }
+      ]
+    },
+    {
+      "id": "coco-capability-20260922-000000000634",
+      "valid": false,
+      "failure_kind": "no_valid_canvas_at_cap",
+      "operational_cutoff": true,
+      "finish_reason": [
+        "stop"
+      ],
+      "turns": [
+        {
+          "valid": false,
+          "action": "paint",
+          "error": "No complete JavaScript code block",
+          "failure_kind": "program"
+        }
+      ]
+    },
+    {
+      "id": "coco-capability-20260922-000000000584",
+      "valid": false,
+      "failure_kind": "no_valid_canvas_at_cap",
+      "operational_cutoff": true,
+      "finish_reason": [
+        "stop"
+      ],
+      "turns": [
+        {
+          "valid": false,
+          "action": "paint",
+          "render_timeout_seconds": 180,
+          "error": "['brush.ellipse is not a function', 'TypeError: brush.ellipse is not a function']",
+          "failure_kind": "program"
+        }
+      ]
+    },
+    {
+      "id": "coco-capability-20260922-000000000572",
+      "valid": false,
+      "failure_kind": "no_valid_canvas_at_cap",
+      "operational_cutoff": true,
+      "finish_reason": [
+        "stop"
+      ],
+      "turns": [
+        {
+          "valid": false,
+          "action": "paint",
+          "error": "No complete JavaScript code block",
+          "failure_kind": "program"
+        }
+      ]
+    },
+    {
+      "id": "coco-capability-20260922-000000000626",
+      "valid": true,
+      "failure_kind": null,
+      "operational_cutoff": true,
+      "finish_reason": [
+        "stop"
+      ],
+      "turns": [
+        {
+          "valid": true,
+          "action": "paint",
+          "render_timeout_seconds": 180,
+          "render_seconds": 143.27228019200265
+        }
+      ]
+    }
+  ],
+  "claim": "operational validity only; first response, not six-turn score"
+}

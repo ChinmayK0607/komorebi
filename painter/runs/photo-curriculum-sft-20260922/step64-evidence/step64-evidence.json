@@ -1,0 +1,35 @@
+{
+  "initial_step": 0,
+  "trained_step": 64,
+  "tensor_count": 992,
+  "changed_tensors": 992,
+  "nonzero_B_tensors": 496,
+  "all_finite": true,
+  "public_checkpoint": {
+    "repo_id": "CK0607/qwen3.8-27b-brush-painting",
+    "private": false,
+    "commit": "b08effd090f8aa8ea5e05094f08588fb5237e950",
+    "path": "photo-curriculum-sft-20260922-balanced/step_64",
+    "url": "https://huggingface.co/CK0607/qwen3.8-27b-brush-painting/tree/b08effd090f8aa8ea5e05094f08588fb5237e950/photo-curriculum-sft-20260922-balanced/step_64",
+    "verified": true,
+    "files": {
+      "adapter_config.json": {
+        "sha256": "1bb3ad53b417ad64b90adba4faa05cc1a93d7725468ce529c015135fc602d942",
+        "bytes": 479
+      },
+      "adapter_model.safetensors": {
+        "sha256": "cbd4af889534218466369330727c4c08cacec667b65b028918046c954d68810a",
+        "bytes": 233590600
+      },
+      "validation.json": {
+        "sha256": "11a5cfe0d944e72d41e278d562e3e9bec1f505ed8752e47ee65efa49e219c9b1",
+        "bytes": 481
+      },
+      "upload-manifest.json": {
+        "sha256": "fb16bbaeead12bb42a54f375e6cdcdf926c95f43357c01dea2d0fd3a5f758d62",
+        "bytes": 609
+      }
+    }
+  },
+  "visual_quality_claim": false
+}
