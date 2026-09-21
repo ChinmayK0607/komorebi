@@ -1,0 +1,257 @@
+"""Pure tests for the current-pin native painting environment."""
+
+from __future__ import annotations
+
+import asyncio
+import importlib
+import json
+import sys
+import types
+import unittest
+from pathlib import Path
+from tempfile import TemporaryDirectory
+from unittest.mock import patch
+
+from pydantic import BaseModel, ConfigDict, Field
+
+
+class _Base(BaseModel):
+    model_config = ConfigDict(extra="allow", arbitrary_types_allowed=True)
+
+
+class _TaskData(_Base):
+    idx: int | None = None
+    name: str | None = None
+    prompt: object = None
+    system_prompt: str | None = None
+
+
+class _Task:
+    def __init__(self, data, config=None):
+        self.data = data
+        self.config = config
+
+
+class _TasksetConfig(_Base):
+    id: str = ""
+    system_prompt: object = None
+
+
+class _Taskset:
+    def __init__(self, config):
+        self.config = config
+
+
+class _EnvConfig(_Base):
+    taskset: object = None
+
+
+class _AgentConfig(_Base):
+    pass
+
+
+class _State:  # only used as a generic argument
+    pass
+
+
+class _Message:
+    def __init__(self, content):
+        self.content = content
+
+
+class _Text:
+    def __init__(self, text):
+        self.text = text
+
+
+class _ImageSource:
+    def __init__(self, url):
+        self.url = url
+
+
+class _Image:
+    def __init__(self, image_url):
+        self.image_url = image_url
+
+
+class _User:
+    def __init__(self, content):
+        self.content = content
+
+
+class _VfEnv:
+    def __init_subclass__(cls, **kwargs):
+        return super().__init_subclass__()
+    def __class_getitem__(cls, _item):
+        return cls
+
+
+class _VfTask:
+    def __class_getitem__(cls, _item):
+        return cls
+    def __init__(self, data, config=None):
+        self.data, self.config = data, config
+
+
+class _VfTaskset:
+    def __class_getitem__(cls, _item):
+        return cls
+    def __init__(self, config):
+        self.config = config
+
+
+def _load_module():
+    vf = types.ModuleType("verifiers.v1")
+    vf.TaskData = _TaskData
+    vf.Task = _VfTask
+    vf.Taskset = _VfTaskset
+    vf.TasksetConfig = _TasksetConfig
+    vf.TaskConfig = _Base
+    vf.Env = _VfEnv
+    vf.EnvConfig = _EnvConfig
+    vf.AgentConfig = _AgentConfig
+    vf.State = _State
+    vf.Agents = object
+    vf.ImageUrlContentPart = _Image
+    vf.ImageUrlSource = _ImageSource
+    vf.TextContentPart = _Text
+    vf.UserMessage = _User
+    verifiers = types.ModuleType("verifiers")
+    verifiers.v1 = vf
+    with patch.dict(sys.modules, {"verifiers": verifiers, "verifiers.v1": vf}, clear=False):
+        sys.modules.pop("painter.native_painting", None)
+        return importlib.import_module("painter.native_painting")
+
+
+class _Segment:
+    def __init__(self, reply):
+        self.last_reply = reply
+        self.terminated = False
+
+
+class _Trace:
+    def __init__(self):
+        self.info = {}
+
+
+class _Interaction:
+    def __init__(self, replies):
+        self.replies = list(replies)
+        self.trace = _Trace()
+        self.messages = []
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, *_exc):
+        return False
+
+    async def turn(self, message=None):
+        self.messages.append(message)
+        return _Segment(self.replies.pop(0))
+
+
+class _Agent:
+    def __init__(self, replies):
+        self.interaction_obj = _Interaction(replies)
+
+    def interaction(self, _task):
+        return self.interaction_obj
+
+
+class _Agents:
+    def __init__(self, replies):
+        self.agent = _Agent(replies)
+
+
+class NativePaintingTests(unittest.TestCase):
+    def test_taskset_loads_cases_and_rejects_duplicate_groups(self):
+        module = _load_module()
+        with TemporaryDirectory() as temp:
+            root = Path(temp)
+            image = root / "reference.png"
+            image.write_bytes(b"png")
+            manifest = root / "tasks.json"
+            manifest.write_text(json.dumps({"cases": [{"id": "v2-box-007", "source_group": "v2-box-007", "reference_png": "reference.png"}]}))
+            config = module.NativePaintingConfig(root=str(root), manifest="tasks.json", expected_count=1)
+            tasks = list(module.NativePaintingTaskset(config).load())
+            self.assertEqual(tasks[0].data.mode, "fresh")
+            self.assertEqual(tasks[0].data.source_group, "v2-box-007")
+            self.assertEqual(len(tasks[0].data.prompt), 1)
+            manifest.write_text(json.dumps({"cases": [
+                {"id": "a", "source_group": "same", "reference_png": "reference.png"},
+                {"id": "b", "source_group": "same", "reference_png": "reference.png"},
+            ]}))
+            with self.assertRaises(ValueError):
+                list(module.NativePaintingTaskset(module.NativePaintingConfig(root=str(root), manifest="tasks.json", expected_count=2)).load())
+
+    def test_taskset_preserves_optional_correction_start(self):
+        module = _load_module()
+        with TemporaryDirectory() as temp:
+            root = Path(temp)
+            (root / "reference.png").write_bytes(b"ref")
+            (root / "start.png").write_bytes(b"start")
+            (root / "start.js").write_text("function draw(){}")
+            manifest = root / "tasks.json"
+            manifest.write_text(json.dumps({"cases": [{
+                "id": "repair-1", "source_group": "box", "reference_png": "reference.png",
+                "mode": "correction", "initial_canvas": "start.png", "initial_program": "start.js",
+            }]}))
+            task = list(module.NativePaintingTaskset(module.NativePaintingConfig(root=str(root), manifest="tasks.json", expected_count=1)).load())[0]
+            self.assertEqual(task.data.mode, "correction")
+            self.assertEqual(task.data.initial_program, "function draw(){}")
+
+    def test_finish_without_canvas_is_recoverable_and_history_is_multimodal(self):
+        module = _load_module()
+        with TemporaryDirectory() as temp:
+            root = Path(temp)
+            reference = root / "reference.png"
+            reference.write_bytes(b"ref")
+            data = module.NativePaintingData(
+                root=str(root), task_id="v2-box-007", source_group="box", reference=str(reference),
+                reference_sha256=module.sha(reference), max_turns=2,
+            )
+            task = module.NativePaintingTask(data)
+            agents = _Agents(["FINISHED", "```javascript\nfunction draw(){}\n```"])
+            render = {"valid": True, "canvas": str(root / "canvas.png"), "program": "function draw(){}", "no_change": False}
+            with patch.object(module, "render_action", return_value=render):
+                asyncio.run(module.NativePaintingEnv.__dict__["run"](_DummyEnv(), task, agents))
+            self.assertTrue(agents.agent.interaction_obj.trace.info["final_canvas_valid"])
+            self.assertEqual(len(agents.agent.interaction_obj.messages), 2)
+            payload_text = " ".join(part.text for part in agents.agent.interaction_obj.messages[1][0].content if hasattr(part, "text"))
+            self.assertIn(module.FINISH_WITHOUT_CANVAS, payload_text)
+
+    def test_invalid_render_preserves_canvas_and_next_turn_has_history(self):
+        module = _load_module()
+        with TemporaryDirectory() as temp:
+            root = Path(temp)
+            reference = root / "reference.png"
+            reference.write_bytes(b"ref")
+            canvas = root / "canvas.png"
+            canvas.write_bytes(b"canvas")
+            data = module.NativePaintingData(
+                root=str(root), task_id="v2-box-007", source_group="box", reference=str(reference),
+                reference_sha256=module.sha(reference), max_turns=3,
+            )
+            task = module.NativePaintingTask(data)
+            agents = _Agents(["```javascript\none();\n```", "```javascript\ntwo();\n```", "FINISHED"])
+            results = iter([
+                {"valid": False, "canvas": None, "error": "syntax", "failure_kind": "program"},
+                {"valid": True, "canvas": str(canvas), "program": "two();", "no_change": False},
+            ])
+            with patch.object(module, "render_action", side_effect=lambda **_: next(results)):
+                asyncio.run(module.NativePaintingEnv.__dict__["run"](_DummyEnv(), task, agents))
+            info = agents.agent.interaction_obj.trace.info
+            self.assertEqual(info["final_canvas"], str(canvas))
+            self.assertTrue(info["final_canvas_valid"])
+            self.assertEqual(len(agents.agent.interaction_obj.messages), 3)
+            payload_text = " ".join(part.text for part in agents.agent.interaction_obj.messages[2][0].content if hasattr(part, "text"))
+            self.assertIn("CURRENT CANVAS", payload_text)
+
+
+class _DummyEnv:
+    pass
+
+
+if __name__ == "__main__":
+    unittest.main()

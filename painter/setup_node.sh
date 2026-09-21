@@ -13,8 +13,11 @@ trap 'echo "$?" > setup.exit' EXIT
 # A failed setup must not leave a previous success marker looking current.
 rm -f ready.json
 # Verify the transferred interface before installing or launching anything.
+# Keep this explicit: a node may retain validation files from an earlier
+# overlay, and importing those can pull optional packages into global Python.
+# test_contract.py is the dependency-light suite shipped in the eval bundle.
 python3 foundation_lock.py > foundation-check.json
-python3 -m unittest discover -s . -p 'test_*.py' > foundation-tests.log 2>&1
+python3 -m unittest test_contract > foundation-tests.log 2>&1
 export UV_CACHE_DIR="$ROOT/cache/uv" PLAYWRIGHT_BROWSERS_PATH="$ROOT/browsers"
 if [[ ! -x bootstrap/bin/uv ]]; then
  python3 -m venv bootstrap

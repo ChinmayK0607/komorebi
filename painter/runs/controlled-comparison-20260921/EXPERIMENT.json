@@ -1,0 +1,97 @@
+{
+  "run_name": "controlled-comparison-20260921",
+  "status": "comparison_running",
+  "kind": "matched_inference_only",
+  "hypothesis": "The four-update RL adapter improves reference-conditioned paintings over its exact SFT initializer under the same corrected native interaction.",
+  "source_baseline": "e51bb48",
+  "model": "Qwen/Qwen3.8-27B",
+  "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+  "policies": {
+    "sft": {
+      "repo": "CK0607/qwen3.8-27b-brush-painting",
+      "revision": "b7103dd9923f19449ccf814f9b67bb2dcfed0909",
+      "prefix": "contract-quality-20260918/step_24",
+      "sha256": "d10eeb3b7b53fc539aa9d5e71eb98bcfe1c59d6a4878c7a69c93b8b09b59bcfa"
+    },
+    "rl": {
+      "repo": "CK0607/qwen3.8-27b-brush-painting",
+      "revision": "2fab61ebb52a00f7e1c9c3829bad1668719d07b3",
+      "prefix": "aesthetic-rl-20260921/step_4",
+      "sha256": "fcbfb3c234b8a10ae3d948e90c778319359f1072f45823c7f90dd50bb69adba3"
+    }
+  },
+  "sampling": {
+    "seed": 918200,
+    "temperature": 1.0,
+    "max_turns": 6,
+    "max_tokens_per_turn": 8192,
+    "context": 32768,
+    "enable_thinking": false,
+    "samples_per_reference": 1
+  },
+  "scope": {
+    "references": 12,
+    "policies": 2,
+    "planned_episodes": 24,
+    "fresh_start": true,
+    "training": false,
+    "reward_during_generation": false
+  },
+  "scheduling": "none",
+  "cost_plan": "One96GB inferenceGPU; advertised1.29USD/hour. Parent foreground-managed. Release after preservation.",
+  "hardware": {
+    "gpu": "NVIDIA RTX PRO 6000 Blackwell Server Edition",
+    "count": 1,
+    "memory_mib": 97887,
+    "driver": "580.126.09",
+    "price_usd_per_hour": 1.29,
+    "rented_at_utc": "2026-09-21T14:24:03.781859Z",
+    "role": "inference_only",
+    "reason": "Single base server with two adapters; no trainer in comparison"
+  },
+  "generation_started_utc": {
+    "sft": "2026-09-21T14:55:30Z",
+    "rl": "2026-09-21T14:55:36Z"
+  },
+  "native_run_names": {
+    "sft": "native_painting--sft--null--14fc2a34",
+    "rl": "native_painting--rl--null--627b07dd"
+  },
+  "source_sha256": {
+    "painter/native_painting.py": "3caa9829468b7d6b5779ad0703628fc1cd2855a6181255acc2871373d321de50",
+    "painter/native_painting_renderer.py": "2bd050e9f43ac347b549e98c06816166443ca7cf1f43b232ae4f4d89fb642d9e",
+    "painter/native_painting_eval.py": "c711b7764951adc3c4fd48d602889d946efcb4b8fd6f6d375b573be19accfe93",
+    "painter/contract.py": "0c77f0ed4bd5cad3121918d27495e3aef780dcb84ff0dd51cf61c3ffdd2ffaa0"
+  },
+  "runtime": {
+    "prime_commit": "26b3131d2716a4f8210b165df584b83b4bc54f61",
+    "verifiers_commit": "828488fffe31aa3332b9d1bd4bd9ee320e375cf1",
+    "vllm": "0.28.0",
+    "transformers": "5.6.2",
+    "torch": "2.13.0+cu130",
+    "base_precision": "bfloat16",
+    "inference_max_sequences": 4,
+    "evaluation_concurrency_per_policy": 4
+  },
+  "prelaunch_validation": [
+    "12 typed native tasks load using actual installed verifier",
+    "native evaluator config dry-run on node",
+    "real node renderer smoke produced hash-verified valid canvas",
+    "seven shared contract checks pass on node"
+  ],
+  "setup_failures": [
+    "Initial bundle included a native test requiring pydantic in the system Python",
+    "Removing that test left no tests; setup correctly failed with exit5",
+    "Incomplete bundle omitted hardware.py; it was added before successful setup"
+  ],
+  "serving_note": "Server launched using pre-CUDA-path-preflight eval_serve.sh; source was enhanced afterward for future bootstrap. Actual launched flags are retained in raw server log.",
+  "launched_node_sha256": {
+    "native_painting.py": "3caa9829468b7d6b5779ad0703628fc1cd2855a6181255acc2871373d321de50",
+    "native_painting_renderer.py": "2bd050e9f43ac347b549e98c06816166443ca7cf1f43b232ae4f4d89fb642d9e",
+    "native_painting_eval.py": "c711b7764951adc3c4fd48d602889d946efcb4b8fd6f6d375b573be19accfe93",
+    "contract.py": "0c77f0ed4bd5cad3121918d27495e3aef780dcb84ff0dd51cf61c3ffdd2ffaa0",
+    "controlled-comparison/sft.toml": "454df571ca985495cc57e1561f65f412256ed9bf26c47b701b7b940a5e17e383",
+    "controlled-comparison/rl.toml": "0da1991f9055292aba6dfb8b6925a50421ebc8cb355767aaf1e5fbee6802fa1d",
+    "eval_serve.sh": "afe3e51a442fb381b536462386fd302cde86f36ec96e301c5dfe0a84e86885aa"
+  }
+}

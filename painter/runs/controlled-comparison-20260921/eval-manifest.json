@@ -1,0 +1,154 @@
+{
+  "schema_version": "controlled-comparison-eval-v1",
+  "run_id": "controlled-comparison-20260921",
+  "status": "prepared_pending_parent_review",
+  "purpose": "Immutable twelve-case evaluation pool for the controlled comparison of the existing contract-quality SFT step24 adapter and the aesthetic-RL step4 checkpoint.",
+  "selection_rule": "Exactly one suffix-007 reference per v2 family, selected by family coverage rather than prior model outcome; no suffix-008 asset is included.",
+  "asset_policy": {
+    "raw_assets_copied": false,
+    "paths_are_relative_to_manifest": true,
+    "asset_root": "../recovery-quality-20260918/collected-final/evidence/data",
+    "reference_manifest": "../recovery-quality-20260918/collected-final/evidence/evaluation-references.json",
+    "reference_manifest_sha256": "54b3846d2b0bf90ce11a489533dd6a013dd75cf1bab5346ca98af686af66eaf1"
+  },
+  "comparison_protocol": {
+    "checkpoints": [
+      {"label": "existing_sft_step24", "source_run": "contract-quality-20260918", "step": 24},
+      {"label": "aesthetic_rl_step4", "source_run": "aesthetic-rl-20260921", "step": 4}
+    ],
+    "model_ids": "deferred to parent configuration; this manifest does not choose or rewrite model identifiers",
+    "reference_count": 12,
+    "one_case_per_family": true,
+    "max_turns": 6,
+    "max_tokens_per_turn": 8192,
+    "proposed_total_context_tokens": 32768,
+    "same_reference_and_budget_for_both_checkpoints": true,
+    "temperature": 1.0,
+    "reward_or_quality_judgment": "parent-defined; preserve raw labels and uncertainty",
+    "note": "The six-turn/32768-context values are the proposed matched comparison contract. Historical runs used different operational caps and are recorded in EVAL_SCOPE.md rather than silently rewritten."
+  },
+  "provenance": {
+    "data_v2_manifest": "../../data-v2/manifest.jsonl",
+    "data_v2_manifest_sha256": "3279a6cdad53619dbf29fc325731c7b255dda10093f8c41e765d28b8fcaf1bb7",
+    "suffix_007_split": "All twelve rows are marked dev in painter/data-v2/manifest.jsonl.",
+    "curriculum_sft_96": "Its RESULTS.md reports 288 train and 96 development references, with twelve development references used for evaluation.",
+    "contract_quality_step24": "Its RUNBOOK/RESULTS report 24 evaluation references held out from 24 disjoint training references; step24 is the SFT initializer used by the aesthetic-RL comparison.",
+    "aesthetic_rl_step4": "Its EXPERIMENT.json records only four matched evaluation groups (box, flower, bus, vase) and identifies step24 as the matched baseline.",
+    "source_evidence_sha256": {
+      "curriculum_sft_results": "08977f81b9c1ba2346e6a69d9362b958579f56e5bbcf3546eb1fe2de8d1cf7cc",
+      "contract_quality_experiment": "de291b567fc85ef10b3edc3eeed37882ff1e29bbd35fbdf5801c5e6566e12a8c",
+      "contract_quality_runbook": "083f60c603ce108bc0eadcea83ba53acd773878b8bde8120047a002576e88e62",
+      "aesthetic_rl_experiment": "464669fcece0c8a1f140d0905812fe5a79f0489ca597b38201585d74bcb007c8"
+    },
+    "honest_exposure_label": "split_dev_and_run_declared_holdout; true_unseen_not_provable_from_local_records"
+  },
+  "cases": [
+    {
+      "id": "v2-box-007", "family": "box", "source_group": "v2-box-007", "split": "dev", "level": 0,
+      "reference_png": "../recovery-quality-20260918/collected-final/evidence/data/v2-box-007/turn-3.png",
+      "teacher_program": "../recovery-quality-20260918/collected-final/evidence/data/v2-box-007/turn-3.js",
+      "render_receipt": "../recovery-quality-20260918/collected-final/evidence/data/v2-box-007/turn-3.json",
+      "sha256": {"png": "51fa6979dc1ae7053d8b947e061ed46b0d87eaf5393eb8752bd37017d5ddfe5c", "teacher_program": "1243ca6301d3ad660e52f9a402cfe7fb13188c941590423f07e19782f451d002", "render_receipt": "776d1eb8fdd14d7c0de01b3a5be4ed87c3dc936cac37d3fa78c52a4d75c904e0"},
+      "visual_check": "Connected three-face cube, stable centered composition, soft cast shadow."
+    },
+    {
+      "id": "v2-bus-007", "family": "bus", "source_group": "v2-bus-007", "split": "dev", "level": 1,
+      "reference_png": "../recovery-quality-20260918/collected-final/evidence/data/v2-bus-007/turn-3.png",
+      "teacher_program": "../recovery-quality-20260918/collected-final/evidence/data/v2-bus-007/turn-3.js",
+      "render_receipt": "../recovery-quality-20260918/collected-final/evidence/data/v2-bus-007/turn-3.json",
+      "sha256": {"png": "d30f47aeae1b20d3eaf2929f52aa5e79022e71776b1415f4231c630ed4c62145", "teacher_program": "667eb6b30e84c0c18553a51e4ead80aab764fcab83771358237a2721a90a24a1", "render_receipt": "ee97e2f2d7eedfd1df512517fabf462065832458fa33cf9a1006d1d68018b33e"},
+      "visual_check": "Readable long body, aligned windows, two attached wheels and grounded shadow."
+    },
+    {
+      "id": "v2-cup-007", "family": "cup", "source_group": "v2-cup-007", "split": "dev", "level": 1,
+      "reference_png": "../recovery-quality-20260918/collected-final/evidence/data/v2-cup-007/turn-3.png",
+      "teacher_program": "../recovery-quality-20260918/collected-final/evidence/data/v2-cup-007/turn-3.js",
+      "render_receipt": "../recovery-quality-20260918/collected-final/evidence/data/v2-cup-007/turn-3.json",
+      "sha256": {"png": "9d519cd8e072197ba13f549506a0428f6760edc5c73ad08916f6912dfa1f0c17", "teacher_program": "ebaae442f96acc594bb45ace39435adff0112f116cf6ef5d18a949a99ee0b3a5", "render_receipt": "e61151bd86fe632263b693c36103198b8948d6e314edc37d281f2c3e7ac7a857"},
+      "visual_check": "Open rim, body, handle connection and soft oval shadow are all legible."
+    },
+    {
+      "id": "v2-cylinder-007", "family": "cylinder", "source_group": "v2-cylinder-007", "split": "dev", "level": 0,
+      "reference_png": "../recovery-quality-20260918/collected-final/evidence/data/v2-cylinder-007/turn-3.png",
+      "teacher_program": "../recovery-quality-20260918/collected-final/evidence/data/v2-cylinder-007/turn-3.js",
+      "render_receipt": "../recovery-quality-20260918/collected-final/evidence/data/v2-cylinder-007/turn-3.json",
+      "sha256": {"png": "b335f0bf30c9838bcbdbd554324b6e4e4a63252686afa1004bd19c1a58ac2b80", "teacher_program": "2aca9223ce197b447a216479bf5f38a88a266ef61cd9c9828a75ad1fc4a68677", "render_receipt": "4d1918d8ccce1c6c30b48af9dce431929729a3a0733ad071bd842276db6bf492"},
+      "visual_check": "Open top rim, continuous sides, warm body wash and attached ground shadow."
+    },
+    {
+      "id": "v2-flower-007", "family": "flower", "source_group": "v2-flower-007", "split": "dev", "level": 1,
+      "reference_png": "../recovery-quality-20260918/collected-final/evidence/data/v2-flower-007/turn-3.png",
+      "teacher_program": "../recovery-quality-20260918/collected-final/evidence/data/v2-flower-007/turn-3.js",
+      "render_receipt": "../recovery-quality-20260918/collected-final/evidence/data/v2-flower-007/turn-3.json",
+      "sha256": {"png": "2e7ecccb0912f61c2204e166414c5558e220ab7aafd99af0e19a2518c7a09c29", "teacher_program": "f2027a8088030080324ec1d69870a72226b199d211e6a7006956661e8a8f2923", "render_receipt": "b52957542375a71b20f84d9753bfc791938795738c172c18895d74fe79815e93"},
+      "visual_check": "Six translucent petals meet a textured center with attached leaf and stem."
+    },
+    {
+      "id": "v2-house-007", "family": "house", "source_group": "v2-house-007", "split": "dev", "level": 1,
+      "reference_png": "../recovery-quality-20260918/collected-final/evidence/data/v2-house-007/turn-3.png",
+      "teacher_program": "../recovery-quality-20260918/collected-final/evidence/data/v2-house-007/turn-3.js",
+      "render_receipt": "../recovery-quality-20260918/collected-final/evidence/data/v2-house-007/turn-3.json",
+      "sha256": {"png": "264f4557c7870281905c0b5ad1d44aef360067f1c900c7e0510da7fdb698e692", "teacher_program": "83cc96e1d6bc6411b93fe17b27ce0144ddaca7f58d4e829fe2a21022aa59f63d", "render_receipt": "ebda4802811d46e7019649c3ecf501120295c7a3e6383a657e6326e69cafd187"},
+      "visual_check": "Roof seats on connected front/side walls with window, door and grounded shadow."
+    },
+    {
+      "id": "v2-ribbons-007", "family": "ribbons", "source_group": "v2-ribbons-007", "split": "dev", "level": 0,
+      "reference_png": "../recovery-quality-20260918/collected-final/evidence/data/v2-ribbons-007/turn-3.png",
+      "teacher_program": "../recovery-quality-20260918/collected-final/evidence/data/v2-ribbons-007/turn-3.js",
+      "render_receipt": "../recovery-quality-20260918/collected-final/evidence/data/v2-ribbons-007/turn-3.json",
+      "sha256": {"png": "485813e4d77525308b3e4810265e5970001845aef88cfca905a5302708de9cad", "teacher_program": "b3f41f8936de1bf63dd12f619343b17df480a448c2b645ae2a56b17bf736654a", "render_receipt": "50406be92ebc9ea7f6d313ca475655a243ad5aab535c546fac34c96c719445f8"},
+      "visual_check": "Three distinct flowing bands with clean spacing and interior contour strokes."
+    },
+    {
+      "id": "v2-sailboat-007", "family": "sailboat", "source_group": "v2-sailboat-007", "split": "dev", "level": 1,
+      "reference_png": "../recovery-quality-20260918/collected-final/evidence/data/v2-sailboat-007/turn-3.png",
+      "teacher_program": "../recovery-quality-20260918/collected-final/evidence/data/v2-sailboat-007/turn-3.js",
+      "render_receipt": "../recovery-quality-20260918/collected-final/evidence/data/v2-sailboat-007/turn-3.json",
+      "sha256": {"png": "d4b65090e75870306df6dbfa4ec46619fcce7079a398014f81b1254d48e650bc", "teacher_program": "6e6d74393d93b10717b8466b904ba1863f542ea817289074b061d2b81bf3f9bf", "render_receipt": "c49a91ac4789f05cee12e51b7a235eb8bcef683d76a868ceee0f28c4c1cb35d8"},
+      "visual_check": "Mast joins two sails and a complete hull; water strokes are separated below."
+    },
+    {
+      "id": "v2-sphere-007", "family": "sphere", "source_group": "v2-sphere-007", "split": "dev", "level": 0,
+      "reference_png": "../recovery-quality-20260918/collected-final/evidence/data/v2-sphere-007/turn-3.png",
+      "teacher_program": "../recovery-quality-20260918/collected-final/evidence/data/v2-sphere-007/turn-3.js",
+      "render_receipt": "../recovery-quality-20260918/collected-final/evidence/data/v2-sphere-007/turn-3.json",
+      "sha256": {"png": "452e9fec94beab4ecc4b47b6ea196c2c09ae35a2c546b456559fa073b9e3e920", "teacher_program": "19ed75fcfbacdf879f81c0a24acdd564c9b6d23866ac79d1add0c16f4f83fedc", "render_receipt": "bf76e4ea0550301abf41bde530414d0f20fad70aade7bfcfbffcc7d68e8c1097"},
+      "visual_check": "Round silhouette, cool layered volume, restrained highlight and attached shadow."
+    },
+    {
+      "id": "v2-still_life-007", "family": "still_life", "source_group": "v2-still_life-007", "split": "dev", "level": 1,
+      "reference_png": "../recovery-quality-20260918/collected-final/evidence/data/v2-still_life-007/turn-3.png",
+      "teacher_program": "../recovery-quality-20260918/collected-final/evidence/data/v2-still_life-007/turn-3.js",
+      "render_receipt": "../recovery-quality-20260918/collected-final/evidence/data/v2-still_life-007/turn-3.json",
+      "sha256": {"png": "86be098e54ea5eeae4a56a6a72eccda904333c879c9a6caeb94959960d8e35c5", "teacher_program": "7cd8463e378710faa6bd31cfcf9f263f2f662f29875b5b8677659ca1fadcdb61", "render_receipt": "38269b446d221a238cba5a8e322af95781a6f6a6a49d99ed102a63dba10ea8e7"},
+      "visual_check": "Open vessel and fruit overlap coherently, with shared ground wash and distinct volumes."
+    },
+    {
+      "id": "v2-tree-007", "family": "tree", "source_group": "v2-tree-007", "split": "dev", "level": 1,
+      "reference_png": "../recovery-quality-20260918/collected-final/evidence/data/v2-tree-007/turn-3.png",
+      "teacher_program": "../recovery-quality-20260918/collected-final/evidence/data/v2-tree-007/turn-3.js",
+      "render_receipt": "../recovery-quality-20260918/collected-final/evidence/data/v2-tree-007/turn-3.json",
+      "sha256": {"png": "02e2bdd028220adf55f22c6ef55a61bc97ac7f76b5cd4c416f182ec23dac2cae", "teacher_program": "dffe2095a0031344210f627b47822908a655ff19e3c464aabb22d0b40e63bf12", "render_receipt": "1d4bc7527bd99790dd747ef32545309bb3047346237be009a49d4de43f03c0b2"},
+      "visual_check": "Overlapping canopy masses connect through two branches to a rooted trunk."
+    },
+    {
+      "id": "v2-vase-007", "family": "vase", "source_group": "v2-vase-007", "split": "dev", "level": 1,
+      "reference_png": "../recovery-quality-20260918/collected-final/evidence/data/v2-vase-007/turn-3.png",
+      "teacher_program": "../recovery-quality-20260918/collected-final/evidence/data/v2-vase-007/turn-3.js",
+      "render_receipt": "../recovery-quality-20260918/collected-final/evidence/data/v2-vase-007/turn-3.json",
+      "sha256": {"png": "a8ed7b380cfcb0f40f6972aa57b1c2b457f2520d7f760a9df51949f9148b9777", "teacher_program": "13c7d6341ce590b0f224c1e7e765110b6bbf1dbaa9f8385d645688e0358756c3", "render_receipt": "1c0c43d947463df9c0dad0219c396382d5f2e1eaa0b63139cb6d2f79472cc584"},
+      "visual_check": "Connected neck, shoulders and body with open rim and grounded shadow."
+    }
+  ],
+  "integrity_checks": {
+    "case_count": 12,
+    "families": 12,
+    "suffixes": ["007"],
+    "all_reference_receipts_valid": true,
+    "all_reference_receipts_have_no_errors": true,
+    "all_programs_start_draw_with_top_left_translate": true,
+    "all_reference_assets_verified_against_sha256": true,
+    "no_suffix_008_cases": true,
+    "no_prior_winner_selection": true
+  }
+}

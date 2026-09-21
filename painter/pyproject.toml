@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=77.0.3"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "painter-controlled-comparison"
+version = "0.1.0"
+description = "Installable native painting taskset for the controlled comparison eval."
+requires-python = ">=3.12"
+dependencies = []
+
+[tool.setuptools]
+py-modules = [
+  "contract",
+  "native_painting",
+  "native_painting_eval",
+  "native_painting_renderer",
+]
