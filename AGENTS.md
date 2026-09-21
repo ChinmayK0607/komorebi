@@ -1,5 +1,7 @@
 # Repository working agreement
 
+Do not create, start, or resume scheduled tasks, heartbeat watchers, or recurring automations unless the user explicitly asks for that scheduling action. General approval to continue an experiment is not scheduling authorization. This supersedes earlier standing requests to keep a watcher running.
+
 This directory is experiment documentation and preparation for the painter work. The parent agent owns Git initialization, reviewed commits, and pushes to the user-designated remote, and treats the unrelated clones under `work/` as separate history. Future code implementation in this workspace is assigned to `gpt-5.6-luna` at reasoning effort `xhigh`; the parent agent handles planning, review, and experiment operations, while the user sets research direction. Visual judging uses `gpt-5.6-luna` at reasoning effort `low` when requested.
 
 Keep the tracked surface deliberately small: active `painter/` source, configuration, documentation, tests, and run scripts may be tracked, together with reviewed small manifests and experiment records. Generated renderings, image batches, model weights, archives, raw rollouts, large logs, caches, environments, credentials, and provider state stay out of Git. Public, hash-verified Hugging Face checkpoints are preferred over copying weights into this workspace.
