@@ -1,0 +1,117 @@
+{
+  "status": "completed_and_released",
+  "scope": "one native CUDA optimizer update; no painting evaluation or quality promotion",
+  "optimizer_audit": {
+    "completed_updates": 1,
+    "lr": [
+      1e-06
+    ],
+    "changed_elements": 54509126,
+    "changed_tensors": 992,
+    "nonzero_gradient_elements": 116674482,
+    "all_finite": true,
+    "method": "exact pre/post native optimizer step CUDA tensor comparison"
+  },
+  "initial_adapter_exact_tensor_matches": 992,
+  "packed_tokens": 16949,
+  "microbatches": 2,
+  "scored_rollouts": 5,
+  "excluded_rollouts": 3,
+  "original_group_size": 8,
+  "step_seconds": 112.56229171901941,
+  "forward_backward_seconds": 110.3689071200788,
+  "wait_for_batch_seconds": 0.00034356676042079926,
+  "peak_memory_gib": 74.37890625,
+  "loss": 0.019946519285440445,
+  "mismatch_kl_mean": 0.0010342044988647103,
+  "grad_norm": 0.31640625,
+  "checkpoint": {
+    "repo_id": "CK0607/qwen3.8-27b-brush-painting",
+    "private": false,
+    "commit": "dbc3745c3a44b3fae1cdd8f68c565dfc2d0a6302",
+    "path": "native-replay-smoke-20260921-diagnostic-only/step_1",
+    "url": "https://huggingface.co/CK0607/qwen3.8-27b-brush-painting/tree/dbc3745c3a44b3fae1cdd8f68c565dfc2d0a6302/native-replay-smoke-20260921-diagnostic-only/step_1",
+    "verified": true,
+    "files": {
+      "adapter_config.json": {
+        "sha256": "1bb3ad53b417ad64b90adba4faa05cc1a93d7725468ce529c015135fc602d942",
+        "bytes": 479
+      },
+      "adapter_model.safetensors": {
+        "sha256": "09d253f9656779142d944e166870f2432062f36214448727a7fe8b8c1f79cc0b",
+        "bytes": 233590600
+      },
+      "validation.json": {
+        "sha256": "731125ee0dd505cfa908b5834cae6e434733c124aadecc9505bd741a0cb39612",
+        "bytes": 480
+      },
+      "upload-manifest.json": {
+        "sha256": "9347b4fd7ce54f59af8792f753ba16a87daf1436258a7759db756a496c895443",
+        "bytes": 614
+      }
+    }
+  },
+  "evidence": {
+    "archive": "collected/evidence.tar.gz",
+    "sha256": "84e86455a53a0cfffd01802f5e1c7ff03a5c6f8f88bc19de11e5023ee55e505e",
+    "bytes": 3918340,
+    "verified_members": 187,
+    "native_rank_sha256": "621a7ebbb463e01b713fe3324237bb87db0d388f5c4ddeb1ca04c70fa8bf79ac"
+  },
+  "utilization": {
+    "measured_lifecycle": {
+      "samples": 107,
+      "devices": 1,
+      "interval_seconds": 10,
+      "first_sample_utc": "2026/09/21 07:32:24.220",
+      "last_sample_utc": "2026/09/21 07:50:04.433",
+      "mean_utilization_percent": 4.327102803738318,
+      "fraction_samples_busy": 0.09345794392523364,
+      "fraction_samples_at_least_90_percent": 0.018691588785046728
+    },
+    "trainer_process": {
+      "samples": 17,
+      "devices": 1,
+      "interval_seconds": 10,
+      "first_sample_utc": "2026/09/21 07:45:54.391",
+      "last_sample_utc": "2026/09/21 07:48:34.416",
+      "mean_utilization_percent": 27.235294117647058,
+      "fraction_samples_busy": 0.5882352941176471,
+      "fraction_samples_at_least_90_percent": 0.11764705882352941
+    },
+    "native_step": {
+      "samples": 12,
+      "devices": 1,
+      "interval_seconds": 10,
+      "first_sample_utc": "2026/09/21 07:46:44.400",
+      "last_sample_utc": "2026/09/21 07:48:34.416",
+      "mean_utilization_percent": 38.083333333333336,
+      "fraction_samples_busy": 0.5833333333333334,
+      "fraction_samples_at_least_90_percent": 0.16666666666666666
+    },
+    "saturated": false,
+    "note": "Sampled utilization, not full-rental average. First seven rental minutes and post-preservation interval unmeasured. One cold step includes kernel compilation."
+  },
+  "rental": {
+    "rate_usd_per_hour": 1.29,
+    "created_at_utc": "2026-09-21T07:25:06.991893Z",
+    "release_verified_at_utc": "2026-09-21T07:52:10Z",
+    "estimated_cost_usd": 0.58,
+    "estimate_not_invoice": true,
+    "active_pods_after_release": 0,
+    "watcher_deleted": true
+  },
+  "source_commit": "3462e84",
+  "quality_evaluation_count": 0,
+  "trainer_config_sha256": "037d51dc3e76da50e71729fa31d485fda608797b202ebce9c6bee51df7278ce4",
+  "replay_manifest_sha256": "143b972ba3878588fd95f7ab0ab422d844913b79865847ad62ef16b2a009bc9f",
+  "verified_scores_sha256": "a7f436772eb26f45a8139af8132cb7dcf890e549e2ec5a0b6ce293af5836e106",
+  "deployed_source_file_sha256": {
+    "native_replay.py": "22f58f9f59d21a4749938a64b462c78db02fe914df1da9a2a42d4ec5339bb436",
+    "launch_replay.sh": "568885921b0dff73ff0762b41e413ab018add09a2d71347a17ea065c95397c87",
+    "prepare_replay_config.py": "75b35da10f825845f15f9b964a1d2fd063ed948853d856df5b371df0d64af552",
+    "train_from_sft.py": "eb459c2e4ddc22364ef9d6c9405c71ec144308906ed320639f5a7b856a3c35a3",
+    "setup_async_node.sh": "9b1a819e727856cd5bfd436224c1fe92126de80df485fab242e38f73ca8f7391"
+  },
+  "source_snapshot_note": "Deployed native_replay.py precedes one final same-sampling consistency assertion in commit3462e84; all eight original records were independently verified to have identical sampling configs after collection. Actual deployed source is preserved by hash in evidence. Launch/config code matches reviewed source."
+}

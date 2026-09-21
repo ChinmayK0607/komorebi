@@ -26,7 +26,7 @@
   "judge_protocol": "full SHA image IDs, neutral canonical paths, one comparison per agent assignment, immediate role captions and factual observations, strict reversed reconciliation",
   "fresh_reward_queue": false,
   "optimizer_resume": false,
-  "source_commit": "f73e2ec",
+  "source_commit": "3462e84",
   "hypothesis": "Completed saved native rollouts with verified scores can be restored through pinned Prime into one finite CUDA optimizer update without waiting for live inference or judgments.",
   "matched_baseline": "Exact contract-quality step24 SFT initializer, verified before first forward.",
   "scope": "Native replay/trainer mechanics only; no painting quality or generalization claim.",
@@ -40,7 +40,7 @@
   "evidence_archive_sha256": "b00964e4e486b4ec7220738e7ae52fa72f63ba2380810ab2b3d93d9f8a38739a",
   "source_prime_revision": "26b3131d2716a4f8210b165df584b83b4bc54f61",
   "replay_policy_version": 0,
-  "status": "trainer_launched",
+  "status": "completed_and_released",
   "selected_native_group": "ff9c7975-6f4c-42b8-9fe6-a3912c1c45c5",
   "source_group_size": 8,
   "admitted_rollouts": 5,
@@ -50,7 +50,7 @@
   "quality_promotion": false,
   "score_manifest": "verified-scores.json",
   "gpu": "RTX PRO 6000 Blackwell Server Edition 96 GB",
-  "rental_started_at_utc": "2026-09-21T07:25:00Z",
+  "rental_started_at_utc": "2026-09-21T07:25:06.991893Z",
   "provider_ttl_utc": "2026-09-21T08:55:00.412629Z",
   "bootstrap_bundle_sha256": "c64bcc8dd998054f157873fe183c76dd7d31fd94ce67c3ca3dbec400d922a8c1",
   "checkpoint_destination": {
@@ -59,7 +59,7 @@
     "public": true,
     "require_hash_verification": true
   },
-  "training_launch_utc": "2026-09-21T07:46:00Z",
+  "training_launch_utc": "2026-09-21T07:45:49Z",
   "native_rank_sha256": "621a7ebbb463e01b713fe3324237bb87db0d388f5c4ddeb1ca04c70fa8bf79ac",
   "native_microbatch_tokens": [
     13954,
@@ -70,5 +70,19 @@
     "prepare_replay_config.py": "75b35da10f825845f15f9b964a1d2fd063ed948853d856df5b371df0d64af552",
     "launch_replay.sh": "568885921b0dff73ff0762b41e413ab018add09a2d71347a17ea065c95397c87",
     "verified-scores.json": "a7f436772eb26f45a8139af8132cb7dcf890e549e2ec5a0b6ce293af5836e106"
-  }
+  },
+  "model_source_revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+  "completed_optimizer_updates": 1,
+  "results": "RESULTS.md",
+  "trainer_config_sha256": "037d51dc3e76da50e71729fa31d485fda608797b202ebce9c6bee51df7278ce4",
+  "replay_manifest_sha256": "143b972ba3878588fd95f7ab0ab422d844913b79865847ad62ef16b2a009bc9f",
+  "verified_scores_sha256": "a7f436772eb26f45a8139af8132cb7dcf890e549e2ec5a0b6ce293af5836e106",
+  "deployed_source_file_sha256": {
+    "native_replay.py": "22f58f9f59d21a4749938a64b462c78db02fe914df1da9a2a42d4ec5339bb436",
+    "launch_replay.sh": "568885921b0dff73ff0762b41e413ab018add09a2d71347a17ea065c95397c87",
+    "prepare_replay_config.py": "75b35da10f825845f15f9b964a1d2fd063ed948853d856df5b371df0d64af552",
+    "train_from_sft.py": "eb459c2e4ddc22364ef9d6c9405c71ec144308906ed320639f5a7b856a3c35a3",
+    "setup_async_node.sh": "9b1a819e727856cd5bfd436224c1fe92126de80df485fab242e38f73ca8f7391"
+  },
+  "source_snapshot_note": "Deployed native_replay.py precedes one final same-sampling consistency assertion in commit3462e84; all eight original records were independently verified to have identical sampling configs after collection. Actual deployed source is preserved by hash in evidence. Launch/config code matches reviewed source."
 }
