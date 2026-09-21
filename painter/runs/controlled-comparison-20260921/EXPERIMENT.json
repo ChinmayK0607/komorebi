@@ -1,6 +1,6 @@
 {
   "run_name": "controlled-comparison-20260921",
-  "status": "comparison_running",
+  "status": "completed_evaluated_node_released",
   "kind": "matched_inference_only",
   "hypothesis": "The four-update RL adapter improves reference-conditioned paintings over its exact SFT initializer under the same corrected native interaction.",
   "source_baseline": "e51bb48",
@@ -93,5 +93,85 @@
     "controlled-comparison/sft.toml": "454df571ca985495cc57e1561f65f412256ed9bf26c47b701b7b940a5e17e383",
     "controlled-comparison/rl.toml": "0da1991f9055292aba6dfb8b6925a50421ebc8cb355767aaf1e5fbee6802fa1d",
     "eval_serve.sh": "afe3e51a442fb381b536462386fd302cde86f36ec96e301c5dfe0a84e86885aa"
-  }
+  },
+  "evaluation_source_commit": "e237b87",
+  "results": {
+    "generation_start_utc": "2026-09-21T14:55:30.954222+00:00",
+    "generation_end_utc": "2026-09-21T15:15:46.369178+00:00",
+    "wall_seconds": 1215.4149556159973,
+    "gpu": {
+      "samples": 121,
+      "sample_interval_seconds": 10,
+      "measurement_start": "2026/09/21 14:55:44.567",
+      "measurement_end": "2026/09/21 15:15:44.821",
+      "mean_percent": 96.58677685950413,
+      "fraction_at_least_90_percent": 0.9669421487603306,
+      "scope": "one inference GPU; no trainer"
+    },
+    "rl": {
+      "episodes": 12,
+      "valid_final_canvases": 12,
+      "explicit_finishes": 4,
+      "cutoffs": 8,
+      "turns": 65,
+      "paint_turns": 61,
+      "invalid_turns": 6,
+      "unchanged_valid_turns": 25,
+      "completion_tokens": 49159,
+      "generation_length_cutoffs": 0,
+      "errors": 0,
+      "service_failures": 0,
+      "mean_completion_tokens_per_turn": 756.2923076923076
+    },
+    "sft": {
+      "episodes": 12,
+      "valid_final_canvases": 11,
+      "explicit_finishes": 5,
+      "cutoffs": 7,
+      "turns": 61,
+      "paint_turns": 56,
+      "invalid_turns": 9,
+      "unchanged_valid_turns": 16,
+      "completion_tokens": 40336,
+      "generation_length_cutoffs": 0,
+      "errors": 0,
+      "service_failures": 0,
+      "mean_completion_tokens_per_turn": 661.2459016393443
+    }
+  },
+  "visual_review": {
+    "model": "gpt-5.6-luna",
+    "reasoning_effort": "low",
+    "counts": {
+      "sft": 7,
+      "rl": 4,
+      "uncertain": 1
+    },
+    "scope": "one blinded view per reference; 11 complete pairs and one missing SFT canvas",
+    "receipt": "receipt-visual-review.json",
+    "parent_review": "PARENT_REVIEW.md"
+  },
+  "preservation": {
+    "verified_members": 310,
+    "primary_archive_sha256": "1cb7bc970f79b209e3443b8f52951a1648027b82f216f15c413292f1e16fa8f7",
+    "finalization_archive_sha256": "11777c779de773e5cf5d4599b785844e868babe541a2f955eab394a54236a469",
+    "note": "Shutdown appended serve.log after initial manifest hash; finalization patch and final manifest verify all 310 members. Initial archive and reconciliation retained.",
+    "evidence": "collected-final/evidence-manifest.json"
+  },
+  "operation": {
+    "training_updates": 0,
+    "node_released": true,
+    "no_active_pods_confirmed": true,
+    "released_before_utc": "2026-09-21T15:24:23Z",
+    "scheduled_tasks_created": 0,
+    "estimated_rental_usd_upper_bound_at_confirmation": 1.3,
+    "estimate_note": "Elapsed-time estimate at advertised $1.29/hour, including cold setup; not a provider invoice."
+  },
+  "decision": "Do not promote step-4 RL as an overall improvement. Keep SFT step24 as the fixed initializer/baseline for the family-balanced curriculum and corrected shared interaction. New training was not part of this comparison.",
+  "limitations": [
+    "12 existing procedural evaluation references, one sample per policy and one seed",
+    "No novel photo-reference or broad generalization claim",
+    "One blinded judge orientation per complete pair; close subjective preferences differ from parent assessment",
+    "65 versus61 turns and all observed generation finish reasons stop, with zero length cutoffs; six-turn cap still censors15 episodes"
+  ]
 }

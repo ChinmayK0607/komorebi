@@ -1,0 +1,246 @@
+{
+  "schema": "painter.comparison-review.v1",
+  "judge": "gpt-5.6-luna",
+  "reasoning_effort": "low",
+  "comparison": "one blinded view per case, not order-swapped",
+  "counts": {
+    "sft": 7,
+    "rl": 4,
+    "uncertain": 1
+  },
+  "note": "Sphere comparison uncertain because SFT produced no canvas. Retained separately as an execution failure. These are evaluation opinions, not training rewards.",
+  "cases": [
+    {
+      "case": "v2-box-007",
+      "winner": "sft",
+      "judge_model": "gpt-5.6-luna",
+      "reasoning_effort": "low",
+      "orientation": "single_blinded_view",
+      "receipt": "judge-review/batch-01/pair-01/judgment.json",
+      "reason": "A presents a clearer, more coherent cube with convincing planar structure, readable pink top and gray side, and a grounded shadow; B is softer and more atmospheric but its top plane and edges are less defined and the form feels less stable.",
+      "weaknesses_A": [
+        "The cube is taller and more sharply outlined than the squat reference, and the shadow is very faint and broad."
+      ],
+      "weaknesses_B": [
+        "The cube's upper edges and right face are washed out, weakening its geometric structure and dimensional clarity."
+      ],
+      "mapping": {
+        "A": "sft",
+        "B": "rl"
+      }
+    },
+    {
+      "case": "v2-cylinder-007",
+      "winner": "rl",
+      "judge_model": "gpt-5.6-luna",
+      "reasoning_effort": "low",
+      "orientation": "single_blinded_view",
+      "receipt": "judge-review/batch-01/pair-02/judgment.json",
+      "reason": "B cleanly depicts a complete translucent golden cylinder with a readable elliptical rim, opening, base, and soft shadow; A is visibly cropped at the upper-left edge and does not provide a judgeable full canvas.",
+      "weaknesses_A": [
+        "The canvas is dominated by an off-frame partial cylinder in the upper-left, so the object is incomplete and compositionally unusable."
+      ],
+      "weaknesses_B": [
+        "The cylinder has somewhat hard, dark contour lines and flatter vertical shading than the soft watercolor reference."
+      ],
+      "mapping": {
+        "A": "sft",
+        "B": "rl"
+      }
+    },
+    {
+      "case": "v2-cup-007",
+      "winner": "rl",
+      "judge_model": "gpt-5.6-luna",
+      "reasoning_effort": "low",
+      "orientation": "single_blinded_view",
+      "receipt": "judge-review/batch-01/pair-03/judgment.json",
+      "reason": "A is the more successful cup interpretation: the vessel, opening, golden body, handle, and grounding shadow are all recognizable and coherently related; B loses the cup silhouette and turns the handle into a detached angular yellow shape.",
+      "weaknesses_A": [
+        "The cup is much smaller and more vertically rigid than the reference, with a thin outlined body and a handle that reads as a flat ring."
+      ],
+      "weaknesses_B": [
+        "The handle is disconnected and angular, the cup body is reduced to a pale rectangular slab, and the overall silhouette no longer reads clearly as the reference mug."
+      ],
+      "mapping": {
+        "A": "rl",
+        "B": "sft"
+      }
+    },
+    {
+      "case": "v2-bus-007",
+      "winner": "sft",
+      "judge_model": "gpt-5.6-luna",
+      "reasoning_effort": "low",
+      "orientation": "single_blinded_view",
+      "receipt": "judge-review/batch-02/pair-01/judgment.json",
+      "reason": "A gives a complete, readable watercolor bus with a coherent long body, wheels, windows, and slanted front; B is closer in some window placement but is severely zoomed and clipped at both sides, weakening the composition.",
+      "weaknesses_A": [
+        "The bus has fewer and fainter windows than the reference, and its front slope is exaggerated."
+      ],
+      "weaknesses_B": [
+        "The image is cropped at the left and right edges, while the enlarged translucent body loses the reference's complete bus silhouette."
+      ],
+      "mapping": {
+        "A": "sft",
+        "B": "rl"
+      }
+    },
+    {
+      "case": "v2-flower-007",
+      "winner": "sft",
+      "judge_model": "gpt-5.6-luna",
+      "reasoning_effort": "low",
+      "orientation": "single_blinded_view",
+      "receipt": "judge-review/batch-02/pair-02/judgment.json",
+      "reason": "B preserves the reference flower's six-petal spread, translucent layered petals, yellow center, stem, and green leaf with a lively balanced composition; A is much smaller and collapses the flower into a compact circular cluster.",
+      "weaknesses_A": [
+        "The petals are compressed into a round disk, reducing the open six-petal structure, and the leaf is a disconnected angular triangle."
+      ],
+      "weaknesses_B": [
+        "The green leaf is more triangular and detached than the reference, and the layered center is darker and more crowded."
+      ],
+      "mapping": {
+        "A": "rl",
+        "B": "sft"
+      }
+    },
+    {
+      "case": "v2-house-007",
+      "winner": "sft",
+      "judge_model": "gpt-5.6-luna",
+      "reasoning_effort": "low",
+      "orientation": "single_blinded_view",
+      "receipt": "judge-review/batch-02/pair-03/judgment.json",
+      "reason": "A is a convincing house interpretation with a readable green facade, two openings, red roof, pale side plane, and grounding shadow; B has a pleasing simple roof but loses the side volume and much of the house's structural clarity.",
+      "weaknesses_A": [
+        "The roof and front facade are slightly oversized and the small window is faint, while the house sits lower and flatter than the reference."
+      ],
+      "weaknesses_B": [
+        "The side wall is nearly absent, the roof is asymmetrically simplified, and the dark door-like mark dominates the otherwise vague facade."
+      ],
+      "mapping": {
+        "A": "sft",
+        "B": "rl"
+      }
+    },
+    {
+      "case": "v2-ribbons-007",
+      "winner": "sft",
+      "judge_model": "gpt-5.6-luna",
+      "reasoning_effort": "low",
+      "orientation": "single_blinded_view",
+      "receipt": "judge-review/batch-03/pair-01/judgment.json",
+      "reason": "A preserves more of the reference's three stacked wave bands and their horizontal rhythm; B leaves the subject almost entirely outside the frame, with only two cropped arcs at the lower right.",
+      "weaknesses_A": [
+        "The composition is severely cropped and displaced to the lower-right, so the three-wave arrangement is only partially visible.",
+        "The pale field and faint diagonal marks compete with the already low-contrast wave forms."
+      ],
+      "weaknesses_B": [
+        "Nearly all of the wave subject is absent from the canvas, leaving only two partial arcs at the lower-right edge.",
+        "The large empty field provides little visual structure or connection to the reference's centered stacked rhythm."
+      ],
+      "mapping": {
+        "A": "sft",
+        "B": "rl"
+      }
+    },
+    {
+      "case": "v2-sailboat-007",
+      "winner": "sft",
+      "judge_model": "gpt-5.6-luna",
+      "reasoning_effort": "low",
+      "orientation": "single_blinded_view",
+      "receipt": "judge-review/batch-03/pair-02/judgment.json",
+      "reason": "B is the more legible and composed sailboat interpretation: its hull, mast, pale left sail, and warm right sail read cleanly together, while A's mast and sail geometry are weaker and its hull feels heavier and less integrated.",
+      "weaknesses_A": [
+        "The left sail is effectively missing and the mast ends in an awkward bent tip, weakening the boat's identity.",
+        "The broad dark hull and jagged upper edge dominate the delicate sails, producing an imbalanced silhouette."
+      ],
+      "weaknesses_B": [
+        "The left sail remains extremely faint and underdefined compared with the reference.",
+        "Thin colored horizontal marks beneath the hull are distracting and read as stray artifacts rather than water."
+      ],
+      "mapping": {
+        "A": "rl",
+        "B": "sft"
+      }
+    },
+    {
+      "case": "v2-still_life-007",
+      "winner": "rl",
+      "judge_model": "gpt-5.6-luna",
+      "reasoning_effort": "low",
+      "orientation": "single_blinded_view",
+      "receipt": "judge-review/batch-03/pair-03/judgment.json",
+      "reason": "A more cleanly captures the reference's quiet cylinder-and-sphere still life, with a coherent pale shadow and uncluttered edges; B adds conspicuous blue tick-like marks around the cylinder that break the softness and distract from the objects.",
+      "weaknesses_A": [
+        "The cylinder is paler and less volumetric than the reference, and its vertical contour is somewhat washed out.",
+        "The ground shadow is very faint, so the objects feel lightly anchored."
+      ],
+      "weaknesses_B": [
+        "Blue tick-like marks around both cylinder sides are visibly distracting and inconsistent with the reference's soft painted edges.",
+        "The stronger dark sphere and long shadow pull attention away from the cylinder and make the balance feel heavier than the reference."
+      ],
+      "mapping": {
+        "A": "rl",
+        "B": "sft"
+      }
+    },
+    {
+      "case": "v2-sphere-007",
+      "winner": "uncertain",
+      "judge_model": "gpt-5.6-luna",
+      "reasoning_effort": "low",
+      "orientation": "single_blinded_view",
+      "receipt": "judge-review/batch-04/pair-01/judgment.json",
+      "reason": "The missing A image prevents full pairwise visual comparison; the available B canvas can be critiqued but cannot establish a winner against an unseen candidate.",
+      "weaknesses_A": [],
+      "weaknesses_B": [
+        "The blue form is a fragmented, translucent cluster rather than the reference's single rounded sphere, with a prominent diagonal line across the lower half."
+      ],
+      "mapping": {
+        "A": "sft",
+        "B": "rl"
+      }
+    },
+    {
+      "case": "v2-tree-007",
+      "winner": "rl",
+      "judge_model": "gpt-5.6-luna",
+      "reasoning_effort": "low",
+      "orientation": "single_blinded_view",
+      "receipt": "judge-review/batch-04/pair-02/judgment.json",
+      "reason": "A has a broader, more balanced pink canopy and a clear trunk that better preserve the reference tree's overall spread and grounding; B is softer but its canopy is more vertically stacked and the trunk is oversized.",
+      "weaknesses_A": [
+        "The thin black branch lines are visually harsh and the trunk is more rectangular and isolated than in the reference."
+      ],
+      "weaknesses_B": [
+        "The canopy collapses toward the center, the trunk is disproportionately wide, and the faint shadow gives the tree less grounding."
+      ],
+      "mapping": {
+        "A": "rl",
+        "B": "sft"
+      }
+    },
+    {
+      "case": "v2-vase-007",
+      "winner": "sft",
+      "judge_model": "gpt-5.6-luna",
+      "reasoning_effort": "low",
+      "orientation": "single_blinded_view",
+      "receipt": "judge-review/batch-04/pair-03/judgment.json",
+      "reason": "A more successfully captures the reference vase's tall neck, narrow shoulder, blue translucent body, and visible opening; B has a broad appealing body but loses the slender neck and reads as a squat vessel.",
+      "weaknesses_A": [
+        "The vase is much smaller in frame and its body is overly symmetrical, with a very faint grounding shadow."
+      ],
+      "weaknesses_B": [
+        "The neck is nearly absent, the body is too wide and squat, and the right side facet is exaggerated into a blocky protrusion."
+      ],
+      "mapping": {
+        "A": "sft",
+        "B": "rl"
+      }
+    }
+  ]
+}
