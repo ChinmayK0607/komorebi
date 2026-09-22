@@ -74,7 +74,10 @@ export PAINTER_FROZEN_OPPONENT_PRIME_ROOT="${PAINTER_FROZEN_OPPONENT_PRIME_ROOT:
 export PAINTER_FROZEN_OPPONENT_EVAL="${PAINTER_FROZEN_OPPONENT_EVAL:-$PRIME_ROOT/.venv/bin/eval}"
 export PAINTER_FROZEN_OPPONENT_RENDERER="${PAINTER_FROZEN_OPPONENT_RENDERER:-$ROOT/vendor/integrations/watercolour/renderer.py}"
 export PAINTER_FROZEN_OPPONENT_RENDERER_PYTHON="${PAINTER_FROZEN_OPPONENT_RENDERER_PYTHON:-$ROOT/renderer-env/bin/python}"
-export PAINTER_FROZEN_OPPONENT_ENDPOINT="${PAINTER_FROZEN_OPPONENT_ENDPOINT:-http://127.0.0.1:8000/v1}"
+# Frozen opponent uses the direct vLLM endpoint: the pinned local router rejects
+# VF's default reasoning_effort=none before forwarding, while direct vLLM accepts
+# it. Operators may override this for a router with the matching schema.
+export PAINTER_FROZEN_OPPONENT_ENDPOINT="${PAINTER_FROZEN_OPPONENT_ENDPOINT:-http://127.0.0.1:8100/v1}"
 export PLAYWRIGHT_BROWSERS_PATH="${PLAYWRIGHT_BROWSERS_PATH:-$ROOT/browsers}"
 export WATERCOLOUR_INIT_ADAPTER="$(cd "$INITIAL_ADAPTER" && pwd -P)"
 export HF_TOKEN_PATH="${HF_TOKEN_PATH:-$ROOT/private/hf-token}"
@@ -159,6 +162,47 @@ fi
 # source and private-token paths without ever printing the token.
 "$UV_BIN" pip install --python "$PYTHON" --no-deps --no-build-isolation -e "$REPO_ROOT/painter"
 
+# Exercise the exact installed VF data serializer before starting any owned
+# GPU process. The orchestrator ships task_data over RPC and the env server
+# reconstructs it from Task.data_type(); direct task construction misses this.
+"$PYTHON" - "$ROOT" "$CONFIG" "$MANIFEST" <<'PY'
+import json
+import sys
+import tomllib
+from pathlib import Path
+
+root, config_path, manifest_path = map(Path, sys.argv[1:])
+raw_config = config_path.read_bytes()
+if config_path.suffix.lower() == ".json" or raw_config.lstrip().startswith(b"{"):
+    config = json.loads(raw_config.decode("utf-8"))
+else:
+    config = tomllib.loads(raw_config.decode("utf-8"))
+taskset_values = config["orchestrator"]["train"]["source"][0]["env"]["taskset"]
+if Path(taskset_values["manifest"]).name != Path(manifest_path).name:
+    raise SystemExit("resolved taskset manifest does not match launcher manifest")
+
+try:
+    from native_painting_rl import NativePaintingRLConfig, NativePaintingRLTaskset
+except ImportError:
+    from painter.native_painting_rl import NativePaintingRLConfig, NativePaintingRLTaskset
+
+taskset_config = NativePaintingRLConfig.model_validate(taskset_values)
+task = next(iter(NativePaintingRLTaskset(taskset_config).load()))
+data_type = task.data_type()
+wire = task.data.model_dump(mode="json", exclude_none=True)
+roundtrip = data_type.model_validate(wire)
+if roundtrip.model_dump(mode="json", exclude_none=True) != wire:
+    raise SystemExit("RL task data changed during pinned VF model_dump/model_validate roundtrip")
+if task.key != type(task)(roundtrip, task.config).key:
+    raise SystemExit("RL task key changed during pinned VF data roundtrip")
+print(json.dumps({
+    "status": "passed",
+    "task_id": task.data.task_id,
+    "data_type": f"{data_type.__module__}.{data_type.__name__}",
+    "rl_wire_fields": len(wire),
+}, sort_keys=True))
+PY
+
 TELEMETRY_PID=""
 RL_PID=""
 cleanup() {
@@ -187,10 +231,13 @@ forward_signal() {
 trap cleanup EXIT INT TERM
 trap 'forward_signal TERM; exit 143' TERM
 trap 'forward_signal INT; exit 130' INT
-rm -f "$ROOT/rl.exit" "$ROOT/logs/gpu-telemetry.csv"
+ATTEMPT_ID="${PAINTER_RL_ATTEMPT_ID:-$(date -u +%Y%m%dT%H%M%SZ)}"
+TELEMETRY_FILE="${PAINTER_RL_TELEMETRY_FILE:-$ROOT/logs/gpu-telemetry-$ATTEMPT_ID.csv}"
+TELEMETRY_ERR_FILE="$ROOT/logs/gpu-telemetry-$ATTEMPT_ID.err"
+rm -f "$ROOT/rl.exit"
 if command -v nvidia-smi >/dev/null 2>&1; then
   nvidia-smi --query-gpu=timestamp,index,name,utilization.gpu,memory.used,power.draw \
-    --format=csv -l "${GPU_TELEMETRY_INTERVAL:-10}" > "$ROOT/logs/gpu-telemetry.csv" 2>"$ROOT/logs/gpu-telemetry.err" &
+    --format=csv -l "${GPU_TELEMETRY_INTERVAL:-10}" > "$TELEMETRY_FILE" 2>"$TELEMETRY_ERR_FILE" &
   TELEMETRY_PID=$!
 fi
 

@@ -338,6 +338,12 @@ class NativePaintingRLTask(vf.Task[NativePaintingRLData, vf.State, vf.TaskConfig
     silently discarded at the RPC boundary before reward evaluation.
     """
 
+    @classmethod
+    def data_type(cls) -> type[NativePaintingRLData]:
+        """Keep the RL wire schema explicit across verifier RPC boundaries."""
+
+        return NativePaintingRLData
+
     @property
     def key(self) -> str:
         """Stable identity for one source/mode/opponent training row."""

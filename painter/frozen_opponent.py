@@ -461,7 +461,11 @@ def generate_frozen_opponent(spec: OpponentSpec) -> Path | Mapping[str, Any]:
         raise OpponentUnavailable("frozen opponent generation is Linux-node only")
     if spec.work_root is None:
         raise OpponentUnavailable("frozen opponent work_root is not configured")
-    endpoint = os.environ.get("PAINTER_FROZEN_OPPONENT_ENDPOINT", "http://127.0.0.1:8000/v1")
+    # The run's frozen alias is served by the direct vLLM instance.  The local
+    # router also exposes the alias, but its pinned request schema rejects the
+    # VF default ``reasoning_effort=none`` before it reaches vLLM.  Keep this
+    # operator-overridable for topologies with a compatible router.
+    endpoint = os.environ.get("PAINTER_FROZEN_OPPONENT_ENDPOINT", "http://127.0.0.1:8100/v1")
     renderer = os.environ.get("PAINTER_FROZEN_OPPONENT_RENDERER")
     renderer_python = os.environ.get("PAINTER_FROZEN_OPPONENT_RENDERER_PYTHON")
     if not renderer or not renderer_python:

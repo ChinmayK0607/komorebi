@@ -59,6 +59,8 @@ class NativePaintingEvalTests(unittest.TestCase):
         self.assertIn("max_turns = 6", text)
         self.assertIn("rollout = 1200", text)
         self.assertIn("context_length = 32768", text)
+        self.assertNotIn("reasoning_effort", text)
+        self.assertIn("enable_thinking = false", text)
 
     def test_runtime_parameters_round_trip_into_config_and_metadata_values(self):
         text = config_text(

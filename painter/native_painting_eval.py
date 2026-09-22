@@ -108,7 +108,6 @@ api_key_var = "PAINTER_LOCAL_API_KEY"
 [sampling]
 temperature = 1.0
 max_tokens = {max_tokens}
-reasoning_effort = "none"
 seed = {DEFAULT_SEED}
 extra_body = {{ chat_template_kwargs = {{ enable_thinking = false }} }}
 
