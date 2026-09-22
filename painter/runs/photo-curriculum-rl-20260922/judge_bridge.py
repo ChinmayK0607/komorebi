@@ -11,6 +11,7 @@ receipts.  No daemon, scheduler, endpoint, or credential is created here.
 from __future__ import annotations
 
 import argparse
+import errno
 import hashlib
 import io
 import json
@@ -21,6 +22,7 @@ import sys
 import tarfile
 import tempfile
 import time
+import shutil
 from typing import Any
 
 
@@ -32,6 +34,8 @@ BATCH_PATTERN = re.compile(r"^[A-Za-z0-9_-]+$")
 HEX64 = frozenset("0123456789abcdef")
 TRANSPORT_ATTEMPTS = 5
 TRANSPORT_BACKOFF_SECONDS = (2.0, 4.0, 8.0, 16.0)
+DISK_PRESSURE_BACKOFF_SECONDS = (5.0, 10.0, 20.0, 30.0)
+LOCAL_FREE_SPACE_FLOOR_BYTES = 1024 * 1024 * 1024
 
 
 def _sha(path: Path) -> str:
@@ -213,18 +217,26 @@ def pull(args: argparse.Namespace) -> dict[str, Any]:
 
 
 def run_local(args: argparse.Namespace) -> dict[str, Any]:
+    local_root = Path(args.local_root).resolve()
+    usage = shutil.disk_usage(local_root)
+    if usage.free < LOCAL_FREE_SPACE_FLOOR_BYTES:
+        raise OSError(
+            errno.ENOSPC,
+            f"local judge root has only {usage.free} free bytes; pausing before Luna calls",
+        )
     # Import only on the controller, where the Codex CLI and its credentials
     # exist.  The node never receives this process or its environment.
     sys.path.insert(0, str(REPO_ROOT))
     from painter.luna_cli_judge import run_batch
 
-    batch_dir = Path(args.local_root).resolve() / "reward-batches" / _batch_name(args.batch)
+    batch_dir = local_root / "reward-batches" / _batch_name(args.batch)
     summary = run_batch(
         batch_dir,
         output_dir=batch_dir,
         protocol_dir=Path(args.protocol_dir).resolve(),
         max_concurrency=args.max_concurrency,
         codex_bin=args.codex_bin,
+        resume=True,
     )
     return {"batch": args.batch, "local_summary": summary, "receipt_installation": "not performed"}
 
@@ -268,6 +280,18 @@ def _is_ssh_transport_failure(error: BaseException) -> bool:
     return isinstance(error, subprocess.CalledProcessError) and error.returncode == 255
 
 
+def _is_disk_pressure_failure(error: BaseException) -> bool:
+    """Recognize ENOSPC/EDQUOT through the local judge wrapper's cause chain."""
+    seen: set[int] = set()
+    current: BaseException | None = error
+    while current is not None and id(current) not in seen:
+        seen.add(id(current))
+        if isinstance(current, OSError) and current.errno in {errno.ENOSPC, errno.EDQUOT}:
+            return True
+        current = current.__cause__ or current.__context__
+    return False
+
+
 def _remote_exit_probe(args: argparse.Namespace) -> bool:
     """Check the finite-run marker without leaking permanent SSH failures."""
     result = subprocess.run(
@@ -288,9 +312,11 @@ def _run_batch_with_transport_retry(
     *,
     deadline: float,
 ) -> dict[str, Any]:
-    """Run one unchanged batch, retrying only remote SSH transport failures."""
+    """Run one batch, retrying SSH transport and bounded local disk pressure."""
     batch = args.batch
-    for attempt in range(1, TRANSPORT_ATTEMPTS + 1):
+    transport_attempt = 0
+    disk_pressure_attempt = 0
+    while True:
         if time.monotonic() >= deadline:
             raise RuntimeError(f"judge bridge transport deadline exceeded for batch {batch}")
         phase = "pull"
@@ -309,15 +335,35 @@ def _run_batch_with_transport_retry(
             pushed = push(args)
             return {"batch": batch, "pull": pulled, "local": local, "push": pushed}
         except Exception as error:
+            if phase in {"pull", "local"} and _is_disk_pressure_failure(error):
+                disk_pressure_attempt += 1
+                delay = DISK_PRESSURE_BACKOFF_SECONDS[
+                    min(disk_pressure_attempt - 1, len(DISK_PRESSURE_BACKOFF_SECONDS) - 1)
+                ]
+                remaining = deadline - time.monotonic()
+                if remaining <= 0:
+                    raise RuntimeError(
+                        f"judge bridge disk-pressure deadline exceeded for batch {batch}"
+                    ) from error
+                delay = min(delay, remaining)
+                print(json.dumps({
+                    "status": "disk_pressure_retry",
+                    "batch": batch,
+                    "attempt": disk_pressure_attempt + 1,
+                    "delay_seconds": delay,
+                }, sort_keys=True), file=sys.stderr)
+                time.sleep(delay)
+                continue
             # A local judge/validation error is terminal even if it happens to
             # use subprocess and return 255.  Retry only remote pull/push SSH.
             if phase not in {"pull", "push", "exit_probe"} or not _is_ssh_transport_failure(error):
                 raise
-            if attempt >= TRANSPORT_ATTEMPTS:
+            transport_attempt += 1
+            if transport_attempt >= TRANSPORT_ATTEMPTS:
                 raise RuntimeError(
-                    f"judge bridge transport failed for batch {batch} after {attempt} attempts"
+                    f"judge bridge transport failed for batch {batch} after {transport_attempt} attempts"
                 ) from None
-            delay = TRANSPORT_BACKOFF_SECONDS[attempt - 1]
+            delay = TRANSPORT_BACKOFF_SECONDS[transport_attempt - 1]
             remaining = deadline - time.monotonic()
             if remaining <= 0:
                 raise RuntimeError(
@@ -327,7 +373,7 @@ def _run_batch_with_transport_retry(
             print(json.dumps({
                 "status": "transport_retry",
                 "batch": batch,
-                "attempt": attempt + 1,
+                "attempt": transport_attempt + 1,
                 "delay_seconds": delay,
             }, sort_keys=True), file=sys.stderr)
             time.sleep(delay)

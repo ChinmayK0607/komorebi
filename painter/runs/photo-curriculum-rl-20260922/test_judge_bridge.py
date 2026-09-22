@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import errno
 import hashlib
 import importlib.util
 import json
@@ -122,6 +123,27 @@ class JudgeBridgeTests(unittest.TestCase):
             self.assertEqual(result["status"], "run_exit")
             self.assertEqual(remote_run.call_count, 2)
             self.assertEqual(sleep.call_args_list[0].args, (2.0,))
+
+    def test_batch_retries_local_disk_pressure_at_same_batch_boundary(self):
+        with TemporaryDirectory() as temp:
+            args = self._worker_args(temp)
+            args.batch = "test-batch-0001"
+            with patch.object(
+                MODULE, "pull", return_value={"batch": args.batch, "status": "staged"}
+            ), patch.object(
+                MODULE, "run_local", side_effect=[
+                    OSError(errno.ENOSPC, "mock disk full"),
+                    {"status": "labels"},
+                ],
+            ) as run_local, patch.object(
+                MODULE, "push", return_value={"status": "installed"}
+            ), patch.object(MODULE.time, "sleep") as sleep:
+                result = MODULE._run_batch_with_transport_retry(
+                    args, deadline=MODULE.time.monotonic() + 60.0
+                )
+            self.assertEqual(result["batch"], args.batch)
+            self.assertEqual(run_local.call_count, 2)
+            sleep.assert_called_once_with(5.0)
 
 
 if __name__ == "__main__":

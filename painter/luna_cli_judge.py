@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import argparse
 import concurrent.futures
+import errno
 import hashlib
 import importlib.util
 import json
@@ -57,6 +58,22 @@ class OutputCollision(ValueError):
     """A prior batch artifact exists and must not be overwritten."""
 
 
+class DiskPressureError(OSError):
+    """The local filesystem could not persist judge evidence."""
+
+    def __init__(self, pair_id: str, stage: str, cause: OSError):
+        super().__init__(
+            getattr(cause, "errno", None) or errno.ENOSPC,
+            f"local disk pressure while persisting {pair_id} ({stage}): {cause}",
+        )
+        self.pair_id = pair_id
+        self.stage = stage
+
+
+def _is_disk_pressure(error: BaseException) -> bool:
+    return isinstance(error, OSError) and error.errno in {errno.ENOSPC, errno.EDQUOT}
+
+
 def sha_bytes(value: bytes) -> str:
     return hashlib.sha256(value).hexdigest()
 
@@ -68,15 +85,21 @@ def sha(path: Path) -> str:
 def _atomic_json(path: Path, value: Any) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_name(path.name + "." + uuid.uuid4().hex + ".tmp")
-    temporary.write_text(json.dumps(value, indent=2, sort_keys=True) + "\n")
-    temporary.replace(path)
+    try:
+        temporary.write_text(json.dumps(value, indent=2, sort_keys=True) + "\n")
+        temporary.replace(path)
+    finally:
+        temporary.unlink(missing_ok=True)
 
 
 def _atomic_bytes(path: Path, value: bytes) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_name(path.name + "." + uuid.uuid4().hex + ".tmp")
-    temporary.write_bytes(value)
-    temporary.replace(path)
+    try:
+        temporary.write_bytes(value)
+        temporary.replace(path)
+    finally:
+        temporary.unlink(missing_ok=True)
 
 
 def _load_judge_module(protocol_dir: Path):
@@ -329,10 +352,12 @@ def _base_execution(
     prompt_source_sha256: str,
     schema_sha256: str,
     command: list[str] | None,
+    attempt: int = 1,
 ) -> dict[str, Any]:
     return {
         "schema": EXECUTION_SCHEMA,
         "pair_id": pair.pair_id,
+        "attempt": attempt,
         "protocol_version": pair.protocol_version,
         "judge_model": JUDGE_MODEL,
         "reasoning_effort": REASONING_EFFORT,
@@ -361,6 +386,239 @@ def _base_execution(
     }
 
 
+_ATTEMPT_KINDS = (
+    "execution",
+    "stdout",
+    "stderr",
+    "events",
+    "last-message",
+)
+_ATTEMPT_SUFFIX = re.compile(r"\.attempt-(\d{4})$")
+
+
+def _artifact_stem(kind: str, pair_id: str, attempt: int) -> str:
+    suffix = "" if attempt == 1 else f".attempt-{attempt:04d}"
+    extension = {
+        "execution": ".json",
+        "stdout": ".log",
+        "stderr": ".log",
+        "events": ".jsonl",
+        "last-message": ".json",
+    }[kind]
+    return f"{kind}-{pair_id}{suffix}{extension}"
+
+
+def _attempt_number(path: Path, kind: str, pair_id: str) -> int | None:
+    prefix = f"{kind}-{pair_id}"
+    if path.name == f"{prefix}{_artifact_stem(kind, pair_id, 1)[len(prefix):]}":
+        return 1
+    if not path.name.startswith(prefix):
+        return None
+    suffix = path.name[len(prefix):]
+    match = _ATTEMPT_SUFFIX.match(suffix.rsplit(".", 1)[0])
+    if match is None:
+        return None
+    return int(match.group(1))
+
+
+def _next_attempt(output_dir: Path, pair_id: str) -> int:
+    highest = 0
+    for kind in _ATTEMPT_KINDS:
+        for path in output_dir.glob(f"{kind}-{pair_id}*"):
+            if not path.exists():
+                continue
+            number = _attempt_number(path, kind, pair_id)
+            if number is not None:
+                highest = max(highest, number)
+    return highest + 1 if highest else 1
+
+
+def _attempt_paths(output_dir: Path, pair_id: str, attempt: int) -> dict[str, Path]:
+    return {
+        kind: output_dir / _artifact_stem(kind, pair_id, attempt)
+        for kind in _ATTEMPT_KINDS
+    }
+
+
+def _execution_candidates(output_dir: Path, pair_id: str) -> list[Path]:
+    candidates: list[tuple[int, Path]] = []
+    for path in output_dir.glob(f"execution-{pair_id}*.json"):
+        if not path.is_file() or path.is_symlink():
+            continue
+        number = _attempt_number(path, "execution", pair_id)
+        if number is not None:
+            candidates.append((number, path))
+    return [path for _number, path in sorted(candidates, reverse=True)]
+
+
+def _expected_prompt_sha(pair: PairInput, prompt_text: str) -> str:
+    names = {
+        role: role + _attachment_extension(pair.images[role], pair.images[role].read_bytes())
+        for role in DISPLAY_ROLES
+    }
+    return sha_bytes(build_prompt(prompt_text, names).encode("utf-8"))
+
+
+def _execution_identity_matches(
+    execution: Any,
+    pair: PairInput,
+    *,
+    prompt_sha256: str,
+    prompt_source_sha256: str,
+    schema_sha256: str,
+) -> bool:
+    if not isinstance(execution, dict):
+        return False
+    if execution.get("schema") != EXECUTION_SCHEMA:
+        return False
+    if execution.get("pair_id") != pair.pair_id:
+        return False
+    if execution.get("protocol_version") != pair.protocol_version:
+        return False
+    if execution.get("judge_model") != JUDGE_MODEL or execution.get("reasoning_effort") != REASONING_EFFORT:
+        return False
+    if execution.get("prompt_sha256") != prompt_sha256:
+        return False
+    if execution.get("prompt_source_sha256") != prompt_source_sha256:
+        return False
+    if execution.get("output_schema_sha256") != schema_sha256:
+        return False
+    inputs = execution.get("input_hashes")
+    if not (
+        isinstance(inputs, dict)
+        and inputs.get("judge_document_sha256") == pair.document_sha256
+        and inputs.get("image_sha256") == pair.image_sha256
+    ):
+        return False
+    for path_key, hash_key in (
+        ("stdout_path", "stdout_sha256"),
+        ("stderr_path", "stderr_sha256"),
+        ("events_path", "events_sha256"),
+        ("last_message_path", "last_message_sha256"),
+    ):
+        evidence_path = execution.get(path_key)
+        digest = execution.get(hash_key)
+        if (
+            not isinstance(evidence_path, str)
+            or not isinstance(digest, str)
+            or not Path(evidence_path).is_file()
+            or Path(evidence_path).is_symlink()
+        ):
+            return False
+        try:
+            if sha(Path(evidence_path)) != digest:
+                return False
+        except OSError:
+            return False
+    return True
+
+
+def _read_existing_label(path: Path, pair_id: str, judge: Any) -> dict[str, Any]:
+    document = json.loads(path.read_text())
+    metadata = {"protocol_version", "judge_model", "reasoning_effort"}
+    if (
+        not isinstance(document, dict)
+        or set(document) != metadata | {"judgments"}
+        or document.get("protocol_version") != judge.PROTOCOL_VERSION
+        or document.get("judge_model") != JUDGE_MODEL
+        or document.get("reasoning_effort") != REASONING_EFFORT
+        or not isinstance(document.get("judgments"), list)
+        or len(document["judgments"]) != 1
+    ):
+        raise ValueError(f"invalid existing label document: {path}")
+    row = document["judgments"][0]
+    if not isinstance(row, dict) or row.get("id") != pair_id:
+        raise ValueError(f"existing label id mismatch: {path}")
+    return judge.parse_judgment(json.dumps({key: row[key] for key in row if key != "id"}))
+
+
+def _label_document(pair: PairInput, validated: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "protocol_version": pair.protocol_version,
+        "judge_model": JUDGE_MODEL,
+        "reasoning_effort": REASONING_EFFORT,
+        "judgments": [{"id": pair.pair_id, **validated}],
+    }
+
+
+def _resume_existing_pair(
+    pair: PairInput,
+    *,
+    output_dir: Path,
+    judge: Any,
+    prompt_sha256: str,
+    prompt_source_sha256: str,
+    schema_sha256: str,
+) -> dict[str, Any] | None:
+    """Reuse or finish an identity-bound prior attempt, if one is safe."""
+
+    label_path = output_dir / f"labels-{pair.pair_id}.json"
+    existing_label: dict[str, Any] | None = None
+    if label_path.exists():
+        try:
+            existing_label = _read_existing_label(label_path, pair.pair_id, judge)
+        except Exception as exc:
+            raise OutputCollision(
+                f"existing label cannot be safely resumed for {pair.pair_id}: {exc}"
+            ) from exc
+
+    matching: list[tuple[Path, dict[str, Any], dict[str, Any]]] = []
+    for execution_path in _execution_candidates(output_dir, pair.pair_id):
+        try:
+            execution = json.loads(execution_path.read_text())
+        except (OSError, ValueError, json.JSONDecodeError):
+            continue
+        if not _execution_identity_matches(
+            execution,
+            pair,
+            prompt_sha256=prompt_sha256,
+            prompt_source_sha256=prompt_source_sha256,
+            schema_sha256=schema_sha256,
+        ):
+            continue
+        status = execution.get("status")
+        if status not in {"validated", "validated_pending_label"}:
+            continue
+        try:
+            validated = judge.parse_judgment(json.dumps(execution.get("validated_label")))
+        except Exception:
+            continue
+        matching.append((execution_path, execution, validated))
+
+    if matching:
+        execution_path, execution, validated = matching[0]
+        if existing_label is not None and existing_label != validated:
+            raise OutputCollision(
+                f"existing label conflicts with identity-matched execution for {pair.pair_id}"
+            )
+        try:
+            if existing_label is None:
+                _atomic_json(label_path, _label_document(pair, validated))
+            if execution.get("status") != "validated":
+                execution["status"] = "validated"
+                execution["recovery"] = "completed_pending_label"
+                _atomic_json(execution_path, execution)
+        except OSError as exc:
+            if _is_disk_pressure(exc):
+                raise DiskPressureError(pair.pair_id, "resume", exc) from exc
+            raise
+        return {
+            "pair_id": pair.pair_id,
+            "status": "validated",
+            "label_path": str(label_path),
+            "resumed": True,
+        }
+
+    if existing_label is not None:
+        # A label without a matching execution is deliberately not rerun or
+        # overwritten. It may be a valid model answer, but its provenance is
+        # incomplete and cannot safely be reconstructed here.
+        raise OutputCollision(
+            f"existing label has no identity-matched execution for {pair.pair_id}"
+        )
+    return None
+
+
 def _run_pair(
     pair: PairInput,
     *,
@@ -373,9 +631,11 @@ def _run_pair(
     judge: Any,
     runner: Callable[[list[str], str, Path, Path], Any],
     codex_bin: str,
+    attempt: int,
 ) -> dict[str, Any]:
     label_path = output_dir / f"labels-{pair.pair_id}.json"
-    execution_path = output_dir / f"execution-{pair.pair_id}.json"
+    paths = _attempt_paths(output_dir, pair.pair_id, attempt)
+    execution_path = paths["execution"]
     command: list[str] | None = None
     execution = _base_execution(
         pair,
@@ -383,11 +643,12 @@ def _run_pair(
         prompt_source_sha256=prompt_source_sha256,
         schema_sha256=schema_sha256,
         command=None,
+        attempt=attempt,
     )
-    stdout_path = output_dir / f"stdout-{pair.pair_id}.log"
-    stderr_path = output_dir / f"stderr-{pair.pair_id}.log"
-    events_path = output_dir / f"events-{pair.pair_id}.jsonl"
-    durable_last_message_path = output_dir / f"last-message-{pair.pair_id}.json"
+    stdout_path = paths["stdout"]
+    stderr_path = paths["stderr"]
+    events_path = paths["events"]
+    durable_last_message_path = paths["last-message"]
     execution.update(
         stdout_path=str(stdout_path),
         stderr_path=str(stderr_path),
@@ -399,9 +660,14 @@ def _run_pair(
         # ``--json`` emits the event stream on stdout. Keep all three raw files
         # so a reviewer can inspect the exact CLI evidence after the temp cwd is
         # removed; hashes alone are insufficient for an initial probe.
-        _atomic_bytes(stdout_path, stdout_bytes)
-        _atomic_bytes(stderr_path, stderr_bytes)
-        _atomic_bytes(events_path, stdout_bytes)
+        try:
+            _atomic_bytes(stdout_path, stdout_bytes)
+            _atomic_bytes(stderr_path, stderr_bytes)
+            _atomic_bytes(events_path, stdout_bytes)
+        except OSError as exc:
+            if _is_disk_pressure(exc):
+                raise DiskPressureError(pair.pair_id, "streams", exc) from exc
+            raise
         execution["stdout_sha256"] = sha_bytes(stdout_bytes)
         execution["stderr_sha256"] = sha_bytes(stderr_bytes)
         execution["events_sha256"] = sha_bytes(stdout_bytes)
@@ -410,9 +676,30 @@ def _run_pair(
         if not path.is_file():
             return None
         value = path.read_bytes()
-        _atomic_bytes(durable_last_message_path, value)
+        try:
+            _atomic_bytes(durable_last_message_path, value)
+        except OSError as exc:
+            if _is_disk_pressure(exc):
+                raise DiskPressureError(pair.pair_id, "last_message", exc) from exc
+            raise
         execution["last_message_sha256"] = sha_bytes(value)
         return value.decode("utf-8")
+
+    def persist_execution() -> None:
+        try:
+            _atomic_json(execution_path, execution)
+        except OSError as exc:
+            if _is_disk_pressure(exc):
+                raise DiskPressureError(pair.pair_id, "execution", exc) from exc
+            raise
+
+    def persist_label(validated: dict[str, Any]) -> None:
+        try:
+            _atomic_json(label_path, _label_document(pair, validated))
+        except OSError as exc:
+            if _is_disk_pressure(exc):
+                raise DiskPressureError(pair.pair_id, "label", exc) from exc
+            raise
 
     try:
         if label_path.exists() or execution_path.exists():
@@ -460,13 +747,21 @@ def _run_pair(
             execution["error"] = (
                 f"execution timeout after {DEFAULT_EXEC_TIMEOUT_SECONDS:g} seconds"
             )
-            _atomic_json(execution_path, execution)
+            persist_execution()
+            return {"pair_id": pair.pair_id, "status": "failed", "error": execution["error"]}
+        except OSError as exc:
+            if _is_disk_pressure(exc):
+                raise DiskPressureError(pair.pair_id, "runner", exc) from exc
+            execution["error"] = f"execution failure: {type(exc).__name__}: {exc}"
+            execution["started_at"] = started
+            execution["ended_at"] = time.time()
+            persist_execution()
             return {"pair_id": pair.pair_id, "status": "failed", "error": execution["error"]}
         except Exception as exc:
             execution["error"] = f"execution failure: {type(exc).__name__}: {exc}"
             execution["started_at"] = started
             execution["ended_at"] = time.time()
-            _atomic_json(execution_path, execution)
+            persist_execution()
             return {"pair_id": pair.pair_id, "status": "failed", "error": execution["error"]}
         execution["started_at"] = started
         execution["ended_at"] = time.time()
@@ -485,28 +780,32 @@ def _run_pair(
             raise ValueError("codex exec did not produce --output-last-message")
         validated = judge.parse_judgment(raw_label)
         execution["validated_label"] = validated
+        # Commit the validated response as a pending label first. If disk
+        # pressure interrupts the label write, a later run can finish this
+        # exact parsed response without paying for another model judgment.
+        execution["status"] = "validated_pending_label"
+        persist_execution()
+        persist_label(validated)
         execution["status"] = "validated"
-        # Existing judge_queue._label_documents accepts this exact metadata +
-        # judgments shape. Execution provenance stays in its sibling record.
-        _atomic_json(
-            label_path,
-            {
-                "protocol_version": pair.protocol_version,
-                "judge_model": JUDGE_MODEL,
-                "reasoning_effort": REASONING_EFFORT,
-                "judgments": [{"id": pair.pair_id, **validated}],
-            },
-        )
-        _atomic_json(execution_path, execution)
+        persist_execution()
         return {"pair_id": pair.pair_id, "status": "validated", "label_path": str(label_path)}
     except OutputCollision:
         # run_batch preflights all outputs. If another process races us, do not
         # overwrite its evidence with a synthetic failure record.
         return {"pair_id": pair.pair_id, "status": "failed", "error": f"output already exists for {pair.pair_id}"}
+    except DiskPressureError:
+        raise
+    except OSError as exc:
+        if _is_disk_pressure(exc):
+            raise DiskPressureError(pair.pair_id, "pair", exc) from exc
+        execution["command"] = command
+        execution["error"] = str(exc)
+        persist_execution()
+        return {"pair_id": pair.pair_id, "status": "failed", "error": str(exc)}
     except Exception as exc:
         execution["command"] = command
         execution["error"] = str(exc)
-        _atomic_json(execution_path, execution)
+        persist_execution()
         return {"pair_id": pair.pair_id, "status": "failed", "error": str(exc)}
 
 
@@ -569,6 +868,35 @@ def _record_pair_id(path: Path) -> str:
     return "invalid-" + digest
 
 
+def _invalid_result_or_record(
+    path: Path,
+    output_dir: Path,
+    *,
+    resume: bool,
+    prompt_source_sha256: str,
+    schema_sha256: str,
+    error: str,
+) -> dict[str, Any]:
+    raw_pair_id = path.stem.removeprefix("judge-")
+    pair_id = raw_pair_id if PAIR_ID_PATTERN.fullmatch(raw_pair_id or "") else _record_pair_id(path)
+    existing = output_dir / f"execution-{pair_id}.json"
+    if resume and existing.exists():
+        try:
+            prior = json.loads(existing.read_text())
+            error = str(prior.get("error") or "prior invalid input attempt preserved")
+        except Exception:
+            error = "prior invalid input attempt preserved"
+        return {"pair_id": pair_id, "status": "failed", "error": error, "resumed": True}
+    return _invalid_pair_record(
+        path,
+        output_dir,
+        prompt_sha256=None,
+        prompt_source_sha256=prompt_source_sha256,
+        schema_sha256=schema_sha256,
+        error=error,
+    )
+
+
 def _assert_no_output_collisions(documents: list[Path], output_dir: Path) -> None:
     artifacts: list[Path] = []
     for path in documents:
@@ -603,6 +931,7 @@ def run_batch(
     codex_bin: str = "codex",
     runner: Callable[[list[str], str, Path, Path], Any] = _default_runner,
     scratch_parent: Path | None = None,
+    resume: bool = False,
 ) -> dict[str, Any]:
     """Process exactly one finite batch and return a reviewable summary."""
 
@@ -630,7 +959,8 @@ def run_batch(
         documents = sorted(path for path in batch_dir.glob("judge-*.json") if path.is_file())
         if not documents:
             raise ValueError(f"no finite judge-*.json inputs found in {batch_dir}")
-        _assert_no_output_collisions(documents, output_dir)
+        if not resume:
+            _assert_no_output_collisions(documents, output_dir)
         valid: list[PairInput] = []
         invalid: list[tuple[Path, str]] = []
         for path in documents:
@@ -639,17 +969,32 @@ def run_batch(
             except Exception as exc:
                 invalid.append((path, str(exc)))
         results: list[dict[str, Any]] = [
-            _invalid_pair_record(
+            _invalid_result_or_record(
                 path,
                 output_dir,
-                prompt_sha256=None,
+                resume=resume,
                 prompt_source_sha256=prompt_source_digest,
                 schema_sha256=schema_digest,
                 error=error,
             )
             for path, error in invalid
         ]
-        if valid:
+        pending: list[tuple[PairInput, int]] = []
+        for pair in valid:
+            if resume:
+                resumed = _resume_existing_pair(
+                    pair,
+                    output_dir=output_dir,
+                    judge=judge,
+                    prompt_sha256=_expected_prompt_sha(pair, prompt_text),
+                    prompt_source_sha256=prompt_source_digest,
+                    schema_sha256=schema_digest,
+                )
+                if resumed is not None:
+                    results.append(resumed)
+                    continue
+            pending.append((pair, _next_attempt(output_dir, pair.pair_id) if resume else 1))
+        if pending:
             with concurrent.futures.ThreadPoolExecutor(max_workers=max_concurrency) as pool:
                 futures = [
                     pool.submit(
@@ -664,8 +1009,9 @@ def run_batch(
                         judge=judge,
                         runner=runner,
                         codex_bin=codex_bin,
+                        attempt=attempt,
                     )
-                    for pair in valid
+                    for pair, attempt in pending
                 ]
                 results.extend(future.result() for future in futures)
     results.sort(key=lambda row: row["pair_id"])

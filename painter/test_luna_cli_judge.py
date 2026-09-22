@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import errno
 import hashlib
 import importlib.util
 import json
@@ -311,7 +312,7 @@ class LunaCliJudgeTests(unittest.TestCase):
             self.assertIsNone(execution["validated_label"])
             self.assertIn("missing fields", execution["error"])
 
-    def test_existing_output_aborts_whole_batch_without_overwriting_evidence(self):
+    def test_failed_prior_output_is_preserved_while_retry_uses_new_attempt_paths(self):
         with TemporaryDirectory() as temp:
             root = Path(temp)
             batch = root / "batch"
@@ -324,13 +325,126 @@ class LunaCliJudgeTests(unittest.TestCase):
             prior.write_text("prior evidence\n")
             runner = _FakeRunner()
 
-            with self.assertRaisesRegex(cli.OutputCollision, "refusing to overwrite"):
-                cli.run_batch(batch, output_dir=output, protocol_dir=PROTOCOL_DIR, runner=runner)
+            summary = cli.run_batch(
+                batch,
+                output_dir=output,
+                protocol_dir=PROTOCOL_DIR,
+                runner=runner,
+                scratch_parent=root,
+                resume=True,
+            )
 
-            self.assertFalse(runner.calls)
+            self.assertEqual(summary["validated"], 2)
             self.assertEqual(prior.read_text(), "prior evidence\n")
-            self.assertFalse((output / "execution-unstarted.json").exists())
-            self.assertFalse((output / "cli-judge-summary.json").exists())
+            self.assertTrue((output / "execution-collision.attempt-0002.json").exists())
+            self.assertTrue((output / "execution-unstarted.json").exists())
+
+    def test_enospc_preserves_partial_attempt_and_resume_does_not_rejudge_valid_output(self):
+        with TemporaryDirectory() as temp:
+            root = Path(temp)
+            batch = root / "batch"
+            output = root / "output"
+            batch.mkdir()
+            _write_pair(batch, "disk-partial")
+            _write_pair(batch, "already-valid", index=1)
+            runner = _FakeRunner()
+            real_atomic_bytes = cli._atomic_bytes
+            failed = False
+
+            def fail_once(path: Path, value: bytes) -> None:
+                nonlocal failed
+                if path.name == "stderr-disk-partial.log" and not failed:
+                    failed = True
+                    raise OSError(errno.ENOSPC, "mock disk full")
+                real_atomic_bytes(path, value)
+
+            with patch.object(cli, "_atomic_bytes", side_effect=fail_once):
+                with self.assertRaises(cli.DiskPressureError):
+                    cli.run_batch(
+                        batch,
+                        output_dir=output,
+                        protocol_dir=PROTOCOL_DIR,
+                        runner=runner,
+                        max_concurrency=1,
+                        scratch_parent=root,
+                        resume=True,
+                    )
+            self.assertTrue((output / "stdout-disk-partial.log").exists())
+            self.assertFalse((output / "labels-disk-partial.json").exists())
+
+            resumed = cli.run_batch(
+                batch,
+                output_dir=output,
+                protocol_dir=PROTOCOL_DIR,
+                runner=runner,
+                max_concurrency=1,
+                scratch_parent=root,
+                resume=True,
+            )
+            self.assertEqual(resumed["validated"], 2)
+            self.assertEqual(resumed["failed"], 0)
+            self.assertEqual(len(runner.calls), 3)
+            self.assertTrue((output / "stdout-disk-partial.attempt-0002.log").exists())
+            self.assertTrue((output / "labels-disk-partial.json").exists())
+            calls_after_resume = len(runner.calls)
+            reused = cli.run_batch(
+                batch,
+                output_dir=output,
+                protocol_dir=PROTOCOL_DIR,
+                runner=runner,
+                max_concurrency=1,
+                scratch_parent=root,
+                resume=True,
+            )
+            self.assertEqual(reused["validated"], 2)
+            self.assertEqual(len(runner.calls), calls_after_resume)
+            self.assertTrue(all(row.get("resumed") for row in reused["results"]))
+
+    def test_enospc_after_execution_commit_recovers_pending_label_without_rerun(self):
+        with TemporaryDirectory() as temp:
+            root = Path(temp)
+            batch = root / "batch"
+            output = root / "output"
+            batch.mkdir()
+            _write_pair(batch, "pending-label")
+            runner = _FakeRunner()
+            real_atomic_json = cli._atomic_json
+            failed = False
+
+            def fail_label(path: Path, value: object) -> None:
+                nonlocal failed
+                if path.name == "labels-pending-label.json" and not failed:
+                    failed = True
+                    raise OSError(errno.ENOSPC, "mock disk full")
+                real_atomic_json(path, value)
+
+            with patch.object(cli, "_atomic_json", side_effect=fail_label):
+                with self.assertRaises(cli.DiskPressureError):
+                    cli.run_batch(
+                        batch,
+                        output_dir=output,
+                        protocol_dir=PROTOCOL_DIR,
+                        runner=runner,
+                        resume=True,
+                        scratch_parent=root,
+                    )
+            self.assertEqual(len(runner.calls), 1)
+            pending = json.loads((output / "execution-pending-label.json").read_text())
+            self.assertEqual(pending["status"], "validated_pending_label")
+
+            resumed = cli.run_batch(
+                batch,
+                output_dir=output,
+                protocol_dir=PROTOCOL_DIR,
+                runner=runner,
+                resume=True,
+                scratch_parent=root,
+            )
+            self.assertEqual(resumed["validated"], 1)
+            self.assertEqual(len(runner.calls), 1)
+            final = json.loads((output / "execution-pending-label.json").read_text())
+            self.assertEqual(final["status"], "validated")
+            self.assertTrue((output / "labels-pending-label.json").exists())
 
     def test_unsafe_pair_id_is_rejected_without_traversal_output(self):
         with TemporaryDirectory() as temp:
