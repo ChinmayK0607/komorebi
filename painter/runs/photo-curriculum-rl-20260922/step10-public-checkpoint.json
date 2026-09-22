@@ -1,0 +1,26 @@
+{
+  "repo_id": "CK0607/qwen3.8-27b-brush-painting",
+  "private": false,
+  "commit": "18980c5e008280e06f27a613a3579a2a9c7ccce3",
+  "path": "photo-curriculum-rl-20260922/step_10",
+  "url": "https://huggingface.co/CK0607/qwen3.8-27b-brush-painting/tree/18980c5e008280e06f27a613a3579a2a9c7ccce3/photo-curriculum-rl-20260922/step_10",
+  "verified": true,
+  "files": {
+    "adapter_config.json": {
+      "sha256": "1bb3ad53b417ad64b90adba4faa05cc1a93d7725468ce529c015135fc602d942",
+      "bytes": 479
+    },
+    "adapter_model.safetensors": {
+      "sha256": "930228353ec8982d1ddb04b8d0846d0d4614e97ba2e8cd8dbcc80dacd7d0de3f",
+      "bytes": 233590600
+    },
+    "validation.json": {
+      "sha256": "2a4f0c9e7ce912b12a3bcf24c7d39036f7a032ca6b9fe87bf74a8bef1126dc56",
+      "bytes": 481
+    },
+    "upload-manifest.json": {
+      "sha256": "83c88f90a5c4f5f43e6541170dbcd5514aebaa7844bacaa3988148d1b60eddb0",
+      "bytes": 599
+    }
+  }
+}

@@ -1,0 +1,70 @@
+{
+  "source_sha256": "bd907dd200940b05ea64e7da9da097fe035339ba7f985911c0b0f337e81d4968",
+  "worker_alive": true,
+  "max_step": 32,
+  "deadline_seconds": 172800,
+  "optimizer_state": "not_preserved_adapter_only_run",
+  "checkpoints": [
+    {
+      "step": 9,
+      "adapter_sha256": "1bf52ef64fcb46ad7e865786871eb04b02bc2a46a9f70201da69cd7c4e9b5a33",
+      "huggingface": {
+        "commit": "aef74a8aebb5846561c6e96758db61aca6563d76",
+        "files": {
+          "adapter_config.json": {
+            "bytes": 479,
+            "sha256": "1bb3ad53b417ad64b90adba4faa05cc1a93d7725468ce529c015135fc602d942"
+          },
+          "adapter_model.safetensors": {
+            "bytes": 233590600,
+            "sha256": "1bf52ef64fcb46ad7e865786871eb04b02bc2a46a9f70201da69cd7c4e9b5a33"
+          },
+          "upload-manifest.json": {
+            "bytes": 615,
+            "sha256": "0323e563bb49f4ef5e9fefa1c16b90a0c131e31d2c078cce2d520f4637f504fd"
+          },
+          "validation.json": {
+            "bytes": 480,
+            "sha256": "e1986369c40359b17ddc7bc0f365f7060ee8ed8d91d89b0b49b7b3650385de8d"
+          }
+        },
+        "path": "photo-curriculum-rl-20260922-broadcast-backup/step_9",
+        "private": false,
+        "repo_id": "CK0607/qwen3.8-27b-brush-painting",
+        "url": "https://huggingface.co/CK0607/qwen3.8-27b-brush-painting/tree/aef74a8aebb5846561c6e96758db61aca6563d76/photo-curriculum-rl-20260922-broadcast-backup/step_9",
+        "verified": true
+      }
+    },
+    {
+      "step": 10,
+      "adapter_sha256": "930228353ec8982d1ddb04b8d0846d0d4614e97ba2e8cd8dbcc80dacd7d0de3f",
+      "huggingface": {
+        "commit": "df75a1ff00b1c0ff7cc5e84a926e784c2e373913",
+        "files": {
+          "adapter_config.json": {
+            "bytes": 479,
+            "sha256": "1bb3ad53b417ad64b90adba4faa05cc1a93d7725468ce529c015135fc602d942"
+          },
+          "adapter_model.safetensors": {
+            "bytes": 233590600,
+            "sha256": "930228353ec8982d1ddb04b8d0846d0d4614e97ba2e8cd8dbcc80dacd7d0de3f"
+          },
+          "upload-manifest.json": {
+            "bytes": 616,
+            "sha256": "6fef68d4061bb1bea90665dc78e1c39adae234977c90f516a6cabd641a19a806"
+          },
+          "validation.json": {
+            "bytes": 481,
+            "sha256": "2a4f0c9e7ce912b12a3bcf24c7d39036f7a032ca6b9fe87bf74a8bef1126dc56"
+          }
+        },
+        "path": "photo-curriculum-rl-20260922-broadcast-backup/step_10",
+        "private": false,
+        "repo_id": "CK0607/qwen3.8-27b-brush-painting",
+        "url": "https://huggingface.co/CK0607/qwen3.8-27b-brush-painting/tree/df75a1ff00b1c0ff7cc5e84a926e784c2e373913/photo-curriculum-rl-20260922-broadcast-backup/step_10",
+        "verified": true
+      }
+    }
+  ],
+  "last_error": null
+}
