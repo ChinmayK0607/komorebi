@@ -1,6 +1,6 @@
 {
   "run": "photo-curriculum-rl-20260922",
-  "status": "running_first_optimizer_update_verified",
+  "status": "running_six_optimizer_updates_verified",
   "hypothesis": "Terminal visual-preference RL over full-history paint/inspect/revise episodes improves frozen midpoint512 painting quality on matched development references.",
   "initializer": {
     "base": "Qwen/Qwen3.8-27B",
@@ -99,9 +99,9 @@
       "pipeline_saturated": false,
       "trainer_state": "waiting for first generated and scored batch"
     },
-    "provider_subtotal_usd_at_latest_check": 7.71,
-    "provider_uptime_at_latest_check": "3.2h",
-    "provider_latest_check_utc": "2026-09-22 11:04",
+    "provider_subtotal_usd_at_latest_check": 15.16,
+    "provider_uptime_at_latest_check": "6.4h",
+    "provider_latest_check_utc": "2026-09-22 14:12",
     "current_generation_window": {
       "start_utc": "2026-09-22 10:23:44.868",
       "end_utc": "2026-09-22 11:06:15.580",
@@ -123,6 +123,18 @@
       "inference_nonzero_fraction": 1.0,
       "trainer_nonzero_fraction": 0.8837,
       "scope": "first update processing only; excludes earlier trainer wait"
+    },
+    "post_first_update_window": {
+      "start_utc": "2026-09-22 11:09:05.628",
+      "end_utc": "2026-09-22 14:12:38.728",
+      "samples_per_gpu": 1102,
+      "sample_interval_seconds": 10,
+      "inference_mean_utilization_percent": 99.81,
+      "trainer_mean_utilization_percent": 25.49,
+      "inference_nonzero_fraction": 1.0,
+      "trainer_nonzero_fraction": 0.2641,
+      "pipeline_saturated": false,
+      "bottleneck": "rollout generation; judge queue pending0 assigned2 atstatuscheck"
     }
   },
   "checkpoints": {
@@ -192,6 +204,17 @@
       "node_prepare_only": "passed; actual installed VF wire, pinned model/adapter/config/manifest validation; no new GPU process or environment install",
       "node_preflight_identity": "1e70f9b484a5aef45b46a1e158f4a96262eb203160eefa5569d0b5188dccf923",
       "new_remote_launcher_full_training_invocation": "not exercised; active run uses earlier launch path"
+    },
+    "latest_completed_update": {
+      "step": 6,
+      "loss": 0.0016,
+      "gradient_norm": 0.0131,
+      "mismatch_kl": 0.0006,
+      "training_tokens_per_second": 1322,
+      "batch_wait_seconds_rounded": 991,
+      "active_step_seconds_rounded": 599,
+      "allocator_warnings": "recovered OOM mapping warnings continue; no fatal exit observed",
+      "visual_quality_result": null
     }
   },
   "failures": [
@@ -243,15 +266,21 @@
   },
   "source_commit": "ff70943",
   "progress": {
-    "observed_at_utc": "2026-09-22 11:13",
-    "phase": "first update complete, live rollouts continue",
-    "optimizer_updates_verified": 1,
+    "observed_at_utc": "2026-09-22 14:13",
+    "phase": "six completed updates; collecting seventh batch",
+    "optimizer_updates_verified": 6,
     "first_update_utc": "2026-09-22 11:09:03",
-    "inference_adapter_reload_utc": "2026-09-22 11:09:04",
+    "inference_adapter_reload_utc": "2026-09-22 14:03:00",
     "judge_requests_completed_at_1108": 37,
     "judge_orientation_labels_at_1108": 74,
     "next_batch_admitted_at_1111": 19,
-    "next_batch_target": 32
+    "next_batch_target": 32,
+    "last_update_utc": "2026-09-22 14:02:59",
+    "judge_requests_completed": 201,
+    "judge_requests_assigned": 2,
+    "judge_requests_pending": 0,
+    "next_batch_admitted_at_1412": 8,
+    "next_batch_buffered_at_1412": 11
   },
   "deployed_node_bundle_sha256": "94fe0e840ad9f981b112d6eca1aa5d03eab3559b6445ede9f24f96c49039c133",
   "deployed_timeout_patch_sha256": "8264f26631cec0afc88d5b355f0fe993478ffcaeaf2fa2a8ce06af11ba4500c5",
