@@ -52,7 +52,30 @@ fi
 git -c http.version=HTTP/1.1 -C "$PRIME_ROOT" fetch --depth=1 origin 26b3131d2716a4f8210b165df584b83b4bc54f61 > logs/prime-fetch.log 2>&1
 git -C "$PRIME_ROOT" checkout --detach 26b3131d2716a4f8210b165df584b83b4bc54f61 >> logs/prime-fetch.log 2>&1
 [[ "$(git -C "$PRIME_ROOT" rev-parse HEAD)" == 26b3131d2716a4f8210b165df584b83b4bc54f61 ]]
-git -c http.version=HTTP/1.1 -C "$PRIME_ROOT" submodule update --init --depth 1 -- deps/verifiers deps/renderers deps/prime-envs deps/pydantic-config > logs/prime-submodules.log 2>&1
+# The pinned revision records SSH submodule URLs, while the rented node only
+# has authenticated HTTPS access.  Rewrite this invocation locally rather than
+# changing the checkout's durable git config or requiring an SSH credential.
+git -c http.version=HTTP/1.1 \
+  -c url.https://github.com/.insteadOf=git@github.com: \
+  -C "$PRIME_ROOT" submodule update --init --force --depth 1 \
+  -- deps/verifiers deps/renderers deps/prime-envs deps/pydantic-config > logs/prime-submodules.log 2>&1
+declare -A EXPECTED_SUBMODULES=(
+  [deps/verifiers]=828488fffe31aa3332b9d1bd4bd9ee320e375cf1
+  [deps/renderers]=f91c3e7061ce50ea405cdf54fd419a45cb51a152
+  [deps/prime-envs]=1f1e050ab0cd273bca39eed5c3e5315e6a8ae9d1
+  [deps/pydantic-config]=65b15dffba82d4be19efdaf8b2b9705cc1756be8
+)
+for submodule in "${!EXPECTED_SUBMODULES[@]}"; do
+  actual="$(git -C "$PRIME_ROOT/$submodule" rev-parse HEAD 2>/dev/null || true)"
+  [[ "$actual" == "${EXPECTED_SUBMODULES[$submodule]}" ]] || {
+    echo "submodule $submodule is not pinned: $actual" >&2
+    exit 1
+  }
+  if [[ "$submodule" == "deps/pydantic-config" && ! -f "$PRIME_ROOT/$submodule/pyproject.toml" ]]; then
+    echo "submodule $submodule is incomplete (pyproject.toml missing)" >&2
+    exit 1
+  fi
+done
 
 bootstrap/bin/uv venv --allow-existing --python python3 runtime
 bootstrap/bin/uv pip install --python runtime/bin/python \

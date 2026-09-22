@@ -58,6 +58,23 @@ try:
 except ImportError:
     from contract import NEXT_VERSION, SYSTEM  # type: ignore
 
+try:
+    from painter.frozen_opponent import (
+        FrozenOpponentProvider,
+        OpponentResult,
+        OpponentSpec,
+        deterministic_seed,
+        generate_frozen_opponent,
+    )
+except ImportError:
+    from frozen_opponent import (  # type: ignore
+        FrozenOpponentProvider,
+        OpponentResult,
+        OpponentSpec,
+        deterministic_seed,
+        generate_frozen_opponent,
+    )
+
 
 RL_PROTOCOL_VERSION = "native-painting-rl-v1"
 DEFAULT_JUDGE_TIMEOUT_SECONDS = 1800.0
@@ -193,6 +210,59 @@ def _opponent_value(row: dict[str, Any]) -> tuple[Any, str | None]:
     return None, None
 
 
+def _lazy_opponent_value(row: dict[str, Any]) -> dict[str, Any] | None:
+    value = row.get("lazy_opponent") or row.get("opponent_provider") or row.get("frozen_opponent")
+    if value is True:
+        return {}
+    if isinstance(value, dict):
+        return dict(value)
+    return None
+
+
+def _load_generator(path: str):
+    """Load a node-side generator as ``module:function`` or ``module.function``."""
+    module_name, separator, attribute = path.partition(":")
+    if not separator:
+        module_name, separator, attribute = path.rpartition(".")
+    if not module_name or not attribute:
+        raise ValueError("opponent_generator must be module:function")
+    function = getattr(importlib.import_module(module_name), attribute, None)
+    if not callable(function):
+        raise ValueError(f"opponent generator is not callable: {path}")
+    return function
+
+
+_FROZEN_PROVIDERS: dict[tuple[str, ...], FrozenOpponentProvider] = {}
+
+
+def _frozen_provider(data: "NativePaintingRLData") -> FrozenOpponentProvider:
+    cache_root = str(data.opponent_cache_root or (Path(data.root) / "frozen-opponents"))
+    key = (
+        cache_root,
+        str(data.opponent_model_alias),
+        data.opponent_generator,
+        str(data.opponent_checkpoint_sha256),
+        str(data.opponent_protocol_version),
+        str(data.opponent_render_protocol),
+        str(data.opponent_decoding_config),
+    )
+    provider = _FROZEN_PROVIDERS.get(key)
+    if provider is None:
+        generator = _load_generator(data.opponent_generator) if data.opponent_generator else generate_frozen_opponent
+        provider = FrozenOpponentProvider(
+            Path(cache_root),
+            model_alias=str(data.opponent_model_alias),
+            generator=generator,
+            lock_timeout_seconds=float(data.opponent_lock_timeout_seconds),
+            checkpoint_sha256=data.opponent_checkpoint_sha256,
+            protocol_version=data.opponent_protocol_version,
+            render_protocol=data.opponent_render_protocol,
+            decoding_config=data.opponent_decoding_config,
+        )
+        _FROZEN_PROVIDERS[key] = provider
+    return provider
+
+
 def _interleave(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """Round-robin families/groups, exhausting one row per group per round."""
 
@@ -235,11 +305,23 @@ def _interleave(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
 
 class NativePaintingRLData(NativePaintingData):
-    """One normalized training row and its fixed same-reference opponent."""
+    """One normalized training row and its eager or lazy same-source opponent."""
 
     opponent: str | None = None
     opponent_sha256: str | None = None
     opponent_source_group: str | None = None
+    opponent_cache_key: str | None = None
+    opponent_cache_root: str | None = None
+    opponent_model_alias: str | None = None
+    opponent_checkpoint_sha256: str | None = None
+    opponent_protocol_version: str | None = None
+    opponent_render_protocol: str | None = None
+    opponent_decoding_config: str | None = None
+    opponent_seed: int | None = None
+    opponent_generator: str | None = None
+    opponent_lock_timeout_seconds: float = DEFAULT_JUDGE_TIMEOUT_SECONDS
+    opponent_max_completion_tokens: int = 8192
+    opponent_context_length: int = 32768
     rollout_group: str | None = None
     curriculum_order: int | None = None
     source_row_id: str | None = None
@@ -247,8 +329,14 @@ class NativePaintingRLData(NativePaintingData):
     judge_timeout_seconds: float = DEFAULT_JUDGE_TIMEOUT_SECONDS
 
 
-class NativePaintingRLTask(NativePaintingTask):
-    """Reuse the native task behavior and add only the terminal visual reward."""
+class NativePaintingRLTask(vf.Task[NativePaintingRLData, vf.State, vf.TaskConfig]):
+    """Native task with an explicit RL wire-data type.
+
+    The verifier env server reconstructs dispatched tasks from this generic
+    parameter.  Inheriting ``NativePaintingTask`` leaves the base
+    ``NativePaintingData`` parameter in place, so RL-only opponent fields are
+    silently discarded at the RPC boundary before reward evaluation.
+    """
 
     @property
     def key(self) -> str:
@@ -259,7 +347,7 @@ class NativePaintingRLTask(NativePaintingTask):
             (
                 str(data.source_group),
                 str(data.mode),
-                str(data.opponent_sha256 or data.opponent),
+                str(data.opponent_sha256 or data.opponent_cache_key or data.opponent),
                 str(data.task_id),
             )
         )
@@ -274,18 +362,81 @@ class NativePaintingRLTask(NativePaintingTask):
             raise RuntimeError(f"service failure is not a visual score: {info['service_failure']}")
         final_canvas_value = info.get("final_canvas")
         if not final_canvas_value or not info.get("final_canvas_valid"):
-            raise ValueError("no valid visible canvas was produced; reward is unavailable")
+            # A model can finish after emitting invalid JavaScript or after a
+            # failed repair turn.  That is a model outcome and must consume a
+            # zero reward so the GRPO group remains trainable.  Renderer and
+            # judge outages are marked as service_failure above and still
+            # propagate as operational errors rather than becoming scores.
+            info["final_canvas_score"] = 0.0
+            info["reward_status"] = "model_invalid_canvas"
+            return 0.0
 
         root = Path(self.data.root)
         reference = Path(self.data.reference)
-        opponent_value = self.data.opponent
-        if not opponent_value:
-            raise ValueError("fixed same-source_group opponent is missing; reward is unavailable")
-        opponent = Path(opponent_value)
         candidate = Path(str(final_canvas_value))
         if not candidate.is_absolute():
             candidate = root / candidate
-        if not all(path.is_file() for path in (reference, opponent, candidate)):
+        if not candidate.is_file():
+            info["service_failure"] = "renderer service failure: advertised final canvas is missing"
+            raise RuntimeError(info["service_failure"])
+        opponent_value = self.data.opponent
+        opponent: Path | None = Path(opponent_value) if opponent_value else None
+        opponent_result: OpponentResult | None = None
+        if opponent is None:
+            if (
+                not self.data.opponent_model_alias
+                or not self.data.opponent_checkpoint_sha256
+                or not self.data.opponent_protocol_version
+                or not self.data.opponent_render_protocol
+                or self.data.opponent_decoding_config is None
+                or self.data.opponent_seed is None
+            ):
+                raise ValueError("fixed or lazy same-source_group opponent is missing; reward is unavailable")
+            provider = _frozen_provider(self.data)
+            spec = OpponentSpec(
+                source_group=str(self.data.source_group),
+                reference=reference,
+                reference_sha256=str(self.data.reference_sha256),
+                model_alias=str(self.data.opponent_model_alias),
+                checkpoint_sha256=str(self.data.opponent_checkpoint_sha256),
+                protocol_version=str(self.data.opponent_protocol_version),
+                render_protocol=str(self.data.opponent_render_protocol),
+                decoding_config=str(self.data.opponent_decoding_config),
+                seed=int(self.data.opponent_seed),
+                max_turns=int(self.data.max_turns),
+                max_completion_tokens=int(self.data.opponent_max_completion_tokens),
+                context_length=int(self.data.opponent_context_length),
+            )
+            opponent_result = await provider.resolve(spec)
+            info.update(
+                opponent_cache_key=opponent_result.cache_key,
+                opponent_status=opponent_result.status,
+                opponent_reason=opponent_result.reason,
+            )
+            if opponent_result.status == "unavailable":
+                message = opponent_result.reason or "frozen opponent service unavailable"
+                info["service_failure"] = f"frozen opponent service failure: {message}"
+                raise RuntimeError(info["service_failure"])
+            if opponent_result.status == "invalid_model_output":
+                # A valid student canvas beats a frozen opponent that failed
+                # to produce a canvas.  No synthetic image or judge score is
+                # invented; both-invalid cases returned zero above.
+                info["final_canvas_score"] = 1.0
+                info["reward_status"] = "anchor_invalid_model_output"
+                _atomic(
+                    root / str(self.data.output_root) / str(getattr(trace, "id", self.data.task_id)) / "reward.json",
+                    {
+                        "status": "anchor_invalid_model_output",
+                        "reward": 1.0,
+                        "opponent_cache_key": opponent_result.cache_key,
+                        "opponent_reason": opponent_result.reason,
+                    },
+                )
+                return 1.0
+            if not opponent_result.valid:
+                raise RuntimeError("frozen opponent provider returned an unusable result")
+            opponent = opponent_result.path
+        if opponent is None or not all(path.is_file() for path in (reference, opponent, candidate)):
             raise ValueError("reference, opponent, or final canvas image is missing; reward is unavailable")
         if reference == opponent or sha(reference) == sha(opponent):
             raise ValueError("reference cannot be used as the RL opponent")
@@ -385,6 +536,19 @@ class NativePaintingRLConfig(vf.TasksetConfig):
     renderer_python: str | None = None
     judge_module_dir: str | None = None
     judge_timeout_seconds: float = DEFAULT_JUDGE_TIMEOUT_SECONDS
+    preserve_manifest_order: bool = False
+    lazy_opponent: bool = False
+    opponent_cache_root: str | None = None
+    opponent_model_alias: str | None = None
+    opponent_checkpoint_sha256: str | None = None
+    opponent_protocol_version: str = RL_PROTOCOL_VERSION
+    opponent_render_protocol: str = "native-painting-v1"
+    opponent_decoding_config: str = "{}"
+    opponent_seed: int = 20260922
+    opponent_generator: str | None = None
+    opponent_lock_timeout_seconds: float = DEFAULT_JUDGE_TIMEOUT_SECONDS
+    opponent_max_completion_tokens: int = 8192
+    opponent_context_length: int = 32768
 
 
 class NativePaintingRLEnvConfig(NativePaintingEnvConfig):
@@ -444,21 +608,92 @@ class NativePaintingRLTaskset(vf.Taskset[NativePaintingRLTask, NativePaintingRLC
                 or raw.get("anchor_source_group")
                 or embedded_group
             )
+            lazy_value = _lazy_opponent_value(raw)
+            lazy_enabled = opponent_value is None and (lazy_value is not None or self.config.lazy_opponent)
+            opponent: Path | None = None
+            opponent_digest: str | None = None
+            lazy_fields: dict[str, Any] = {}
             if opponent_value is None:
-                raise ValueError(
-                    f"scaled row {task_id} has no fixed opponent; materialize a distinct same-source_group canvas"
+                if not lazy_enabled:
+                    raise ValueError(
+                        f"scaled row {task_id} has no fixed opponent; materialize a distinct same-source_group canvas"
+                    )
+                if opponent_group is not None and str(opponent_group) != source_group:
+                    raise ValueError(
+                        f"opponent for {task_id} belongs to {opponent_group!r}, expected source_group {source_group!r}"
+                    )
+                settings = lazy_value or {}
+                alias = str(settings.get("model_alias") or settings.get("alias") or self.config.opponent_model_alias or "")
+                if not alias:
+                    raise ValueError(f"lazy opponent row {task_id} needs an immutable model_alias")
+                checkpoint_sha256 = str(
+                    settings.get("checkpoint_sha256")
+                    or self.config.opponent_checkpoint_sha256
+                    or ""
                 )
-            if opponent_group is not None and str(opponent_group) != source_group:
-                raise ValueError(
-                    f"opponent for {task_id} belongs to {opponent_group!r}, expected source_group {source_group!r}"
+                if not checkpoint_sha256:
+                    raise ValueError(f"lazy opponent row {task_id} needs a pinned checkpoint_sha256")
+                protocol_version = str(
+                    settings.get("protocol_version", self.config.opponent_protocol_version)
                 )
-            opponent = _resolve_asset(root, manifest_path, opponent_value, role="opponent")
-            opponent_digest = sha(opponent)
-            expected_opponent = _hash_from_row(raw, "opponent", opponent_value)
-            if expected_opponent and expected_opponent != opponent_digest:
-                raise ValueError(f"opponent hash mismatch for {task_id}: {opponent_digest}")
-            if reference_digest == opponent_digest:
-                raise ValueError(f"reference is also the opponent for {task_id}")
+                render_protocol = str(
+                    settings.get("render_protocol", self.config.opponent_render_protocol)
+                )
+                decoding_value = settings.get("decoding_config", self.config.opponent_decoding_config)
+                decoding_config = (
+                    json.dumps(decoding_value, sort_keys=True, separators=(",", ":"))
+                    if isinstance(decoding_value, dict)
+                    else str(decoding_value)
+                )
+                base_seed = int(settings.get("base_seed", self.config.opponent_seed))
+                source_seed = int(settings.get("seed", deterministic_seed(base_seed, source_group, reference_digest)))
+                cache_root_value = settings.get("cache_root", self.config.opponent_cache_root)
+                cache_root = _resolve(root, str(cache_root_value or "frozen-opponents"))
+                generator = settings.get("generator", self.config.opponent_generator)
+                max_completion_tokens = int(settings.get("max_completion_tokens", self.config.opponent_max_completion_tokens))
+                context_length = int(settings.get("context_length", self.config.opponent_context_length))
+                spec = OpponentSpec(
+                    source_group=source_group,
+                    reference=reference,
+                    reference_sha256=reference_digest,
+                    model_alias=alias,
+                    checkpoint_sha256=checkpoint_sha256,
+                    protocol_version=protocol_version,
+                    render_protocol=render_protocol,
+                    decoding_config=decoding_config,
+                    seed=source_seed,
+                    max_turns=int(raw.get("opponent_max_turns", self.config.max_turns)),
+                    max_completion_tokens=max_completion_tokens,
+                    context_length=context_length,
+                )
+                lazy_fields = {
+                    "opponent_cache_key": spec.cache_key,
+                    "opponent_cache_root": str(cache_root),
+                    "opponent_model_alias": alias,
+                    "opponent_checkpoint_sha256": checkpoint_sha256,
+                    "opponent_protocol_version": protocol_version,
+                    "opponent_render_protocol": render_protocol,
+                    "opponent_decoding_config": decoding_config,
+                    "opponent_seed": source_seed,
+                    "opponent_generator": str(generator) if generator else None,
+                    "opponent_lock_timeout_seconds": float(settings.get("lock_timeout_seconds", self.config.opponent_lock_timeout_seconds)),
+                    "opponent_max_completion_tokens": max_completion_tokens,
+                    "opponent_context_length": context_length,
+                }
+                opponent_identity = spec.cache_key
+            else:
+                if opponent_group is not None and str(opponent_group) != source_group:
+                    raise ValueError(
+                        f"opponent for {task_id} belongs to {opponent_group!r}, expected source_group {source_group!r}"
+                    )
+                opponent = _resolve_asset(root, manifest_path, opponent_value, role="opponent")
+                opponent_digest = sha(opponent)
+                expected_opponent = _hash_from_row(raw, "opponent", opponent_value)
+                if expected_opponent and expected_opponent != opponent_digest:
+                    raise ValueError(f"opponent hash mismatch for {task_id}: {opponent_digest}")
+                if reference_digest == opponent_digest:
+                    raise ValueError(f"reference is also the opponent for {task_id}")
+                opponent_identity = opponent_digest
             if source_group in group_reference and group_reference[source_group] != reference_digest:
                 raise ValueError(f"source_group {source_group} has multiple reference images")
             rollout_group = str(
@@ -469,10 +704,10 @@ class NativePaintingRLTaskset(vf.Taskset[NativePaintingRLTask, NativePaintingRLC
                 or task_id
             )
             rollout_key = (source_group, rollout_group)
-            if rollout_key in rollout_opponent and rollout_opponent[rollout_key] != opponent_digest:
+            if rollout_key in rollout_opponent and rollout_opponent[rollout_key] != opponent_identity:
                 raise ValueError(f"rollout_group {rollout_group} has multiple fixed opponents")
             group_reference[source_group] = reference_digest
-            rollout_opponent[rollout_key] = opponent_digest
+            rollout_opponent[rollout_key] = opponent_identity
 
             initial_canvas_value = raw.get("initial_canvas") or raw.get("canvas")
             initial_program_value = raw.get("initial_program") or raw.get("program")
@@ -502,9 +737,10 @@ class NativePaintingRLTaskset(vf.Taskset[NativePaintingRLTask, NativePaintingRLC
                 "family": family,
                 "reference": str(reference),
                 "reference_sha256": reference_digest,
-                "opponent": str(opponent),
+                "opponent": str(opponent) if opponent else None,
                 "opponent_sha256": opponent_digest,
                 "opponent_source_group": source_group,
+                **lazy_fields,
                 "rollout_group": rollout_group,
                 "mode": mode,
                 "initial_canvas": str(initial_canvas) if initial_canvas else None,
@@ -517,7 +753,7 @@ class NativePaintingRLTaskset(vf.Taskset[NativePaintingRLTask, NativePaintingRLC
                 "judge_module_dir": judge_dir,
             })
 
-        ordered = _interleave(normalized)
+        ordered = normalized if self.config.preserve_manifest_order else _interleave(normalized)
         tasks: list[NativePaintingRLTask] = []
         for index, row in enumerate(ordered):
             prompt_parts: list[Any] = [_text("REFERENCE"), _image(Path(row["reference"]))]
@@ -552,6 +788,24 @@ class NativePaintingRLTaskset(vf.Taskset[NativePaintingRLTask, NativePaintingRLC
                 opponent=row["opponent"],
                 opponent_sha256=row["opponent_sha256"],
                 opponent_source_group=row["opponent_source_group"],
+                opponent_cache_key=row.get("opponent_cache_key"),
+                opponent_cache_root=row.get("opponent_cache_root"),
+                opponent_model_alias=row.get("opponent_model_alias"),
+                opponent_checkpoint_sha256=row.get("opponent_checkpoint_sha256"),
+                opponent_protocol_version=row.get("opponent_protocol_version"),
+                opponent_render_protocol=row.get("opponent_render_protocol"),
+                opponent_decoding_config=row.get("opponent_decoding_config"),
+                opponent_seed=row.get("opponent_seed"),
+                opponent_generator=row.get("opponent_generator"),
+                opponent_lock_timeout_seconds=float(
+                    row.get("opponent_lock_timeout_seconds", self.config.opponent_lock_timeout_seconds)
+                ),
+                opponent_max_completion_tokens=int(
+                    row.get("opponent_max_completion_tokens", self.config.opponent_max_completion_tokens)
+                ),
+                opponent_context_length=int(
+                    row.get("opponent_context_length", self.config.opponent_context_length)
+                ),
                 rollout_group=row["rollout_group"],
                 curriculum_order=row["curriculum_order"],
                 source_row_id=row["source_row_id"],

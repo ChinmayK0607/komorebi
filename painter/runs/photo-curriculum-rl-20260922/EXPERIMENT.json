@@ -1,0 +1,129 @@
+{
+  "run": "photo-curriculum-rl-20260922",
+  "status": "restart_after_verified_task_wire_fix",
+  "hypothesis": "Terminal visual-preference RL over full-history paint/inspect/revise episodes improves frozen midpoint512 painting quality on matched development references.",
+  "initializer": {
+    "base": "Qwen/Qwen3.8-27B",
+    "base_revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+    "adapter_repo": "CK0607/qwen3.8-27b-brush-painting",
+    "adapter_revision": "adf687e5b321514eda7be6eab050434fdc8e44ff",
+    "adapter_prefix": "photo-curriculum-sft-20260922-balanced/step_512",
+    "adapter_sha256": "bea72b066986faa1b92b9dc539c710093181ee916b99323e2b2498f318ac1740",
+    "optimizer": "fresh"
+  },
+  "prime_revision": "26b3131d2716a4f8210b165df584b83b4bc54f61",
+  "data": {
+    "training_references": 2486,
+    "photo": 86,
+    "procedural": 2400,
+    "excluded_photo_dev": 28,
+    "excluded_procedural_dev": 240,
+    "excluded_general_sft_rows": 192,
+    "source_manifest_sha256": "94c4da9e83dcbe1bf9f37d3bb25bd82ddd946ddf225bbef62324e1de15bc1fd5",
+    "references_seen": null
+  },
+  "training": {
+    "max_updates": 32,
+    "batch_size": 32,
+    "group_size": 8,
+    "learning_rate": 1e-06,
+    "max_turns": 6,
+    "max_output_tokens_per_turn": 8192,
+    "context": 32768,
+    "min_initial_inflight": 32,
+    "max_inflight": 64,
+    "max_off_policy_steps": 1,
+    "checkpoint_interval": 8,
+    "speed_reward": false
+  },
+  "judge": {
+    "model": "gpt-5.6-luna",
+    "reasoning_effort": "low",
+    "orientations": 2,
+    "concurrency": 8,
+    "requests_per_handoff": 8,
+    "transport": "finite local CLI bridge; direct reference/A/B image attachments",
+    "rubric": "holistic aesthetic preference preserving reference identity; critiques both paintings",
+    "opponent": "lazy cached immutable midpoint512 using the same native full-history loop",
+    "invalid_model_canvas_reward": 0,
+    "valid_candidate_invalid_anchor_reward": 1,
+    "service_failure_reward": null
+  },
+  "hardware": {
+    "gpu_count": 2,
+    "gpu_model": "RTX PRO 6000 Blackwell Server Edition",
+    "memory_gib_per_gpu": 96,
+    "inference_gpus": 1,
+    "trainer_gpus": 1,
+    "price_usd_per_hour": 2.38,
+    "utilization": {
+      "scope": "failed restart including initialization; not training utilization",
+      "window_utc": [
+        "2026-09-22 08:50:37",
+        "2026-09-22 08:54:07"
+      ],
+      "interval_seconds": 10,
+      "samples_per_gpu": 22,
+      "inference_gpu": {
+        "mean_percent": 6.73,
+        "nonzero_sample_fraction": 0.18181818181818182
+      },
+      "trainer_gpu": {
+        "mean_percent": 0.36,
+        "nonzero_sample_fraction": 0.09090909090909091
+      },
+      "pipeline_saturated": false
+    },
+    "provider_subtotal_usd_at_failed_restart_review": 2.71,
+    "provider_uptime_at_failed_restart_review": "1.1h"
+  },
+  "checkpoints": {
+    "repo": "CK0607/qwen3.8-27b-brush-painting",
+    "namespace": "photo-curriculum-rl-20260922",
+    "public_required": true,
+    "remote_hash_verification_required": true,
+    "new_revisions": [],
+    "anonymous_repository_access_verified": true
+  },
+  "validation": {
+    "prime_native_dry_run": "passed 2026-09-22 08:32:53 UTC",
+    "luna_identity_control": "tie; actual directly attached images",
+    "native_gpu_update_verified": false,
+    "actual_verifier_task_wire_roundtrip": "passed on Linux node; RL data type and frozen opponent fields preserved",
+    "local_targeted_tests": 36
+  },
+  "failures": [
+    "Fresh setup exposed public SSH submodule URLs and an incomplete dependency checkout; fixed HTTPS/pinned checkout bootstrap.",
+    "Source archive included AppleDouble metadata, causing the foundation check to fail; replaced with clean archive.",
+    "Prime validation mutated the input config before TOML serialization; validation now uses a deep copy.",
+    "Local judge SSH needed the owned node host key pinned before connection.",
+    "First native launch initialized inference but wrapper parsed Prime's JSON child configuration as TOML; fixed and tested both formats.",
+    "Restart initially collided with the failed run directory; preserved that directory and restarted under a clean output directory.",
+    "Restart reached initialized trainer and all 2486 tasks, but VF task transport deserialized NativePaintingRLTask.data into NativePaintingData, dropping opponent fields. Every request failed and the zero-output guard stopped the run; no rollout reached the judge and no optimizer update occurred."
+  ],
+  "limitations": [
+    "Rented hardware before preparation was complete; roughly an hour of rental passed without optimizer work.",
+    "No matched RL quality result exists yet.",
+    "28 photo and 240 procedural development references were used in previous experiments; they are not untouched test data."
+  ],
+  "source_file_sha256": {
+    "painter/contract.py": "0c77f0ed4bd5cad3121918d27495e3aef780dcb84ff0dd51cf61c3ffdd2ffaa0",
+    "painter/frozen_opponent.py": "0d05b028ea7ba33a2b9c311790d83d30a9be51d32ed9dad9c0422c07986882a3",
+    "painter/native_painting.py": "dea9ea9cbba7da7249d2cbaaeb317dc3a645e34f72b50376677ea6e1fc51c43a",
+    "painter/native_painting_renderer.py": "3611e656a2ad59fed2e5ff21e3b891055a238b27c55822e113fd57bb5769be4e",
+    "painter/native_painting_rl.py": "9e67c7b3e9b48a2b03111aa3b665ecb26f9da5d09eb181adb742dc033926aace",
+    "painter/runs/photo-curriculum-rl-20260922/aesthetic_judge.py": "3565ba4bc731fc6b5b2528f3192c4e6b662484eae8f381f2c69ff6b435d80ea6",
+    "painter/runs/photo-curriculum-rl-20260922/download_initial_adapter.py": "5212493f4e29b1ffc6523f887ca1ac44032dbdabafc9fc7be2012741a47ec382",
+    "painter/runs/photo-curriculum-rl-20260922/judge_bridge.py": "d7b46b9d158cc977d18e0e79a06db2a685ed2118abd17465e39ead96dc9dc9c5",
+    "painter/runs/photo-curriculum-rl-20260922/judge_queue.py": "b3b8fdc7c33989fda98c4c162f72df5852e3e4c916d3d907f5687b689c093fd5",
+    "painter/runs/photo-curriculum-rl-20260922/launch_rl.sh": "de2f5be02f6c1beb9e9540040f2326240c008100229754be5a5b2c6001bc539c",
+    "painter/runs/photo-curriculum-rl-20260922/prepare_rl_config.py": "bfbcc6623e6b4f006d55e717b84291075c5a71c63225397f24535b48adfa85a3",
+    "painter/runs/photo-curriculum-rl-20260922/prepare_rl_data.py": "224d23d489d39a4bb22e63565fbf62d12c78a28a5b50a817a908a6a12b68fcb5",
+    "painter/runs/photo-curriculum-rl-20260922/run_from_sft.py": "bde311e5c94134bc64d83175e3cddc9166bed5b034061c0539f958b9566eac0e",
+    "painter/runs/photo-curriculum-rl-20260922/setup_rl_runtime.sh": "213e74a28b88c138425e736406e8767299194ab1931b06cad051a209670d5552",
+    "painter/runs/photo-curriculum-rl-20260922/test_judge_bridge.py": "08d7ff3b202810ea87e1b54aeae0c3c51ac2f863ac0e4ce84c45c068f38b1247",
+    "painter/runs/photo-curriculum-rl-20260922/test_prepare_rl_config.py": "ee1d949ed65a0c9f7c0b219286ac04836814990bf6a7d9a0fb1befce9173186c",
+    "painter/runs/photo-curriculum-rl-20260922/test_run_from_sft.py": "8bd068a68b16fa672488c3c2636943c019b77d57b9cae69b4e67806211ab5ecf",
+    "painter/runs/photo-curriculum-rl-20260922/train_from_sft.py": "eea061f95c32559329ab30d08db8b5664d0966c9dbf7a199d98afb156e254491"
+  }
+}

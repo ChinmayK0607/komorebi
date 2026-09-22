@@ -44,6 +44,10 @@ class _Trace:
 
 
 class NativePaintingRLTests(unittest.TestCase):
+    def test_rl_task_declares_rl_wire_data_type(self):
+        module = _load_rl_module()
+        self.assertIs(module.NativePaintingRLTask.data_type(), module.NativePaintingRLData)
+
     def test_rl_env_reuses_shared_native_loop(self):
         module = _load_rl_module()
         self.assertIs(module.NativePaintingRLEnv.run, module.NativePaintingEnv.run)
@@ -244,7 +248,7 @@ class NativePaintingRLTests(unittest.TestCase):
             self.assertEqual(trace.info["score_evidence"]["request_id"], "request-1")
             self.assertTrue((root / "rl-rollouts" / "trace-test" / "reward.json").is_file())
 
-    def test_reward_masks_missing_canvas_and_service_failure(self):
+    def test_reward_scores_model_invalid_canvas_zero_but_masks_service_failure(self):
         module = _load_rl_module()
         with TemporaryDirectory() as temp:
             root = Path(temp)
@@ -258,8 +262,10 @@ class NativePaintingRLTests(unittest.TestCase):
                 opponent=str(opponent), opponent_sha256=_digest(opponent), mode="fresh",
             )
             task = module.NativePaintingRLTask(data)
-            with self.assertRaisesRegex(ValueError, "no valid visible canvas"):
-                asyncio.run(task.final_canvas_aesthetic(_Trace(final_canvas_valid=False)))
+            trace = _Trace(final_canvas_valid=False)
+            self.assertEqual(asyncio.run(task.final_canvas_aesthetic(trace)), 0.0)
+            self.assertEqual(trace.info["reward_status"], "model_invalid_canvas")
+            self.assertEqual(trace.info["final_canvas_score"], 0.0)
             with self.assertRaisesRegex(RuntimeError, "not a visual score"):
                 asyncio.run(task.final_canvas_aesthetic(_Trace(service_failure="renderer unavailable")))
 

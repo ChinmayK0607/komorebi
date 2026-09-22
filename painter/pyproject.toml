@@ -16,5 +16,6 @@ py-modules = [
   "native_painting_eval",
   "native_painting_rl",
   "native_painting_renderer",
+  "frozen_opponent",
   "luna_cli_judge",
 ]

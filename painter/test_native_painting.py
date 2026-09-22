@@ -11,6 +11,7 @@ import types
 import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from typing import Generic, TypeVar, get_args
 from unittest.mock import patch
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -87,11 +88,24 @@ class _VfEnv:
         return cls
 
 
-class _VfTask:
-    def __class_getitem__(cls, _item):
-        return cls
+_TaskDataT = TypeVar("_TaskDataT")
+_TaskStateT = TypeVar("_TaskStateT")
+_TaskConfigT = TypeVar("_TaskConfigT")
+
+
+class _VfTask(Generic[_TaskDataT, _TaskStateT, _TaskConfigT]):
     def __init__(self, data, config=None):
         self.data, self.config = data, config
+
+    @classmethod
+    def data_type(cls):
+        # Mirror the current VF concrete-generic lookup used by the node
+        # serializer, enough for local task declaration tests.
+        for base in getattr(cls, "__orig_bases__", ()):
+            args = get_args(base)
+            if args and isinstance(args[0], type):
+                return args[0]
+        return _TaskData
 
 
 class _VfTaskset:
