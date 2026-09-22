@@ -302,20 +302,207 @@ def make_contacts(records: list[dict[str, Any]], output: Path) -> list[dict[str,
     return sheets
 
 
-def cell_html(record: dict[str, Any], label: str, value: dict[str, Any]) -> str:
-    asset = value.get("asset")
-    image = f'<img loading="lazy" src="{esc(asset["path"])}" alt="{esc(record["id"])} {esc(label)}">' if asset else '<div class="missing">no verified final canvas</div>'
-    return f'<figure>{image}<figcaption><b>role: {esc(label)}</b><br>status: {esc(value.get("status"))}<br>sha256: <code>{esc(value.get("render_sha256") or "—")}</code><br>{esc(value.get("error") or "verified final canvas")}</figcaption></figure>'
-
 
 def build_html(manifest: dict[str, Any]) -> str:
-    links = "".join(f'<a href="{esc(sheet["file"])}"><img src="{esc(sheet["file"])}" alt="contact batch {sheet["pair_count"]}"><br>batch {sheet["pair_count"]} pairs · {esc(sheet["sha256"])}</a>' for sheet in manifest["contact_sheets"])
-    rows = []
-    for record in manifest["records"]:
-        policies = record["policies"]
-        rows.append(f'''<article class="case"><h2>{esc(record["id"])}</h2><p class="meta">reference status: {esc(record["reference"]["status"])} · expected sha256: <code>{esc(record["reference"].get("expected_sha256") or "—")}</code> · actual: <code>{esc(record["reference"].get("actual_sha256") or "—")}</code></p><div class="grid"><figure>{f'<img loading="lazy" src="{esc(record["reference"]["asset"]["path"])}" alt="{esc(record["id"])} reference">' if record["reference"].get("asset") else '<div class="missing">reference unavailable</div>'}<figcaption><b>role: reference</b><br>sha256: <code>{esc(record["reference"].get("actual_sha256") or "—")}</code></figcaption></figure>{cell_html(record, "base", policies["base"])}{cell_html(record, "midpoint512", policies["midpoint512"])}{cell_html(record, "final1024", policies["final1024"])}</div><details><summary>Trace, finish, token and failure evidence</summary><pre>{esc(json.dumps({"policies": policies, "reference": record["reference"]}, indent=2, sort_keys=True))}</pre></details></article>''')
-    return f'''<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Matched photo evaluation</title><style>body{{margin:0;padding:24px;background:#f3f1ec;color:#252525;font:14px/1.45 system-ui,sans-serif}}main{{max-width:1800px;margin:auto}}.note,.case,.contacts a,.stat{{background:white;border:1px solid #d5d1c8;border-radius:8px;padding:12px}}.note{{border-left:4px solid #bd8b00}}.stats{{display:flex;gap:10px;flex-wrap:wrap;margin:16px 0}}.stat{{min-width:130px;text-align:center}}.case{{margin:16px 0}}h1,h2{{margin:0 0 6px}}.meta{{color:#666;overflow-wrap:anywhere}}.grid{{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}}figure{{margin:0;min-width:0}}figure img,.missing{{display:block;width:100%;height:auto;max-height:600px;object-fit:contain;background:#eef0f2;border:1px solid #ddd}}.missing{{min-height:150px;display:grid;place-items:center;color:#777}}figcaption{{padding:6px 0;color:#555;font-size:.82rem;overflow-wrap:anywhere}}pre{{white-space:pre-wrap;overflow-wrap:anywhere;background:#f5f3ef;padding:10px;border-radius:6px;font-size:.76rem}}.contacts{{margin:18px 0}}.contact-grid{{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px}}.contacts a{{display:block;color:#225f8c;text-decoration:none}}.contacts img{{width:100%;height:auto}}@media(max-width:1000px){{.grid{{grid-template-columns:repeat(2,1fr)}}}}@media(max-width:600px){{body{{padding:12px}}.grid{{grid-template-columns:1fr}}}}</style></head><body><main><h1>Matched photo evaluation</h1><p>Reference, baseline, midpoint-512, and final-1024 artifacts from preserved native traces. This gallery reports artifact and trace evidence only; it makes no visual quality claim and never substitutes a turn canvas for a missing final canvas.</p><p class="note">{manifest["denominator"]} case denominator · reference valid {manifest["reference_valid_count"]}/{manifest["denominator"]} · complete policy cells {manifest["valid_cell_count"]}/{manifest["denominator"] * 3}</p><div class="stats"><div class="stat"><b>{manifest["denominator"]}</b><br>case denominator</div><div class="stat"><b>{manifest["reference_valid_count"]}</b><br>valid references</div><div class="stat"><b>{manifest["valid_cell_count"]}</b><br>valid final canvases</div><div class="stat"><b>{manifest["missing_or_failed_count"]}</b><br>missing/failed cells</div></div>{f'<section class="contacts"><h2>Contact sheets</h2><div class="contact-grid">{links}</div></section>' if links else ''}{''.join(rows)}</main></body></html>\n'''
-
+    # Keep the manifest in the standalone file so opening index.html via file://
+    # never needs fetch(), a local server, or a dependency. Escape '<' before
+    # placing JSON in a script element; metadata and asset paths remain exact.
+    data = json.dumps(manifest, ensure_ascii=False, separators=(",", ":")).replace("<", "\\u003c")
+    template = r'''<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Matched photo evaluation</title>
+<style>
+:root{color-scheme:light;--ink:#20252a;--muted:#68717a;--line:#d7dce1;--panel:#fff;--soft:#f2f4f6;--accent:#245e7b;--warn:#9a6200;--bad:#9b3a32}
+*{box-sizing:border-box}body{margin:0;background:#eef1f3;color:var(--ink);font:14px/1.45 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}body.modal-open{overflow:hidden}
+button,select{font:inherit}button,select{border:1px solid #bbc4ca;border-radius:6px;background:#fff;color:var(--ink);padding:7px 10px}button{cursor:pointer}button:hover,button:focus-visible,select:focus-visible{border-color:var(--accent);outline:3px solid #b9d9e8;outline-offset:1px}.button-primary{background:#245e7b;color:#fff;border-color:#245e7b}
+main{width:min(100% - 28px,1900px);margin:0 auto;padding:18px 0 48px}.app-header{display:flex;align-items:flex-end;justify-content:space-between;gap:18px;margin-bottom:10px}.kicker{margin:0 0 2px;color:var(--accent);font-size:11px;font-weight:750;letter-spacing:.12em;text-transform:uppercase}.app-header h1{font-size:clamp(20px,2.4vw,31px);line-height:1.1;margin:0}.lede{margin:5px 0 0;color:var(--muted);font-size:13px}.counter{white-space:nowrap;font-weight:700;color:#35414a}.summary,.toolbar,.case-panel,.overview-panel,.secondary{background:var(--panel);border:1px solid var(--line);border-radius:10px}.summary{display:flex;flex-wrap:wrap;gap:6px 16px;align-items:center;padding:8px 12px;color:var(--muted);font-size:12px}.summary strong{color:var(--ink)}.summary .quality-note{color:var(--warn)}.toolbar{display:flex;align-items:center;flex-wrap:wrap;gap:8px;padding:9px 12px;margin:10px 0}.toolbar .spacer{flex:1}.policy-controls{display:flex;gap:5px;flex-wrap:wrap}.policy-controls button[aria-pressed=true]{background:#e1f0f6;border-color:#245e7b;color:#16445b;font-weight:700}.case-panel{padding:12px}.case-heading{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin:0 2px 10px}.case-heading h2{font-size:18px;margin:0}.case-family{color:var(--muted);font-size:12px}.comparison{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px}.canvas-card{min-width:0;margin:0}.canvas-card h3{font-size:13px;margin:0 0 5px}.role{color:var(--muted);font-weight:500}.image-stage{height:clamp(390px,68vh,820px);display:grid;place-items:center;background:#e8edf0;border:1px solid var(--line);border-radius:7px;overflow:hidden}.image-stage img{display:block;max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;cursor:zoom-in}.canvas-caption{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:6px 1px 0;color:var(--muted);font-size:12px}.status{display:inline-flex;align-items:center;min-height:22px;padding:2px 7px;border-radius:999px;background:#e7edf0;color:#45525a}.status.valid{background:#e3f2e8;color:#22613a}.status.failed{background:#fae8e5;color:var(--bad);font-weight:700}.missing-stage{height:100%;width:100%;display:grid;align-content:center;justify-items:center;gap:5px;padding:20px;text-align:center;color:var(--bad)}.missing-stage strong{font-size:16px}.missing-stage span{color:var(--muted);font-size:12px}.evidence{margin:12px 2px 0;border-top:1px solid var(--line);padding-top:9px;color:var(--muted)}.evidence summary,.secondary summary{cursor:pointer;font-weight:650;color:#45525a}.evidence pre{max-height:360px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere;background:var(--soft);padding:10px;border-radius:6px;font-size:11px;color:#343c41}.overview-panel{padding:12px}.overview-heading{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:10px}.overview-heading h2{font-size:17px;margin:0}.overview-grid{display:grid;gap:10px}.overview-case{border:1px solid var(--line);border-radius:8px;padding:8px;background:#fbfcfc;cursor:pointer}.overview-case:hover,.overview-case:focus-visible{border-color:var(--accent);outline:3px solid #b9d9e8;outline-offset:1px}.overview-case h3{font-size:12px;margin:0 0 6px;overflow-wrap:anywhere}.overview-cells{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}.overview-cell{min-width:0}.overview-cell label{display:block;color:var(--muted);font-size:10px;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.overview-thumb{height:150px;display:grid;place-items:center;background:#e8edf0;border:1px solid var(--line);border-radius:4px;overflow:hidden;color:var(--bad);font-size:11px;text-align:center;padding:5px}.overview-thumb img{display:block;width:100%;height:100%;object-fit:contain}.secondary{margin-top:10px;padding:9px 12px}.contact-links{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}.contact-links a{color:var(--accent)}[hidden]{display:none!important}
+.lightbox{position:fixed;inset:0;z-index:10;display:grid;grid-template-rows:auto 1fr;background:rgba(8,13,17,.94);padding:12px}.lightbox-toolbar{display:flex;align-items:center;gap:7px;color:#fff;min-height:42px}.lightbox-toolbar .lightbox-label{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.lightbox-toolbar button{background:#fff;color:#1e2529}.lightbox-stage{min-height:0;overflow:auto;display:block;padding:18px}.lightbox-image{display:block;margin:0 auto;max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;cursor:zoom-out}.lightbox-image.actual{max-width:none;max-height:none;width:auto;height:auto;cursor:zoom-out}.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+@media(max-width:700px){main{width:min(100% - 18px,1900px);padding-top:10px}.app-header{align-items:flex-start;flex-direction:column;gap:5px}.lede{display:none}.comparison{grid-template-columns:1fr}.image-stage{height:60vh;min-height:300px}.overview-cells{grid-template-columns:repeat(2,minmax(0,1fr))}.overview-thumb{height:120px}.toolbar .spacer{display:none}}
+</style>
+</head>
+<body>
+<main>
+  <header class="app-header">
+    <div><p class="kicker">matched photo evaluation</p><h1>Reference vs. generated painting</h1><p class="lede">Artifact and trace evidence only; no visual quality claim.</p></div>
+    <div class="counter" id="case-counter" aria-live="polite"></div>
+  </header>
+  <section class="summary" aria-label="Evaluation summary">
+    <span><strong id="summary-denominator"></strong> cases</span><span><strong id="summary-references"></strong> valid references</span><span><strong id="summary-cells"></strong> valid final canvases</span><span><strong id="summary-failures"></strong> missing or failed cells</span><span class="quality-note">Failures stay in the case list.</span>
+  </section>
+  <section class="toolbar" aria-label="Gallery controls">
+    <button type="button" id="previous-case" aria-label="Previous case">← Previous</button>
+    <button type="button" id="next-case" aria-label="Next case">Next →</button>
+    <label for="case-select">Case <select id="case-select"></select></label>
+    <span class="spacer"></span>
+    <div class="policy-controls" id="policy-controls" role="group" aria-label="Candidate checkpoint"></div>
+    <button type="button" id="overview-toggle" class="button-primary" aria-expanded="false">Overview</button>
+  </section>
+  <section id="focus-view" class="case-panel" tabindex="-1" aria-label="Focused case"></section>
+  <section id="overview-view" class="overview-panel" aria-label="All cases overview" hidden></section>
+  <section class="secondary"><details><summary>Existing contact-sheet files</summary><div class="contact-links" id="contact-links"></div></details></section>
+</main>
+<div id="lightbox" class="lightbox" role="dialog" aria-modal="true" aria-labelledby="lightbox-label" hidden>
+  <div class="lightbox-toolbar"><span id="lightbox-label" class="lightbox-label"></span><button type="button" id="lightbox-fit">Fit</button><button type="button" id="lightbox-actual">100%</button><button type="button" id="lightbox-minus" aria-label="Zoom out">−</button><span id="lightbox-zoom">100%</span><button type="button" id="lightbox-plus" aria-label="Zoom in">+</button><button type="button" id="lightbox-close">Close</button></div>
+  <div id="lightbox-stage" class="lightbox-stage"><img id="lightbox-image" class="lightbox-image" alt=""></div>
+</div>
+<script id="gallery-data" type="application/json">__MANIFEST_DATA__</script>
+<script>
+(function () {
+  "use strict";
+  var manifest = JSON.parse(document.getElementById("gallery-data").textContent);
+  var records = Array.isArray(manifest.records) ? manifest.records : [];
+  var policies = [["base", "Base"], ["midpoint512", "Midpoint 512"], ["final1024", "Final 1024"]];
+  var focus = document.getElementById("focus-view");
+  var overview = document.getElementById("overview-view");
+  var caseSelect = document.getElementById("case-select");
+  var policyControls = document.getElementById("policy-controls");
+  var counter = document.getElementById("case-counter");
+  var index = 0;
+  var selectedPolicy = "midpoint512";
+  var lightbox = document.getElementById("lightbox");
+  var lightboxImage = document.getElementById("lightbox-image");
+  var lightboxLabel = document.getElementById("lightbox-label");
+  var lightboxScale = 1;
+  var lightboxMode = "fit";
+  var lastFocus = null;
+  function esc(value) {
+    return String(value == null ? "—" : value).replace(/[&<>"']/g, function (char) {
+      return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[char];
+    });
+  }
+  function labelFor(key) {
+    for (var n = 0; n < policies.length; n += 1) if (policies[n][0] === key) return policies[n][1];
+    return key;
+  }
+  function current() { return records[index] || null; }
+  function assetPath(value) { return value && value.asset && value.asset.path ? String(value.asset.path) : null; }
+  function failureText(value, isReference) {
+    if (!value) return "unavailable";
+    if (isReference) return value.status === "valid" ? "verified reference" : "reference unavailable";
+    return ({invalid_final_canvas:"final canvas marked invalid",artifact_missing:"recorded canvas file missing",missing_trace:"no exact trace",reference_mismatch:"reference hash mismatch"}[value.status] || "no valid final painting");
+  }
+  function imageMarkup(value, alt, isReference) {
+    var path = assetPath(value);
+    if (path) return '<img data-open="' + esc(path) + '" data-alt="' + esc(alt) + '" src="' + esc(path) + '" alt="' + esc(alt) + '" role="button" tabindex="0" aria-label="Open ' + esc(alt) + '">';
+    return '<div class="missing-stage"><strong>' + esc(isReference ? "reference unavailable" : "no valid final painting") + '</strong><span>' + esc(failureText(value, isReference)) + '</span></div>';
+  }
+  function panelMarkup(record, key, value, isReference) {
+    var title = isReference ? "Reference" : labelFor(key);
+    var status = value && value.status === "valid" ? "valid" : "failed";
+    var statusText = value && value.status === "valid" ? "verified image" : failureText(value, isReference);
+    return '<figure class="canvas-card"><h3>' + esc(title) + ' <span class="role">' + (isReference ? "source" : "candidate") + '</span></h3><div class="image-stage">' + imageMarkup(value, record.id + " " + title, isReference) + '</div><figcaption class="canvas-caption"><span class="status ' + status + '">' + esc(statusText) + '</span></figcaption></figure>';
+  }
+  function setSummary() {
+    document.getElementById("summary-denominator").textContent = manifest.denominator == null ? records.length : manifest.denominator;
+    document.getElementById("summary-references").textContent = (manifest.reference_valid_count == null ? 0 : manifest.reference_valid_count) + "/" + (manifest.denominator == null ? records.length : manifest.denominator);
+    document.getElementById("summary-cells").textContent = (manifest.valid_cell_count == null ? 0 : manifest.valid_cell_count) + "/" + ((manifest.denominator == null ? records.length : manifest.denominator) * 3);
+    document.getElementById("summary-failures").textContent = manifest.missing_or_failed_count == null ? 0 : manifest.missing_or_failed_count;
+  }
+  function setSelectors() {
+    caseSelect.innerHTML = records.map(function (record, n) { return '<option value="' + n + '">' + esc(String(n + 1).padStart(2, "0")) + " · " + esc(record.id) + "</option>"; }).join("");
+    policyControls.innerHTML = policies.map(function (item) { return '<button type="button" data-policy="' + item[0] + '" aria-pressed="' + (item[0] === selectedPolicy) + '">' + esc(item[1]) + "</button>"; }).join("");
+    caseSelect.value = String(index);
+    policyControls.querySelectorAll("button[data-policy]").forEach(function (button) { button.addEventListener("click", function () { selectedPolicy = button.dataset.policy; showFocusedCase(); }); });
+  }
+  function attachImageOpeners(root) {
+    root.querySelectorAll("img[data-open]").forEach(function (image) { image.addEventListener("click", function (event) { event.stopPropagation(); openLightbox(image.dataset.open, image.dataset.alt); }); image.addEventListener("keydown", function (event) { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); event.stopPropagation(); openLightbox(image.dataset.open, image.dataset.alt); } }); });
+  }
+  function renderFocus() {
+    var record = current();
+    if (!record) { focus.innerHTML = '<p class="missing-stage">No cases in manifest.</p>'; return; }
+    var candidate = record.policies[selectedPolicy] || {};
+    counter.textContent = "Case " + (index + 1) + " / " + records.length;
+    caseSelect.value = String(index);
+    policyControls.querySelectorAll("button[data-policy]").forEach(function (button) { button.setAttribute("aria-pressed", String(button.dataset.policy === selectedPolicy)); });
+    var evidence = {reference: record.reference, policy: candidate, policy_name: selectedPolicy};
+    focus.innerHTML = '<div class="case-heading"><h2>' + esc(record.id) + '</h2><span class="case-family">' + esc(record.family || "matched case") + '</span></div><div class="comparison">' + panelMarkup(record, "reference", record.reference, true) + panelMarkup(record, selectedPolicy, candidate, false) + '</div><details class="evidence"><summary>Checksums, trace, finish, tokens and failure evidence</summary><pre>' + esc(JSON.stringify(evidence, null, 2)) + "</pre></details>";
+    attachImageOpeners(focus);
+  }
+  function overviewCell(value, title, alt) {
+    var path = assetPath(value);
+    if (path) return '<div class="overview-cell"><label>' + esc(title) + '</label><div class="overview-thumb"><img loading="lazy" data-open="' + esc(path) + '" data-alt="' + esc(alt) + '" src="' + esc(path) + '" alt="' + esc(alt) + '" role="button" tabindex="0" aria-label="Open ' + esc(alt) + '"></div></div>';
+    return '<div class="overview-cell"><label>' + esc(title) + '</label><div class="overview-thumb"><span>' + esc(title === "Reference" ? "reference unavailable" : "no valid final painting") + "</span></div></div>";
+  }
+  function renderOverview() {
+    overview.innerHTML = '<div class="overview-heading"><h2>All cases · four-role overview</h2><span class="case-family">Select a row to return to the focused viewer.</span></div><div class="overview-grid">' + records.map(function (record, n) { return '<article class="overview-case" tabindex="0" data-case-index="' + n + '" aria-label="Open case ' + esc(record.id) + '"><h3>' + esc(String(n + 1).padStart(2, "0")) + ' · ' + esc(record.id) + '</h3><div class="overview-cells">' + overviewCell(record.reference, "Reference", record.id + " reference") + overviewCell(record.policies.base, "Base", record.id + " Base") + overviewCell(record.policies.midpoint512, "Midpoint 512", record.id + " Midpoint 512") + overviewCell(record.policies.final1024, "Final 1024", record.id + " Final 1024") + "</div></article>"; }).join("") + "</div>";
+    overview.querySelectorAll(".overview-case").forEach(function (card) {
+      var open = function () { index = Number(card.dataset.caseIndex); showFocusedCase(); focus.focus(); };
+      card.addEventListener("click", open);
+      card.addEventListener("keydown", function (event) { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); open(); } });
+    });
+    attachImageOpeners(overview);
+  }
+  var showingOverview = false;
+  function showFocusedCase() { showingOverview = false; overview.hidden = true; focus.hidden = false; var button = document.getElementById("overview-toggle"); button.setAttribute("aria-expanded", "false"); button.textContent = "Overview"; renderFocus(); }
+  function move(delta) { if (!records.length) return; index = (index + delta + records.length) % records.length; showFocusedCase(); }
+  function toggleOverview() {
+    showingOverview = !showingOverview;
+    overview.hidden = !showingOverview;
+    focus.hidden = showingOverview;
+    var button = document.getElementById("overview-toggle");
+    button.setAttribute("aria-expanded", String(showingOverview));
+    button.textContent = showingOverview ? "Focused case" : "Overview";
+    if (showingOverview) renderOverview(); else { renderFocus(); focus.focus(); }
+  }
+  function applyLightbox() {
+    lightboxImage.classList.toggle("actual", lightboxMode !== "fit");
+    if (lightboxMode === "fit") { lightboxImage.style.removeProperty("width"); lightboxImage.style.removeProperty("height"); } else if (lightboxImage.naturalWidth) { lightboxImage.style.width = Math.round(lightboxImage.naturalWidth * lightboxScale) + "px"; lightboxImage.style.height = Math.round(lightboxImage.naturalHeight * lightboxScale) + "px"; }
+    document.getElementById("lightbox-zoom").textContent = Math.round(lightboxScale * 100) + "%";
+  }
+  function openLightbox(src, alt) {
+    lastFocus = document.activeElement;
+    lightbox.hidden = false;
+    document.body.classList.add("modal-open");
+    lightboxImage.onload = applyLightbox;
+    lightboxImage.src = src;
+    lightboxImage.alt = alt || "painting";
+    lightboxLabel.textContent = alt || "painting";
+    lightboxMode = "fit";
+    lightboxScale = 1;
+    applyLightbox();
+    document.getElementById("lightbox-close").focus();
+  }
+  function closeLightbox() {
+    lightbox.hidden = true;
+    document.body.classList.remove("modal-open");
+    lightboxImage.removeAttribute("src");
+    if (lastFocus && lastFocus.focus) lastFocus.focus();
+  }
+  document.getElementById("previous-case").addEventListener("click", function () { move(-1); });
+  document.getElementById("next-case").addEventListener("click", function () { move(1); });
+  caseSelect.addEventListener("change", function (event) { index = Number(event.target.value); showFocusedCase(); });
+  document.getElementById("overview-toggle").addEventListener("click", toggleOverview);
+  document.getElementById("lightbox-close").addEventListener("click", closeLightbox);
+  document.getElementById("lightbox-fit").addEventListener("click", function () { lightboxMode = "fit"; lightboxScale = 1; applyLightbox(); });
+  document.getElementById("lightbox-actual").addEventListener("click", function () { lightboxMode = "actual"; lightboxScale = 1; applyLightbox(); });
+  document.getElementById("lightbox-minus").addEventListener("click", function () { lightboxMode = "actual"; lightboxScale = Math.max(.25, lightboxScale - .25); applyLightbox(); });
+  document.getElementById("lightbox-plus").addEventListener("click", function () { lightboxMode = "actual"; lightboxScale = Math.min(4, lightboxScale + .25); applyLightbox(); });
+  lightbox.addEventListener("click", function (event) { if (event.target === lightbox) closeLightbox(); });
+  document.addEventListener("keydown", function (event) {
+    if (!lightbox.hidden) {
+      if (event.key === "Escape") { event.preventDefault(); closeLightbox(); return; }
+      if (event.key === "Tab") {
+        var modalItems = Array.prototype.slice.call(lightbox.querySelectorAll("button, [href], input, select, textarea, [tabindex]:not([tabindex=\"-1\"])"));
+        if (modalItems.length) { var first = modalItems[0]; var last = modalItems[modalItems.length - 1]; if (!lightbox.contains(document.activeElement)) { event.preventDefault(); first.focus(); } else if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); } else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); } }
+      }
+      return;
+    }
+    var target = event.target;
+    if (target && (target.isContentEditable || ["INPUT", "SELECT", "TEXTAREA"].indexOf(target.tagName) !== -1)) return;
+    if (event.key === "ArrowLeft") { event.preventDefault(); move(-1); } else if (event.key === "ArrowRight") { event.preventDefault(); move(1); }
+  });
+  var contactLinks = document.getElementById("contact-links");
+  contactLinks.innerHTML = (manifest.contact_sheets || []).map(function (sheet) { return '<a href="' + esc(sheet.file) + '">' + esc(sheet.file) + " · " + esc(sheet.sha256) + "</a>"; }).join("") || "No contact sheets recorded.";
+  setSummary(); setSelectors(); renderFocus();
+}());
+</script>
+</body>
+</html>
+'''
+    return template.replace("__MANIFEST_DATA__", data)
 
 def build(args: argparse.Namespace) -> dict[str, Any]:
     manifest_path = args.manifest.resolve()

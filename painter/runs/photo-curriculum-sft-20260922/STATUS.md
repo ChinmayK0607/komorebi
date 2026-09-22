@@ -52,3 +52,7 @@ Archive on node: 1,647,090,298 bytes, 2,679 files, SHA256 b986c2e67399232ea88198
 The user explicitly requested cleanup of the idle GPU pod. Both devices showed 0% utilization, 0 MiB memory, and no GPU processes. The painting pod was terminated and the provider listing confirmed no active pods. The last observed provider subtotal was $24.32 shortly before release (final elapsed estimate about $24.50; not a final invoice). No recurring or scheduled cleanup was created.
 
 The blocked 1.65 GB raw-evidence archive was never downloaded or locally hash-verified and was lost with the node; do not describe full raw evidence as preserved. Public hash-verified adapters, the complete painting gallery, all28 blind labels, aggregate metrics, training-completion records and reviewed source remain available. This supersedes the earlier pending-permission/allocated-node entries.
+
+## Gallery usability update
+
+The existing review-matched/index.html now uses a large focused reference/candidate viewer, checkpoint selector, case navigation, overview and keyboard-accessible image zoom. Evidence details remain collapsed; images, manifest, judgments and all28 cases are unchanged. The reusable HTML generator is updated. Python/JavaScript syntax and embedded data/asset checks pass. Browser automation could not inspect the file:// page because its URL policy blocks local-file navigation, so no browser visual-validation claim is made.
