@@ -1,0 +1,107 @@
+{
+  "cases": [
+    {
+      "add_generation_prompt": true,
+      "equal": true,
+      "first_mismatch": null,
+      "hf": {
+        "images": 0,
+        "route": "tokenizer.apply_chat_template"
+      },
+      "hf_length": 519,
+      "message_count": 2,
+      "name": "text_only_fresh",
+      "prime": {
+        "images": 0
+      },
+      "prime_length": 519
+    },
+    {
+      "add_generation_prompt": true,
+      "equal": true,
+      "first_mismatch": null,
+      "hf": {
+        "image_grid_thw_shape": [
+          1,
+          3
+        ],
+        "images": 1,
+        "route": "processor.apply_chat_template+processor"
+      },
+      "hf_length": 713,
+      "message_count": 2,
+      "name": "image_fresh",
+      "prime": {
+        "image_item_keys": [
+          [
+            "image_grid_thw",
+            "pixel_values"
+          ]
+        ],
+        "images": 1,
+        "placeholder_ranges": [
+          {
+            "length": 192,
+            "offset": 501
+          }
+        ]
+      },
+      "prime_length": 713
+    },
+    {
+      "add_generation_prompt": true,
+      "equal": true,
+      "first_mismatch": null,
+      "hf": {
+        "image_grid_thw_shape": [
+          3,
+          3
+        ],
+        "images": 3,
+        "route": "processor.apply_chat_template+processor"
+      },
+      "hf_length": 1155,
+      "message_count": 4,
+      "name": "image_multiturn_history",
+      "prime": {
+        "image_item_keys": [
+          [
+            "image_grid_thw",
+            "pixel_values"
+          ],
+          [
+            "image_grid_thw",
+            "pixel_values"
+          ],
+          [
+            "image_grid_thw",
+            "pixel_values"
+          ]
+        ],
+        "images": 3,
+        "placeholder_ranges": [
+          {
+            "length": 192,
+            "offset": 501
+          },
+          {
+            "length": 192,
+            "offset": 735
+          },
+          {
+            "length": 192,
+            "offset": 932
+          }
+        ]
+      },
+      "prime_length": 1155
+    }
+  ],
+  "cpu_only": true,
+  "cuda_visible_devices": "",
+  "image": "/root/painter/runs/scaled-curriculum-20260921/real-pool/raw/coco128/images/train2017/000000000643.jpg",
+  "model": "/root/painter/cache/huggingface/hub/models--Qwen--Qwen3.8-27B/snapshots/1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+  "prime_root": "/root/painter/prime-rl",
+  "schema": "qwen35-prompt-route-parity.v1",
+  "status": "ok"
+}

@@ -340,10 +340,16 @@ def worker(args: argparse.Namespace) -> dict[str, Any]:
         raise ValueError("deadline, poll interval, and max batches must be positive")
     started = time.monotonic()
     processed: list[dict[str, Any]] = []
-    for index in range(1, args.max_batches + 1):
+    poll_index = 0
+    while len(processed) < args.max_batches:
         if time.monotonic() - started >= args.deadline_seconds:
             return {"status": "deadline", "processed": processed}
-        args.batch = f"{args.batch_prefix}-{index:04d}"
+        # Empty polls do not consume the finite work-batch budget. A long RL
+        # run may have no pending requests while its next rollout group is
+        # still rendering; the deadline, rather than max_batches, bounds this
+        # wait.
+        poll_index += 1
+        args.batch = f"{args.batch_prefix}-{poll_index:04d}"
         batch_result = _run_batch_with_transport_retry(
             args, deadline=started + args.deadline_seconds
         )

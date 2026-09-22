@@ -13,7 +13,7 @@ ADAPTER_REVISION="adf687e5b321514eda7be6eab050434fdc8e44ff"
 ADAPTER_PREFIX="photo-curriculum-sft-20260922-balanced/step_512"
 ADAPTER_SHA256="bea72b066986faa1b92b9dc539c710093181ee916b99323e2b2498f318ac1740"
 HF_REPO="CK0607/qwen3.8-27b-brush-painting"
-RUN_NAME="photo-curriculum-rl-20260922"
+RUN_NAME="${PAINTER_RL_RUN_NAME:-photo-curriculum-rl-20260922}"
 FROZEN_SFT_ALIAS="${PAINTER_FROZEN_SFT_ALIAS:-sft-step512}"
 MODEL_DIR="${MODEL_DIR:?set MODEL_DIR to the staged base snapshot}"
 BRUSH_ROOT="${BRUSH_ROOT:-$ROOT/source/brush-rl}"
@@ -78,6 +78,7 @@ export PAINTER_FROZEN_OPPONENT_RENDERER_PYTHON="${PAINTER_FROZEN_OPPONENT_RENDER
 # VF's default reasoning_effort=none before forwarding, while direct vLLM accepts
 # it. Operators may override this for a router with the matching schema.
 export PAINTER_FROZEN_OPPONENT_ENDPOINT="${PAINTER_FROZEN_OPPONENT_ENDPOINT:-http://127.0.0.1:8100/v1}"
+export PAINTER_FROZEN_OPPONENT_CONFIG="${PAINTER_FROZEN_OPPONENT_CONFIG:-$ROOT/frozen-opponent-config.json}"
 export PLAYWRIGHT_BROWSERS_PATH="${PLAYWRIGHT_BROWSERS_PATH:-$ROOT/browsers}"
 export WATERCOLOUR_INIT_ADAPTER="$(cd "$INITIAL_ADAPTER" && pwd -P)"
 export HF_TOKEN_PATH="${HF_TOKEN_PATH:-$ROOT/private/hf-token}"
@@ -105,14 +106,14 @@ mkdir -p "$ROOT/logs" "$ROOT/private" "$PAINTER_RL_CACHE_ROOT"
 chmod 700 "$ROOT/private"
 
 "$PYTHON" - "$ROOT" "$MODEL_DIR" "$WATERCOLOUR_INIT_ADAPTER" "$MANIFEST" \
-  "$BASE_MODEL_REVISION" "$ADAPTER_REVISION" "$ADAPTER_PREFIX" "$ADAPTER_SHA256" <<'PY'
+  "$BASE_MODEL_REVISION" "$ADAPTER_REVISION" "$ADAPTER_PREFIX" "$ADAPTER_SHA256" "$RUN_NAME" <<'PY'
 import hashlib
 import json
 import os
 import sys
 from pathlib import Path
 
-root, model_dir, adapter_dir, manifest, base_revision, adapter_revision, prefix, expected_sha = sys.argv[1:]
+root, model_dir, adapter_dir, manifest, base_revision, adapter_revision, prefix, expected_sha, run_name = sys.argv[1:]
 model = Path(model_dir)
 adapter = Path(adapter_dir)
 weight = adapter / "adapter_model.safetensors"
@@ -130,7 +131,7 @@ if metadata.get("revision") not in (None, base_revision):
     raise SystemExit("initial adapter base revision does not match the pinned model")
 config_hash = hashlib.sha256((model / "config.json").read_bytes()).hexdigest()
 receipt = {
-    "run": "photo-curriculum-rl-20260922",
+    "run": run_name,
     "base_model": "Qwen/Qwen3.8-27B",
     "base_revision": base_revision,
     "base_config_sha256": config_hash,
@@ -156,11 +157,22 @@ if [[ ! -f "$CONFIG" ]]; then
     --num-train-gpus "$NUM_TRAIN_GPUS" --num-infer-gpus "$NUM_INFER_GPUS" \
     --checkpoint-interval 8 --run-name "$RUN_NAME" --prime-root "$PRIME_ROOT" --validate-prime
 fi
+[[ -f "$PAINTER_FROZEN_OPPONENT_CONFIG" ]] || {
+  echo "frozen opponent operational config is missing: $PAINTER_FROZEN_OPPONENT_CONFIG" >&2
+  exit 1
+}
 
 # Use the already-installed pinned package; this is dependency-free and does
 # not mutate the runtime lock.  Prime's own child processes inherit the same
 # source and private-token paths without ever printing the token.
-"$UV_BIN" pip install --python "$PYTHON" --no-deps --no-build-isolation -e "$REPO_ROOT/painter"
+if [[ "${PAINTER_RL_SKIP_EDITABLE_INSTALL:-0}" == "1" ]]; then
+  # Prepare-only validation can use the explicit PYTHONPATH below without
+  # mutating a shared Prime environment. Normal runs retain the reviewed
+  # editable install behavior.
+  printf '%s\n' 'Skipping editable painter install (prepare-only mode).'
+else
+  "$UV_BIN" pip install --python "$PYTHON" --no-deps --no-build-isolation -e "$REPO_ROOT/painter"
+fi
 
 # Exercise the exact installed VF data serializer before starting any owned
 # GPU process. The orchestrator ships task_data over RPC and the env server
@@ -202,6 +214,14 @@ print(json.dumps({
     "rl_wire_fields": len(wire),
 }, sort_keys=True))
 PY
+
+# Remote prepare-only validation must exercise the installed VF serializer,
+# adapter/token paths, and config imports without starting telemetry, servers,
+# or Prime.  Keep this exit before every owned GPU process.
+if [[ "${PAINTER_RL_PREFLIGHT_ONLY:-0}" == "1" ]]; then
+  printf '%s\n' '{"status":"preflight_passed","training_started":false}'
+  exit 0
+fi
 
 TELEMETRY_PID=""
 RL_PID=""

@@ -510,7 +510,7 @@ def generate_frozen_opponent(spec: OpponentSpec) -> Path | Mapping[str, Any]:
         except (OSError, json.JSONDecodeError) as exc:
             raise OpponentUnavailable(f"frozen opponent config is unreadable: {exc}") from exc
     limits = dict(config.get("operational_limits") or {})
-    episode_timeout = int(limits.get("episode_timeout_seconds", 1800))
+    episode_timeout = int(limits.get("episode_timeout_seconds", 3600))
     render_timeout = int(limits.get("render_timeout_seconds", 180))
     work = Path(spec.work_root).resolve()
     work.mkdir(parents=True, exist_ok=True)

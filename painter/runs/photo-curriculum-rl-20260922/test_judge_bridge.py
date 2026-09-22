@@ -112,14 +112,14 @@ class JudgeBridgeTests(unittest.TestCase):
         with TemporaryDirectory() as temp:
             args = self._worker_args(temp)
             timeout = subprocess.TimeoutExpired(["ssh", "node.example"], 120)
-            probe_clear = SimpleNamespace(returncode=1, args=["ssh"], stdout=b"", stderr=b"")
+            probe_clear = SimpleNamespace(returncode=0, args=["ssh"], stdout=b"", stderr=b"")
             with patch.object(
                 MODULE, "pull", return_value={"batch": "test-batch-0001", "status": "no_pending_work"}
             ), patch.object(MODULE.subprocess, "run", side_effect=[timeout, probe_clear]) as remote_run, patch.object(
                 MODULE.time, "sleep"
             ) as sleep:
                 result = MODULE.worker(args)
-            self.assertEqual(result["status"], "max_batches")
+            self.assertEqual(result["status"], "run_exit")
             self.assertEqual(remote_run.call_count, 2)
             self.assertEqual(sleep.call_args_list[0].args, (2.0,))
 

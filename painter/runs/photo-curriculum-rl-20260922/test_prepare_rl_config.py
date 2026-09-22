@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 from pathlib import Path
 import tempfile
 import tomllib
@@ -37,6 +38,12 @@ class PhotoRLConfigTests(unittest.TestCase):
             "max_inflight": 64,
         })
         self.assertEqual(config["inference"]["vllm"]["max_num_seqs"], 16)
+        source = config["orchestrator"]["train"]["source"][0]
+        self.assertEqual(source["env"]["agent"]["timeout"], {
+            "rollout": 7200,
+            "scoring": 6300,
+        })
+        self.assertEqual(source["env"]["timeout"]["episode"], 13600)
         taskset = config["orchestrator"]["train"]["source"][0]["env"]["taskset"]
         self.assertEqual(taskset["manifest"], "source-manifest.json")
         self.assertEqual(taskset["expected_count"], 2486)
@@ -45,6 +52,7 @@ class PhotoRLConfigTests(unittest.TestCase):
         self.assertEqual(taskset["opponent_model_alias"], "sft-step512")
         self.assertEqual(taskset["opponent_generator"], "frozen_opponent:generate_frozen_opponent")
         self.assertEqual(taskset["max_turns"], 6)
+        self.assertEqual(taskset["opponent_lock_timeout_seconds"], 4200)
         self.assertEqual(config["orchestrator"]["train"]["sampling"]["max_completion_tokens"], 8192)
 
     def test_horizon_is_extensible_but_bounded(self):
@@ -78,10 +86,12 @@ class PhotoRLConfigTests(unittest.TestCase):
             output = Path(temp) / "native-rl.toml"
             message = MODULE.write_config(output, config, validate_prime=True)
             parsed = tomllib.loads(output.read_text())
+            limits = json.loads((output.parent / "frozen-opponent-config.json").read_text())
 
         self.assertEqual(message, "stub accepted after normalization")
         self.assertEqual(config["trainer"]["model"]["compile"], "None")
         self.assertEqual(parsed["trainer"]["model"]["compile"], "None")
+        self.assertEqual(limits["operational_limits"]["episode_timeout_seconds"], 3600)
 
 
 if __name__ == "__main__":

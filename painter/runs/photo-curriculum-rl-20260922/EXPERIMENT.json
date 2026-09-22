@@ -1,6 +1,6 @@
 {
   "run": "photo-curriculum-rl-20260922",
-  "status": "production_frozen_baseline_prewarm_running",
+  "status": "running_first_optimizer_update_verified",
   "hypothesis": "Terminal visual-preference RL over full-history paint/inspect/revise episodes improves frozen midpoint512 painting quality on matched development references.",
   "initializer": {
     "base": "Qwen/Qwen3.8-27B",
@@ -35,7 +35,14 @@
     "max_off_policy_steps": 1,
     "checkpoint_interval": 8,
     "speed_reward": false,
-    "vllm_max_num_seqs": 16
+    "vllm_max_num_seqs": 16,
+    "operational_timeouts_seconds": {
+      "rollout": 7200,
+      "scoring": 6300,
+      "episode": 13600,
+      "frozen_episode": 3600,
+      "opponent_lock": 4200
+    }
   },
   "judge": {
     "model": "gpt-5.6-luna",
@@ -49,7 +56,9 @@
     "invalid_model_canvas_reward": 0,
     "valid_candidate_invalid_anchor_reward": 1,
     "service_failure_reward": null,
-    "frozen_endpoint_route": "direct vLLM, operator-configurable; avoids incompatible pinned router request schema"
+    "frozen_endpoint_route": "direct vLLM, operator-configurable; avoids incompatible pinned router request schema",
+    "finite_worker_deadline_seconds": 172800,
+    "finite_worker_handoff": "Replaced original eight-hour worker at empty queue boundary after 37 completed requests; no assigned/pending requests; unique batch prefix; no scheduled automation."
   },
   "hardware": {
     "gpu_count": 2,
@@ -90,29 +99,100 @@
       "pipeline_saturated": false,
       "trainer_state": "waiting for first generated and scored batch"
     },
-    "provider_subtotal_usd_at_latest_check": 5.45,
-    "provider_uptime_at_latest_check": "2.3h",
-    "provider_latest_check_utc": "2026-09-22 10:08"
+    "provider_subtotal_usd_at_latest_check": 7.71,
+    "provider_uptime_at_latest_check": "3.2h",
+    "provider_latest_check_utc": "2026-09-22 11:04",
+    "current_generation_window": {
+      "start_utc": "2026-09-22 10:23:44.868",
+      "end_utc": "2026-09-22 11:06:15.580",
+      "samples_per_gpu": 256,
+      "sample_interval_seconds": 10,
+      "inference_mean_utilization_percent": 99.36,
+      "trainer_mean_utilization_percent": 14.61,
+      "inference_nonzero_fraction": 0.9961,
+      "trainer_nonzero_fraction": 0.1523,
+      "pipeline_saturated": false
+    },
+    "first_batch_processing_window": {
+      "start_utc": "2026-09-22 10:59:15.459",
+      "end_utc": "2026-09-22 11:06:15.580",
+      "samples_per_gpu": 43,
+      "sample_interval_seconds": 10,
+      "inference_mean_utilization_percent": 99.84,
+      "trainer_mean_utilization_percent": 85.33,
+      "inference_nonzero_fraction": 1.0,
+      "trainer_nonzero_fraction": 0.8837,
+      "scope": "first update processing only; excludes earlier trainer wait"
+    }
   },
   "checkpoints": {
     "repo": "CK0607/qwen3.8-27b-brush-painting",
     "namespace": "photo-curriculum-rl-20260922",
     "public_required": true,
     "remote_hash_verification_required": true,
-    "new_revisions": [],
+    "new_revisions": [
+      {
+        "step": 1,
+        "revision": "cc15eed54edd25b786b069ca6d236b5956b7dd52",
+        "path": "photo-curriculum-rl-20260922/step_1",
+        "weight_sha256": "6d8ea82afe4702c5b4f9a86415b80ee94dbe325bf9db5af1955c03ef1db9f600",
+        "public": true,
+        "remote_hash_verified": true,
+        "kind": "portable adapter copied from completed immutable native broadcast; no optimizer state",
+        "anonymous_config_download_hash_verified": true
+      }
+    ],
     "anonymous_repository_access_verified": true
   },
   "validation": {
     "prime_native_dry_run": "passed 2026-09-22 08:32:53 UTC",
     "luna_identity_control": "tie; actual directly attached images",
-    "native_gpu_update_verified": false,
+    "native_gpu_update_verified": true,
     "actual_verifier_task_wire_roundtrip": "passed on Linux node; RL data type and frozen opponent fields preserved",
     "local_targeted_tests": 42,
     "initial_adapter_exact_tensor_matches": 992,
     "initial_adapter_parameters": 116727808,
     "direct_frozen_vllm_http_probe": "HTTP200; prompt15 completion1; reasoning_effort=none and enable_thinking=false",
-    "production_first_frozen_episode_before_candidate_admission": "implemented; pending actual successful execution",
-    "old_frozen_cache": "quarantined; cannot reuse receipts from renderer-runtime failures"
+    "production_first_frozen_episode_before_candidate_admission": "completed six turns at 10:14:34 UTC; genuine model-invalid final; cache retained, no service failure",
+    "old_frozen_cache": "quarantined; cannot reuse receipts from renderer-runtime failures",
+    "tokenizer_route_parity": {
+      "status": "passed",
+      "node_cpu_only": true,
+      "cases": {
+        "text_only_fresh": 519,
+        "image_fresh": 713,
+        "image_multiturn_history": 1155
+      },
+      "meaning": "Exact Prime and pinned HF token ID parity on three representative histories; not exhaustive template validation",
+      "evidence": "diagnostics/qwen35-route-parity.json"
+    },
+    "parent_judge_spotcheck": {
+      "pair_id": "615a140c55e2f6355c0db93f36c6a2568294db6b2be6260fbaf4380763fd6405",
+      "decision": "agree B",
+      "scope": "one reference/A/B triplet viewed directly; stronger flask proportions and texture; not judge accuracy estimate"
+    },
+    "first_update": {
+      "tensor_count": 992,
+      "changed_tensors": 992,
+      "changed_elements": 39223672,
+      "finite": true,
+      "loss_mean": 0.0020205213222652674,
+      "gradient_norm": 0.0166015625,
+      "mismatch_kl_mean": 0.0005136285326443613,
+      "training_tokens_per_second": 1006.6889206867064,
+      "time_step_seconds_including_batch_wait": 2729.3716128217056,
+      "time_wait_for_batch_seconds": 2107.3864013925195,
+      "time_forward_backward_seconds": 618.4552022041753,
+      "time_broadcast_seconds": 0.9268348310142756,
+      "effective_first_batch_tokens": 587844,
+      "quality_improvement_claim": false
+    },
+    "launcher_tests": {
+      "focused_pure_tests_passed": 34,
+      "node_prepare_only": "passed; actual installed VF wire, pinned model/adapter/config/manifest validation; no new GPU process or environment install",
+      "node_preflight_identity": "1e70f9b484a5aef45b46a1e158f4a96262eb203160eefa5569d0b5188dccf923",
+      "new_remote_launcher_full_training_invocation": "not exercised; active run uses earlier launch path"
+    }
   },
   "failures": [
     "Fresh setup exposed public SSH submodule URLs and an incomplete dependency checkout; fixed HTTPS/pinned checkout bootstrap.",
@@ -126,16 +206,23 @@
     "Frozen deterministic seeds used unsigned64 values beyond vLLM signed64 range; mask to63bits and validate all explicitseeds.",
     "Frozen renderer interpreter path resolution dereferenced its virtual environment executable into systemPython withoutPlaywright. Preserve executable symlinks. Runtime error receipts had incorrectly been classified as model-invalid; now they propagate service failures. No optimizer update verified. Quarantine old frozen cache before restart.",
     "Observed KVcache98.6%,24preemptions,29running+3waiting and recentgeneration146.7tokens/s. Reduce simultaneous decoding32to16 while retaining batch32/group8/context32768/turncap6.",
-    "Finite local judgeworker exited on SSH255 before producinglabels; add bounded retries for transienttransport failures."
+    "Finite local judgeworker exited on SSH255 before producinglabels; add bounded retries for transienttransport failures.",
+    "Inherited rollout timeout1200 seconds was too short for long six-turn queued generation; stopped just-admitted batch before updates, preserved attempt, increased operational timeouts and relaunched using cached baseline.",
+    "Several 180-second render timeouts were operationally excluded; do not count as zero visual reward.",
+    "First optimizer step logged a transient CUDA allocator OOM warning but recovered and completed with finite parameters; peak92.8GiB leaves little headroom. No fatal OOM observed.",
+    "Isolated remote launcher preparation initially misparsed multiline JSON; fixed and real-node preflight rerun passed. Active training unaffected."
   ],
   "limitations": [
-    "Rented hardware before preparation was complete; provider reported 2.3 hours / $5.45 at the latest check, with zero verified optimizer updates.",
+    "Paid setup began before integration was working: provider subtotal $5.45 at10:08UTC with zero updates. First update completed11:09:03UTC. Latest observed subtotal $7.71 at11:04UTC.",
     "No matched RL quality result exists yet.",
-    "28 photo and 240 procedural development references were used in previous experiments; they are not untouched test data."
+    "28 photo and 240 procedural development references were used in previous experiments; they are not untouched test data.",
+    "One optimizer update and a finite changed adapter establish pipeline operation, not visual improvement.",
+    "Reported Prime MFU is not hardware-accurate: trainer fell back to A100 peak FLOPS for RTX PRO6000; use measured utilization and token throughput.",
+    "New launcher has passed real-node prepare-only on this prepared two-GPU profile; arbitrary cold-node bootstrap and optimizer resume are not validated."
   ],
   "source_file_sha256": {
     "painter/contract.py": "0c77f0ed4bd5cad3121918d27495e3aef780dcb84ff0dd51cf61c3ffdd2ffaa0",
-    "painter/frozen_opponent.py": "6fa089c00f138f5f73fa256a653af6f3d34933e4633c59e6401279e3f3645d95",
+    "painter/frozen_opponent.py": "aa82977920e0ccdbb43c3cd3c265a27dc57cf25f9d054345ae013da8807cac2c",
     "painter/native_painting.py": "dea9ea9cbba7da7249d2cbaaeb317dc3a645e34f72b50376677ea6e1fc51c43a",
     "painter/native_painting_renderer.py": "751a3cb0e4f2eef038d8e681ca0f6c56325d1a41f0c486d8d3b8b7dcac2b424b",
     "painter/native_painting_rl.py": "71c33fe52f0cd81bb9afd73d1aee5f28faec11176af96ee2cc75bc443703f32f",
@@ -143,8 +230,8 @@
     "painter/runs/photo-curriculum-rl-20260922/download_initial_adapter.py": "5212493f4e29b1ffc6523f887ca1ac44032dbdabafc9fc7be2012741a47ec382",
     "painter/runs/photo-curriculum-rl-20260922/judge_bridge.py": "cf1dd576666672ab7a5c98113e013d0d585d238698c2c8f3876fd7b01a7ec9f2",
     "painter/runs/photo-curriculum-rl-20260922/judge_queue.py": "b3b8fdc7c33989fda98c4c162f72df5852e3e4c916d3d907f5687b689c093fd5",
-    "painter/runs/photo-curriculum-rl-20260922/launch_rl.sh": "5e5c448fce9868d310f13fbe18118373a021bf3353b016b246979cd54caad5a5",
-    "painter/runs/photo-curriculum-rl-20260922/prepare_rl_config.py": "d304c2eeabbd552de08ea2d3dc765a856f34910cbf485a3f97a67a28c99cb115",
+    "painter/runs/photo-curriculum-rl-20260922/launch_rl.sh": "4711a547be9567b619f6493784865ad68eb27119812205ae90cccb0e82110851",
+    "painter/runs/photo-curriculum-rl-20260922/prepare_rl_config.py": "a65cace6a79f3d26ab817afd365267d946b1f6a938a5d538a0ef836ee6f75998",
     "painter/runs/photo-curriculum-rl-20260922/prepare_rl_data.py": "224d23d489d39a4bb22e63565fbf62d12c78a28a5b50a817a908a6a12b68fcb5",
     "painter/runs/photo-curriculum-rl-20260922/run_from_sft.py": "a7774e75a898371f313ea810f70fe548ad5dd7e059180e2942ccfac4d9f1bb21",
     "painter/runs/photo-curriculum-rl-20260922/setup_rl_runtime.sh": "213e74a28b88c138425e736406e8767299194ab1931b06cad051a209670d5552",
@@ -156,13 +243,25 @@
   },
   "source_commit": "ff70943",
   "progress": {
-    "observed_at_utc": "2026-09-22 10:09",
-    "phase": "production frozen-baseline episode; model correction loop",
-    "completed_render_attempts": 3,
-    "valid_render_attempts": 0,
-    "judge_requests": 0,
-    "optimizer_updates_verified": 0,
-    "trainer_started_current_attempt": false
+    "observed_at_utc": "2026-09-22 11:13",
+    "phase": "first update complete, live rollouts continue",
+    "optimizer_updates_verified": 1,
+    "first_update_utc": "2026-09-22 11:09:03",
+    "inference_adapter_reload_utc": "2026-09-22 11:09:04",
+    "judge_requests_completed_at_1108": 37,
+    "judge_orientation_labels_at_1108": 74,
+    "next_batch_admitted_at_1111": 19,
+    "next_batch_target": 32
   },
-  "deployed_node_bundle_sha256": "94fe0e840ad9f981b112d6eca1aa5d03eab3559b6445ede9f24f96c49039c133"
+  "deployed_node_bundle_sha256": "94fe0e840ad9f981b112d6eca1aa5d03eab3559b6445ede9f24f96c49039c133",
+  "deployed_timeout_patch_sha256": "8264f26631cec0afc88d5b355f0fe993478ffcaeaf2fa2a8ce06af11ba4500c5",
+  "active_source_identity_note": "Base deployed bundle plus timeout patch identify the active Linux run. New reviewed controller source was staged only into an isolated prepare-only directory, not deployed over the live run.",
+  "current_reviewed_source_sha256": {
+    "painter/rl_entrypoint.py": "f30a4a0b38fb276f224ca4d0be9f1b7db192a8e344127de028f1fe1ece9d92d1",
+    "painter/rl_remote.py": "e9f9c384cea6ac434662eae9008b44d9c167e4d58cd645c546bfdf0b734e7e30",
+    "painter/runs/photo-curriculum-rl-20260922/judge_bridge.py": "9552b8b37b76b83c579d19cc4a9fa38514a179a273d79f21bb33bc129a8371ab",
+    "painter/runs/photo-curriculum-rl-20260922/launch_rl.sh": "a90dacd1ee0370b0e4891271b992e24f0a104144a8e26cfdc430a4b6be956cff",
+    "painter/runs/photo-curriculum-rl-20260922/prepare_rl_config.py": "9733bea0c0439547ccf95805ed0e2731cbf91ea37a71c5133556d4d1da269a7a"
+  },
+  "next_decision": "Continue finite32-update run with public checkpoints every8 updates; compare matched six-turn frozen-midpoint and RL development paintings before any visual-quality claim. Keep memory warning, rendering exclusions, and long initial batch wait visible."
 }

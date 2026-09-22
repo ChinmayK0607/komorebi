@@ -1,6 +1,6 @@
 # Photo curriculum RL
 
-Status: retrying launch after setup failures; no RL optimizer update verified. See EXPERIMENT.json for actual outcomes and failures.
+Status: live RL; first finite optimizer update completed at 11:09:03 UTC and inference reloaded it at 11:09:04. Step 1 is public and hash-verified. No matched visual-quality result yet. See EXPERIMENT.json for measured timings, utilization, failures, and source identities.
 
 The user requested RL on the same data after inspecting the photo-curriculum SFT paintings. The hypothesis is that training complete paint → inspect → revise episodes with a terminal visual preference reward improves the midpoint SFT model's reference fidelity and painting quality. Speed optimization remains deferred.
 
