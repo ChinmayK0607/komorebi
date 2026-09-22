@@ -1,0 +1,563 @@
+{
+  "status": "training_complete_visual_evaluation_pending",
+  "exit_code": 0,
+  "completed_updates": 1024,
+  "all_recorded_losses_finite": true,
+  "nan_loss_count": 0,
+  "validation": [
+    {
+      "step": 1,
+      "loss": 0.8708562254905701,
+      "unix_time": 1790028946.359713
+    },
+    {
+      "step": 64,
+      "loss": 0.6106312870979309,
+      "unix_time": 1790029556.2410855
+    },
+    {
+      "step": 128,
+      "loss": 0.4083993434906006,
+      "unix_time": 1790030266.3033018
+    },
+    {
+      "step": 192,
+      "loss": 0.2707373797893524,
+      "unix_time": 1790030934.6893702
+    },
+    {
+      "step": 256,
+      "loss": 0.0963146835565567,
+      "unix_time": 1790031630.3357394
+    },
+    {
+      "step": 320,
+      "loss": 0.05278554931282997,
+      "unix_time": 1790032287.7481816
+    },
+    {
+      "step": 384,
+      "loss": 0.04352154955267906,
+      "unix_time": 1790032961.55764
+    },
+    {
+      "step": 448,
+      "loss": 0.03893079608678818,
+      "unix_time": 1790033629.2511094
+    },
+    {
+      "step": 512,
+      "loss": 0.03695353493094444,
+      "unix_time": 1790034274.0005872
+    },
+    {
+      "step": 576,
+      "loss": 0.03673943132162094,
+      "unix_time": 1790034939.9781802
+    },
+    {
+      "step": 640,
+      "loss": 0.037086207419633865,
+      "unix_time": 1790035615.815755
+    },
+    {
+      "step": 704,
+      "loss": 0.03589711710810661,
+      "unix_time": 1790036288.4642937
+    },
+    {
+      "step": 768,
+      "loss": 0.03513723239302635,
+      "unix_time": 1790036961.9794478
+    },
+    {
+      "step": 832,
+      "loss": 0.03597468137741089,
+      "unix_time": 1790037622.552993
+    },
+    {
+      "step": 896,
+      "loss": 0.03426225855946541,
+      "unix_time": 1790038306.0693913
+    },
+    {
+      "step": 960,
+      "loss": 0.03429001197218895,
+      "unix_time": 1790038975.2678392
+    },
+    {
+      "step": 1024,
+      "loss": 0.033264242112636566,
+      "unix_time": 1790039657.445979
+    }
+  ],
+  "checkpoint_receipts": [
+    {
+      "repo_id": "CK0607/qwen3.8-27b-brush-painting",
+      "private": false,
+      "commit": "c8063b8df4fc4c38a0fd05051791cdce32f51573",
+      "path": "photo-curriculum-sft-20260922-balanced/step_0",
+      "url": "https://huggingface.co/CK0607/qwen3.8-27b-brush-painting/tree/c8063b8df4fc4c38a0fd05051791cdce32f51573/photo-curriculum-sft-20260922-balanced/step_0",
+      "verified": true,
+      "files": {
+        "adapter_config.json": {
+          "sha256": "1bb3ad53b417ad64b90adba4faa05cc1a93d7725468ce529c015135fc602d942",
+          "bytes": 479
+        },
+        "adapter_model.safetensors": {
+          "sha256": "15b1e2df8be841db534a47f3a44a8f7ee87e18ed809de5d878e0df993bacaf76",
+          "bytes": 233590600
+        },
+        "validation.json": {
+          "sha256": "387e9b0e83d6cebee753b3010e9aebf2a08cbf7cde9ba0ec6b2878a9c11114dd",
+          "bytes": 733
+        },
+        "upload-manifest.json": {
+          "sha256": "2fce9edab92b75deb006f309c43dd9d9eca1474352ce087a729baa97e40a8ff6",
+          "bytes": 608
+        }
+      }
+    },
+    {
+      "repo_id": "CK0607/qwen3.8-27b-brush-painting",
+      "private": false,
+      "commit": "b08effd090f8aa8ea5e05094f08588fb5237e950",
+      "path": "photo-curriculum-sft-20260922-balanced/step_64",
+      "url": "https://huggingface.co/CK0607/qwen3.8-27b-brush-painting/tree/b08effd090f8aa8ea5e05094f08588fb5237e950/photo-curriculum-sft-20260922-balanced/step_64",
+      "verified": true,
+      "files": {
+        "adapter_config.json": {
+          "sha256": "1bb3ad53b417ad64b90adba4faa05cc1a93d7725468ce529c015135fc602d942",
+          "bytes": 479
+        },
+        "adapter_model.safetensors": {
+          "sha256": "cbd4af889534218466369330727c4c08cacec667b65b028918046c954d68810a",
+          "bytes": 233590600
+        },
+        "validation.json": {
+          "sha256": "11a5cfe0d944e72d41e278d562e3e9bec1f505ed8752e47ee65efa49e219c9b1",
+          "bytes": 481
+        },
+        "upload-manifest.json": {
+          "sha256": "fb16bbaeead12bb42a54f375e6cdcdf926c95f43357c01dea2d0fd3a5f758d62",
+          "bytes": 609
+        }
+      }
+    },
+    {
+      "repo_id": "CK0607/qwen3.8-27b-brush-painting",
+      "private": false,
+      "commit": "7702b56e104e3fe766901261c3e98070466e83df",
+      "path": "photo-curriculum-sft-20260922-balanced/step_128",
+      "url": "https://huggingface.co/CK0607/qwen3.8-27b-brush-painting/tree/7702b56e104e3fe766901261c3e98070466e83df/photo-curriculum-sft-20260922-balanced/step_128",
+      "verified": true,
+      "files": {
+        "adapter_config.json": {
+          "sha256": "1bb3ad53b417ad64b90adba4faa05cc1a93d7725468ce529c015135fc602d942",
+          "bytes": 479
+        },
+        "adapter_model.safetensors": {
+          "sha256": "8a3a56224435a1c5907ba65cc83dc85e9b6c8253902d91a47f3c1c25a3f55d22",
+          "bytes": 233590600
+        },
+        "validation.json": {
+          "sha256": "f6c44abc0a768847b59ad504065d116d9dfadb34d7757c0d260210eb0d82cab3",
+          "bytes": 482
+        },
+        "upload-manifest.json": {
+          "sha256": "ba88446aff6810a8a0ae4b6adc6e1a6e9fbb144a964490fc710b1164cfc40740",
+          "bytes": 610
+        }
+      }
+    },
+    {
+      "repo_id": "CK0607/qwen3.8-27b-brush-painting",
+      "private": false,
+      "commit": "148fc084e824fea8342817543c645d29248ce520",
+      "path": "photo-curriculum-sft-20260922-balanced/step_192",
+      "url": "https://huggingface.co/CK0607/qwen3.8-27b-brush-painting/tree/148fc084e824fea8342817543c645d29248ce520/photo-curriculum-sft-20260922-balanced/step_192",
+      "verified": true,
+      "files": {
+        "adapter_config.json": {
+          "sha256": "1bb3ad53b417ad64b90adba4faa05cc1a93d7725468ce529c015135fc602d942",
+          "bytes": 479
+        },
+        "adapter_model.safetensors": {
+          "sha256": "c8ffc92bbb04ee95cbcf3b85bdff68de591c00396a6357e76e9c7293ddd0d8d0",
+          "bytes": 233590600
+        },
+        "validation.json": {
+          "sha256": "249e62c6225230f191b45b304fb1bb60f034b766463bba6b32baba885b062299",
+          "bytes": 482
+        },
+        "upload-manifest.json": {
+          "sha256": "fc90b6cbc927475b5c1e7a3975830d62a094267c5ef8b4990204515046302431",
+          "bytes": 610
+        }
+      }
+    },
+    {
+      "repo_id": "CK0607/qwen3.8-27b-brush-painting",
+      "private": false,
+      "commit": "47e019db31edfbed9b7d1a73f6443cb933207c88",
+      "path": "photo-curriculum-sft-20260922-balanced/step_256",
+      "url": "https://huggingface.co/CK0607/qwen3.8-27b-brush-painting/tree/47e019db31edfbed9b7d1a73f6443cb933207c88/photo-curriculum-sft-20260922-balanced/step_256",
+      "verified": true,
+      "files": {
+        "adapter_config.json": {
+          "sha256": "1bb3ad53b417ad64b90adba4faa05cc1a93d7725468ce529c015135fc602d942",
+          "bytes": 479
+        },
+        "adapter_model.safetensors": {
+          "sha256": "6a66eabbdb07d392677274f63cb98da1389be02fd42105e939d2085d5b7c64e5",
+          "bytes": 233590600
+        },
+        "validation.json": {
+          "sha256": "899b708ec87f20d6eea2dd645a3b5ef09e4476de451d1312a05c9701d08e51e3",
+          "bytes": 482
+        },
+        "upload-manifest.json": {
+          "sha256": "45342b58f07e33e5e4219ce1cea0ce4bfb32d2f0dc6db2623700c3428f98f731",
+          "bytes": 610
+        }
+      }
+    },
+    {
+      "repo_id": "CK0607/qwen3.8-27b-brush-painting",
+      "private": false,
+      "commit": "7c0828f0ef13d664fbc6ca1095c30d0b8eac7cb0",
+      "path": "photo-curriculum-sft-20260922-balanced/step_320",
+      "url": "https://huggingface.co/CK0607/qwen3.8-27b-brush-painting/tree/7c0828f0ef13d664fbc6ca1095c30d0b8eac7cb0/photo-curriculum-sft-20260922-balanced/step_320",
+      "verified": true,
+      "files": {
+        "adapter_config.json": {
+          "sha256": "1bb3ad53b417ad64b90adba4faa05cc1a93d7725468ce529c015135fc602d942",
+          "bytes": 479
+        },
+        "adapter_model.safetensors": {
+          "sha256": "3476b53a671466bbf262d443d921dd38a0e9dfbda6ece0bf96152ff9c098cd04",
+          "bytes": 233590600
+        },
+        "validation.json": {
+          "sha256": "269307fcb1fbceddad1e98fe7ff6958f215bb14217a7818964948a631fea1c4b",
+          "bytes": 482
+        },
+        "upload-manifest.json": {
+          "sha256": "99c56f426facec04d50e7a26cfa29329e3e7143447deefee49dca02b52dd9a25",
+          "bytes": 610
+        }
+      }
+    },
+    {
+      "repo_id": "CK0607/qwen3.8-27b-brush-painting",
+      "private": false,
+      "commit": "7947c03c08e080e03ca805c8771461d22f0468af",
+      "path": "photo-curriculum-sft-20260922-balanced/step_384",
+      "url": "https://huggingface.co/CK0607/qwen3.8-27b-brush-painting/tree/7947c03c08e080e03ca805c8771461d22f0468af/photo-curriculum-sft-20260922-balanced/step_384",
+      "verified": true,
+      "files": {
+        "adapter_config.json": {
+          "sha256": "1bb3ad53b417ad64b90adba4faa05cc1a93d7725468ce529c015135fc602d942",
+          "bytes": 479
+        },
+        "adapter_model.safetensors": {
+          "sha256": "b2afbda44083ca1a54c40ad2af77dc7445b7d4299f43d1ef48e6818d2dd384db",
+          "bytes": 233590600
+        },
+        "validation.json": {
+          "sha256": "0277c4321293c59aa870f448bb17dce23e468aed2442fec79ff423336ca848a0",
+          "bytes": 482
+        },
+        "upload-manifest.json": {
+          "sha256": "f163e898283aae90b5081a1be79a59217bd4f939eb14ff3d93a1a5f9e2434183",
+          "bytes": 610
+        }
+      }
+    },
+    {
+      "repo_id": "CK0607/qwen3.8-27b-brush-painting",
+      "private": false,
+      "commit": "c3c007056caa071dbbd40b053d9b6f3d1e0cf355",
+      "path": "photo-curriculum-sft-20260922-balanced/step_448",
+      "url": "https://huggingface.co/CK0607/qwen3.8-27b-brush-painting/tree/c3c007056caa071dbbd40b053d9b6f3d1e0cf355/photo-curriculum-sft-20260922-balanced/step_448",
+      "verified": true,
+      "files": {
+        "adapter_config.json": {
+          "sha256": "1bb3ad53b417ad64b90adba4faa05cc1a93d7725468ce529c015135fc602d942",
+          "bytes": 479
+        },
+        "adapter_model.safetensors": {
+          "sha256": "f450598bafc55808642a9567152a74bca436685525feecec4421e17ddee41775",
+          "bytes": 233590600
+        },
+        "validation.json": {
+          "sha256": "01da4f8f59a17eb4e1da81585b11bbfaf987e443371edca2c93ca245c207f6af",
+          "bytes": 482
+        },
+        "upload-manifest.json": {
+          "sha256": "a0518bc4e3e530625144dca2d83b69a2b2917e4e93fcf62f2ff699bb76bf88e6",
+          "bytes": 610
+        }
+      }
+    },
+    {
+      "repo_id": "CK0607/qwen3.8-27b-brush-painting",
+      "private": false,
+      "commit": "adf687e5b321514eda7be6eab050434fdc8e44ff",
+      "path": "photo-curriculum-sft-20260922-balanced/step_512",
+      "url": "https://huggingface.co/CK0607/qwen3.8-27b-brush-painting/tree/adf687e5b321514eda7be6eab050434fdc8e44ff/photo-curriculum-sft-20260922-balanced/step_512",
+      "verified": true,
+      "files": {
+        "adapter_config.json": {
+          "sha256": "1bb3ad53b417ad64b90adba4faa05cc1a93d7725468ce529c015135fc602d942",
+          "bytes": 479
+        },
+        "adapter_model.safetensors": {
+          "sha256": "bea72b066986faa1b92b9dc539c710093181ee916b99323e2b2498f318ac1740",
+          "bytes": 233590600
+        },
+        "validation.json": {
+          "sha256": "6cec9b6bae75ce3bc95e14bab55a872f596f35280bef929b1aa486f5d4359b35",
+          "bytes": 482
+        },
+        "upload-manifest.json": {
+          "sha256": "cc3e0b8fc0e4c36e7dbafc6263832f95c91043b2ceef707b2b1484062d3bb773",
+          "bytes": 610
+        }
+      }
+    },
+    {
+      "repo_id": "CK0607/qwen3.8-27b-brush-painting",
+      "private": false,
+      "commit": "88b4768faf12bc66f417bd22dc7b69679539ee52",
+      "path": "photo-curriculum-sft-20260922-balanced/step_576",
+      "url": "https://huggingface.co/CK0607/qwen3.8-27b-brush-painting/tree/88b4768faf12bc66f417bd22dc7b69679539ee52/photo-curriculum-sft-20260922-balanced/step_576",
+      "verified": true,
+      "files": {
+        "adapter_config.json": {
+          "sha256": "1bb3ad53b417ad64b90adba4faa05cc1a93d7725468ce529c015135fc602d942",
+          "bytes": 479
+        },
+        "adapter_model.safetensors": {
+          "sha256": "de0196f543f219e91bb32bbf3d3c9c53bf148d32604dccd8e4e01b1bc47e1dc7",
+          "bytes": 233590600
+        },
+        "validation.json": {
+          "sha256": "e7203e4f0ccfbc0798285e590ccbad91a7dc9bee716a9976ecd0182353b5d3ae",
+          "bytes": 482
+        },
+        "upload-manifest.json": {
+          "sha256": "e8f4cd99d9f4eb3422dc01ee8e7a8b83a257af11fe4e933ea00379bc22e5a5c4",
+          "bytes": 610
+        }
+      }
+    },
+    {
+      "repo_id": "CK0607/qwen3.8-27b-brush-painting",
+      "private": false,
+      "commit": "fb186250f66ca0804537d191e95be924d38fe47d",
+      "path": "photo-curriculum-sft-20260922-balanced/step_640",
+      "url": "https://huggingface.co/CK0607/qwen3.8-27b-brush-painting/tree/fb186250f66ca0804537d191e95be924d38fe47d/photo-curriculum-sft-20260922-balanced/step_640",
+      "verified": true,
+      "files": {
+        "adapter_config.json": {
+          "sha256": "1bb3ad53b417ad64b90adba4faa05cc1a93d7725468ce529c015135fc602d942",
+          "bytes": 479
+        },
+        "adapter_model.safetensors": {
+          "sha256": "6d1c98eacdcadbff78edf8676b7decfb014fd09855e4f6b03225245173a5480f",
+          "bytes": 233590600
+        },
+        "validation.json": {
+          "sha256": "9e6f7da4cd37a02c09f70da2e737235a3dc2e75c1143eec0379128058b561294",
+          "bytes": 482
+        },
+        "upload-manifest.json": {
+          "sha256": "b415fabb9c47b333e3c456ef9007877723cc9b0a7ffe14b0eb7aad58ca0ed313",
+          "bytes": 610
+        }
+      }
+    },
+    {
+      "repo_id": "CK0607/qwen3.8-27b-brush-painting",
+      "private": false,
+      "commit": "c5e577bf7594b2a33d193f324c9f2eeb536564fb",
+      "path": "photo-curriculum-sft-20260922-balanced/step_704",
+      "url": "https://huggingface.co/CK0607/qwen3.8-27b-brush-painting/tree/c5e577bf7594b2a33d193f324c9f2eeb536564fb/photo-curriculum-sft-20260922-balanced/step_704",
+      "verified": true,
+      "files": {
+        "adapter_config.json": {
+          "sha256": "1bb3ad53b417ad64b90adba4faa05cc1a93d7725468ce529c015135fc602d942",
+          "bytes": 479
+        },
+        "adapter_model.safetensors": {
+          "sha256": "0ff44249a94e685161ca1bbd49c6ab1ddf8b13c781acb76db0b6215f2c71bb2d",
+          "bytes": 233590600
+        },
+        "validation.json": {
+          "sha256": "fd3cecc1923c7ece9d9ef95a7caa8388d7130eddc33229d105969107fdae77d0",
+          "bytes": 482
+        },
+        "upload-manifest.json": {
+          "sha256": "4a8f4331feee51e2f83928cf60b45b239554b640da86ff80b652568a1be80922",
+          "bytes": 610
+        }
+      }
+    },
+    {
+      "repo_id": "CK0607/qwen3.8-27b-brush-painting",
+      "private": false,
+      "commit": "7d4b8c0574574ee2c611faceb3bd46d1c0be25bf",
+      "path": "photo-curriculum-sft-20260922-balanced/step_768",
+      "url": "https://huggingface.co/CK0607/qwen3.8-27b-brush-painting/tree/7d4b8c0574574ee2c611faceb3bd46d1c0be25bf/photo-curriculum-sft-20260922-balanced/step_768",
+      "verified": true,
+      "files": {
+        "adapter_config.json": {
+          "sha256": "1bb3ad53b417ad64b90adba4faa05cc1a93d7725468ce529c015135fc602d942",
+          "bytes": 479
+        },
+        "adapter_model.safetensors": {
+          "sha256": "eea543beb6adcc771efa5f227670660e3b821e7ec35fcc39718acb6a6b2e8b6e",
+          "bytes": 233590600
+        },
+        "validation.json": {
+          "sha256": "04ccb9e4678525b41603b2233def45400ff845ccd806f4d540c0c8655eee2fd6",
+          "bytes": 482
+        },
+        "upload-manifest.json": {
+          "sha256": "14448116f66f49daba675a10386d8c5755e9f3d8d7b815262383837ce9c8635c",
+          "bytes": 610
+        }
+      }
+    },
+    {
+      "repo_id": "CK0607/qwen3.8-27b-brush-painting",
+      "private": false,
+      "commit": "ded085214ffc7ec8639173f299eed8cc1a30c75c",
+      "path": "photo-curriculum-sft-20260922-balanced/step_832",
+      "url": "https://huggingface.co/CK0607/qwen3.8-27b-brush-painting/tree/ded085214ffc7ec8639173f299eed8cc1a30c75c/photo-curriculum-sft-20260922-balanced/step_832",
+      "verified": true,
+      "files": {
+        "adapter_config.json": {
+          "sha256": "1bb3ad53b417ad64b90adba4faa05cc1a93d7725468ce529c015135fc602d942",
+          "bytes": 479
+        },
+        "adapter_model.safetensors": {
+          "sha256": "ed58a843818ccae8d0f5c295c6f6d3b4bbbe72b2c728302e27f5fd6ad45993c3",
+          "bytes": 233590600
+        },
+        "validation.json": {
+          "sha256": "806904f850d25d5b2efa8dbb0cfdba5cfbdfc645ea4b9635aaa07108b7da2d84",
+          "bytes": 482
+        },
+        "upload-manifest.json": {
+          "sha256": "723dea920330e2647fb34ffc4242ebc7d3cebce50c4fa9d03a0e8b0262e1a4d1",
+          "bytes": 610
+        }
+      }
+    },
+    {
+      "repo_id": "CK0607/qwen3.8-27b-brush-painting",
+      "private": false,
+      "commit": "093a26596a9429a21d52c71c5cf993bcf39cef87",
+      "path": "photo-curriculum-sft-20260922-balanced/step_896",
+      "url": "https://huggingface.co/CK0607/qwen3.8-27b-brush-painting/tree/093a26596a9429a21d52c71c5cf993bcf39cef87/photo-curriculum-sft-20260922-balanced/step_896",
+      "verified": true,
+      "files": {
+        "adapter_config.json": {
+          "sha256": "1bb3ad53b417ad64b90adba4faa05cc1a93d7725468ce529c015135fc602d942",
+          "bytes": 479
+        },
+        "adapter_model.safetensors": {
+          "sha256": "d35ebeaffb5717e57c715bf9dcd48a25fbe89a276f6f8b7150bce2be004d0d47",
+          "bytes": 233590600
+        },
+        "validation.json": {
+          "sha256": "7471e6a9ff4b1354a7c3b2913fa76a769fd18a5fc6212f8d3cc121c0391cd7cd",
+          "bytes": 482
+        },
+        "upload-manifest.json": {
+          "sha256": "78da212d7d7c73a4bd013de95427f38f77bf8dab53fc59ffeed1c014bb7d36bc",
+          "bytes": 610
+        }
+      }
+    },
+    {
+      "repo_id": "CK0607/qwen3.8-27b-brush-painting",
+      "private": false,
+      "commit": "3208917239d10bb6781d0891b20e39bf63097107",
+      "path": "photo-curriculum-sft-20260922-balanced/step_960",
+      "url": "https://huggingface.co/CK0607/qwen3.8-27b-brush-painting/tree/3208917239d10bb6781d0891b20e39bf63097107/photo-curriculum-sft-20260922-balanced/step_960",
+      "verified": true,
+      "files": {
+        "adapter_config.json": {
+          "sha256": "1bb3ad53b417ad64b90adba4faa05cc1a93d7725468ce529c015135fc602d942",
+          "bytes": 479
+        },
+        "adapter_model.safetensors": {
+          "sha256": "0a8c28802df61f8776b7dd109ddfa8be3e4cf37a65a07caac378e78b83f157de",
+          "bytes": 233590600
+        },
+        "validation.json": {
+          "sha256": "edf5fb56eb6ac903d6abd65e7eeb54d9e71399562278e459bf7af9752a87c15a",
+          "bytes": 482
+        },
+        "upload-manifest.json": {
+          "sha256": "fdaba0608fd853c5269445d29c2441a63bc86d476bcb9d51f4b43069ef125738",
+          "bytes": 610
+        }
+      }
+    },
+    {
+      "repo_id": "CK0607/qwen3.8-27b-brush-painting",
+      "private": false,
+      "commit": "94b97165474a5c0b56bd1eb3e3fc81b710741cca",
+      "path": "photo-curriculum-sft-20260922-balanced/step_1024",
+      "url": "https://huggingface.co/CK0607/qwen3.8-27b-brush-painting/tree/94b97165474a5c0b56bd1eb3e3fc81b710741cca/photo-curriculum-sft-20260922-balanced/step_1024",
+      "verified": true,
+      "files": {
+        "adapter_config.json": {
+          "sha256": "1bb3ad53b417ad64b90adba4faa05cc1a93d7725468ce529c015135fc602d942",
+          "bytes": 479
+        },
+        "adapter_model.safetensors": {
+          "sha256": "9a9caf994f9fb19bec989fa7b341327d4263d39d11566f7853529e74f4240dd0",
+          "bytes": 233590600
+        },
+        "validation.json": {
+          "sha256": "0fd7aa7174ec15fac4a1ea13a203fcda1b85a33c09311ebe4111fd0d21f15542",
+          "bytes": 483
+        },
+        "upload-manifest.json": {
+          "sha256": "21f928070e4676116f7c7c2321c0164611cb2f46920fc281647ba3916a02571e",
+          "bytes": 611
+        }
+      }
+    }
+  ],
+  "gpu_utilization": {
+    "status": "measured",
+    "measurement_window": {
+      "start_utc": "2026-09-21T22:11:52.983236+00:00",
+      "end_utc": "2026-09-22T01:15:33.098998+00:00"
+    },
+    "sample_count": 2196,
+    "denominator": "all parseable nvidia-smi GPU samples in the bounded training process window",
+    "per_gpu": {
+      "0": {
+        "samples": 1098,
+        "mean_utilization_percent": 72.45173041894354,
+        "busy_fraction_at_least_10_percent": 0.9034608378870674
+      },
+      "1": {
+        "samples": 1098,
+        "mean_utilization_percent": 72.99180327868852,
+        "busy_fraction_at_least_10_percent": 0.912568306010929
+      }
+    },
+    "created_utc": "2026-09-22T01:15:33.678104+00:00"
+  },
+  "median_step_seconds_excluding_first": 8.021927058696747,
+  "checkpoint_policy": "public hash verified adapters every64updates,17 includinginitial",
+  "visual_improvement": null
+}

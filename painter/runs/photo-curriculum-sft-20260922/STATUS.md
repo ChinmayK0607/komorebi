@@ -1,6 +1,6 @@
-# Photo curriculum SFT: live run
+# Photo curriculum SFT: training complete
 
-The fresh-base two-GPU training job is active. This is a progress record, not a completed visual result.
+The fresh-base two-GPU training job completed all 1,024 updates successfully at 2026-09-22 01:15 UTC (06:45 IST). This records training completion; rendered visual evaluation is pending.
 
 ## What changed
 
@@ -23,3 +23,9 @@ Matched baseline is complete on all 28 held-out photographs: 4 valid first-paint
 Visual improvement is unknown until saved student checkpoints receive the same evaluation. The next decision compares real-reference fidelity and aesthetics against the immutable base, with failed paintings included. Neither teacher validity nor declining training loss is a visual-quality result. GPU rental rate is $2.38/hour; final utilization, elapsed cost and run results remain pending. No scheduled task was created.
 
 Public trained checkpoint: [step64](https://huggingface.co/CK0607/qwen3.8-27b-brush-painting/tree/b08effd090f8aa8ea5e05094f08588fb5237e950/photo-curriculum-sft-20260922-balanced/step_64).
+
+## Completed training
+
+Exit code 0. All 1,024 reported losses were finite with zero NaN losses. All 17 checkpoints, including initialization, are public and remotely hash-verified. Final procedural validation loss was 0.033264 versus initial 0.870856; this measures prediction of held-out procedural programs, not painting aesthetics or photo generalization. Median step time excluding the first was 8.02 seconds.
+
+Whole-job utilization: GPU 0 averaged 72.45%, GPU 1 averaged 72.99%, with 1,098 samples each during 2026-09-21 22:11:52.983 to 2026-09-22 01:15:33.099 UTC. Busy fractions (at least 10% utilization) were 90.35% and 91.26%. This includes startup, validation and checkpoint work. It excludes the subsequent idle allocation period. At the 04:59 UTC status check, the node remained allocated and both GPUs were idle, approximately 3 hours 44 minutes after completion. The next finite job compares step 512 and step 1,024 with the preserved base first-paint evaluation on all 28 held-out photographs.

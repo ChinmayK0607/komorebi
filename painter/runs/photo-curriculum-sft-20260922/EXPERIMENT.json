@@ -1,6 +1,6 @@
 {
   "run": "photo-curriculum-sft-20260922",
-  "status": "training_in_progress",
+  "status": "training_complete_visual_evaluation_pending",
   "training_started": true,
   "hypothesis": "Complete, rendered, reference-specific demonstrations with diverse structural foundations improve fresh-base photo painting.",
   "base": {
@@ -113,7 +113,7 @@
     "review-labels/sol-batch.json": "8af1f6970a6f275e00e9c4939c3324bb52f1f15dd553fb14c181a311a01b4d17"
   },
   "results": {
-    "completed_updates_observed": 68,
+    "completed_updates_observed": 1024,
     "finite_gradients": true,
     "loss_nan_count": 0,
     "visual_improvement": null,
@@ -370,5 +370,148 @@
     "accrued_estimate_usd": 3.41,
     "scope": "allocation including setup, baseline inference and early training; not final billed cost",
     "as_of_utc": "2026-09-21T22:30:00Z"
+  },
+  "training_completion": {
+    "exit_code": 0,
+    "completed_updates": 1024,
+    "all_recorded_losses_finite": true,
+    "nan_loss_count": 0,
+    "validation": [
+      {
+        "step": 1,
+        "loss": 0.8708562254905701,
+        "unix_time": 1790028946.359713
+      },
+      {
+        "step": 64,
+        "loss": 0.6106312870979309,
+        "unix_time": 1790029556.2410855
+      },
+      {
+        "step": 128,
+        "loss": 0.4083993434906006,
+        "unix_time": 1790030266.3033018
+      },
+      {
+        "step": 192,
+        "loss": 0.2707373797893524,
+        "unix_time": 1790030934.6893702
+      },
+      {
+        "step": 256,
+        "loss": 0.0963146835565567,
+        "unix_time": 1790031630.3357394
+      },
+      {
+        "step": 320,
+        "loss": 0.05278554931282997,
+        "unix_time": 1790032287.7481816
+      },
+      {
+        "step": 384,
+        "loss": 0.04352154955267906,
+        "unix_time": 1790032961.55764
+      },
+      {
+        "step": 448,
+        "loss": 0.03893079608678818,
+        "unix_time": 1790033629.2511094
+      },
+      {
+        "step": 512,
+        "loss": 0.03695353493094444,
+        "unix_time": 1790034274.0005872
+      },
+      {
+        "step": 576,
+        "loss": 0.03673943132162094,
+        "unix_time": 1790034939.9781802
+      },
+      {
+        "step": 640,
+        "loss": 0.037086207419633865,
+        "unix_time": 1790035615.815755
+      },
+      {
+        "step": 704,
+        "loss": 0.03589711710810661,
+        "unix_time": 1790036288.4642937
+      },
+      {
+        "step": 768,
+        "loss": 0.03513723239302635,
+        "unix_time": 1790036961.9794478
+      },
+      {
+        "step": 832,
+        "loss": 0.03597468137741089,
+        "unix_time": 1790037622.552993
+      },
+      {
+        "step": 896,
+        "loss": 0.03426225855946541,
+        "unix_time": 1790038306.0693913
+      },
+      {
+        "step": 960,
+        "loss": 0.03429001197218895,
+        "unix_time": 1790038975.2678392
+      },
+      {
+        "step": 1024,
+        "loss": 0.033264242112636566,
+        "unix_time": 1790039657.445979
+      }
+    ],
+    "gpu_utilization": {
+      "status": "measured",
+      "measurement_window": {
+        "start_utc": "2026-09-21T22:11:52.983236+00:00",
+        "end_utc": "2026-09-22T01:15:33.098998+00:00"
+      },
+      "sample_count": 2196,
+      "denominator": "all parseable nvidia-smi GPU samples in the bounded training process window",
+      "per_gpu": {
+        "0": {
+          "samples": 1098,
+          "mean_utilization_percent": 72.45173041894354,
+          "busy_fraction_at_least_10_percent": 0.9034608378870674
+        },
+        "1": {
+          "samples": 1098,
+          "mean_utilization_percent": 72.99180327868852,
+          "busy_fraction_at_least_10_percent": 0.912568306010929
+        }
+      },
+      "created_utc": "2026-09-22T01:15:33.678104+00:00"
+    },
+    "median_step_seconds_excluding_first": 8.021927058696747,
+    "public_hash_verified_checkpoints": 17,
+    "final_checkpoint": {
+      "repo_id": "CK0607/qwen3.8-27b-brush-painting",
+      "private": false,
+      "commit": "94b97165474a5c0b56bd1eb3e3fc81b710741cca",
+      "path": "photo-curriculum-sft-20260922-balanced/step_1024",
+      "url": "https://huggingface.co/CK0607/qwen3.8-27b-brush-painting/tree/94b97165474a5c0b56bd1eb3e3fc81b710741cca/photo-curriculum-sft-20260922-balanced/step_1024",
+      "verified": true,
+      "files": {
+        "adapter_config.json": {
+          "sha256": "1bb3ad53b417ad64b90adba4faa05cc1a93d7725468ce529c015135fc602d942",
+          "bytes": 479
+        },
+        "adapter_model.safetensors": {
+          "sha256": "9a9caf994f9fb19bec989fa7b341327d4263d39d11566f7853529e74f4240dd0",
+          "bytes": 233590600
+        },
+        "validation.json": {
+          "sha256": "0fd7aa7174ec15fac4a1ea13a203fcda1b85a33c09311ebe4111fd0d21f15542",
+          "bytes": 483
+        },
+        "upload-manifest.json": {
+          "sha256": "21f928070e4676116f7c7c2321c0164611cb2f46920fc281647ba3916a02571e",
+          "bytes": 611
+        }
+      }
+    }
   }
 }
