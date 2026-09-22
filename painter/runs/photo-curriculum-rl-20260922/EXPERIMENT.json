@@ -89,7 +89,10 @@
       "trainer_nonzero_fraction": 0,
       "pipeline_saturated": false,
       "trainer_state": "waiting for first generated and scored batch"
-    }
+    },
+    "provider_subtotal_usd_at_latest_check": 5.45,
+    "provider_uptime_at_latest_check": "2.3h",
+    "provider_latest_check_utc": "2026-09-22 10:08"
   },
   "checkpoints": {
     "repo": "CK0607/qwen3.8-27b-brush-painting",
@@ -126,7 +129,7 @@
     "Finite local judgeworker exited on SSH255 before producinglabels; add bounded retries for transienttransport failures."
   ],
   "limitations": [
-    "Rented hardware before preparation was complete; roughly an hour of rental passed without optimizer work.",
+    "Rented hardware before preparation was complete; provider reported 2.3 hours / $5.45 at the latest check, with zero verified optimizer updates.",
     "No matched RL quality result exists yet.",
     "28 photo and 240 procedural development references were used in previous experiments; they are not untouched test data."
   ],
@@ -151,13 +154,15 @@
     "painter/runs/photo-curriculum-rl-20260922/train_from_sft.py": "eea061f95c32559329ab30d08db8b5664d0966c9dbf7a199d98afb156e254491",
     "painter/native_painting_eval.py": "0edf9ae1eca668e7d4dceb9bb2d833882d4230ba781ef4657f2a1268c3df800f"
   },
-  "source_commit": "0709bba",
+  "source_commit": "ff70943",
   "progress": {
-    "observed_at_utc": "2026-09-22 09:08:16",
-    "inflight_episodes": 32,
-    "rendered_canvas_files": 27,
+    "observed_at_utc": "2026-09-22 10:09",
+    "phase": "production frozen-baseline episode; model correction loop",
+    "completed_render_attempts": 3,
+    "valid_render_attempts": 0,
     "judge_requests": 0,
-    "optimizer_updates_verified": 0
+    "optimizer_updates_verified": 0,
+    "trainer_started_current_attempt": false
   },
   "deployed_node_bundle_sha256": "94fe0e840ad9f981b112d6eca1aa5d03eab3559b6445ede9f24f96c49039c133"
 }
