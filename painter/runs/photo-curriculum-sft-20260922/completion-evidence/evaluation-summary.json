@@ -66,9 +66,12 @@
       "text_files": 1669
     }
   },
-  "archive_local_verification": "pending_automatic_approval_review_requires_user_authorization",
-  "node_status": "allocated_idle_pending_preservation",
+  "archive_local_verification": "not_downloaded; blocked transfer abandoned when user requested termination",
+  "node_status": "released_at_user_request",
   "hourly_usd": 2.38,
   "estimated_rental_usd_at_0601_utc": 21.3,
-  "cost_note": "elapsed rental estimate from about21:04UTC, not provider invoice; node still accruing"
+  "cost_note": "Provider reported $24.32 shortly before termination; final elapsed estimate about $24.50, not a final invoice.",
+  "release_utc": "2026-09-22T07:21:52Z",
+  "last_observed_provider_spent_usd": 24.32,
+  "unpreserved_evidence": "Full raw archive was not downloaded and was lost on node termination; final gallery, all28 labels, aggregate results and public verified adapters remain."
 }

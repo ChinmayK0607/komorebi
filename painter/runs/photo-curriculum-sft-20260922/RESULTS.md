@@ -37,3 +37,10 @@ The complete visual evidence is review-matched/index.html. The blind review is r
 Whole training job GPU averages were72.45/72.99% across1098 samples each,22:11:52–01:15:33UTC. Evaluation averages were84.73/83.21% across131 samples each,05:24:00–05:45:41UTC, excluding server startup. The subsequent preservation/approval wait has idle GPUs and is not included in either interval. The earlier post-training idle allocation was about3h44. Elapsed rental estimate at06:01UTC is$21.30 and keeps accruing at$2.38/hour; this is not a provider invoice.
 
 All public adapters are verified. The1.65GB private evidence archive exists on the node, with remote SHA b986c2e67399232ea88198aa519190c282fe7210bf96800ec5e19537e67fb26b; local download and verification remain pending explicit authorization after automatic approval review rejected that transfer. The node has not been released. Final galleries and labels are already local.
+
+
+## Cleanup superseding the pending archive status — 07:21 UTC
+
+The user explicitly requested cleanup of the idle GPU pod. Both devices showed 0% utilization, 0 MiB memory, and no GPU processes. The painting pod was terminated and the provider listing confirmed no active pods. The last observed provider subtotal was $24.32 shortly before release (final elapsed estimate about $24.50; not a final invoice). No recurring or scheduled cleanup was created.
+
+The blocked 1.65 GB raw-evidence archive was never downloaded or locally hash-verified and was lost with the node; do not describe full raw evidence as preserved. Public hash-verified adapters, the complete painting gallery, all28 blind labels, aggregate metrics, training-completion records and reviewed source remain available. This supersedes the earlier pending-permission/allocated-node entries.

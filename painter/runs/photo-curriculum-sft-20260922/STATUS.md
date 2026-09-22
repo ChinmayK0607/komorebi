@@ -45,3 +45,10 @@ Both evaluation workers exited 0. Final comparison reports 19/28 valid midpoint 
 Evaluation GPU means were 84.73% and 83.21%, 131 samples each during 05:24:00–05:45:41UTC; this includes rendering/tail but excludes server startup and later preservation. All compute finished.
 
 Archive on node: 1,647,090,298 bytes, 2,679 files, SHA256 b986c2e67399232ea88198aa519190c282fe7210bf96800ec5e19537e67fb26b. The archiver excludes model/optimizer weights and reports no detected credentials. Local transfer/verification is pending: automatic approval review rejected downloading potentially sensitive raw experiment data and requires explicit user authorization. The user was asked through the input tool. A separate rejected notes upload was abandoned; those notes remain local. Do not release the node until archive preservation is resolved. Rental is approximately $21.30 at 06:01UTC and continues at $2.38/hour. No scheduled watcher exists.
+
+
+## Cleanup superseding the pending archive status — 07:21 UTC
+
+The user explicitly requested cleanup of the idle GPU pod. Both devices showed 0% utilization, 0 MiB memory, and no GPU processes. The painting pod was terminated and the provider listing confirmed no active pods. The last observed provider subtotal was $24.32 shortly before release (final elapsed estimate about $24.50; not a final invoice). No recurring or scheduled cleanup was created.
+
+The blocked 1.65 GB raw-evidence archive was never downloaded or locally hash-verified and was lost with the node; do not describe full raw evidence as preserved. Public hash-verified adapters, the complete painting gallery, all28 blind labels, aggregate metrics, training-completion records and reviewed source remain available. This supersedes the earlier pending-permission/allocated-node entries.

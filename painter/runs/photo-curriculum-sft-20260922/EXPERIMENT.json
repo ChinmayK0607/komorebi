@@ -1,6 +1,6 @@
 {
   "run": "photo-curriculum-sft-20260922",
-  "status": "evaluation_complete_archive_download_awaiting_approval",
+  "status": "evaluation_complete_node_released_at_user_request",
   "training_started": true,
   "hypothesis": "Complete, rendered, reference-specific demonstrations with diverse structural foundations improve fresh-base photo painting.",
   "base": {
@@ -157,11 +157,13 @@
           "text_files": 1669
         }
       },
-      "archive_local_verification": "pending_automatic_approval_review_requires_user_authorization",
-      "node_status": "allocated_idle_pending_preservation",
+      "archive_local_verification": "not_downloaded_before_user_requested_termination",
+      "node_status": "released_at_user_request",
       "hourly_usd": 2.38,
       "estimated_rental_usd_at_0601_utc": 21.3,
-      "cost_note": "elapsed rental estimate from about21:04UTC, not provider invoice; node still accruing"
+      "cost_note": "elapsed rental estimate from about21:04UTC, not provider invoice; node still accruing",
+      "release_utc": "2026-09-22T07:21:52Z",
+      "last_observed_provider_spent_usd": 24.32
     }
   },
   "hardware": {
