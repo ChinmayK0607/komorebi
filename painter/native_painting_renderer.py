@@ -103,8 +103,19 @@ def render_action(
         raise RuntimeError("renderer produced no receipt: " + completed.stderr[-1000:])
     receipt = json.loads(receipt_path.read_text())
     if not receipt.get("valid"):
+        error = str(receipt.get("errors") or receipt.get("error") or completed.stderr)
+        error_code = receipt.get("error_code")
+        # The vendor renderer uses an error_code for worker/runtime failures
+        # (missing Playwright, browser startup, deadline, or child failure).
+        # Those are infrastructure outages and must reach the native loop's
+        # service-failure path; only a receipt with page-level errors and no
+        # runtime error code is a model-program failure.
+        if error_code or receipt.get("timed_out"):
+            raise RuntimeError(
+                f"renderer service failure ({error_code or 'timeout'}): {error}"
+            )
         row.update(
-            error=str(receipt.get("errors") or receipt.get("error") or completed.stderr),
+            error=error,
             renderer_errors=receipt.get("errors") or receipt.get("error"),
             failure_kind="program",
         )

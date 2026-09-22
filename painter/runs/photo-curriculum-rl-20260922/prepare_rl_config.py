@@ -40,6 +40,7 @@ SEQ_LEN = 32_768
 MAX_COMPLETION_TOKENS = 8_192
 BATCH_SIZE = 32
 GROUP_SIZE = 8
+VLLM_MAX_NUM_SEQS = 16
 MAX_TURNS = 6
 LEARNING_RATE = 1e-6
 CHECKPOINT_INTERVAL = 8
@@ -109,8 +110,8 @@ def build_config(
         "initial_inflight": BATCH_SIZE,
         # Keep one decode batch active while the preceding batch waits for
         # bounded judge receipts.  vLLM still admits at most BATCH_SIZE
-        # sequences; this only permits the orchestrator's pending window to
-        # overlap generation and scoring.
+        # sequences; the smaller serving cap keeps long-context requests from
+        # thrashing while the orchestrator's pending window overlaps scoring.
         "max_inflight": BATCH_SIZE * 2,
     }
     sampling = config["orchestrator"]["train"]["sampling"]
@@ -140,7 +141,7 @@ def build_config(
     config["inference"]["vllm"].update(
         {
             "max_model_len": SEQ_LEN,
-            "max_num_seqs": BATCH_SIZE,
+            "max_num_seqs": VLLM_MAX_NUM_SEQS,
             "max_num_batched_tokens": SEQ_LEN,
             # Keep the immutable SFT anchor resident alongside Prime's live
             # base-name alias. Prime reloads the live slot in place after each
@@ -214,6 +215,7 @@ def main(argv: list[str] | None = None) -> int:
         "max_steps": args.max_steps,
         "batch_size": BATCH_SIZE,
         "group_size": GROUP_SIZE,
+        "vllm_max_num_seqs": VLLM_MAX_NUM_SEQS,
         "max_turns": MAX_TURNS,
         "seq_len": SEQ_LEN,
         "max_completion_tokens": MAX_COMPLETION_TOKENS,

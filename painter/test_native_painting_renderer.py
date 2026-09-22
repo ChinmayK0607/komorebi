@@ -54,6 +54,33 @@ class NativePaintingRendererTests(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     renderer_module.render_timeout_seconds()
 
+    def test_runtime_receipt_failure_is_service_error(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            folder = root / "episode"
+            renderer = root / "renderer.py"
+            renderer_python = root / "python"
+            renderer.write_text("# test renderer\n")
+            renderer_python.write_text("# test python\n")
+
+            def fake_run(command, **kwargs):
+                output = Path(command[8])
+                output.with_suffix(".json").write_text(json.dumps({
+                    "valid": False,
+                    "error_code": "renderer_error",
+                    "error": "ModuleNotFoundError: No module named 'playwright'",
+                }))
+                return SimpleNamespace(returncode=0, stderr="")
+
+            with patch.object(renderer_module.subprocess, "run", side_effect=fake_run):
+                with self.assertRaisesRegex(RuntimeError, "renderer service failure.*playwright"):
+                    renderer_module.render_action(
+                        root=root, folder=folder,
+                        reply="```javascript\nfunction setup() {}\n```",
+                        initial_canvas=None, initial_program=None,
+                        renderer=renderer, renderer_python=renderer_python,
+                    )
+
 
 if __name__ == "__main__":
     unittest.main()

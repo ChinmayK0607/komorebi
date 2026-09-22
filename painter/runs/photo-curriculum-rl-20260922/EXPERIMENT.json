@@ -1,6 +1,6 @@
 {
   "run": "photo-curriculum-rl-20260922",
-  "status": "restarted_after_frozen_router_schema_failure",
+  "status": "production_frozen_baseline_prewarm_running",
   "hypothesis": "Terminal visual-preference RL over full-history paint/inspect/revise episodes improves frozen midpoint512 painting quality on matched development references.",
   "initializer": {
     "base": "Qwen/Qwen3.8-27B",
@@ -34,7 +34,8 @@
     "max_inflight": 64,
     "max_off_policy_steps": 1,
     "checkpoint_interval": 8,
-    "speed_reward": false
+    "speed_reward": false,
+    "vllm_max_num_seqs": 16
   },
   "judge": {
     "model": "gpt-5.6-luna",
@@ -106,7 +107,9 @@
     "local_targeted_tests": 42,
     "initial_adapter_exact_tensor_matches": 992,
     "initial_adapter_parameters": 116727808,
-    "direct_frozen_vllm_http_probe": "HTTP200; prompt15 completion1; reasoning_effort=none and enable_thinking=false"
+    "direct_frozen_vllm_http_probe": "HTTP200; prompt15 completion1; reasoning_effort=none and enable_thinking=false",
+    "production_first_frozen_episode_before_candidate_admission": "implemented; pending actual successful execution",
+    "old_frozen_cache": "quarantined; cannot reuse receipts from renderer-runtime failures"
   },
   "failures": [
     "Fresh setup exposed public SSH submodule URLs and an incomplete dependency checkout; fixed HTTPS/pinned checkout bootstrap.",
@@ -116,7 +119,11 @@
     "First native launch initialized inference but wrapper parsed Prime's JSON child configuration as TOML; fixed and tested both formats.",
     "Restart initially collided with the failed run directory; preserved that directory and restarted under a clean output directory.",
     "Restart reached initialized trainer and all 2486 tasks, but VF task transport deserialized NativePaintingRLTask.data into NativePaintingData, dropping opponent fields. Every request failed and the zero-output guard stopped the run; no rollout reached the judge and no optimizer update occurred.",
-    "Student generation produced at least 84 canvases, but frozen baseline VF requests were rejected by Prime router8000 because reasoning_effort=none is outside its schema. Fourteen failed traces were observed, excluded from rewards. Stopped owned run; direct vLLM endpoint8100 accepted identical one-token request. Restart uses that endpoint; all attempt artifacts retained, no optimizer update verified."
+    "Student generation produced at least 84 canvases, but frozen baseline VF requests were rejected by Prime router8000 because reasoning_effort=none is outside its schema. Fourteen failed traces were observed, excluded from rewards. Stopped owned run; direct vLLM endpoint8100 accepted identical one-token request. Restart uses that endpoint; all attempt artifacts retained, no optimizer update verified.",
+    "Frozen deterministic seeds used unsigned64 values beyond vLLM signed64 range; mask to63bits and validate all explicitseeds.",
+    "Frozen renderer interpreter path resolution dereferenced its virtual environment executable into systemPython withoutPlaywright. Preserve executable symlinks. Runtime error receipts had incorrectly been classified as model-invalid; now they propagate service failures. No optimizer update verified. Quarantine old frozen cache before restart.",
+    "Observed KVcache98.6%,24preemptions,29running+3waiting and recentgeneration146.7tokens/s. Reduce simultaneous decoding32to16 while retaining batch32/group8/context32768/turncap6.",
+    "Finite local judgeworker exited on SSH255 before producinglabels; add bounded retries for transienttransport failures."
   ],
   "limitations": [
     "Rented hardware before preparation was complete; roughly an hour of rental passed without optimizer work.",
@@ -125,22 +132,22 @@
   ],
   "source_file_sha256": {
     "painter/contract.py": "0c77f0ed4bd5cad3121918d27495e3aef780dcb84ff0dd51cf61c3ffdd2ffaa0",
-    "painter/frozen_opponent.py": "36c8bde40de7c0733b6d0977805b5bbb4763dd1077e2dd3c8ee206b7623d0c32",
+    "painter/frozen_opponent.py": "6fa089c00f138f5f73fa256a653af6f3d34933e4633c59e6401279e3f3645d95",
     "painter/native_painting.py": "dea9ea9cbba7da7249d2cbaaeb317dc3a645e34f72b50376677ea6e1fc51c43a",
-    "painter/native_painting_renderer.py": "3611e656a2ad59fed2e5ff21e3b891055a238b27c55822e113fd57bb5769be4e",
-    "painter/native_painting_rl.py": "1eae6a5faf160ae4e91889755309b78e87c1f815dd9681a74b909210a7a32213",
+    "painter/native_painting_renderer.py": "751a3cb0e4f2eef038d8e681ca0f6c56325d1a41f0c486d8d3b8b7dcac2b424b",
+    "painter/native_painting_rl.py": "71c33fe52f0cd81bb9afd73d1aee5f28faec11176af96ee2cc75bc443703f32f",
     "painter/runs/photo-curriculum-rl-20260922/aesthetic_judge.py": "3565ba4bc731fc6b5b2528f3192c4e6b662484eae8f381f2c69ff6b435d80ea6",
     "painter/runs/photo-curriculum-rl-20260922/download_initial_adapter.py": "5212493f4e29b1ffc6523f887ca1ac44032dbdabafc9fc7be2012741a47ec382",
-    "painter/runs/photo-curriculum-rl-20260922/judge_bridge.py": "d7b46b9d158cc977d18e0e79a06db2a685ed2118abd17465e39ead96dc9dc9c5",
+    "painter/runs/photo-curriculum-rl-20260922/judge_bridge.py": "cf1dd576666672ab7a5c98113e013d0d585d238698c2c8f3876fd7b01a7ec9f2",
     "painter/runs/photo-curriculum-rl-20260922/judge_queue.py": "b3b8fdc7c33989fda98c4c162f72df5852e3e4c916d3d907f5687b689c093fd5",
     "painter/runs/photo-curriculum-rl-20260922/launch_rl.sh": "5e5c448fce9868d310f13fbe18118373a021bf3353b016b246979cd54caad5a5",
-    "painter/runs/photo-curriculum-rl-20260922/prepare_rl_config.py": "bfbcc6623e6b4f006d55e717b84291075c5a71c63225397f24535b48adfa85a3",
+    "painter/runs/photo-curriculum-rl-20260922/prepare_rl_config.py": "d304c2eeabbd552de08ea2d3dc765a856f34910cbf485a3f97a67a28c99cb115",
     "painter/runs/photo-curriculum-rl-20260922/prepare_rl_data.py": "224d23d489d39a4bb22e63565fbf62d12c78a28a5b50a817a908a6a12b68fcb5",
-    "painter/runs/photo-curriculum-rl-20260922/run_from_sft.py": "bde311e5c94134bc64d83175e3cddc9166bed5b034061c0539f958b9566eac0e",
+    "painter/runs/photo-curriculum-rl-20260922/run_from_sft.py": "a7774e75a898371f313ea810f70fe548ad5dd7e059180e2942ccfac4d9f1bb21",
     "painter/runs/photo-curriculum-rl-20260922/setup_rl_runtime.sh": "213e74a28b88c138425e736406e8767299194ab1931b06cad051a209670d5552",
-    "painter/runs/photo-curriculum-rl-20260922/test_judge_bridge.py": "08d7ff3b202810ea87e1b54aeae0c3c51ac2f863ac0e4ce84c45c068f38b1247",
-    "painter/runs/photo-curriculum-rl-20260922/test_prepare_rl_config.py": "ee1d949ed65a0c9f7c0b219286ac04836814990bf6a7d9a0fb1befce9173186c",
-    "painter/runs/photo-curriculum-rl-20260922/test_run_from_sft.py": "8bd068a68b16fa672488c3c2636943c019b77d57b9cae69b4e67806211ab5ecf",
+    "painter/runs/photo-curriculum-rl-20260922/test_judge_bridge.py": "b5777ac73ab60c8ca3bf8d619e729a1c28205d6cab2251dffc49267d5e5cdbbc",
+    "painter/runs/photo-curriculum-rl-20260922/test_prepare_rl_config.py": "e97c8667ab994d2ecee78c45fc53baeb5bd71f144fd84e4cac6956764fbfeac4",
+    "painter/runs/photo-curriculum-rl-20260922/test_run_from_sft.py": "01b0c4a2b58dcf589700d61dc3573b98d4e6351e71890e672ff5e9682d7700d8",
     "painter/runs/photo-curriculum-rl-20260922/train_from_sft.py": "eea061f95c32559329ab30d08db8b5664d0966c9dbf7a199d98afb156e254491",
     "painter/native_painting_eval.py": "0edf9ae1eca668e7d4dceb9bb2d833882d4230ba781ef4657f2a1268c3df800f"
   },
@@ -151,5 +158,6 @@
     "rendered_canvas_files": 27,
     "judge_requests": 0,
     "optimizer_updates_verified": 0
-  }
+  },
+  "deployed_node_bundle_sha256": "94fe0e840ad9f981b112d6eca1aa5d03eab3559b6445ede9f24f96c49039c133"
 }

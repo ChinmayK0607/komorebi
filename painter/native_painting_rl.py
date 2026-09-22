@@ -65,6 +65,7 @@ try:
         OpponentSpec,
         deterministic_seed,
         generate_frozen_opponent,
+        validate_seed,
     )
 except ImportError:
     from frozen_opponent import (  # type: ignore
@@ -73,6 +74,7 @@ except ImportError:
         OpponentSpec,
         deterministic_seed,
         generate_frozen_opponent,
+        validate_seed,
     )
 
 
@@ -652,7 +654,13 @@ class NativePaintingRLTaskset(vf.Taskset[NativePaintingRLTask, NativePaintingRLC
                     else str(decoding_value)
                 )
                 base_seed = int(settings.get("base_seed", self.config.opponent_seed))
-                source_seed = int(settings.get("seed", deterministic_seed(base_seed, source_group, reference_digest)))
+                explicit_seed = settings.get("seed")
+                source_seed = validate_seed(
+                    explicit_seed,
+                    name=f"opponent seed for {task_id}",
+                ) if explicit_seed is not None else deterministic_seed(
+                    base_seed, source_group, reference_digest
+                )
                 cache_root_value = settings.get("cache_root", self.config.opponent_cache_root)
                 cache_root = _resolve(root, str(cache_root_value or "frozen-opponents"))
                 generator = settings.get("generator", self.config.opponent_generator)

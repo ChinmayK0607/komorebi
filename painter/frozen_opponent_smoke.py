@@ -39,7 +39,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--checkpoint-sha256", required=True)
     parser.add_argument("--model-alias", default="sft-step512")
     parser.add_argument("--seed", type=int, default=20260922)
-    parser.add_argument("--endpoint", default="http://127.0.0.1:8000/v1")
+    parser.add_argument(
+        "--endpoint",
+        default="http://127.0.0.1:8100/v1",
+        help="direct vLLM endpoint (the pinned local router rejects VF reasoning_effort=none)",
+    )
     parser.add_argument("--root", default="/root/painter")
     parser.add_argument("--prime-root", default="/root/painter/prime-rl")
     parser.add_argument("--eval", dest="eval_bin", default="/root/painter/prime-rl/.venv/bin/eval")

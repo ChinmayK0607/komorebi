@@ -17,6 +17,9 @@ from painter.frozen_opponent import (
     deterministic_seed,
     OpponentResult,
     _native_eval_canvas,
+    MAX_SIGNED_SEED,
+    validate_seed,
+    _absolute_preserving_symlink,
 )
 from painter.test_native_painting_rl import _load_rl_module
 
@@ -45,6 +48,40 @@ class FrozenOpponentTests(unittest.TestCase):
         self.assertEqual(first, deterministic_seed(10, "a", "h"))
         self.assertNotEqual(first, deterministic_seed(10, "b", "h"))
         self.assertNotEqual(first, deterministic_seed(11, "a", "h"))
+
+    def test_derived_seeds_stay_in_signed_63_bit_api_range(self):
+        values = [
+            deterministic_seed(20260922, f"source-{index}", f"{index:064x}")
+            for index in range(2048)
+        ]
+        self.assertTrue(all(0 <= value <= MAX_SIGNED_SEED for value in values))
+        self.assertEqual(len(values), len(set(values)))
+
+    def test_explicit_seed_validation_rejects_api_overflow_and_non_integer(self):
+        self.assertEqual(validate_seed(0), 0)
+        self.assertEqual(validate_seed(MAX_SIGNED_SEED), MAX_SIGNED_SEED)
+        for value in (-1, MAX_SIGNED_SEED + 1, True, 1.5):
+            with self.subTest(value=value):
+                with self.assertRaises(ValueError):
+                    validate_seed(value)  # type: ignore[arg-type]
+        with tempfile.TemporaryDirectory() as temp:
+            with self.assertRaisesRegex(ValueError, r"\[0, 9223372036854775807\]"):
+                self._spec(Path(temp), alias="sft-step512").__class__(
+                    **{**self._spec(Path(temp), alias="sft-step512").__dict__, "seed": MAX_SIGNED_SEED + 1}
+                )
+
+    def test_renderer_interpreter_path_preserves_venv_symlink(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            target = root / "system-python"
+            target.write_text("python")
+            link = root / "renderer-env" / "bin" / "python"
+            link.parent.mkdir(parents=True)
+            link.symlink_to(target)
+            preserved = _absolute_preserving_symlink(link)
+            self.assertEqual(preserved, link.absolute())
+            self.assertTrue(preserved.is_symlink())
+            self.assertNotEqual(preserved, target)
 
     def test_cache_key_binds_checkpoint_and_runtime_contract(self):
         with tempfile.TemporaryDirectory() as temp:

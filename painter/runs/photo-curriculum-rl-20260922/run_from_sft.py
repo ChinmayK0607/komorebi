@@ -10,10 +10,13 @@ adapter reset or optimizer resume is introduced here.
 
 from __future__ import annotations
 
+import asyncio
 import json
 import os
 from pathlib import Path
+import sys
 import time
+from typing import Any, Callable
 import urllib.error
 import urllib.request
 
@@ -71,6 +74,102 @@ def _initial_aliases(live_alias: str, frozen_alias: str) -> tuple[str, ...]:
     if not live_alias or not frozen_alias or live_alias == frozen_alias:
         raise ValueError("initial adapter aliases must be non-empty and distinct")
     return live_alias, frozen_alias
+
+
+def _rl_config_path(argv: list[str]) -> Path:
+    """Resolve the same config path passed to Prime's ``@`` CLI argument."""
+    value = os.environ.get("PAINTER_RL_CONFIG")
+    if value:
+        return Path(value).expanduser().resolve(strict=True)
+    for index, argument in enumerate(argv[:-1]):
+        if argument == "@":
+            return Path(argv[index + 1]).expanduser().resolve(strict=True)
+    raise ValueError("RL config path is required via PAINTER_RL_CONFIG or Prime's @ argument")
+
+
+def _load_first_rl_task(config_path: Path) -> Any:
+    """Load the first real task through the installed native RL taskset."""
+    import tomllib
+
+    raw = config_path.read_bytes()
+    if config_path.suffix.lower() == ".json" or raw.lstrip().startswith(b"{"):
+        config = json.loads(raw.decode("utf-8"))
+    else:
+        config = tomllib.loads(raw.decode("utf-8"))
+    taskset_values = config["orchestrator"]["train"]["source"][0]["env"]["taskset"]
+    try:
+        from native_painting_rl import NativePaintingRLConfig, NativePaintingRLTaskset
+    except ImportError:
+        from painter.native_painting_rl import NativePaintingRLConfig, NativePaintingRLTaskset
+    taskset_config = NativePaintingRLConfig.model_validate(taskset_values)
+    return next(iter(NativePaintingRLTaskset(taskset_config).load()))
+
+
+def _prewarm_frozen_opponent(
+    config_path: Path,
+    *,
+    task_loader: Callable[[], Any] | None = None,
+    provider_factory: Callable[[Any], Any] | None = None,
+    spec_type: type | None = None,
+) -> Any:
+    """Resolve one real lazy opponent before Prime admits candidate rollouts."""
+    task = task_loader() if task_loader is not None else _load_first_rl_task(config_path)
+    data = task.data
+    if data.opponent is not None:
+        raise ValueError("frozen-opponent prewarm requires a lazy opponent task")
+    required = (
+        data.opponent_model_alias,
+        data.opponent_checkpoint_sha256,
+        data.opponent_protocol_version,
+        data.opponent_render_protocol,
+        data.opponent_decoding_config,
+        data.opponent_seed,
+    )
+    if any(value is None for value in required):
+        raise ValueError("first RL task is missing lazy frozen-opponent identity fields")
+    if provider_factory is None:
+        try:
+            from native_painting_rl import _frozen_provider
+        except ImportError:
+            from painter.native_painting_rl import _frozen_provider
+        provider_factory = _frozen_provider
+    if spec_type is None:
+        try:
+            from frozen_opponent import OpponentSpec
+        except ImportError:
+            from painter.frozen_opponent import OpponentSpec
+        spec_type = OpponentSpec
+    spec = spec_type(
+        source_group=str(data.source_group),
+        reference=Path(data.reference),
+        reference_sha256=str(data.reference_sha256),
+        model_alias=str(data.opponent_model_alias),
+        checkpoint_sha256=str(data.opponent_checkpoint_sha256),
+        protocol_version=str(data.opponent_protocol_version),
+        render_protocol=str(data.opponent_render_protocol),
+        decoding_config=str(data.opponent_decoding_config),
+        seed=data.opponent_seed,
+        max_turns=int(data.max_turns),
+        max_completion_tokens=int(data.opponent_max_completion_tokens),
+        context_length=int(data.opponent_context_length),
+    )
+    result = asyncio.run(provider_factory(data).resolve(spec))
+    status = getattr(result, "status", None)
+    if status == "unavailable":
+        raise RuntimeError(
+            "frozen-opponent prewarm unavailable: "
+            + str(getattr(result, "reason", None) or "unknown service failure")
+        )
+    if status not in {"valid", "invalid_model_output"}:
+        raise RuntimeError(f"frozen-opponent prewarm returned unexpected status: {status!r}")
+    print(json.dumps({
+        "status": "frozen_opponent_prewarm",
+        "task_id": str(data.task_id),
+        "source_group": str(data.source_group),
+        "opponent_status": status,
+        "cache_key": str(getattr(result, "cache_key", "")),
+    }, sort_keys=True))
+    return result
 
 
 def _wait_and_load(process, adapter: Path, *, base_url: str, aliases: tuple[str, ...]) -> None:
@@ -167,6 +266,7 @@ def main() -> None:
     adapter = _adapter_path()
     root = Path(__file__).resolve().parent
     wrapper = Path(__file__).with_name("train_from_sft.py").resolve(strict=True)
+    rl_config_path = _rl_config_path(sys.argv[1:])
     base_url = os.environ.get("PAINTER_RL_INFERENCE_URL", DEFAULT_INFERENCE_URL)
     live_alias = os.environ.get("MODEL_DIR")
     frozen_alias = os.environ.get("PAINTER_FROZEN_SFT_ALIAS", "sft-step512")
@@ -191,6 +291,16 @@ def main() -> None:
             kwargs["env"] = _cache_env(root, "inference", environment)
             process = original(command, *args, **kwargs)
             _wait_and_load(process, adapter, base_url=base_url, aliases=aliases)
+            try:
+                _prewarm_frozen_opponent(rl_config_path)
+            except Exception:
+                if process.poll() is None:
+                    process.terminate()
+                    try:
+                        process.wait(timeout=15)
+                    except Exception:
+                        process.kill()
+                raise
             return process
         if basename == "orchestrator":
             if orchestrator_started:

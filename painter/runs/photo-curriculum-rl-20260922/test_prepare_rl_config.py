@@ -36,7 +36,7 @@ class PhotoRLConfigTests(unittest.TestCase):
             "initial_inflight": 32,
             "max_inflight": 64,
         })
-        self.assertEqual(config["inference"]["vllm"]["max_num_seqs"], 32)
+        self.assertEqual(config["inference"]["vllm"]["max_num_seqs"], 16)
         taskset = config["orchestrator"]["train"]["source"][0]["env"]["taskset"]
         self.assertEqual(taskset["manifest"], "source-manifest.json")
         self.assertEqual(taskset["expected_count"], 2486)

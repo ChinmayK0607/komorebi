@@ -30,6 +30,8 @@ DEFAULT_PROTOCOL_DIR = REPO_ROOT / "painter" / "runs" / "aesthetic-rl-20260921"
 DEFAULT_REMOTE_ROOT = Path("/root/painter/runs/photo-curriculum-rl-20260922")
 BATCH_PATTERN = re.compile(r"^[A-Za-z0-9_-]+$")
 HEX64 = frozenset("0123456789abcdef")
+TRANSPORT_ATTEMPTS = 5
+TRANSPORT_BACKOFF_SECONDS = (2.0, 4.0, 8.0, 16.0)
 
 
 def _sha(path: Path) -> str:
@@ -259,6 +261,78 @@ def push(args: argparse.Namespace) -> dict[str, Any]:
     }
 
 
+def _is_ssh_transport_failure(error: BaseException) -> bool:
+    """Recognize only the SSH failures safe to retry at a batch boundary."""
+    if isinstance(error, subprocess.TimeoutExpired):
+        return True
+    return isinstance(error, subprocess.CalledProcessError) and error.returncode == 255
+
+
+def _remote_exit_probe(args: argparse.Namespace) -> bool:
+    """Check the finite-run marker without leaking permanent SSH failures."""
+    result = subprocess.run(
+        _ssh(args) + ["test", "-f", str(_remote_root(args) / "rl.exit")],
+        check=False, capture_output=True, timeout=120,
+    )
+    if result.returncode == 0:
+        return True
+    if result.returncode == 1:
+        return False
+    if result.returncode == 255:
+        raise subprocess.CalledProcessError(result.returncode, result.args, result.stdout, result.stderr)
+    raise RuntimeError(f"judge bridge exit probe failed for batch {args.batch}")
+
+
+def _run_batch_with_transport_retry(
+    args: argparse.Namespace,
+    *,
+    deadline: float,
+) -> dict[str, Any]:
+    """Run one unchanged batch, retrying only remote SSH transport failures."""
+    batch = args.batch
+    for attempt in range(1, TRANSPORT_ATTEMPTS + 1):
+        if time.monotonic() >= deadline:
+            raise RuntimeError(f"judge bridge transport deadline exceeded for batch {batch}")
+        phase = "pull"
+        try:
+            pulled = pull(args)
+            if pulled.get("status") == "no_pending_work":
+                phase = "exit_probe"
+                return {
+                    "batch": batch,
+                    "pull": pulled,
+                    "run_exit": _remote_exit_probe(args),
+                }
+            phase = "local"
+            local = run_local(args)
+            phase = "push"
+            pushed = push(args)
+            return {"batch": batch, "pull": pulled, "local": local, "push": pushed}
+        except Exception as error:
+            # A local judge/validation error is terminal even if it happens to
+            # use subprocess and return 255.  Retry only remote pull/push SSH.
+            if phase not in {"pull", "push", "exit_probe"} or not _is_ssh_transport_failure(error):
+                raise
+            if attempt >= TRANSPORT_ATTEMPTS:
+                raise RuntimeError(
+                    f"judge bridge transport failed for batch {batch} after {attempt} attempts"
+                ) from None
+            delay = TRANSPORT_BACKOFF_SECONDS[attempt - 1]
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                raise RuntimeError(
+                    f"judge bridge transport deadline exceeded for batch {batch}"
+                ) from None
+            delay = min(delay, remaining)
+            print(json.dumps({
+                "status": "transport_retry",
+                "batch": batch,
+                "attempt": attempt + 1,
+                "delay_seconds": delay,
+            }, sort_keys=True), file=sys.stderr)
+            time.sleep(delay)
+
+
 def worker(args: argparse.Namespace) -> dict[str, Any]:
     """Process finite queue batches until node exit or a hard deadline."""
 
@@ -270,21 +344,16 @@ def worker(args: argparse.Namespace) -> dict[str, Any]:
         if time.monotonic() - started >= args.deadline_seconds:
             return {"status": "deadline", "processed": processed}
         args.batch = f"{args.batch_prefix}-{index:04d}"
-        pulled = pull(args)
+        batch_result = _run_batch_with_transport_retry(
+            args, deadline=started + args.deadline_seconds
+        )
+        pulled = batch_result["pull"]
         if pulled.get("status") == "no_pending_work":
-            exit_probe = subprocess.run(
-                _ssh(args) + ["test", "-f", str(_remote_root(args) / "rl.exit")],
-                check=False, capture_output=True, timeout=120,
-            )
-            if exit_probe.returncode == 0:
+            if batch_result.get("run_exit"):
                 return {"status": "run_exit", "processed": processed}
-            if exit_probe.returncode not in (0, 1):
-                raise subprocess.CalledProcessError(exit_probe.returncode, exit_probe.args, exit_probe.stdout, exit_probe.stderr)
             time.sleep(min(args.poll_seconds, max(0.0, args.deadline_seconds - (time.monotonic() - started))))
             continue
-        local = run_local(args)
-        pushed = push(args)
-        processed.append({"batch": args.batch, "pull": pulled, "local": local, "push": pushed})
+        processed.append(batch_result)
     return {"status": "max_batches", "processed": processed}
 
 

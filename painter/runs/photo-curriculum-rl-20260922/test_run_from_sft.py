@@ -8,6 +8,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 import tomllib
 import unittest
+from types import SimpleNamespace
 
 
 ROOT = Path(__file__).resolve().parent
@@ -57,6 +58,60 @@ class PhotoRLRunnerTests(unittest.TestCase):
             self.assertNotEqual(inference["TORCHINDUCTOR_CACHE_DIR"], trainer["TORCHINDUCTOR_CACHE_DIR"])
             self.assertTrue(Path(inference["VLLM_CACHE_ROOT"]).is_dir())
             self.assertTrue(Path(trainer["TRITON_CACHE_DIR"]).is_dir())
+
+    def test_prewarm_uses_first_real_task_and_accepts_valid_result(self):
+        from painter.frozen_opponent import OpponentSpec
+
+        with TemporaryDirectory() as temp:
+            reference = Path(temp) / "reference.jpg"
+            reference.write_bytes(b"reference")
+            data = SimpleNamespace(
+                task_id="task-1", source_group="group-1", opponent=None,
+                reference=reference, reference_sha256="reference-sha",
+                opponent_model_alias="sft-step512", opponent_checkpoint_sha256="checkpoint-sha",
+                opponent_protocol_version="native-painting-rl-v1", opponent_render_protocol="native-painting-v1",
+                opponent_decoding_config="{}", opponent_seed=1234, max_turns=6,
+                opponent_max_completion_tokens=8192, opponent_context_length=32768,
+            )
+            captured = {}
+
+            class Provider:
+                async def resolve(self, spec):
+                    captured["spec"] = spec
+                    return SimpleNamespace(status="valid", cache_key="cache-key")
+
+            result = MODULE._prewarm_frozen_opponent(
+                Path(temp) / "native-rl.toml",
+                task_loader=lambda: SimpleNamespace(data=data),
+                provider_factory=lambda _data: Provider(),
+                spec_type=OpponentSpec,
+            )
+            self.assertEqual(result.status, "valid")
+            self.assertEqual(captured["spec"].seed, 1234)
+            self.assertEqual(captured["spec"].max_turns, 6)
+
+    def test_prewarm_fails_for_service_unavailable(self):
+        data = SimpleNamespace(
+            task_id="task-1", source_group="group-1", opponent=None,
+            reference=Path("/tmp/reference.jpg"), reference_sha256="reference-sha",
+            opponent_model_alias="sft-step512", opponent_checkpoint_sha256="checkpoint-sha",
+            opponent_protocol_version="native-painting-rl-v1", opponent_render_protocol="native-painting-v1",
+            opponent_decoding_config="{}", opponent_seed=1234, max_turns=6,
+            opponent_max_completion_tokens=8192, opponent_context_length=32768,
+        )
+
+        class Provider:
+            async def resolve(self, _spec):
+                return SimpleNamespace(status="unavailable", reason="renderer service failure")
+
+        from painter.frozen_opponent import OpponentSpec
+        with self.assertRaisesRegex(RuntimeError, "prewarm unavailable"):
+            MODULE._prewarm_frozen_opponent(
+                Path("/tmp/native-rl.toml"),
+                task_loader=lambda: SimpleNamespace(data=data),
+                provider_factory=lambda _data: Provider(),
+                spec_type=OpponentSpec,
+            )
 
 
 if __name__ == "__main__":

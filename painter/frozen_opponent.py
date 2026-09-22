@@ -33,6 +33,7 @@ except ImportError:  # pragma: no cover - only non-POSIX development hosts
 PNG_MAGIC = b"\x89PNG\r\n\x1a\n"
 PROVIDER_VERSION = "frozen-opponent-v1"
 MAX_DIAGNOSTIC_BYTES = 64 * 1024
+MAX_SIGNED_SEED = (1 << 63) - 1
 
 
 class OpponentUnavailable(RuntimeError):
@@ -58,6 +59,9 @@ class OpponentSpec:
     max_turns: int = 6
     max_completion_tokens: int = 8192
     context_length: int = 32768
+
+    def __post_init__(self) -> None:
+        validate_seed(self.seed)
 
     @property
     def cache_key(self) -> str:
@@ -94,9 +98,27 @@ class OpponentResult:
 
 
 def deterministic_seed(base_seed: int, source_group: str, reference_sha256: str) -> int:
-    """Derive a stable per-source seed without Python's process-random hash."""
+    """Derive a stable API-safe per-source seed without process-random hashing.
+
+    vLLM/OpenAI seed values are serialized as signed 64-bit integers.  Masking
+    to 63 bits keeps every derived seed in that accepted non-negative range.
+    """
     material = f"{base_seed}:{source_group}:{reference_sha256}".encode("utf-8")
-    return int.from_bytes(hashlib.sha256(material).digest()[:8], "big")
+    return int.from_bytes(hashlib.sha256(material).digest()[:8], "big") & MAX_SIGNED_SEED
+
+
+def validate_seed(seed: int, *, name: str = "seed") -> int:
+    """Validate an explicit non-negative signed-63-bit API seed."""
+    if isinstance(seed, bool) or not isinstance(seed, int):
+        raise ValueError(f"{name} must be an integer")
+    if not 0 <= seed <= MAX_SIGNED_SEED:
+        raise ValueError(f"{name} must be in [0, {MAX_SIGNED_SEED}]")
+    return seed
+
+
+def _absolute_preserving_symlink(path: str | Path) -> Path:
+    """Make an interpreter path absolute without dereferencing its venv link."""
+    return Path(path).absolute()
 
 
 def sha(path: Path) -> str:
@@ -508,7 +530,7 @@ def generate_frozen_opponent(spec: OpponentSpec) -> Path | Mapping[str, Any]:
             "reference_sha256": spec.reference_sha256,
             "max_turns": spec.max_turns,
             "renderer": str(Path(renderer).resolve()),
-            "renderer_python": str(Path(renderer_python).resolve()),
+            "renderer_python": str(_absolute_preserving_symlink(renderer_python)),
         }]
     }, indent=2, sort_keys=True) + "\n")
     try:
@@ -543,7 +565,7 @@ def generate_frozen_opponent(spec: OpponentSpec) -> Path | Mapping[str, Any]:
     renderer_config = (
         taskset_marker
         + f"renderer = {json.dumps(str(Path(renderer).resolve()))}\n"
-        + f"renderer_python = {json.dumps(str(Path(renderer_python).resolve()))}\n"
+        + f"renderer_python = {json.dumps(str(_absolute_preserving_symlink(renderer_python)))}\n"
     )
     if taskset_marker not in generated:
         raise OpponentUnavailable("native frozen-opponent config has no env.taskset section")
