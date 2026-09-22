@@ -28,7 +28,8 @@ RENDER_TIMEOUT=${PAINTER_RENDER_TIMEOUT_SECONDS:-180}
 ROLLOUT_TIMEOUT=${ROLLOUT_TIMEOUT_SECONDS:-1800}
 SERVER_START_TIMEOUT=${SERVER_START_TIMEOUT_SECONDS:-900}
 LOG_ROOT=$EVAL_ROOT/logs
-mkdir -p "$LOG_ROOT"
+CACHE_ROOT=$EVAL_ROOT/cache
+mkdir -p "$LOG_ROOT" "$CACHE_ROOT/midpoint512" "$CACHE_ROOT/final1024"
 
 [[ $(uname -s) == Linux ]] || { echo "this launcher must run on the Linux node" >&2; exit 2; }
 for required in "$PYTHON" "$EVAL" "$VLLM" "$MODEL_DIR/config.json" "$MANIFEST" \
@@ -169,6 +170,9 @@ start_server() {
   local name=$1 gpu=$2 port=$3 adapter=$4 log=$5
   setsid env CUDA_VISIBLE_DEVICES="$gpu" TOKENIZERS_PARALLELISM=false \
     VLLM_USE_FLASHINFER_SAMPLER=0 OMP_NUM_THREADS="${OMP_NUM_THREADS:-6}" \
+    VLLM_CACHE_ROOT="$CACHE_ROOT/$name/vllm" \
+    TORCHINDUCTOR_CACHE_DIR="$CACHE_ROOT/$name/torchinductor" \
+    TRITON_CACHE_DIR="$CACHE_ROOT/$name/triton" \
     PLAYWRIGHT_BROWSERS_PATH="$PAINTER_ROOT/browsers" \
     "$VLLM" serve "$MODEL_DIR" --served-model-name base --host 127.0.0.1 --port "$port" \
       --dtype bfloat16 --max-model-len "$MAX_MODEL_LEN" --max-num-seqs "$MAX_CONCURRENT" \

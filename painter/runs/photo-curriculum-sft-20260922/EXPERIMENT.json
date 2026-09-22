@@ -1,6 +1,6 @@
 {
   "run": "photo-curriculum-sft-20260922",
-  "status": "training_complete_visual_evaluation_pending",
+  "status": "training_complete_matched_visual_evaluation_running",
   "training_started": true,
   "hypothesis": "Complete, rendered, reference-specific demonstrations with diverse structural foundations improve fresh-base photo painting.",
   "base": {
@@ -77,6 +77,20 @@
         "length": 2
       },
       "no_complete_code_block": 5
+    },
+    "student_evaluation": {
+      "status": "generating",
+      "started_utc": "2026-09-22T05:24:00Z",
+      "steps": [
+        512,
+        1024
+      ],
+      "max_concurrent_each": 4,
+      "failed_startups": [
+        "stale_node_config_generator_cli",
+        "shared_compiler_cache_race"
+      ],
+      "startup_samples_lost": 0
     }
   },
   "hardware": {

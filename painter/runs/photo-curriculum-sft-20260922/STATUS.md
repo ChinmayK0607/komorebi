@@ -14,13 +14,13 @@ Pinned fresh Qwen3.8-27B, Prime 26b3131d2716a4f8210b165df584b83b4bc54f61; rank 1
 
 The initial 512-update startup was deliberately stopped with no completed optimizer update observed in its preserved logs: source coverage made its desired token proportions impossible. Preserved initial receipts show 21.62/72.97/5.41%. The 1,024-update relaunch reaches the intended 40/50/10 mixture. Its namespace is photo-curriculum-sft-20260922-balanced. Native checkpoints retain the last two states on the node for resumability; public adapters are exported and remotely hash-verified every 64 updates.
 
-## Evidence and limitations
+## Early evidence at step 64
 
 The run passed 64 updates and resumed training afterward. All observed losses and gradient norms were finite, with zero NaN loss counts. The step-64 public adapter is hash-verified; all 992 tensors changed from initialization and all 496 B tensors are nonzero. Procedural validation loss fell from 0.871 to 0.611; this is teacher-forced token prediction, not a visual score. Post-startup median step time was 8.82 seconds over steps 2–13. GPU means were 78.0% and 72.92% across 13 samples each during 22:15:54–22:17:54 UTC. Both were busy at every sample, but the pipeline is not fully saturated. Startup compilation is outside that selected utilization interval and its telemetry is preserved. Prime emitted impossible MFU estimates above 100%; those values are not evidence of efficiency.
 
 Matched baseline is complete on all 28 held-out photographs: 4 valid first-paint canvases; 19 runtime/JavaScript failures; 5 responses lacking a complete JavaScript block, including 2 length cutoffs. All 28 remain in the denominator. This protocol is one response with 8,192 output tokens and 180 seconds rendering; it is distinct from the previous six-turn capability study.
 
-Visual improvement is unknown until saved student checkpoints receive the same evaluation. The next decision compares real-reference fidelity and aesthetics against the immutable base, with failed paintings included. Neither teacher validity nor declining training loss is a visual-quality result. GPU rental rate is $2.38/hour; final utilization, elapsed cost and run results remain pending. No scheduled task was created.
+Visual improvement is unknown until saved student checkpoints receive the same evaluation. The next decision compares real-reference fidelity and aesthetics against the immutable base, with failed paintings included. Neither teacher validity nor declining training loss is a visual-quality result. GPU rental rate is $2.38/hour; the completed-training utilization is recorded below, while visual results and final rental cost remain pending. No scheduled task was created.
 
 Public trained checkpoint: [step64](https://huggingface.co/CK0607/qwen3.8-27b-brush-painting/tree/b08effd090f8aa8ea5e05094f08588fb5237e950/photo-curriculum-sft-20260922-balanced/step_64).
 
@@ -29,3 +29,9 @@ Public trained checkpoint: [step64](https://huggingface.co/CK0607/qwen3.8-27b-br
 Exit code 0. All 1,024 reported losses were finite with zero NaN losses. All 17 checkpoints, including initialization, are public and remotely hash-verified. Final procedural validation loss was 0.033264 versus initial 0.870856; this measures prediction of held-out procedural programs, not painting aesthetics or photo generalization. Median step time excluding the first was 8.02 seconds.
 
 Whole-job utilization: GPU 0 averaged 72.45%, GPU 1 averaged 72.99%, with 1,098 samples each during 2026-09-21 22:11:52.983 to 2026-09-22 01:15:33.099 UTC. Busy fractions (at least 10% utilization) were 90.35% and 91.26%. This includes startup, validation and checkpoint work. It excludes the subsequent idle allocation period. At the 04:59 UTC status check, the node remained allocated and both GPUs were idle, approximately 3 hours 44 minutes after completion. The next finite job compares step 512 and step 1,024 with the preserved base first-paint evaluation on all 28 held-out photographs.
+
+## Matched evaluation startup
+
+The reviewed finite evaluation launcher and gallery exporter are committed as 3b1af99. The first startup stopped before inference because the node had an older config-generator CLI; the canonical committed generator was synchronized and its previous copy retained. The second startup hit a concurrent vLLM/Triton compiler-cache race; both owned servers cleaned up. Per-server cache isolation resolved the compiler race; both policies began concurrent generation at approximately 05:24 UTC, with four cases per GPU. Neither failed startup produced evaluation samples or changes training completion. Both attempt logs are preserved.
+
+The blind review helper received metadata and syntax checks locally. An earlier agent fixture composed placeholder contact sheets on Mac using a platform override, contrary to the node-only rendering agreement; it is not counted as Linux validation. Actual model inference and painting rendering remain on the Linux node, and the actual review images will also be composed there.
