@@ -1,0 +1,154 @@
+{
+  "reviews": [
+    {
+      "case_id": "case-010",
+      "triptych_sha256": "1c98eea032c06a965e9be33ae34408abed5f1e7e49de9de45b221dc1e226410b",
+      "viewed": true,
+      "preference": "A",
+      "acceptable_a": true,
+      "acceptable_b": false,
+      "reason": "A is the only valid painting and conveys the vintage biplane and boarding crowd.",
+      "preferred_defects": [
+        "Aircraft structure and people are heavily abstracted."
+      ],
+      "worse_in_preferred": [
+        "The plane silhouette and crowd placement are rough."
+      ]
+    },
+    {
+      "case_id": "case-011",
+      "triptych_sha256": "1184c95628f733a778d1e3ca696eb6859b6c21729bd43fee25ed6d0fb876eb27",
+      "viewed": true,
+      "preference": "B",
+      "acceptable_a": true,
+      "acceptable_b": true,
+      "reason": "B is the only valid painting and clearly depicts the bus on a city street.",
+      "preferred_defects": [
+        "Bus geometry and storefront detail are simplified."
+      ],
+      "worse_in_preferred": [
+        "The front and wheels are distorted."
+      ]
+    },
+    {
+      "case_id": "case-012",
+      "triptych_sha256": "a84dbbf66e9d2fdb13c182d03ff4eeb7fa0ff282e0c23a87de58de44f844d519",
+      "viewed": true,
+      "preference": "A",
+      "acceptable_a": true,
+      "acceptable_b": true,
+      "reason": "A better preserves the owl candle, ornate clock, and tabletop arrangement; B has a clock and owl-like form but loses the distinctive sculpture.",
+      "preferred_defects": [
+        "A's owl and clock proportions are crude."
+      ],
+      "worse_in_preferred": [
+        "Small decorative details and candle shape are lost."
+      ]
+    },
+    {
+      "case_id": "case-013",
+      "triptych_sha256": "c0056e965f7199c3eb196d46d0270fa2afdb4f1b902bca774ea49d6749447072",
+      "viewed": true,
+      "preference": "neither",
+      "acceptable_a": false,
+      "acceptable_b": false,
+      "reason": "Both candidates are missing, so neither can be judged as a painting.",
+      "preferred_defects": [
+        "No candidate image is available."
+      ],
+      "worse_in_preferred": [
+        "No preferred image."
+      ]
+    },
+    {
+      "case_id": "case-014",
+      "triptych_sha256": "5dcffe3e7eda308ebb8faaea5055bc3bdcfd1565e01316889d1b554424916917",
+      "viewed": true,
+      "preference": "A",
+      "acceptable_a": true,
+      "acceptable_b": true,
+      "reason": "A more clearly depicts two jumping horses and the hurdle in a green field; B has less coherent horse anatomy and composition.",
+      "preferred_defects": [
+        "A loses riders and fine equestrian details."
+      ],
+      "worse_in_preferred": [
+        "Horse legs and rider forms are indistinct."
+      ]
+    },
+    {
+      "case_id": "case-015",
+      "triptych_sha256": "a0680d6fb435e7c5787439fe39388b9a5ca45ecea99365fff3f6e7d3ae2fb6b9",
+      "viewed": true,
+      "preference": "A",
+      "acceptable_a": true,
+      "acceptable_b": true,
+      "reason": "A retains two giraffes, their upward neck interaction, and the wooded setting more legibly than B.",
+      "preferred_defects": [
+        "A's foreground giraffe is oversized and tangled with line artifacts."
+      ],
+      "worse_in_preferred": [
+        "Patterning and body anatomy are rough."
+      ]
+    },
+    {
+      "case_id": "case-016",
+      "triptych_sha256": "1d2627ddf26c4ae7d04538b6a6e5b04696ca4a6aca2b2891273eb629e561e3f2",
+      "viewed": true,
+      "preference": "A",
+      "acceptable_a": true,
+      "acceptable_b": false,
+      "reason": "A is the only valid painting and preserves the skatepark, ramps, multiple skaters, and skyline.",
+      "preferred_defects": [
+        "Skater poses and graffiti are simplified."
+      ],
+      "worse_in_preferred": [
+        "The central figure and board geometry are unclear."
+      ]
+    },
+    {
+      "case_id": "case-017",
+      "triptych_sha256": "bd9355f59416f782d1458437c253d637b02bd48e2fcc41dc5cfcb09b6ee673ea",
+      "viewed": true,
+      "preference": "A",
+      "acceptable_a": true,
+      "acceptable_b": true,
+      "reason": "A better retains the couple, cake table, and indoor celebration layout; B has a cake but weaker people and room structure.",
+      "preferred_defects": [
+        "A omits facial detail and cake writing."
+      ],
+      "worse_in_preferred": [
+        "The cake surface and hand gestures are simplified."
+      ]
+    },
+    {
+      "case_id": "case-018",
+      "triptych_sha256": "d5884a7761ff671485926b57fedd615e0a5e68ae4414978f3962a208d062282a",
+      "viewed": true,
+      "preference": "A",
+      "acceptable_a": true,
+      "acceptable_b": true,
+      "reason": "A preserves the nighttime lawn, person, and glowing flying disc much more clearly; B loses the dark setting and disc action.",
+      "preferred_defects": [
+        "A's figure is stiff and the disc trajectory is weak."
+      ],
+      "worse_in_preferred": [
+        "Lighting and hand/arm anatomy are rough."
+      ]
+    },
+    {
+      "case_id": "case-019",
+      "triptych_sha256": "7d9e43c19f4916035501efe374d6099abdb3d218e445d15a313b44f256c6d532",
+      "viewed": true,
+      "preference": "B",
+      "acceptable_a": true,
+      "acceptable_b": false,
+      "reason": "B is the only valid painting and clearly retains the open toilet, bowl, stone wall, and overhead view.",
+      "preferred_defects": [
+        "The bowl interior and wall texture are simplified."
+      ],
+      "worse_in_preferred": [
+        "Perspective is flatter and the outdoor opening is ambiguous."
+      ]
+    }
+  ]
+}

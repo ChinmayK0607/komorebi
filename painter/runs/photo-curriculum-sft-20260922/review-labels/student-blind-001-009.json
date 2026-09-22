@@ -1,0 +1,139 @@
+{
+  "reviews": [
+    {
+      "case_id": "case-001",
+      "triptych_sha256": "960c799e172a04cbdf18dc442564a5cd9fffc0c9fcdf38427f8549f00c3dbdb2",
+      "viewed": true,
+      "preference": "A",
+      "acceptable_a": true,
+      "acceptable_b": true,
+      "reason": "A preserves the outdoor tabletop, cup, saucer, cake, and surrounding objects with stronger overall structure; B is cleaner but loses the table context and simplifies the cake.",
+      "preferred_defects": [
+        "A flattens the tabletop perspective and obscures some props."
+      ],
+      "worse_in_preferred": [
+        "Cake and cup proportions are rough."
+      ]
+    },
+    {
+      "case_id": "case-002",
+      "triptych_sha256": "2e8174346f76f88010682b4fa3ba7e59e6ca782ed0f74580d06fd019a5ab2334",
+      "viewed": true,
+      "preference": "A",
+      "acceptable_a": true,
+      "acceptable_b": false,
+      "reason": "A is the only valid painting and retains the colorful lunch containers and foods; B has no valid final painting.",
+      "preferred_defects": [
+        "Food shapes and container perspective are highly abstract."
+      ],
+      "worse_in_preferred": [
+        "Several foods merge into large flat shapes."
+      ]
+    },
+    {
+      "case_id": "case-003",
+      "triptych_sha256": "092685bca81016c082da4d05e0fd89b81267825860c4115351ec61bc2e4e88cf",
+      "viewed": true,
+      "preference": "A",
+      "acceptable_a": true,
+      "acceptable_b": true,
+      "reason": "A better retains the tennis court, net, player positions, and red-clad far player; B has a more explicit net but loses the court perspective and has distorted figures.",
+      "preferred_defects": [
+        "A's foreground player is an oversized dark silhouette."
+      ],
+      "worse_in_preferred": [
+        "Ball and racket action are unclear."
+      ]
+    },
+    {
+      "case_id": "case-004",
+      "triptych_sha256": "f838f455b95b0b4598fe6148c7a5c189536f7cac7118e47d19ca9b2e43b14b94",
+      "viewed": true,
+      "preference": "A",
+      "acceptable_a": false,
+      "acceptable_b": false,
+      "reason": "A is the only valid output and at least depicts an animal indoors, but it changes the cat on a couch into a distorted dog-like musician; B is missing.",
+      "preferred_defects": [
+        "Animal identity, couch pose, and remote controls are wrong."
+      ],
+      "worse_in_preferred": [
+        "The instrument dominates and replaces the reference props."
+      ]
+    },
+    {
+      "case_id": "case-005",
+      "triptych_sha256": "bb291df56203fb73f1b5590efcef5758d8d4f6088892074eccfb1b4bc921c95c",
+      "viewed": true,
+      "preference": "A",
+      "acceptable_a": true,
+      "acceptable_b": false,
+      "reason": "A preserves the bunk bed, desk, drawers, lamp, and room layout in a coherent stylized interior; B is missing.",
+      "preferred_defects": [
+        "Lower furniture and bed details are simplified."
+      ],
+      "worse_in_preferred": [
+        "Perspective and lighting are flatter than the reference."
+      ]
+    },
+    {
+      "case_id": "case-006",
+      "triptych_sha256": "359fa3f9390c498bcb9776130ac3769a0aef392adb43a843b96796a693224c95",
+      "viewed": true,
+      "preference": "A",
+      "acceptable_a": true,
+      "acceptable_b": false,
+      "reason": "A clearly depicts the same kitchen with stove, hood, tiled backsplash, and knife rack; B is missing.",
+      "preferred_defects": [
+        "Counter clutter and date stamp are omitted."
+      ],
+      "worse_in_preferred": [
+        "Appliance geometry is blocky."
+      ]
+    },
+    {
+      "case_id": "case-007",
+      "triptych_sha256": "e208c5d6e5d40844d7b31e0fba8a6c358253476cdde739ef66724071b9925c46",
+      "viewed": true,
+      "preference": "A",
+      "acceptable_a": true,
+      "acceptable_b": false,
+      "reason": "A retains the sink, faucet, mirror, and two lizards, while B is missing; the scene remains recognizable despite heavy abstraction.",
+      "preferred_defects": [
+        "Lizard anatomy and faucet perspective are rough."
+      ],
+      "worse_in_preferred": [
+        "The mirror reflection and running water are weakly represented."
+      ]
+    },
+    {
+      "case_id": "case-008",
+      "triptych_sha256": "47d8a9b646262523beadaff01027902435caabf4f6a7e404b49bc59d5f8ebe7b",
+      "viewed": true,
+      "preference": "B",
+      "acceptable_a": false,
+      "acceptable_b": true,
+      "reason": "B preserves the baseball diamond, striped outfield, players, and home-plate action better; A largely loses the players and field structure.",
+      "preferred_defects": [
+        "B simplifies all players to tiny marks and loses stadium detail."
+      ],
+      "worse_in_preferred": [
+        "The pitching and batting action are ambiguous."
+      ]
+    },
+    {
+      "case_id": "case-009",
+      "triptych_sha256": "8f9d64311ea8c6bb654ed5f6a9f0915cd9ea064959c70729bf490ec0a49da691",
+      "viewed": true,
+      "preference": "A",
+      "acceptable_a": true,
+      "acceptable_b": false,
+      "reason": "A is the only valid painting and preserves the snowy mountain layers, broad slope, tracks, and skier; B is missing.",
+      "preferred_defects": [
+        "Mountain texture and skier scale are simplified."
+      ],
+      "worse_in_preferred": [
+        "The skier is a generic small figure and the snow shadows are reduced."
+      ]
+    }
+  ]
+}

@@ -1,0 +1,491 @@
+{
+  "reviewed": 28,
+  "preferences": {
+    "midpoint512": 15,
+    "final1024": 11,
+    "neither": 2
+  },
+  "both_valid_preferences": {
+    "midpoint512": 7,
+    "final1024": 4
+  },
+  "note": "Offline Luna-low preferences, not training reward; parent disagreements preserved. Absolute acceptability bar clarified after batch001-009; do not pool acceptability rates.",
+  "reviews": [
+    {
+      "case_id": "case-001",
+      "triptych_sha256": "960c799e172a04cbdf18dc442564a5cd9fffc0c9fcdf38427f8549f00c3dbdb2",
+      "viewed": true,
+      "preference": "A",
+      "acceptable_a": true,
+      "acceptable_b": true,
+      "reason": "A preserves the outdoor tabletop, cup, saucer, cake, and surrounding objects with stronger overall structure; B is cleaner but loses the table context and simplifies the cake.",
+      "preferred_defects": [
+        "A flattens the tabletop perspective and obscures some props."
+      ],
+      "worse_in_preferred": [
+        "Cake and cup proportions are rough."
+      ],
+      "reference_id": "coco-capability-20260922-000000000127",
+      "mapped_preference": "midpoint512"
+    },
+    {
+      "case_id": "case-002",
+      "triptych_sha256": "2e8174346f76f88010682b4fa3ba7e59e6ca782ed0f74580d06fd019a5ab2334",
+      "viewed": true,
+      "preference": "A",
+      "acceptable_a": true,
+      "acceptable_b": false,
+      "reason": "A is the only valid painting and retains the colorful lunch containers and foods; B has no valid final painting.",
+      "preferred_defects": [
+        "Food shapes and container perspective are highly abstract."
+      ],
+      "worse_in_preferred": [
+        "Several foods merge into large flat shapes."
+      ],
+      "reference_id": "coco-capability-20260922-000000000009",
+      "mapped_preference": "midpoint512"
+    },
+    {
+      "case_id": "case-003",
+      "triptych_sha256": "092685bca81016c082da4d05e0fd89b81267825860c4115351ec61bc2e4e88cf",
+      "viewed": true,
+      "preference": "A",
+      "acceptable_a": true,
+      "acceptable_b": true,
+      "reason": "A better retains the tennis court, net, player positions, and red-clad far player; B has a more explicit net but loses the court perspective and has distorted figures.",
+      "preferred_defects": [
+        "A's foreground player is an oversized dark silhouette."
+      ],
+      "worse_in_preferred": [
+        "Ball and racket action are unclear."
+      ],
+      "reference_id": "coco-capability-20260922-000000000419",
+      "mapped_preference": "final1024"
+    },
+    {
+      "case_id": "case-004",
+      "triptych_sha256": "f838f455b95b0b4598fe6148c7a5c189536f7cac7118e47d19ca9b2e43b14b94",
+      "viewed": true,
+      "preference": "A",
+      "acceptable_a": false,
+      "acceptable_b": false,
+      "reason": "A is the only valid output and at least depicts an animal indoors, but it changes the cat on a couch into a distorted dog-like musician; B is missing.",
+      "preferred_defects": [
+        "Animal identity, couch pose, and remote controls are wrong."
+      ],
+      "worse_in_preferred": [
+        "The instrument dominates and replaces the reference props."
+      ],
+      "reference_id": "coco-capability-20260922-000000000599",
+      "mapped_preference": "midpoint512"
+    },
+    {
+      "case_id": "case-005",
+      "triptych_sha256": "bb291df56203fb73f1b5590efcef5758d8d4f6088892074eccfb1b4bc921c95c",
+      "viewed": true,
+      "preference": "A",
+      "acceptable_a": true,
+      "acceptable_b": false,
+      "reason": "A preserves the bunk bed, desk, drawers, lamp, and room layout in a coherent stylized interior; B is missing.",
+      "preferred_defects": [
+        "Lower furniture and bed details are simplified."
+      ],
+      "worse_in_preferred": [
+        "Perspective and lighting are flatter than the reference."
+      ],
+      "reference_id": "coco-capability-20260922-000000000133",
+      "mapped_preference": "final1024"
+    },
+    {
+      "case_id": "case-006",
+      "triptych_sha256": "359fa3f9390c498bcb9776130ac3769a0aef392adb43a843b96796a693224c95",
+      "viewed": true,
+      "preference": "A",
+      "acceptable_a": true,
+      "acceptable_b": false,
+      "reason": "A clearly depicts the same kitchen with stove, hood, tiled backsplash, and knife rack; B is missing.",
+      "preferred_defects": [
+        "Counter clutter and date stamp are omitted."
+      ],
+      "worse_in_preferred": [
+        "Appliance geometry is blocky."
+      ],
+      "reference_id": "coco-capability-20260922-000000000089",
+      "mapped_preference": "midpoint512"
+    },
+    {
+      "case_id": "case-007",
+      "triptych_sha256": "e208c5d6e5d40844d7b31e0fba8a6c358253476cdde739ef66724071b9925c46",
+      "viewed": true,
+      "preference": "A",
+      "acceptable_a": true,
+      "acceptable_b": false,
+      "reason": "A retains the sink, faucet, mirror, and two lizards, while B is missing; the scene remains recognizable despite heavy abstraction.",
+      "preferred_defects": [
+        "Lizard anatomy and faucet perspective are rough."
+      ],
+      "worse_in_preferred": [
+        "The mirror reflection and running water are weakly represented."
+      ],
+      "reference_id": "coco-capability-20260922-000000000208",
+      "mapped_preference": "midpoint512"
+    },
+    {
+      "case_id": "case-008",
+      "triptych_sha256": "47d8a9b646262523beadaff01027902435caabf4f6a7e404b49bc59d5f8ebe7b",
+      "viewed": true,
+      "preference": "B",
+      "acceptable_a": false,
+      "acceptable_b": true,
+      "reason": "B preserves the baseball diamond, striped outfield, players, and home-plate action better; A largely loses the players and field structure.",
+      "preferred_defects": [
+        "B simplifies all players to tiny marks and loses stadium detail."
+      ],
+      "worse_in_preferred": [
+        "The pitching and batting action are ambiguous."
+      ],
+      "reference_id": "coco-capability-20260922-000000000357",
+      "mapped_preference": "midpoint512"
+    },
+    {
+      "case_id": "case-009",
+      "triptych_sha256": "8f9d64311ea8c6bb654ed5f6a9f0915cd9ea064959c70729bf490ec0a49da691",
+      "viewed": true,
+      "preference": "A",
+      "acceptable_a": true,
+      "acceptable_b": false,
+      "reason": "A is the only valid painting and preserves the snowy mountain layers, broad slope, tracks, and skier; B is missing.",
+      "preferred_defects": [
+        "Mountain texture and skier scale are simplified."
+      ],
+      "worse_in_preferred": [
+        "The skier is a generic small figure and the snow shadows are reduced."
+      ],
+      "reference_id": "coco-capability-20260922-000000000382",
+      "mapped_preference": "final1024"
+    },
+    {
+      "case_id": "case-010",
+      "triptych_sha256": "1c98eea032c06a965e9be33ae34408abed5f1e7e49de9de45b221dc1e226410b",
+      "viewed": true,
+      "preference": "A",
+      "acceptable_a": true,
+      "acceptable_b": false,
+      "reason": "A is the only valid painting and conveys the vintage biplane and boarding crowd.",
+      "preferred_defects": [
+        "Aircraft structure and people are heavily abstracted."
+      ],
+      "worse_in_preferred": [
+        "The plane silhouette and crowd placement are rough."
+      ],
+      "reference_id": "coco-capability-20260922-000000000542",
+      "mapped_preference": "final1024"
+    },
+    {
+      "case_id": "case-011",
+      "triptych_sha256": "1184c95628f733a778d1e3ca696eb6859b6c21729bd43fee25ed6d0fb876eb27",
+      "viewed": true,
+      "preference": "B",
+      "acceptable_a": true,
+      "acceptable_b": true,
+      "reason": "B is the only valid painting and clearly depicts the bus on a city street.",
+      "preferred_defects": [
+        "Bus geometry and storefront detail are simplified."
+      ],
+      "worse_in_preferred": [
+        "The front and wheels are distorted."
+      ],
+      "reference_id": "coco-capability-20260922-000000000641",
+      "mapped_preference": "final1024"
+    },
+    {
+      "case_id": "case-012",
+      "triptych_sha256": "a84dbbf66e9d2fdb13c182d03ff4eeb7fa0ff282e0c23a87de58de44f844d519",
+      "viewed": true,
+      "preference": "A",
+      "acceptable_a": true,
+      "acceptable_b": true,
+      "reason": "A better preserves the owl candle, ornate clock, and tabletop arrangement; B has a clock and owl-like form but loses the distinctive sculpture.",
+      "preferred_defects": [
+        "A's owl and clock proportions are crude."
+      ],
+      "worse_in_preferred": [
+        "Small decorative details and candle shape are lost."
+      ],
+      "reference_id": "coco-capability-20260922-000000000078",
+      "mapped_preference": "midpoint512"
+    },
+    {
+      "case_id": "case-013",
+      "triptych_sha256": "c0056e965f7199c3eb196d46d0270fa2afdb4f1b902bca774ea49d6749447072",
+      "viewed": true,
+      "preference": "neither",
+      "acceptable_a": false,
+      "acceptable_b": false,
+      "reason": "Both candidates are missing, so neither can be judged as a painting.",
+      "preferred_defects": [
+        "No candidate image is available."
+      ],
+      "worse_in_preferred": [
+        "No preferred image."
+      ],
+      "reference_id": "coco-capability-20260922-000000000030",
+      "mapped_preference": "neither"
+    },
+    {
+      "case_id": "case-014",
+      "triptych_sha256": "5dcffe3e7eda308ebb8faaea5055bc3bdcfd1565e01316889d1b554424916917",
+      "viewed": true,
+      "preference": "A",
+      "acceptable_a": true,
+      "acceptable_b": true,
+      "reason": "A more clearly depicts two jumping horses and the hurdle in a green field; B has less coherent horse anatomy and composition.",
+      "preferred_defects": [
+        "A loses riders and fine equestrian details."
+      ],
+      "worse_in_preferred": [
+        "Horse legs and rider forms are indistinct."
+      ],
+      "reference_id": "coco-capability-20260922-000000000049",
+      "mapped_preference": "final1024"
+    },
+    {
+      "case_id": "case-015",
+      "triptych_sha256": "a0680d6fb435e7c5787439fe39388b9a5ca45ecea99365fff3f6e7d3ae2fb6b9",
+      "viewed": true,
+      "preference": "A",
+      "acceptable_a": true,
+      "acceptable_b": true,
+      "reason": "A retains two giraffes, their upward neck interaction, and the wooded setting more legibly than B.",
+      "preferred_defects": [
+        "A's foreground giraffe is oversized and tangled with line artifacts."
+      ],
+      "worse_in_preferred": [
+        "Patterning and body anatomy are rough."
+      ],
+      "reference_id": "coco-capability-20260922-000000000072",
+      "mapped_preference": "final1024"
+    },
+    {
+      "case_id": "case-016",
+      "triptych_sha256": "1d2627ddf26c4ae7d04538b6a6e5b04696ca4a6aca2b2891273eb629e561e3f2",
+      "viewed": true,
+      "preference": "A",
+      "acceptable_a": true,
+      "acceptable_b": false,
+      "reason": "A is the only valid painting and preserves the skatepark, ramps, multiple skaters, and skyline.",
+      "preferred_defects": [
+        "Skater poses and graffiti are simplified."
+      ],
+      "worse_in_preferred": [
+        "The central figure and board geometry are unclear."
+      ],
+      "reference_id": "coco-capability-20260922-000000000077",
+      "mapped_preference": "midpoint512"
+    },
+    {
+      "case_id": "case-017",
+      "triptych_sha256": "bd9355f59416f782d1458437c253d637b02bd48e2fcc41dc5cfcb09b6ee673ea",
+      "viewed": true,
+      "preference": "A",
+      "acceptable_a": true,
+      "acceptable_b": true,
+      "reason": "A better retains the couple, cake table, and indoor celebration layout; B has a cake but weaker people and room structure.",
+      "preferred_defects": [
+        "A omits facial detail and cake writing."
+      ],
+      "worse_in_preferred": [
+        "The cake surface and hand gestures are simplified."
+      ],
+      "reference_id": "coco-capability-20260922-000000000113",
+      "mapped_preference": "midpoint512"
+    },
+    {
+      "case_id": "case-018",
+      "triptych_sha256": "d5884a7761ff671485926b57fedd615e0a5e68ae4414978f3962a208d062282a",
+      "viewed": true,
+      "preference": "A",
+      "acceptable_a": true,
+      "acceptable_b": true,
+      "reason": "A preserves the nighttime lawn, person, and glowing flying disc much more clearly; B loses the dark setting and disc action.",
+      "preferred_defects": [
+        "A's figure is stiff and the disc trajectory is weak."
+      ],
+      "worse_in_preferred": [
+        "Lighting and hand/arm anatomy are rough."
+      ],
+      "reference_id": "coco-capability-20260922-000000000322",
+      "mapped_preference": "midpoint512"
+    },
+    {
+      "case_id": "case-019",
+      "triptych_sha256": "7d9e43c19f4916035501efe374d6099abdb3d218e445d15a313b44f256c6d532",
+      "viewed": true,
+      "preference": "B",
+      "acceptable_a": true,
+      "acceptable_b": false,
+      "reason": "B is the only valid painting and clearly retains the open toilet, bowl, stone wall, and overhead view.",
+      "preferred_defects": [
+        "The bowl interior and wall texture are simplified."
+      ],
+      "worse_in_preferred": [
+        "Perspective is flatter and the outdoor opening is ambiguous."
+      ],
+      "reference_id": "coco-capability-20260922-000000000636",
+      "mapped_preference": "final1024"
+    },
+    {
+      "case_id": "case-020",
+      "triptych_sha256": "a9e3fd669e12a9c2eb4bd0fb49ac9a704c28eceb07c053d2899c3e0e607ac82d",
+      "viewed": true,
+      "preference": "neither",
+      "acceptable_a": false,
+      "acceptable_b": false,
+      "reason": "Both candidates are missing, so neither is a usable painting.",
+      "preferred_defects": [
+        "No preferred image."
+      ],
+      "worse_in_preferred": [
+        "No candidate image is available."
+      ],
+      "reference_id": "coco-capability-20260922-000000000201",
+      "mapped_preference": "neither"
+    },
+    {
+      "case_id": "case-021",
+      "triptych_sha256": "262dcc4e06b5f286248bb7c77d20969a7a0e8aedc6d3861a6bf30daee74a2a74",
+      "viewed": true,
+      "preference": "A",
+      "acceptable_a": true,
+      "acceptable_b": true,
+      "reason": "A better preserves the silhouetted city street, overhead signals, and central tower; B is a scattered abstract street scene.",
+      "preferred_defects": [
+        "A's skyline and vehicle are vague."
+      ],
+      "worse_in_preferred": [
+        "Street perspective and signage are simplified."
+      ],
+      "reference_id": "coco-capability-20260922-000000000359",
+      "mapped_preference": "midpoint512"
+    },
+    {
+      "case_id": "case-022",
+      "triptych_sha256": "13e499c634ed02126ffbfbd75745b513e2b828d40c76259d85334da71864393b",
+      "viewed": true,
+      "preference": "B",
+      "acceptable_a": true,
+      "acceptable_b": false,
+      "reason": "B is the only valid output and retains the two people, doorway, and suitcase from the reference.",
+      "preferred_defects": [
+        "People are simplified and the upper body pose is stiff."
+      ],
+      "worse_in_preferred": [
+        "Suitcase and stair geometry are crude."
+      ],
+      "reference_id": "coco-capability-20260922-000000000572",
+      "mapped_preference": "midpoint512"
+    },
+    {
+      "case_id": "case-023",
+      "triptych_sha256": "66521507565c68195beee363058b25e0f78e19a0d26ebdc9e5657ee2d77e0638",
+      "viewed": true,
+      "preference": "B",
+      "acceptable_a": true,
+      "acceptable_b": false,
+      "reason": "B is the only valid output and at least preserves a plated orange-brown food dish with scattered toppings.",
+      "preferred_defects": [
+        "The food is an amorphous mound and loses the distinct cubed ingredients."
+      ],
+      "worse_in_preferred": [
+        "Plate perspective and ingredient structure are weak."
+      ],
+      "reference_id": "coco-capability-20260922-000000000584",
+      "mapped_preference": "midpoint512"
+    },
+    {
+      "case_id": "case-024",
+      "triptych_sha256": "b0155b29f449dd9e8748aed820e2e28b6de6938f49a4e7997696c64ca4b4f65b",
+      "viewed": true,
+      "preference": "A",
+      "acceptable_a": true,
+      "acceptable_b": true,
+      "reason": "A more directly depicts several toothbrushes standing in a glass, matching the reference arrangement; B changes it to a cup with one oversized brush.",
+      "preferred_defects": [
+        "A is washed out and loses the glass's form."
+      ],
+      "worse_in_preferred": [
+        "Toothbrush bristles and color details are faint."
+      ],
+      "reference_id": "coco-capability-20260922-000000000562",
+      "mapped_preference": "midpoint512"
+    },
+    {
+      "case_id": "case-025",
+      "triptych_sha256": "6c7484d3a4d54049c6ee46ef4f6f6ea036d99d49e279ec01c4c488add54a2d23",
+      "viewed": true,
+      "preference": "B",
+      "acceptable_a": true,
+      "acceptable_b": false,
+      "reason": "B is the only valid output and clearly depicts a large passenger airplane in flight.",
+      "preferred_defects": [
+        "Aircraft proportions and engines are simplified."
+      ],
+      "worse_in_preferred": [
+        "Wing and fuselage details are rough."
+      ],
+      "reference_id": "coco-capability-20260922-000000000081",
+      "mapped_preference": "final1024"
+    },
+    {
+      "case_id": "case-026",
+      "triptych_sha256": "b9eff4a64a39eb974225bf66c59aab0de87a73388be50b09dfb7488474c9ab68",
+      "viewed": true,
+      "preference": "A",
+      "acceptable_a": true,
+      "acceptable_b": false,
+      "reason": "A is the only valid output and preserves the tennis player, racket, ball, and court lines.",
+      "preferred_defects": [
+        "Player anatomy and the racket action are distorted."
+      ],
+      "worse_in_preferred": [
+        "The pose is stiff and background elements are generic."
+      ],
+      "reference_id": "coco-capability-20260922-000000000431",
+      "mapped_preference": "midpoint512"
+    },
+    {
+      "case_id": "case-027",
+      "triptych_sha256": "22cac8acf33295cbde893811d7110c4df39be9d43cecaf7c69ffb5fd52fd61a9",
+      "viewed": true,
+      "preference": "B",
+      "acceptable_a": true,
+      "acceptable_b": false,
+      "reason": "B is the only valid output and captures the clock tower building framed by taller buildings.",
+      "preferred_defects": [
+        "The facade is simplified into flat blocks."
+      ],
+      "worse_in_preferred": [
+        "Clock face and architectural details are sparse."
+      ],
+      "reference_id": "coco-capability-20260922-000000000626",
+      "mapped_preference": "final1024"
+    },
+    {
+      "case_id": "case-028",
+      "triptych_sha256": "2251d5e854c1b9075a156a42f58c8c44680d6a26ccb7721642e77b3532600396",
+      "viewed": true,
+      "preference": "A",
+      "acceptable_a": true,
+      "acceptable_b": true,
+      "reason": "A better retains the skateboarder riding inside the bowl and the curved skatepark geometry; B has a weaker figure and unclear board.",
+      "preferred_defects": [
+        "A's body and board are distorted but the action reads."
+      ],
+      "worse_in_preferred": [
+        "Facial anatomy and shadow are poorly defined."
+      ],
+      "reference_id": "coco-capability-20260922-000000000634",
+      "mapped_preference": "final1024"
+    }
+  ]
+}

@@ -1,6 +1,6 @@
-# Photo curriculum SFT: training complete
+# Photo curriculum SFT: training and matched evaluation complete
 
-The fresh-base two-GPU training job completed all 1,024 updates successfully at 2026-09-22 01:15 UTC (06:45 IST). This records training completion; rendered visual evaluation is pending.
+The fresh-base two-GPU training job completed all 1,024 updates successfully at 2026-09-22 01:15 UTC (06:45 IST). Matched 28-photo evaluation is complete: base 4/28 valid, midpoint 19/28, final 18/28. Luna-low blind preferences are 15 midpoint / 11 final / 2 neither. See RESULTS.md for limitations.
 
 ## What changed
 
@@ -35,3 +35,13 @@ Whole-job utilization: GPU 0 averaged 72.45%, GPU 1 averaged 72.99%, with 1,098 
 The reviewed finite evaluation launcher and gallery exporter are committed as 3b1af99. The first startup stopped before inference because the node had an older config-generator CLI; the canonical committed generator was synchronized and its previous copy retained. The second startup hit a concurrent vLLM/Triton compiler-cache race; both owned servers cleaned up. Per-server cache isolation resolved the compiler race; both policies began concurrent generation at approximately 05:24 UTC, with four cases per GPU. Neither failed startup produced evaluation samples or changes training completion. Both attempt logs are preserved.
 
 The blind review helper received metadata and syntax checks locally. An earlier agent fixture composed placeholder contact sheets on Mac using a platform override, contrary to the node-only rendering agreement; it is not counted as Linux validation. Actual model inference and painting rendering remain on the Linux node, and the actual review images will also be composed there.
+
+Read-only inference coverage audit: installed vLLM 0.28.0 maps all four trained GDN projections (in_proj_qkv/z/b/a) into supported fused LoRA wrappers. The adapters contain 992 tensors / 496 A-B pairs, all language-model parameters across 12 projection types. All 111 ignored-wrapper warnings per server concern visual modules; no trained language key was logged as ignored. Model-list responses expose distinct base and adapter aliases with the adapters parented to base, and LoRA kernels execute during generation.
+
+## Final evaluation and preservation status
+
+Both evaluation workers exited 0. Final comparison reports 19/28 valid midpoint canvases and 18/28 final versus 4/28 base. All 28 blinded Luna-low labels match the displayed-image hashes. Selected next initializer is midpoint 512; parent quality disagreements and remaining weak anatomy are preserved, not hidden by valid-program counts.
+
+Evaluation GPU means were 84.73% and 83.21%, 131 samples each during 05:24:00–05:45:41UTC; this includes rendering/tail but excludes server startup and later preservation. All compute finished.
+
+Archive on node: 1,647,090,298 bytes, 2,679 files, SHA256 b986c2e67399232ea88198aa519190c282fe7210bf96800ec5e19537e67fb26b. The archiver excludes model/optimizer weights and reports no detected credentials. Local transfer/verification is pending: automatic approval review rejected downloading potentially sensitive raw experiment data and requires explicit user authorization. The user was asked through the input tool. A separate rejected notes upload was abandoned; those notes remain local. Do not release the node until archive preservation is resolved. Rental is approximately $21.30 at 06:01UTC and continues at $2.38/hour. No scheduled watcher exists.

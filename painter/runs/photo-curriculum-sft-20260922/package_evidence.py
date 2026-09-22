@@ -51,6 +51,8 @@ DENY_DIRS = {
     "caches",
     "huggingface",
     "hf_home",
+    "checkpoint",
+    "checkpoints",
     "private",
     "credentials",
     "secrets",
@@ -64,6 +66,7 @@ DENY_SUFFIXES = {
     ".ckpt",
     ".gguf",
     ".onnx",
+    ".distcp",
     ".npz",
     ".npy",
     ".tar",
@@ -459,7 +462,7 @@ def main() -> None:
     parser.add_argument("--run-root", type=Path, default=Path("/root/painter/runs") / RUN_NAME)
     parser.add_argument("--output", type=Path, required=True, help="private local .tar.gz destination")
     parser.add_argument("--source", type=Path, action="append", default=[], help="extra teacher/data source file or directory")
-    parser.add_argument("--max-file-bytes", type=int, default=512 * 1024 * 1024)
+    parser.add_argument("--max-file-bytes", type=int, default=2 * 1024 * 1024 * 1024, help="maximum admitted source file size; native checkpoint directories are always excluded")
     args = parser.parse_args()
     if args.max_file_bytes < 1:
         raise SystemExit("--max-file-bytes must be positive")

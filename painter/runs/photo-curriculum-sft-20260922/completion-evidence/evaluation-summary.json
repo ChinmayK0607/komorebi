@@ -1,0 +1,74 @@
+{
+  "status": "completed",
+  "worker_exit_codes": {
+    "step512": 0,
+    "step1024": 0
+  },
+  "denominator_each": 28,
+  "valid_first_paint": {
+    "base": 4,
+    "midpoint512": 19,
+    "final1024": 18
+  },
+  "finish_reasons": {
+    "base": {
+      "stop": 26,
+      "length": 2
+    },
+    "midpoint512": {
+      "stop": 27,
+      "length": 1
+    },
+    "final1024": {
+      "stop": 28
+    }
+  },
+  "completion_tokens": {
+    "base": 130166,
+    "midpoint512": 86085,
+    "final1024": 81947
+  },
+  "luna_low_blind_preferences": {
+    "midpoint512": 15,
+    "final1024": 11,
+    "neither": 2
+  },
+  "both_valid_preferences": {
+    "midpoint512": 7,
+    "final1024": 4
+  },
+  "all28_label_image_hashes_verified": true,
+  "gpu_utilization": {
+    "window_utc": [
+      "2026-09-22T05:24:00.739Z",
+      "2026-09-22T05:45:41.100Z"
+    ],
+    "samples_each": 131,
+    "mean_percent": [
+      84.73282442748092,
+      83.20610687022901
+    ],
+    "busy_ge10_fraction": [
+      0.8473282442748091,
+      0.8320610687022901
+    ],
+    "scope": "generation/rendering tail; excludes server startup and later preservation"
+  },
+  "archive": {
+    "bytes": 1647090298,
+    "sha256": "b986c2e67399232ea88198aa519190c282fe7210bf96800ec5e19537e67fb26b",
+    "files": 2679,
+    "contains_weights": false,
+    "contains_credentials": "no_detected_credentials",
+    "credential_scan": {
+      "matches": 0,
+      "status": "passed",
+      "text_files": 1669
+    }
+  },
+  "archive_local_verification": "pending_automatic_approval_review_requires_user_authorization",
+  "node_status": "allocated_idle_pending_preservation",
+  "hourly_usd": 2.38,
+  "estimated_rental_usd_at_0601_utc": 21.3,
+  "cost_note": "elapsed rental estimate from about21:04UTC, not provider invoice; node still accruing"
+}
