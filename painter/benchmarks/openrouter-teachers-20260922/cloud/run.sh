@@ -45,7 +45,10 @@ publish_on_exit() {
   status=$?
   trap - EXIT
   if [[ -d "$BENCHMARK/episodes" ]]; then
-    "$PY" "$BENCHMARK/cloud/publish_results.py" --root "$BENCHMARK" || status=1
+    # The cloud proxy's allowlist covers HF's Git LFS upload host. Xet can
+    # fail at its CAS endpoint in this environment, so use the verified LFS
+    # transport for publication without changing benchmark model requests.
+    HF_HUB_DISABLE_XET=1 "$PY" "$BENCHMARK/cloud/publish_results.py" --root "$BENCHMARK" || status=1
   fi
   exit "$status"
 }
