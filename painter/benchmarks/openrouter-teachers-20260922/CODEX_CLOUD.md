@@ -148,3 +148,19 @@ downloaded and SHA-256 verified at HF dataset commit
 No model was called. `cloud/run.sh` therefore selects this verified LFS path
 for future result publication. A full-size archive remains untested on the
 new task policy, so the next paid batch must still verify its public receipt.
+
+The result publisher now retries a failed archive upload as Base64 ASCII
+`.txt` parts through regular HF commits, then anonymously reconstructs and
+checks the complete archive before writing a receipt. It logs only an error
+type on fallback because proxy exceptions can contain signed upload URLs.
+Either receipt format can be downloaded and independently verified without a
+credential:
+
+```bash
+python3 painter/benchmarks/openrouter-teachers-20260922/cloud/fetch_results.py \
+  cloud-teacher-proxy-smoke-20260923 /tmp/painter-teacher-evidence.tar.gz
+```
+
+The split fallback is a durability path, not a claim that very large text
+archives are an efficient long-term storage format. Screen outputs should be
+kept in bounded task slices with unique run IDs and verified receipts.

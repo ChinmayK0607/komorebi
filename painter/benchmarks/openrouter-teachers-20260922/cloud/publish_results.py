@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import base64
 import hashlib
 import json
 import os
@@ -14,10 +15,12 @@ import tarfile
 import tempfile
 from urllib.request import urlopen
 
-from huggingface_hub import HfApi
+from huggingface_hub import CommitOperationAdd, HfApi
 
 DATASET = "CK0607/komorebi-painter-teachers"
 TOP_LEVEL = ("progress.json", "events.jsonl", "run-summary.json", "gallery.html")
+PART_RAW_BYTES = 384 * 1024
+PARTS_PER_COMMIT = 8
 
 
 def sha256_file(path: Path) -> str:
@@ -49,10 +52,70 @@ def public_sha256(url: str) -> str:
     return digest.hexdigest()
 
 
+def public_url(revision: str, path: str) -> str:
+    return f"https://huggingface.co/datasets/{DATASET}/resolve/{revision}/{path}?download=true"
+
+
+def publish_archive(api: HfApi, archive: Path, run_id: str, expected: str) -> dict[str, object]:
+    remote_path = f"runs/{run_id}/bundle.tar.gz"
+    commit = api.upload_file(
+        path_or_fileobj=str(archive), path_in_repo=remote_path,
+        repo_id=DATASET, repo_type="dataset",
+        commit_message=f"Publish painter benchmark {run_id}",
+    )
+    if public_sha256(public_url(commit.oid, remote_path)) != expected:
+        raise RuntimeError("public result archive failed SHA-256 verification")
+    return {"dataset_commit": commit.oid, "bundle_path": remote_path, "representation": "archive"}
+
+
+def publish_split(api: HfApi, archive: Path, run_id: str, expected: str, temp: Path) -> dict[str, object]:
+    """Use regular-Git ASCII files when a cloud proxy blocks Xet/LFS hosts."""
+    part_paths: list[str] = []
+    local_parts: list[Path] = []
+    with archive.open("rb") as source:
+        for index, chunk in enumerate(iter(lambda: source.read(PART_RAW_BYTES), b"")):
+            path = temp / f"part-{index:04d}.txt"
+            path.write_bytes(base64.b64encode(chunk) + b"\n")
+            local_parts.append(path)
+            part_paths.append(f"runs/{run_id}/parts/{path.name}")
+    if not part_paths:
+        raise RuntimeError("empty result archive")
+    commit = None
+    for start in range(0, len(part_paths), PARTS_PER_COMMIT):
+        operations = [
+            CommitOperationAdd(path_in_repo=part_paths[i], path_or_fileobj=str(local_parts[i]))
+            for i in range(start, min(start + PARTS_PER_COMMIT, len(part_paths)))
+        ]
+        commit = api.create_commit(
+            repo_id=DATASET, repo_type="dataset", operations=operations,
+            commit_message=f"Publish painter benchmark {run_id} text parts",
+        )
+    assert commit is not None
+    digest = hashlib.sha256()
+    byte_count = 0
+    for path in part_paths:
+        with urlopen(public_url(commit.oid, path), timeout=180) as response:
+            encoded = response.read()
+        raw = base64.b64decode(b"".join(encoded.split()), validate=True)
+        digest.update(raw)
+        byte_count += len(raw)
+    if byte_count != archive.stat().st_size or digest.hexdigest() != expected:
+        raise RuntimeError("public text parts failed archive SHA-256 verification")
+    return {
+        "dataset_commit": commit.oid,
+        "representation": "split-base64-text",
+        "encoding": "base64-per-part",
+        "part_order": "lexical",
+        "part_paths": part_paths,
+        "public_parts_anonymously_fetched": True,
+    }
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parents[1])
     parser.add_argument("--run-id", default=os.environ.get("PAINTER_RUN_ID"))
+    parser.add_argument("--split", action="store_true", help="publish regular-Git Base64 text parts directly")
     args = parser.parse_args()
     root = args.root.resolve()
     run_id = args.run_id
@@ -68,26 +131,26 @@ def main() -> int:
         archive = Path(temp) / "bundle.tar.gz"
         count = pack(root, archive)
         expected = sha256_file(archive)
-        remote_path = f"runs/{run_id}/bundle.tar.gz"
-        commit = api.upload_file(
-            path_or_fileobj=str(archive), path_in_repo=remote_path,
-            repo_id=DATASET, repo_type="dataset",
-            commit_message=f"Publish painter benchmark {run_id}",
-        )
-        url = f"https://huggingface.co/datasets/{DATASET}/resolve/{commit.oid}/{remote_path}?download=true"
-        if public_sha256(url) != expected:
-            raise RuntimeError("public result archive failed SHA-256 verification")
+        if args.split:
+            publication = publish_split(api, archive, run_id, expected, Path(temp))
+        else:
+            try:
+                publication = publish_archive(api, archive, run_id, expected)
+            except Exception as exc:
+                # Never log a proxy exception: it may contain a signed upload
+                # URL. Regular-Git text parts work through huggingface.co.
+                print(json.dumps({"archive_upload_failed": type(exc).__name__, "retrying": "split-base64-text"}))
+                publication = publish_split(api, archive, run_id, expected, Path(temp))
         receipt = {
             "schema": "painter.hf-benchmark-result.v1",
             "run_id": run_id,
             "source_commit": source_commit,
             "dataset_repo": DATASET,
-            "dataset_commit": commit.oid,
-            "bundle_path": remote_path,
             "bundle_bytes": archive.stat().st_size,
             "bundle_sha256": expected,
             "file_count": count,
             "public_hash_verified": True,
+            **publication,
         }
         receipt_path = Path(temp) / "receipt.json"
         receipt_path.write_text(json.dumps(receipt, indent=2, sort_keys=True) + "\n")
