@@ -2,13 +2,13 @@
 
 ## Decision before launch
 
-The initial quality benchmark cannot yet support a model-quality ranking. Four
-anonymously downloaded, hash-verified public shards (`full-quality-02`, `04`,
-`07`, `09`) contain 80 episodes: 42 ended at the 180-second renderer deadline,
-28 ended in provider connection/header errors, and 10 reached another terminal
-status. The 28 API errors report either `Headers Timeout Error` (22) or
-`other side closed` (6) after the AI SDK's three attempts. This is censored
-infrastructure evidence, not 70 poor paintings.
+The initial quality benchmark cannot yet support a model-quality ranking. The
+first four anonymously downloaded, hash-verified public shards
+(`full-quality-02`, `04`, `07`, `09`) contained 80 episodes: 42 ended at the
+180-second renderer deadline, 28 ended in provider connection/header errors,
+and 10 reached another terminal status. The 28 API errors reported either
+`Headers Timeout Error` (22) or `other side closed` (6) after the AI SDK's
+three attempts. This is censored infrastructure evidence, not 70 poor paintings.
 
 **Hypothesis.** Streaming a response from the Gateway and allowing a longer
 bounded renderer deadline will recover usable teacher paintings and turns from
@@ -123,3 +123,41 @@ paid turns only where the canvas is valid, then compare visual quality on
 matched references. Limit simultaneous Gateway recovery shards while the
 original quality tasks finish; streaming is proven for one Xiaomi case, not
 for all five providers.
+
+## Expanded verified scope and finite reruns
+
+Three more original quality shards (`01`, `03`, `08`) were independently
+downloaded and SHA-256 verified against their public receipts. Their archive
+hashes are, respectively, `0bba7173dcfa27b85064d890d59a8f6329739bdc22a940f561cfb7016b5da21e`,
+`94a5f4c06845497373f33b68aa3e64a4380c49cb213131b3ce2364ee9588d995`,
+and `09a9085ffe70ce2f8747ca9e7f7a99991c720d42ed992c8cfd2377c72f15ab39`.
+The eight verified original quality shards (`00`–`04`, `07`–`09`) now cover
+160/200 planned episodes: 74 `renderer_error`, 55 `api_error`, 21 `turn_limit`,
+9 `complete`, and 1 `invalid`. Original shards `05` and `06` have no public
+verified receipt yet. These status counts do not rank visual quality.
+
+At source `454a29b`, eight finite, provider-free cloud tasks were dispatched
+to replay all saved render-timeout programs from those verified shards at a
+600-second deadline. They use zero model calls, leave the originals unchanged,
+and publish separate hash-verifiable public results. The source-to-task map is:
+
+| Original quality shard | Replay cloud task |
+| --- | --- |
+| `00` | [task](https://chatgpt.com/codex/cloud/tasks/task_e_6ab4112087dc832bbc3b2473fc4633a6) |
+| `01` | [task](https://chatgpt.com/codex/cloud/tasks/task_e_6ab412c5f2d4832ba5a0e49c52e35046) |
+| `02` | [task](https://chatgpt.com/codex/cloud/tasks/task_e_6ab4114bd680832bbbc9703b93ad933b) |
+| `03` | [task](https://chatgpt.com/codex/cloud/tasks/task_e_6ab412d9a938832baf6e5a082cea7455) |
+| `04` | [task](https://chatgpt.com/codex/cloud/tasks/task_e_6ab411350aa0832bb140941ccf6f263f) |
+| `07` | [task](https://chatgpt.com/codex/cloud/tasks/task_e_6ab4115e0248832ba10fe81815cda5cc) |
+| `08` | [task](https://chatgpt.com/codex/cloud/tasks/task_e_6ab412ebf0c4832bb27745f2eb931b05) |
+| `09` | [task](https://chatgpt.com/codex/cloud/tasks/task_e_6ab41178c01c832b884538623e035423) |
+
+In parallel, three one-episode corrected continuations were dispatched to
+test streaming and saved-turn reuse across providers: [DeepSeek ref368,
+global episode 16](https://chatgpt.com/codex/cloud/tasks/task_e_6ab41365e950832b9c6a3a1cb577acd6),
+[Step-5 ref136, episode 37](https://chatgpt.com/codex/cloud/tasks/task_e_6ab41379ca4c832b8a8a4b9093fcb50d),
+and [MiMo Pro ref349, episode 194](https://chatgpt.com/codex/cloud/tasks/task_e_6ab413909550832bb101477a8d442c4e).
+Xiaomi Flash has the verified episode-43 continuation above. The additional
+tasks are **in progress**; dispatch is not a successful render, valid painting,
+or provider ranking. Only newly needed turns can issue paid Gateway requests.
+No scheduled task or watcher was created.
