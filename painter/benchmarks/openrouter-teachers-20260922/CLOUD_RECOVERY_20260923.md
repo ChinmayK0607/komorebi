@@ -58,4 +58,32 @@ Local verification: TypeScript typecheck; 19 Python tests; Python compile and
 shell syntax checks; anonymous source archive verification and restoration of
 `full-quality-02` (157 episode files); replay dry run identified one selected
 timeout program. No local Mac rendering or paid model calls were performed.
-Cloud smoke result and decision will be appended after completion.
+## Zero-call replay smoke
+
+The [cloud replay task](https://chatgpt.com/codex/cloud/tasks/task_e_6ab40a4f8910832bb8e9cc8b622d7cc8)
+ran source `ab2d0a169808e7abe3d60e3f996701679aa69375` against one saved
+DeepSeek program on reference `coco128-000000000064` from quality shard `02`.
+The original episode ended at the 180-second renderer deadline. The replay
+produced a valid 600×600 canvas in **172.351 seconds** under the explicit
+600-second deadline, with **zero paid model calls**. This difference may be
+runtime variance or reduced concurrent contention; one replay does not show
+that increasing the deadline alone fixes all censored cases.
+
+The [public replay receipt](https://huggingface.co/datasets/CK0607/komorebi-painter-teachers/blob/main/runs/renderer-replay-quality02-smoke-20260923/receipt.json)
+records dataset commit `754040be93dd241b9e6cfd78ab5b4d3e96b89f6b`, archive size
+627,988 bytes and SHA-256
+`31821fbe6e2041c897b96971093646be454fc8bec6b519fbf2052d569c694239`.
+The archive was independently reassembled from its public Base64 parts at
+that immutable revision; size and hash matched. Direct visual inspection
+against the reference found the foreground clock, central tree, and street
+layout recognizable, with simplified car, lettering and scene detail. This
+is one unblinded observation, not a model-quality ranking.
+
+The next [single-episode continuation](https://chatgpt.com/codex/cloud/tasks/task_e_6ab40c7b6ae4832bbf22e07e50700d6b)
+is `quality-recovery-02-e43-20260923`, selecting deterministic offset `43`
+only. Its Xiaomi Flash episode ended at a turn-11 render timeout, so a
+successful replay needs at most the one remaining turn-12 model response.
+A local fake-render check on the anonymously restored shard confirmed its
+saved turn-11 response is reused, the 600-second override is passed, and
+zero paid requests occur before that render. The actual cloud result,
+streamed provider behavior and public evidence hash remain pending.
