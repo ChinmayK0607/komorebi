@@ -1,6 +1,6 @@
 # Multiturn painting teacher comparison
 
-Prepared on 2026-09-23 as the Vercel AI Gateway migration of the 2026-09-22 teacher benchmark. **Not launched. No paid Gateway requests have been made for this benchmark.** Existing RL continues independently; this benchmark neither rents nor stops GPUs.
+Prepared on 2026-09-23 as the Vercel AI Gateway migration of the 2026-09-22 teacher benchmark. One `zai/glm-5.3-flash` quality pilot has since run on one reference; the full model/image comparison has not launched. See the root [research log](../../../RESEARCH_LOG.md) for its receipt and parser correction. This benchmark runs independently of RL training.
 
 ## Question and comparison
 

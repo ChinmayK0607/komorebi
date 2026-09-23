@@ -1,6 +1,6 @@
 # Preparation validation — 2026-09-22
 
-Status: prepared, not launched. Zero paid AI Gateway generation calls.
+Status: preparation checks passed; a one-reference paid quality pilot subsequently ran. This file records the preparation checks, while the root research log records the pilot outcome.
 
 - Parent ran the complete offline suite: **16 tests passed**. The suite covers content extraction, context exhaustion, key redaction/retry usage, cached-response reuse after renderer failure, full two-turn image conversation reconstruction, speed deadline classification, two-track counts, API reasoning payload schema, package boundaries, archive traversal rejection, offline dry runs, custom-model selection and real CLI compatibility.
 - Full input dry run: **40 references × 5 models × 2 tracks = 400 episodes**, at most **3,000 assistant requests before service retries**.
@@ -23,4 +23,4 @@ Full local smoke receipt: `renderer-smoke/node-smoke-receipt.json` (generated ev
 
 ## Limits
 
-No paid teacher benchmark generation requests have been executed. The separate AI SDK holiday example has been smoke-tested against the Gateway. Offline tests use mocked transport and renderer replies, except for the explicit real-node renderer smoke. This validates preparation and key runtime plumbing; it is not evidence of model quality, provider availability, realized price, or successful completion of all 400 episodes. Gateway model versions are not immutable weight revisions.
+The separate AI SDK holiday example was smoke-tested against the Gateway before the benchmark. Offline tests use mocked transport and renderer replies, except for the explicit real-node renderer smoke. These checks validate preparation and key runtime plumbing; the later one-reference pilot is recorded separately in the root research log. Neither establishes model quality, realized price, or successful completion of all 400 episodes. Gateway model versions are not immutable weight revisions.

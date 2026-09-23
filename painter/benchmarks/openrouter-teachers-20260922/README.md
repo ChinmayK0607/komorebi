@@ -112,7 +112,7 @@ Native output ceilings can be large. The full run has at most 3,000 assistant re
 
 Rerun the same command to resume. Completed matching responses are reused, including when only rendering needs retry. Adding another model should preserve already completed results for the existing models. Changing the prompt, renderer or generation settings is a different experiment and must not silently reuse incompatible completed episodes.
 
-The node retains the complete output tree, and the wrapper collects available artifacts under `results-ai-gateway-20260923/` in this folder. Open `results-ai-gateway-20260923/gallery.html` after collection; raw trajectories are in `results-ai-gateway-20260923/episodes/`, with `results-ai-gateway-20260923/progress.json` and `results-ai-gateway-20260923/events.jsonl` for progress. Keep the terminal running for the foreground launch. If disconnected, outputs remain on the node for a subsequent resume/collection; do not release the node until desired evidence has been collected.
+The node retains the complete output tree. The Mac `run_on_node.py` wrapper collects available artifacts under `results-ai-gateway-20260923/`; the direct node launcher leaves them on the node for an explicit collection. Open `results-ai-gateway-20260923/gallery.html` after collection; raw trajectories are in `results-ai-gateway-20260923/episodes/`, with `progress.json` and `events.jsonl` for progress. Keep the terminal running for the foreground launch. If disconnected, outputs remain on the node for a subsequent resume/collection; do not release the node until desired evidence has been collected.
 
 Stored evidence includes:
 
@@ -127,4 +127,4 @@ All demonstrations are candidates for later review. Executable code or a self-de
 
 ## Validation before handoff
 
-Offline tests cover the real runner CLI with multiple model IDs, including arbitrary Gateway IDs. The Linux node passed the fixed-sketch sandbox render with matching source/canvas hashes and the isolated `tqdm` environment bootstrap. Paid Gateway generation remains to be exercised after funding. Details: [VALIDATION.md](VALIDATION.md).
+Offline tests cover the real runner CLI with multiple model IDs, including arbitrary Gateway IDs. The Linux node passed the fixed-sketch sandbox render with matching source/canvas hashes and the isolated `tqdm` environment bootstrap. One paid quality pilot has run; it is not a model ranking. Details: [VALIDATION.md](VALIDATION.md) and the root [research log](../../../RESEARCH_LOG.md).
