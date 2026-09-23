@@ -244,3 +244,14 @@ earlier quality replay tasks cover the other 74 timeouts, giving coverage for
 all **127** originally timed-out quality/speed programs. All replay tasks are
 in progress; no outcome or throughput gain is claimed from dispatch. They
 make zero model calls and publish per-shard public hash-verifiable archives.
+
+The first completed replay is quality shard `09`. Its [public receipt](https://huggingface.co/datasets/CK0607/komorebi-painter-teachers/blob/main/runs/renderer-replay-full-quality-09-20260923/receipt.json)
+pins immutable dataset commit `09724f5b478575575b45a43445c5e6f6d5a64655` and
+SHA-256 `915e8453bc7e77f683c35973bcec7abfdd413e4e256aa8b5d4a9e58ac952c3c7`
+over 4,359,168 bytes. An anonymous independent download matched both. Seven
+of its eight saved timeout programs rendered valid canvases at the 600-second
+bound; DeepSeek ref349 still timed out at 600.131 seconds. The valid programs
+took 168.239–365.956 seconds each. This is an offline render recovery with
+zero model calls, not a completed teacher continuation. The local gallery was
+rebuilt with these seven separately labeled replay images; the other ten replay
+tasks remain pending.
