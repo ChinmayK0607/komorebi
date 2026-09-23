@@ -25,17 +25,37 @@ def main() -> int:
     parser.add_argument("--run-id", default="luna-high-initial-20260924")
     parser.add_argument("--api-run-id", action="append", default=[],
                         help="paid Gateway Luna high episode; repeat for more references")
+    parser.add_argument("--revision-run-id", help="provider-free visual revision render")
     parser.add_argument("--benchmark", type=Path, default=HERE)
     parser.add_argument("--selection-gallery", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     archive, receipt = public_bytes(args.run_id)
     api_archives = [public_bytes(run_id) for run_id in args.api_run_id]
+    revision_archive, revision_receipt = public_bytes(args.revision_run_id) if args.revision_run_id else (None, None)
     selection = json.loads((args.selection_gallery / "manifest.json").read_text())
     output = args.output.resolve()
     assets = output / "assets"
     assets.mkdir(parents=True, exist_ok=True)
     rows = []
+    revised = {}
+    if revision_archive is not None:
+        with tarfile.open(fileobj=io.BytesIO(revision_archive), mode="r:gz") as revision_bundle:
+            revision_members = {m.name: m for m in revision_bundle.getmembers() if m.isfile()}
+            for ref in REFS:
+                episode = json.load(revision_bundle.extractfile(revision_members[f"episodes/{ref}/episode.json"]))
+                canvas_name = f"episodes/{ref}/turn-01.png"
+                target = None
+                if canvas_name in revision_members:
+                    target = assets / f"{ref}-luna-revised.png"
+                    data = revision_bundle.extractfile(revision_members[canvas_name]).read()
+                    expected = episode.get("render", {}).get("receipt", {}).get("png_sha256")
+                    if expected and hashlib.sha256(data).hexdigest() != expected:
+                        raise ValueError(f"revised Luna PNG hash mismatch: {ref}")
+                    target.write_bytes(data)
+                revised[ref] = {"canvas": f"assets/{target.name}" if target else None,
+                                "status": episode.get("status"),
+                                "elapsed_seconds": episode.get("render", {}).get("elapsed_seconds")}
     api_episodes = {}
     for api_archive, api_receipt in api_archives:
         with tarfile.open(fileobj=io.BytesIO(api_archive), mode="r:gz") as api_bundle:
@@ -99,11 +119,13 @@ def main() -> int:
                          "luna": f"assets/{luna_target.name}" if luna_target else None,
                          "luna_status": episode.get("status"),
                          "luna_elapsed_seconds": episode.get("render", {}).get("elapsed_seconds"),
+                         "luna_revised": revised.get(ref),
                          "luna_api": api_episodes.get(ref)})
     evidence = {"schema": "painter.luna-high-comparison.v1", "luna_receipt": receipt,
+                "luna_revision_receipt": revision_receipt,
                 "luna_summary": summary, "luna_api_receipts": [receipt for _, receipt in api_archives],
                 "rows": rows,
-                "limitation": "Luna is a Codex high-effort first pass. MiMo Pro had up to 12 turns; recovered MiMo canvases are offline replays. This is a visual feasibility comparison, not a matched API cost/quality ranking."}
+                "limitation": "Luna Codex-agent sketches are first passes and are not budget-matched to MiMo Pro. Paid Luna API episodes use the same reference and quality-turn cap, but only one sample per reference. Recovered MiMo canvases are offline replays the teacher did not see. This is a visual feasibility comparison, not a measured API cost/quality ranking."}
     (output / "manifest.json").write_text(json.dumps(evidence, indent=2, sort_keys=True) + "\n")
     cards = []
     for row in rows:
@@ -112,6 +134,9 @@ def main() -> int:
             ("Reference", row["reference"], "COCO photo"),
             ("MiMo Pro", row["mimo"], f"{row['mimo_status']}" + (" · offline replay" if row["mimo_offline_replay"] else "")),
             ("Luna high", row["luna"], f"{row['luna_status']} · first pass"),
+            *(("Luna revised", row["luna_revised"]["canvas"],
+                f"{row['luna_revised']['status']} · visual revision")
+               for _ in (0,) if row["luna_revised"]),
             *(("Luna high API", row["luna_api"]["canvas"],
                 f"{row['luna_api']['status']} · {row['luna_api']['turns']} turns")
                for _ in (0,) if row["luna_api"]),
@@ -121,7 +146,7 @@ def main() -> int:
         cards.append(f'<section><h2>{html.escape(row["reference_id"])}</h2><div class="grid">{"".join(panels)}</div></section>')
     page = '''<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Luna high / MiMo Pro painter comparison</title><style>
     body{background:#171a1e;color:#f4f2ec;font:16px system-ui;margin:0 auto;padding:24px;max-width:1800px}h1{margin-bottom:4px}p{color:#c6c6c6}section{border-top:1px solid #555;padding:25px 0}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,380px),1fr));gap:16px}.panel{background:#23282d;padding:14px;border-radius:12px}.panel img{width:100%;height:auto;max-height:70vh;object-fit:contain;background:#111}.panel h3{margin:0 0 10px}.panel p{margin:7px 0}.missing{height:300px;display:grid;place-items:center;color:#aaa}@media(max-width:800px){.grid{grid-template-columns:1fr}}
-    </style><h1>Luna high vs MiMo Pro</h1><p>Same three references. Luna's Codex-agent sketches are first passes; the optional Gateway Luna episode and MiMo Pro had multiple benchmark turns. Click any image to inspect full size. This is a visual feasibility check, not a definitive cost ranking.</p>''' + "".join(cards) + "</html>"
+    </style><h1>Luna high vs MiMo Pro</h1><p>Same three references. Luna's Codex-agent sketches have an initial and optional visually revised pass; paid Gateway Luna episodes and MiMo Pro had multiple benchmark turns. Click any image to inspect full size. This is a visual feasibility check, not a definitive cost ranking.</p>''' + "".join(cards) + "</html>"
     (output / "index.html").write_text(page)
     print(json.dumps({"output": str(output / "index.html"), "luna_status_counts": summary["status_counts"], "rows": len(rows)}))
     return 0

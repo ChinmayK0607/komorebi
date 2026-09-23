@@ -57,10 +57,9 @@ visible. Compare actual paid calls, tokens, elapsed time and cost per accepted
 demonstration when available. A good first-pass Codex-agent painting alone is
 insufficient to replace MiMo Pro; the API episode and subsequent independent
 references must support that decision. No speed curriculum is part of this
-screen. Results and the next decision will be appended after public receipts
-are verified.
+screen. The verified results and next decision follow.
 
-## First observed results
+## Verified rendering and API results
 
 The three independent Codex-agent programs were rendered concurrently in
 finite cloud task `task_e_6ab428322e30832bb9bfa874024fb015` at source
@@ -69,37 +68,97 @@ complete ten-file archive was anonymously fetched and verified against public
 receipt `runs/luna-high-initial-20260924/receipt.json`, bundle SHA-256
 `66996c3bde97a3557cf601dd9dddf4c5a22772823601df5089c88fe464918ee5`,
 dataset commit `1c15871f39b0adadedf9e38aeb9a1836f7429054`. There are no
-canvases from that batch. A finite, sequential one-worker rerender with a
-900-second deadline is running as `luna-high-sequential-20260924`; this tests
-whether three simultaneous software-rendered Chromium instances caused the
-timeouts. It makes no model calls. The initial timeout is censored evidence,
-not a visual-quality score.
+canvases from that batch. The same exact programs were rerendered on one
+software-rendered Chromium worker, with a 900-second deadline. All 3/3 were
+valid, taking 318.019, 236.593 and 228.534 seconds for references 110, 247
+and 520. Its public run `luna-high-sequential-20260924` was anonymously
+reconstructed and hash-verified: bundle SHA-256
+`6bdba599ef0da7304970b1a0876fa18a748b61f3fb8ba57774899040411e37c5`,
+dataset commit `b79278b4405cbc2d6e2a32e70208a4c7ef1774ab`, source
+`cb1c196`. This isolates contention between three concurrent software
+renderers as the likely cause of the first failure; it does not imply that
+sequential rendering is optimal across independent VMs.
 
-The paid Gateway episode on reference `110` completed at source `c091a95`
-with task-local high reasoning, quality-track 12 turns and a 600-second
-renderer override. Its public archive was anonymously fetched and SHA-256
-verified: run `luna-high-api-coco110-20260924`, bundle
-`0c340822b247b7ba71ce36193f4a8144a3adb05cb0af5f003ab701146257bcb4`,
-dataset commit `53e3e5efd8f16f5e216c99643260b05e7e2f080d`. It made exactly
-12 fresh provider calls and produced nine valid canvases. Turn 2 supplied no
-complete program; turns 6 and 10 failed on undefined functions. The last
-valid canvas is turn 12, with a recognizable mother, child, restaurant and
-pizza. The first valid canvas was visually confused; later turns corrected
-the structure, but the result remains flat and graphic compared with MiMo
-Pro's softer, more painterly matched-reference final canvas. This is the
-parent's unblinded assessment, not a calibrated pairwise judge result.
+The Codex Luna painter inspected those actual canvases and revised each
+program once. The revised source manifest is public at dataset commit
+`1c9abfcfbf4482a18384673354d54f66f63eaad3`, SHA-256
+`d6999f58ab7516f87ece53e2ea0cf3a3fc74ceb4e66426b4e6557ed3d329d114`.
+Its provider-free, one-worker render at source `94d4baa` produced 3/3 valid
+canvases in 95.536, 72.397 and 70.743 seconds. The public run
+`luna-high-revision-20260924` was anonymously reconstructed and hash-verified:
+bundle SHA-256
+`abe70173f4abf96a20973cb3e3eb3547d649aacce2dc2b71aec3a0cf26abb37e`,
+dataset commit `62705bca316d8c5e979076609ac6fd48acd987b5`.
+The Codex-agent generation cost remains unknown. These are one-step visual
+revisions, not the same Gateway API scaffold used below.
 
-The Luna run used 471,933 prompt and 97,657 completion tokens (569,590
-total) and 1,051.118 active seconds; the matched MiMo Pro quality episode
-used 559,073 prompt and 132,369 completion tokens (691,442 total) and
-4,074.278 active seconds. The provider supplied no actual dollar cost for
-either run. Applying the publicly listed per-token prices *only as an
-estimate* gives about $0.096 for Luna and $0.36 for MiMo Pro on this
-reference, with possible billing differences unmeasured. The list prices
-were [Luna](https://vercel.com/ai-gateway/models/gpt-6-luna) $0.10/$0.50
-and [MiMo Pro](https://vercel.com/ai-gateway/models/mimo-v2.6-pro) about
-$0.44/$0.87 per million input/output tokens when checked on 2026-09-24.
-This one example supports testing Luna as an inexpensive structural teacher,
-but does not support replacing MiMo Pro for the aesthetic tier. Paid
-high-reasoning episodes on the matched airplane and harbor references are
-underway before a broader decision.
+Three **paid** Gateway episodes used the identical quality-track prompt SHA-256
+`dc030b846c01bc6a68be4d5aa6371b42d0814306a6c5e0eb23336c0e09d8eacb`,
+effective config SHA-256 `591a53f3d83b830a72075a77050d0288627141bbbf7b836a066513dae099563a`,
+explicit `high` reasoning, 12-turn cap and 600-second render override. Source
+was `c091a95` for 110 and `cb1c196` for 247/520; the latter only added
+documentation. The model ID was the mutable `openai/gpt-6-luna` alias, with
+no immutable provider weight revision exposed. Each run made exactly 12
+fresh provider calls and hit the turn limit, rather than finishing early.
+
+| Reference | Valid renders | Prompt / completion tokens | Active seconds | Listed-rate cost estimate | Public bundle SHA-256 |
+| --- | ---: | ---: | ---: | ---: | --- |
+| Restaurant 110 | 9/12 | 471,933 / 97,657 | 1,051.118 | ~$0.096 | `0c340822b247b7ba71ce36193f4a8144a3adb05cb0af5f003ab701146257bcb4` |
+| Airplane 247 | 11/12 | 425,183 / 90,987 | 1,423.130 | ~$0.088 | `b1a81b24b8df8a7881887766591decbba57b4c68dd151b792a45851e6b5670c8` |
+| Harbor 520 | 6/12 | 301,873 / 70,104 | 613.800 | ~$0.065 | `a1944514212dc2f203d3efd2ac0fe8e208d11949e9ce52fa3f79b72de2425983` |
+
+The corresponding public run IDs are `luna-high-api-coco110-20260924`,
+`luna-high-api-coco247-20260924` and `luna-high-api-coco520-20260924`.
+All three bundles were anonymously reconstructed and hash-verified. Their
+dataset commits are, in row order,
+`53e3e5efd8f16f5e216c99643260b05e7e2f080d`,
+`d70d962c2bdea803258153c90c0e5f9771fcc92e`, and
+`477edc7dc2738bdee79876fc5a2a7de15fc48789`. Provider cost fields were
+missing on every turn, so the table's dollar amounts are **not measured
+charges**. They apply the publicly listed [Luna](https://vercel.com/ai-gateway/models/gpt-6-luna)
+$0.10/$0.50 input/output and [MiMo Pro](https://vercel.com/ai-gateway/models/mimo-v2.6-pro)
+approximately $0.44/$0.87 per million input/output tokens, checked
+2026-09-24. Billing details or discounts can change the actual amounts.
+
+The matched MiMo Pro restaurant episode completed ten turns, nine with valid
+canvases, using 691,442 tokens and 4,074.278 active seconds. At the same
+listed-rate calculation it is about $0.36, versus Luna's ~$0.096. MiMo Pro's
+airplane and harbor episodes were interrupted after four and five turns by
+renderer errors; their saved latest programs were replayed offline. Their
+partial token costs must not be compared with Luna's complete 12-turn costs
+as if both had the same training opportunity.
+
+## Visual judgment and decision
+
+The [local comparison gallery](results-ai-gateway-20260923/luna-high-comparison/index.html)
+shows each reference, the best available MiMo Pro canvas, Luna's Codex-agent
+first pass and revision, and Luna's paid API final canvas. Parent inspection
+is unblinded and qualitative:
+
+- **Restaurant:** The paid Luna episode corrects a confused first canvas into
+  recognizable people and pizza, but its final image is flat. The Codex-agent
+  brush version has attractive wash texture but a conspicuous dark gap and
+  weak people/hand anatomy after one revision. MiMo Pro is the better
+  finished painting to this reviewer.
+- **Airplane:** Luna's paid final canvas reproduces the frontal aircraft,
+  propeller, landing gear and apron structure well. It is graphically stiff;
+  the Codex-agent revision is more painterly but hazy. The MiMo Pro canvas
+  has richer brush texture, while Luna's paid version is arguably closer in
+  geometry. The result is mixed, not a decisive overall win.
+- **Harbor:** Luna's paid final canvas contains the bridge, birds and water
+  but reads like crisp vector art. Its Codex-agent brush version has more
+  atmosphere, though the pier is too dark and the scene is foggy. MiMo Pro
+  better balances structure and painterly finish here.
+
+The paid Luna finals relied on ordinary p5 filled shapes for large color
+fields, despite the shared prompt's preference for `brush.fill` polygons;
+the MiMo Pro restaurant final used brush fills. This likely explains some
+of the aesthetic gap, but is an inference from these programs, not a proven
+model limitation. Luna can be a useful lower-listed-price **structural**
+teacher, especially for hard objects. The present three-case evidence does
+not justify replacing MiMo Pro for the higher-quality aesthetic tier. The
+next bounded experiment should compare a brush-fill-specific Luna prompt or
+distill the Codex-agent visual revision scaffold, then apply a blinded
+pairwise reference-and-beauty filter to select demonstrations. Keep MiMo Pro
+as a candidate rather than paying both on every image. No GPU rental,
+scheduled task, or recurring watcher was used in this feasibility screen.
