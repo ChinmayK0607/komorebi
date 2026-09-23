@@ -23,12 +23,13 @@ from run import render_program  # noqa: E402
 
 DATASET = "CK0607/komorebi-painter-teachers"
 HEX_SHA = re.compile(r"[0-9a-f]{64}\Z")
+HEX_REV = re.compile(r"[0-9a-f]{40}\Z")
 SAFE_PATH = re.compile(r"[a-zA-Z0-9._/-]+\Z")
 SAFE_ID = re.compile(r"[a-zA-Z0-9._-]+\Z")
 
 
 def public_file(revision: str, path: str, expected: str) -> bytes:
-    if not HEX_SHA.fullmatch(revision) or not HEX_SHA.fullmatch(expected):
+    if not HEX_REV.fullmatch(revision) or not HEX_SHA.fullmatch(expected):
         raise ValueError("a source hash or revision is invalid")
     if not SAFE_PATH.fullmatch(path) or path.startswith("/") or ".." in Path(path).parts:
         raise ValueError("unsafe public source path")
