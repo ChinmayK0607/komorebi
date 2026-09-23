@@ -85,5 +85,41 @@ only. Its Xiaomi Flash episode ended at a turn-11 render timeout, so a
 successful replay needs at most the one remaining turn-12 model response.
 A local fake-render check on the anonymously restored shard confirmed its
 saved turn-11 response is reused, the 600-second override is passed, and
-zero paid requests occur before that render. The actual cloud result,
-streamed provider behavior and public evidence hash remain pending.
+zero paid requests occur before that render.
+
+## Single-episode continuation result
+
+The continuation ran source
+`ab2d0a169808e7abe3d60e3f996701679aa69375` and ended `turn_limit` after
+12 turns with a valid final canvas. Turn 11 reused its original response and
+rendered successfully in 208.821 seconds. Exactly one new model response was
+generated for turn 12 (90,010 reported tokens: 82,137 prompt and 7,873
+completion), and its canvas rendered in 205.428 seconds. The full episode
+records 611,184 tokens, including the original ten turns. Provider cost is
+missing on all 12 turns; the reported known $0.00 is not total spend. The
+final painting clarifies individual bird bodies and wings compared with the
+retained turn-10 canvas, but remains a simplified rendering of the reference.
+This is an unblinded single-case observation, not a general model preference.
+
+The [public recovery receipt](https://huggingface.co/datasets/CK0607/komorebi-painter-teachers/blob/main/runs/quality-recovery-02-e43-20260923/receipt.json)
+pins HF dataset commit `672e4d89178255940d0a2d11e4fa129c16187df4`, archive size
+8,873,196 bytes and SHA-256
+`2411cc38915ca9a17a98f5b054bbb9f4ebf7077947115d30dbca01d8191e9c53`.
+I independently reassembled its public parts at that revision and verified
+both size and hash. The original archive remains separate and unchanged.
+
+**Accounting correction:** This run's `run-summary.json` reports 11
+`network_requests_made_this_invocation` by summing archived original turns
+whose `api_reused` flag was false in the *old* invocation. Raw turn receipts
+show ten old responses, one reused turn-11 response and one new turn-12
+response with one attempt. Thus this recovery submitted **one** Gateway
+request. The counting code was corrected at source `64b9258`; future runs
+count requests submitted by the current transport process, not saved turns.
+Do not use the old summary's 11 as a spend or throughput measurement.
+
+**Next decision:** Continue bounded, provider-free replays across verified
+quality shards to learn which saved timeout programs are recoverable. Resume
+paid turns only where the canvas is valid, then compare visual quality on
+matched references. Limit simultaneous Gateway recovery shards while the
+original quality tasks finish; streaming is proven for one Xiaomi case, not
+for all five providers.
