@@ -228,4 +228,19 @@ shard `06` is 10,538,204 bytes with SHA-256
 The original quality track now has all **200/200 episodes** archived; 89
 ended `renderer_error`, 73 `api_error`, 25 `turn_limit`, 11 `complete`, and 2
 `invalid`. The gallery was rebuilt from all 20 original quality and speed shards
-and now has 400 candidate episodes. No replay archive was included yet.
+and now has 400 candidate episodes: quality has 36 terminal valid canvases
+and 86 with any retained valid canvas; speed has 75 terminal valid canvases
+and 96 with any retained valid canvas. All 40 reference images and 222 asset
+files exist locally, and the inline JavaScript passed syntax checking. No
+replay archive was included yet.
+
+The remaining already-paid timeout sketches were dispatched for finite,
+provider-free Linux replay using source `e85ce59`: [speed shards 00–04](https://chatgpt.com/codex/cloud/tasks/task_e_6ab41b5fedac832b9cbd10c018dd40c4)
+and [speed shards 05–09](https://chatgpt.com/codex/cloud/tasks/task_e_6ab41b75c904832bb2841b49c32a3f3d)
+contain 19 timeout programs each and use a 360-second bound with two isolated
+render workers; [quality shards 05–06](https://chatgpt.com/codex/cloud/tasks/task_e_6ab41b8841b8832bb5a035edd9094b8c)
+contain 15 timeout programs and use 600 seconds with two workers. The eight
+earlier quality replay tasks cover the other 74 timeouts, giving coverage for
+all **127** originally timed-out quality/speed programs. All replay tasks are
+in progress; no outcome or throughput gain is claimed from dispatch. They
+make zero model calls and publish per-shard public hash-verifiable archives.
