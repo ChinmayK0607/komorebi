@@ -851,6 +851,9 @@ class GatewayClient:
         except (OSError, ValueError) as exc:
             raise APIError(f"AI SDK transport could not start: {type(exc).__name__}", retryable=True) from exc
         self._write_lock = threading.Lock()
+        # Counts JSONL requests submitted by this client process only. Saved
+        # turns from a restored archive must not inflate this invocation.
+        self.submitted_requests = 0
         self._pending_lock = threading.Lock()
         self._pending: dict[str, tuple[threading.Event, dict[str, Any]]] = {}
         self._stderr_tail = ""
@@ -911,6 +914,7 @@ class GatewayClient:
                         raise APIError("AI SDK transport exited", retryable=True)
                     self.process.stdin.write(line)
                     self.process.stdin.flush()
+                    self.submitted_requests += 1
                 wait_seconds = float(self.timeout)
                 if deadline is not None:
                     wait_seconds = min(wait_seconds, max(0.0, deadline - time.monotonic()))
@@ -930,7 +934,7 @@ class GatewayClient:
                 if not isinstance(response, dict):
                     raise APIError("AI SDK transport returned malformed response", retryable=True)
                 response["_latency_seconds"] = round(time.monotonic() - started, 3)
-                response["_attempts"] = self.last_attempts
+                response["_attempts"] = attempt + 1
                 return response
             except APIError as exc:
                 last = exc
@@ -2032,6 +2036,11 @@ def run_benchmark(inputs: BenchmarkInputs, *, track: str = "all", limit: int | N
     counts: dict[str, int] = {}
     for row in results:
         counts[row.get("status", "unknown")] = counts.get(row.get("status", "unknown"), 0) + 1
+    active_clients = getattr(client_pool, "_clients", None)
+    submitted_this_invocation = (
+        sum(int(getattr(client, "submitted_requests", 0)) for client in active_clients.values())
+        if isinstance(active_clients, dict) else None
+    )
     summary = {
         "schema": SCHEMA,
         "mode": "run",
@@ -2045,10 +2054,9 @@ def run_benchmark(inputs: BenchmarkInputs, *, track: str = "all", limit: int | N
         "cost_missing_turns": sum(int(row.get("cost_missing_turns") or 0) for row in results),
         "cost_complete": all(bool(row.get("cost_complete", False)) for row in results),
         "response_turns_total": sum(len(row.get("turns", [])) for row in results),
-        "network_requests_made_this_invocation": sum(
-            sum(int((turn.get("response") or {}).get("attempts") or turn.get("attempts") or 0) for turn in row.get("turns", []) if not turn.get("api_reused"))
-            for row in results
-        ),
+        "gateway_transport_requests_this_invocation": submitted_this_invocation,
+        "network_requests_made_this_invocation": submitted_this_invocation,
+        "transport_implementation": "ai-sdk-streamText-jsonl",
         "resumed_response_turns": sum(
             sum(1 for turn in row.get("turns", []) if turn.get("api_reused")) for row in results
         ),
