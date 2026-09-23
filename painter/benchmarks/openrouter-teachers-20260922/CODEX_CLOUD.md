@@ -90,3 +90,10 @@ were not inspected), and a credential-free Node 22.23.2 `fetch` with
 documented proxy switch is now set in `cloud/run.sh` before the Python runner
 spawns the AI SDK transport. A paid painting rerun is still required before
 claiming the cloud benchmark works end to end.
+
+The next bounded task (`task_e_6ab3cd037ed8832b9b9ae4e46ffcefe9`) made no
+model request: setup stopped with apt exit code 100 because the cloud proxy
+returned HTTP 403 for the universal image's unused `apt.llvm.org` source.
+`cloud/setup.sh` now moves only that source into the ignored runtime directory
+before apt updates, while keeping the Ubuntu and Node sources. The failed task
+is infrastructure evidence, not a model result.
