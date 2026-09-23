@@ -161,3 +161,36 @@ Xiaomi Flash has the verified episode-43 continuation above. The additional
 tasks are **in progress**; dispatch is not a successful render, valid painting,
 or provider ranking. Only newly needed turns can issue paid Gateway requests.
 No scheduled task or watcher was created.
+
+## Gateway credit block and throughput correction
+
+All three additional one-episode continuations published separate archives,
+which were anonymously reassembled and SHA-256 verified. Each selected episode
+ended with `api_error` because the AI Gateway returned HTTP **402**:
+"A positive credit balance is required for all requests, including BYOK".
+The three archive hashes are DeepSeek
+`0173108669d8bf71bbb6f99ad61eac0bd2b1fe425d94e4ae878c588278f382ba`
+(44,446,563 bytes), Step-5
+`87440d0f8894403a4df4da9544f819fcb134c96ebe2b8b07490c10ad015d555b`
+(39,663,191 bytes), and MiMo Pro
+`d5bf6b2bf7e336c45eada7aa07f3381b1b0969d3d43608d174496e9daf4ae43e`
+(26,387,421 bytes). No provider/model comparison is possible from these
+attempts. The successful Xiaomi Flash continuation happened before this
+balance block; it must not be generalized to the other providers.
+
+These three run summaries also incorrectly reported zero requests submitted
+this invocation. The Python pool was cleared by `close()` before the counter
+was read, while each selected turn's receipt contains one nonretryable 402
+response with `attempts: 1`. Source now snapshots transport counters **before**
+closing the pool; the regression test simulates a clearing `close()`.
+The 402 is an external balance condition, not a resume-path failure. Do not
+retry paid Gateway calls until a positive balance is confirmed.
+
+The initial provider-free replay script runs one render at a time within each
+cloud shard; eight shards run concurrently on separate VMs. This is a script
+choice, not a benchmark constraint. The replay command now accepts
+`--workers 2` (bounded 1–8) and uses a fresh isolated browser profile for
+each concurrent program. A focused overlap test and all 19 Python tests pass.
+No claim of measured wall-time speedup is made until a Linux replay compares
+the same programs at one versus two workers. The already-running tasks remain
+on their original source commit and retain their serial timing baseline.

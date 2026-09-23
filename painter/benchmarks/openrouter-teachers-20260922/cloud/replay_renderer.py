@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import argparse
 import base64
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import hashlib
 import io
 import json
@@ -99,12 +99,16 @@ def main() -> int:
     parser.add_argument("--browser-path", type=Path)
     parser.add_argument("--timeout", type=int, default=600)
     parser.add_argument("--limit", type=int)
+    parser.add_argument("--workers", type=int, default=1,
+                        help="concurrent isolated browser renders; use 1 for baseline timing")
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
     if not 181 <= args.timeout <= 900:
         parser.error("replay timeout must be between 181 and 900 seconds")
     if args.limit is not None and args.limit < 1:
         parser.error("--limit must be positive")
+    if not 1 <= args.workers <= 8:
+        parser.error("--workers must be between 1 and 8")
     archive, source_receipt = public_bytes(args.source_run_id)
     programs = timed_out_programs(archive)
     if args.limit is not None:
@@ -120,7 +124,9 @@ def main() -> int:
     output = args.output.resolve()
     output.mkdir(parents=True, exist_ok=True)
     statuses: dict[str, int] = {}
-    for index, (job, turn, program, original) in enumerate(programs, 1):
+
+    def replay_one(item: tuple[str, int, bytes, dict]) -> tuple[str, str, float | None]:
+        job, turn, program, original = item
         episode_dir = output / "episodes" / job
         episode_dir.mkdir(parents=True, exist_ok=True)
         source = episode_dir / f"turn-{turn:02d}.program.js"
@@ -130,18 +136,25 @@ def main() -> int:
                                 renderer_python=renderer_python, browser_path=args.browser_path,
                                 timeout=args.timeout, run_as_user="painter", local=False)
         status = "valid" if result.get("valid") else str(result.get("error_code") or "invalid")
-        statuses[status] = statuses.get(status, 0) + 1
         evidence = {"schema": "painter.renderer-replay.v1", "source_run_id": args.source_run_id,
                     "source_archive_sha256": source_receipt["bundle_sha256"], "source_turn": turn,
                     "program_sha256": hashlib.sha256(program).hexdigest(), "timeout_seconds": args.timeout,
                     "source": original, "result": result,
                     "limitation": "Offline render only; subsequent teacher turns were not generated from this canvas."}
         (episode_dir / "replay.json").write_text(json.dumps(evidence, indent=2, sort_keys=True) + "\n")
-        print(json.dumps({"progress": f"{index}/{len(programs)}", "job": job, "status": status,
-                          "elapsed_seconds": result.get("elapsed_seconds")}), flush=True)
+        return job, status, result.get("elapsed_seconds")
+
+    with ThreadPoolExecutor(max_workers=args.workers) as pool:
+        futures = [pool.submit(replay_one, item) for item in programs]
+        for index, future in enumerate(as_completed(futures), 1):
+            job, status, elapsed_seconds = future.result()
+            statuses[status] = statuses.get(status, 0) + 1
+            print(json.dumps({"progress": f"{index}/{len(programs)}", "job": job, "status": status,
+                              "elapsed_seconds": elapsed_seconds}), flush=True)
     summary = {"schema": "painter.renderer-replay-summary.v1", "source_run_id": args.source_run_id,
                "source_archive_sha256": source_receipt["bundle_sha256"], "timeout_seconds": args.timeout,
-               "programs_selected": len(programs), "status_counts": statuses, "paid_model_calls": 0}
+               "programs_selected": len(programs), "render_workers": args.workers,
+               "status_counts": statuses, "paid_model_calls": 0}
     (output / "run-summary.json").write_text(json.dumps(summary, indent=2, sort_keys=True) + "\n")
     print(json.dumps(summary, sort_keys=True), flush=True)
     return 0

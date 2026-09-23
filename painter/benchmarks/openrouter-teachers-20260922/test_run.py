@@ -368,6 +368,7 @@ class RunTests(unittest.TestCase):
                  patch.object(run, "tqdm", side_effect=lambda iterable, **_: iter(iterable)):
                 pool_class.return_value.get.return_value = type("Client", (), {"timeout": 1, "max_retries": 1})()
                 pool_class.return_value._clients = {"test": type("Client", (), {"submitted_requests": 1})()}
+                pool_class.return_value.close.side_effect = pool_class.return_value._clients.clear
                 runner_class.return_value.run.return_value = result
                 summary = run.run_benchmark(
                     inputs, track="quality", limit=1, api_key="test-key",

@@ -2030,17 +2030,20 @@ def run_benchmark(inputs: BenchmarkInputs, *, track: str = "all", limit: int | N
                     if callable(set_postfix):
                         set_postfix(done=f"{progress['episodes_completed']}/{progress['episodes_requested']}", status=status)
     finally:
+        # close() clears the pool, so snapshot the transport counters first.
+        # The response archive alone cannot distinguish old restored turns
+        # from requests actually submitted in this invocation.
+        active_clients = getattr(client_pool, "_clients", None)
+        submitted_this_invocation = (
+            sum(int(getattr(client, "submitted_requests", 0)) for client in active_clients.values())
+            if isinstance(active_clients, dict) else None
+        )
         client_pool.close()
     progress["finished_at"] = time.time()
     atomic_json(progress_path, progress)
     counts: dict[str, int] = {}
     for row in results:
         counts[row.get("status", "unknown")] = counts.get(row.get("status", "unknown"), 0) + 1
-    active_clients = getattr(client_pool, "_clients", None)
-    submitted_this_invocation = (
-        sum(int(getattr(client, "submitted_requests", 0)) for client in active_clients.values())
-        if isinstance(active_clients, dict) else None
-    )
     summary = {
         "schema": SCHEMA,
         "mode": "run",
