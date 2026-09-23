@@ -59,3 +59,47 @@ insufficient to replace MiMo Pro; the API episode and subsequent independent
 references must support that decision. No speed curriculum is part of this
 screen. Results and the next decision will be appended after public receipts
 are verified.
+
+## First observed results
+
+The three independent Codex-agent programs were rendered concurrently in
+finite cloud task `task_e_6ab428322e30832bb9bfa874024fb015` at source
+`be61cb5`. All three timed out at the 600-second per-program deadline. The
+complete ten-file archive was anonymously fetched and verified against public
+receipt `runs/luna-high-initial-20260924/receipt.json`, bundle SHA-256
+`66996c3bde97a3557cf601dd9dddf4c5a22772823601df5089c88fe464918ee5`,
+dataset commit `1c15871f39b0adadedf9e38aeb9a1836f7429054`. There are no
+canvases from that batch. A finite, sequential one-worker rerender with a
+900-second deadline is running as `luna-high-sequential-20260924`; this tests
+whether three simultaneous software-rendered Chromium instances caused the
+timeouts. It makes no model calls. The initial timeout is censored evidence,
+not a visual-quality score.
+
+The paid Gateway episode on reference `110` completed at source `c091a95`
+with task-local high reasoning, quality-track 12 turns and a 600-second
+renderer override. Its public archive was anonymously fetched and SHA-256
+verified: run `luna-high-api-coco110-20260924`, bundle
+`0c340822b247b7ba71ce36193f4a8144a3adb05cb0af5f003ab701146257bcb4`,
+dataset commit `53e3e5efd8f16f5e216c99643260b05e7e2f080d`. It made exactly
+12 fresh provider calls and produced nine valid canvases. Turn 2 supplied no
+complete program; turns 6 and 10 failed on undefined functions. The last
+valid canvas is turn 12, with a recognizable mother, child, restaurant and
+pizza. The first valid canvas was visually confused; later turns corrected
+the structure, but the result remains flat and graphic compared with MiMo
+Pro's softer, more painterly matched-reference final canvas. This is the
+parent's unblinded assessment, not a calibrated pairwise judge result.
+
+The Luna run used 471,933 prompt and 97,657 completion tokens (569,590
+total) and 1,051.118 active seconds; the matched MiMo Pro quality episode
+used 559,073 prompt and 132,369 completion tokens (691,442 total) and
+4,074.278 active seconds. The provider supplied no actual dollar cost for
+either run. Applying the publicly listed per-token prices *only as an
+estimate* gives about $0.096 for Luna and $0.36 for MiMo Pro on this
+reference, with possible billing differences unmeasured. The list prices
+were [Luna](https://vercel.com/ai-gateway/models/gpt-6-luna) $0.10/$0.50
+and [MiMo Pro](https://vercel.com/ai-gateway/models/mimo-v2.6-pro) about
+$0.44/$0.87 per million input/output tokens when checked on 2026-09-24.
+This one example supports testing Luna as an inexpensive structural teacher,
+but does not support replacing MiMo Pro for the aesthetic tier. Paid
+high-reasoning episodes on the matched airplane and harbor references are
+underway before a broader decision.
