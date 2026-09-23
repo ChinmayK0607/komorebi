@@ -78,3 +78,15 @@ reproduced the original `GatewayResponseError: Invalid error response format`.
 The transport therefore uses the AI SDK OpenAI-compatible provider at the
 Gateway's documented `/v1` endpoint. A paid painting rerun is required before
 claiming this change fixed generation; keep the failed archive as evidence.
+
+The `/v1` rerun (`task_e_6ab3cb061454832b9e456f8e7c8dc77f`, run ID
+`cloud-teacher-v1-smoke-20260923`) also produced `api_error`, now with
+`AI_APICallError: Cannot connect to API`, zero tokens, and no canvas. Its
+five-file archive was hash-verified at dataset revision
+`4eb905e7dd6675aa931a4843da9422f12f7cd089`. In that same cloud
+environment, both HTTP and HTTPS proxy variables were present (their values
+were not inspected), and a credential-free Node 22.23.2 `fetch` with
+`NODE_USE_ENV_PROXY=1` reached the allowlisted Gateway (HTTP 308). Node's
+documented proxy switch is now set in `cloud/run.sh` before the Python runner
+spawns the AI SDK transport. A paid painting rerun is still required before
+claiming the cloud benchmark works end to end.

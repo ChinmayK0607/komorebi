@@ -5,6 +5,11 @@ set -Eeuo pipefail
 REPO_ROOT="$(git rev-parse --show-toplevel)"
 # Match the Node selected during setup, ahead of Codex universal's Node 20.
 export PATH="/usr/bin:/bin:$PATH"
+# Codex cloud routes task egress through HTTP(S)_PROXY. Node's global fetch
+# ignores those variables unless proxy support is enabled at process startup.
+# The pinned Node 22.23.2 supports this flag; direct Node fetch then reaches
+# the allowlisted Gateway without changing the browser/render sandbox.
+export NODE_USE_ENV_PROXY=1
 BENCHMARK="$REPO_ROOT/painter/benchmarks/openrouter-teachers-20260922"
 RUNTIME_ROOT="$REPO_ROOT/.painter-cloud-runtime"
 PY="$RUNTIME_ROOT/renderer-env/bin/python"
