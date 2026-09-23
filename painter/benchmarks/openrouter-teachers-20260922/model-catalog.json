@@ -1,0 +1,359 @@
+{
+  "fetched_date_utc": "2026-09-23",
+  "source": "https://vercel.com/docs/ai-gateway/models-and-providers",
+  "profile_kind": "gateway-unverified",
+  "models": [
+    {
+      "id": "zai/glm-5.3-flash",
+      "name": "Z.ai: GLM 5.3 Flash",
+      "architecture": {
+        "modality": "text+image+video->text",
+        "input_modalities": [
+          "text",
+          "image",
+          "video"
+        ],
+        "output_modalities": [
+          "text"
+        ],
+        "tokenizer": "Other",
+        "instruct_type": null
+      },
+      "context_length": 1310720,
+      "top_provider": {
+        "context_length": 1048576,
+        "max_completion_tokens": 943718,
+        "is_moderated": false
+      },
+      "supported_parameters": [
+        "frequency_penalty",
+        "include_reasoning",
+        "logit_bias",
+        "logprobs",
+        "max_tokens",
+        "min_p",
+        "parallel_tool_calls",
+        "presence_penalty",
+        "reasoning",
+        "reasoning_effort",
+        "repetition_penalty",
+        "response_format",
+        "seed",
+        "stop",
+        "structured_outputs",
+        "temperature",
+        "tool_choice",
+        "tools",
+        "top_k",
+        "top_logprobs",
+        "top_p"
+      ],
+      "pricing": {
+        "prompt": "0.00000015",
+        "completion": "0.0000005",
+        "input_cache_read": "0.00000005"
+      },
+      "default_parameters": {
+        "temperature": 1,
+        "top_p": 0.95
+      },
+      "reasoning": {
+        "mandatory": true,
+        "default_enabled": true,
+        "supported_efforts": [
+          "max",
+          "high",
+          "low"
+        ],
+        "default_effort": "max"
+      }
+    },
+    {
+      "id": "deepseek/deepseek-v4.1-flash",
+      "name": "DeepSeek: DeepSeek V4.1 Flash",
+      "architecture": {
+        "modality": "text+image->text",
+        "input_modalities": [
+          "text",
+          "image"
+        ],
+        "output_modalities": [
+          "text"
+        ],
+        "tokenizer": "DeepSeek",
+        "instruct_type": null
+      },
+      "context_length": 1048576,
+      "top_provider": {
+        "context_length": 1048576,
+        "max_completion_tokens": 384000,
+        "is_moderated": false
+      },
+      "supported_parameters": [
+        "frequency_penalty",
+        "include_reasoning",
+        "logit_bias",
+        "logprobs",
+        "max_tokens",
+        "min_p",
+        "presence_penalty",
+        "reasoning",
+        "reasoning_effort",
+        "repetition_penalty",
+        "response_format",
+        "seed",
+        "stop",
+        "structured_outputs",
+        "temperature",
+        "tool_choice",
+        "tools",
+        "top_k",
+        "top_logprobs",
+        "top_p"
+      ],
+      "pricing": {
+        "prompt": "0.00000015",
+        "completion": "0.0000006",
+        "input_cache_read": "0.000000003",
+        "overrides": [
+          {
+            "utc_days": [
+              "saturday",
+              "sunday"
+            ],
+            "prompt": "0.00000015",
+            "completion": "0.0000006",
+            "input_cache_read": "0.000000003"
+          },
+          {
+            "utc_days": [
+              "monday",
+              "tuesday",
+              "wednesday",
+              "thursday",
+              "friday"
+            ],
+            "utc_start": 0,
+            "utc_end": 100,
+            "prompt": "0.00000015",
+            "completion": "0.0000006",
+            "input_cache_read": "0.000000003"
+          },
+          {
+            "utc_days": [
+              "monday",
+              "tuesday",
+              "wednesday",
+              "thursday",
+              "friday"
+            ],
+            "utc_start": 100,
+            "utc_end": 400,
+            "prompt": "0.0000003",
+            "completion": "0.0000012",
+            "input_cache_read": "0.000000006"
+          },
+          {
+            "utc_days": [
+              "monday",
+              "tuesday",
+              "wednesday",
+              "thursday",
+              "friday"
+            ],
+            "utc_start": 400,
+            "utc_end": 600,
+            "prompt": "0.00000015",
+            "completion": "0.0000006",
+            "input_cache_read": "0.000000003"
+          },
+          {
+            "utc_days": [
+              "monday",
+              "tuesday",
+              "wednesday",
+              "thursday",
+              "friday"
+            ],
+            "utc_start": 600,
+            "utc_end": 1000,
+            "prompt": "0.0000003",
+            "completion": "0.0000012",
+            "input_cache_read": "0.000000006"
+          },
+          {
+            "utc_days": [
+              "monday",
+              "tuesday",
+              "wednesday",
+              "thursday",
+              "friday"
+            ],
+            "utc_start": 1000,
+            "utc_end": 0,
+            "prompt": "0.00000015",
+            "completion": "0.0000006",
+            "input_cache_read": "0.000000003"
+          }
+        ]
+      },
+      "default_parameters": {},
+      "reasoning": {
+        "mandatory": false,
+        "default_enabled": true,
+        "supported_efforts": [
+          "max",
+          "high",
+          "low"
+        ],
+        "default_effort": "high"
+      }
+    },
+    {
+      "id": "stepfun/step-5-preview",
+      "name": "StepFun: Step 5 Preview",
+      "architecture": {
+        "modality": "text+image->text",
+        "input_modalities": [
+          "text",
+          "image"
+        ],
+        "output_modalities": [
+          "text"
+        ],
+        "tokenizer": "Other",
+        "instruct_type": null
+      },
+      "context_length": 1000000,
+      "top_provider": {
+        "context_length": 1000000,
+        "max_completion_tokens": 1000000
+      },
+      "supported_parameters": [
+        "max_tokens",
+        "temperature",
+        "stop",
+        "reasoning",
+        "include_reasoning",
+        "response_format",
+        "structured_outputs"
+      ],
+      "pricing": {
+        "prompt": "0.000001",
+        "completion": "0.0000027",
+        "input_cache_read": "0.00000005"
+      },
+      "default_parameters": {},
+      "reasoning": {
+        "mandatory": false,
+        "supported_efforts": [
+          "low",
+          "medium",
+          "high"
+        ]
+      }
+    },
+    {
+      "id": "xiaomi/mimo-v2.6-flash",
+      "name": "Xiaomi: MiMo-V2.6-Flash",
+      "architecture": {
+        "modality": "text+image+audio+video->text",
+        "input_modalities": [
+          "text",
+          "image",
+          "video",
+          "audio"
+        ],
+        "output_modalities": [
+          "text"
+        ],
+        "tokenizer": "Other",
+        "instruct_type": null
+      },
+      "context_length": 1048576,
+      "top_provider": {
+        "context_length": 1048576,
+        "max_completion_tokens": 131072,
+        "is_moderated": false
+      },
+      "supported_parameters": [
+        "frequency_penalty",
+        "include_reasoning",
+        "max_tokens",
+        "presence_penalty",
+        "reasoning",
+        "response_format",
+        "stop",
+        "structured_outputs",
+        "temperature",
+        "tool_choice",
+        "tools",
+        "top_p"
+      ],
+      "pricing": {
+        "prompt": "0.00000014",
+        "completion": "0.00000028",
+        "input_cache_read": "0.0000000028"
+      },
+      "default_parameters": {
+        "temperature": 1,
+        "top_p": 0.95,
+        "frequency_penalty": 0
+      },
+      "reasoning": {
+        "mandatory": false
+      }
+    },
+    {
+      "id": "xiaomi/mimo-v2.6-pro",
+      "name": "Xiaomi: MiMo-V2.6-Pro",
+      "architecture": {
+        "modality": "text+image+audio+video->text",
+        "input_modalities": [
+          "text",
+          "image",
+          "video",
+          "audio"
+        ],
+        "output_modalities": [
+          "text"
+        ],
+        "tokenizer": "Other",
+        "instruct_type": null
+      },
+      "context_length": 1048576,
+      "top_provider": {
+        "context_length": 1048576,
+        "max_completion_tokens": 131072,
+        "is_moderated": false
+      },
+      "supported_parameters": [
+        "frequency_penalty",
+        "include_reasoning",
+        "max_tokens",
+        "presence_penalty",
+        "reasoning",
+        "response_format",
+        "stop",
+        "structured_outputs",
+        "temperature",
+        "tool_choice",
+        "tools",
+        "top_p"
+      ],
+      "pricing": {
+        "prompt": "0.000000435",
+        "completion": "0.00000087",
+        "input_cache_read": "0.0000000036"
+      },
+      "default_parameters": {
+        "temperature": 1,
+        "top_p": 0.95,
+        "frequency_penalty": 0
+      },
+      "reasoning": {
+        "mandatory": false
+      }
+    }
+  ]
+}

@@ -1,0 +1,852 @@
+{
+  "version": 1,
+  "references": [
+    {
+      "id": "coco128-000000000109",
+      "image": "references/coco128-000000000109.jpg",
+      "sha256": "69edeeca53763fb2a4ee51739e4f9a4f053584b4f3ca4ff9911c49fa52ed2762",
+      "category": "action poses and small people",
+      "annotation_classes": [
+        "bench",
+        "dog",
+        "person"
+      ],
+      "annotated_object_count": 8,
+      "source_split": "train",
+      "source_group": "coco128:train2017:000000000109",
+      "source_url": "https://cocodataset.org/#explore?id=109",
+      "dataset": "COCO train2017 via Ultralytics COCO128",
+      "per_image_license_status": "unverified_not_provided_in_archive",
+      "prior_exposure": "Existing training-reference pool; not an unseen generalization test",
+      "selection_reason": "Parent visually inspected original image before model generation; retains structure, layering, perspective, anatomy or texture challenges",
+      "visual_review_status": "reference_selection_reviewed"
+    },
+    {
+      "id": "coco128-000000000149",
+      "image": "references/coco128-000000000149.jpg",
+      "sha256": "73a20e38429ba6c78f62a90df787360c4a9ae3d331b002b509a8ee15179788a4",
+      "category": "action poses and small people",
+      "annotation_classes": [
+        "car",
+        "kite",
+        "person"
+      ],
+      "annotated_object_count": 22,
+      "source_split": "train",
+      "source_group": "coco128:train2017:000000000149",
+      "source_url": "https://cocodataset.org/#explore?id=149",
+      "dataset": "COCO train2017 via Ultralytics COCO128",
+      "per_image_license_status": "unverified_not_provided_in_archive",
+      "prior_exposure": "Existing training-reference pool; not an unseen generalization test",
+      "selection_reason": "Parent visually inspected original image before model generation; retains structure, layering, perspective, anatomy or texture challenges",
+      "visual_review_status": "reference_selection_reviewed"
+    },
+    {
+      "id": "coco128-000000000192",
+      "image": "references/coco128-000000000192.jpg",
+      "sha256": "93a9d9132aefccbb1f1bfb51198b5b427d1cf4a977ef259c9d0507ee5b0df732",
+      "category": "action poses and small people",
+      "annotation_classes": [
+        "baseball bat",
+        "person"
+      ],
+      "annotated_object_count": 5,
+      "source_split": "train",
+      "source_group": "coco128:train2017:000000000192",
+      "source_url": "https://cocodataset.org/#explore?id=192",
+      "dataset": "COCO train2017 via Ultralytics COCO128",
+      "per_image_license_status": "unverified_not_provided_in_archive",
+      "prior_exposure": "Existing training-reference pool; not an unseen generalization test",
+      "selection_reason": "Parent visually inspected original image before model generation; retains structure, layering, perspective, anatomy or texture challenges",
+      "visual_review_status": "reference_selection_reviewed"
+    },
+    {
+      "id": "coco128-000000000368",
+      "image": "references/coco128-000000000368.jpg",
+      "sha256": "a10be0a1beb5a34b50af22cc657dbf186a944db7ce8924e570295f35bd954036",
+      "category": "action poses and small people",
+      "annotation_classes": [
+        "person",
+        "sports ball"
+      ],
+      "annotated_object_count": 13,
+      "source_split": "train",
+      "source_group": "coco128:train2017:000000000368",
+      "source_url": "https://cocodataset.org/#explore?id=368",
+      "dataset": "COCO train2017 via Ultralytics COCO128",
+      "per_image_license_status": "unverified_not_provided_in_archive",
+      "prior_exposure": "Existing training-reference pool; not an unseen generalization test",
+      "selection_reason": "Parent visually inspected original image before model generation; retains structure, layering, perspective, anatomy or texture challenges",
+      "visual_review_status": "reference_selection_reviewed"
+    },
+    {
+      "id": "coco128-000000000488",
+      "image": "references/coco128-000000000488.jpg",
+      "sha256": "9e1c9d4c88d38e6a2cd2f775bea82c137c14dc3b13f8430bcdadcb89ab0b7022",
+      "category": "action poses and small people",
+      "annotation_classes": [
+        "baseball bat",
+        "baseball glove",
+        "person",
+        "sports ball"
+      ],
+      "annotated_object_count": 10,
+      "source_split": "train",
+      "source_group": "coco128:train2017:000000000488",
+      "source_url": "https://cocodataset.org/#explore?id=488",
+      "dataset": "COCO train2017 via Ultralytics COCO128",
+      "per_image_license_status": "unverified_not_provided_in_archive",
+      "prior_exposure": "Existing training-reference pool; not an unseen generalization test",
+      "selection_reason": "Parent visually inspected original image before model generation; retains structure, layering, perspective, anatomy or texture challenges",
+      "visual_review_status": "reference_selection_reviewed"
+    },
+    {
+      "id": "coco128-000000000061",
+      "image": "references/coco128-000000000061.jpg",
+      "sha256": "a1a9ac88e4c5cfbdd1cd425a6d262b1e78bf32676a9c17a2861ca6a23a731955",
+      "category": "animal anatomy and overlapping subjects",
+      "annotation_classes": [
+        "elephant",
+        "person"
+      ],
+      "annotated_object_count": 5,
+      "source_split": "train",
+      "source_group": "coco128:train2017:000000000061",
+      "source_url": "https://cocodataset.org/#explore?id=61",
+      "dataset": "COCO train2017 via Ultralytics COCO128",
+      "per_image_license_status": "unverified_not_provided_in_archive",
+      "prior_exposure": "Existing training-reference pool; not an unseen generalization test",
+      "selection_reason": "Parent visually inspected original image before model generation; retains structure, layering, perspective, anatomy or texture challenges",
+      "visual_review_status": "reference_selection_reviewed"
+    },
+    {
+      "id": "coco128-000000000074",
+      "image": "references/coco128-000000000074.jpg",
+      "sha256": "99d864809a7355862032b54283bd4808971da5a2b976b20467203e6c192e755d",
+      "category": "animal anatomy and overlapping subjects",
+      "annotation_classes": [
+        "bicycle",
+        "dog",
+        "person"
+      ],
+      "annotated_object_count": 8,
+      "source_split": "train",
+      "source_group": "coco128:train2017:000000000074",
+      "source_url": "https://cocodataset.org/#explore?id=74",
+      "dataset": "COCO train2017 via Ultralytics COCO128",
+      "per_image_license_status": "unverified_not_provided_in_archive",
+      "prior_exposure": "Existing training-reference pool; not an unseen generalization test",
+      "selection_reason": "Parent visually inspected original image before model generation; retains structure, layering, perspective, anatomy or texture challenges",
+      "visual_review_status": "reference_selection_reviewed"
+    },
+    {
+      "id": "coco128-000000000136",
+      "image": "references/coco128-000000000136.jpg",
+      "sha256": "e20c569a1e6174fd845a434a3fe3d50fb4f8a0e275fb348cc2c9b42a11600ccc",
+      "category": "animal anatomy and overlapping subjects",
+      "annotation_classes": [
+        "giraffe",
+        "person"
+      ],
+      "annotated_object_count": 4,
+      "source_split": "train",
+      "source_group": "coco128:train2017:000000000136",
+      "source_url": "https://cocodataset.org/#explore?id=136",
+      "dataset": "COCO train2017 via Ultralytics COCO128",
+      "per_image_license_status": "unverified_not_provided_in_archive",
+      "prior_exposure": "Existing training-reference pool; not an unseen generalization test",
+      "selection_reason": "Parent visually inspected original image before model generation; retains structure, layering, perspective, anatomy or texture challenges",
+      "visual_review_status": "reference_selection_reviewed"
+    },
+    {
+      "id": "coco128-000000000143",
+      "image": "references/coco128-000000000143.jpg",
+      "sha256": "03d4d20019d5abdf6f9314a166f8f8cf582f1d0d2167beef7ec2400d0f1b629e",
+      "category": "animal anatomy and overlapping subjects",
+      "annotation_classes": [
+        "bird"
+      ],
+      "annotated_object_count": 8,
+      "source_split": "train",
+      "source_group": "coco128:train2017:000000000143",
+      "source_url": "https://cocodataset.org/#explore?id=143",
+      "dataset": "COCO train2017 via Ultralytics COCO128",
+      "per_image_license_status": "unverified_not_provided_in_archive",
+      "prior_exposure": "Existing training-reference pool; not an unseen generalization test",
+      "selection_reason": "Parent visually inspected original image before model generation; retains structure, layering, perspective, anatomy or texture challenges",
+      "visual_review_status": "reference_selection_reviewed"
+    },
+    {
+      "id": "coco128-000000000154",
+      "image": "references/coco128-000000000154.jpg",
+      "sha256": "2938c94a9b07cacf10a8343c35949b065ae868190a11020f458f50450bd13552",
+      "category": "animal anatomy and overlapping subjects",
+      "annotation_classes": [
+        "zebra"
+      ],
+      "annotated_object_count": 3,
+      "source_split": "train",
+      "source_group": "coco128:train2017:000000000154",
+      "source_url": "https://cocodataset.org/#explore?id=154",
+      "dataset": "COCO train2017 via Ultralytics COCO128",
+      "per_image_license_status": "unverified_not_provided_in_archive",
+      "prior_exposure": "Existing training-reference pool; not an unseen generalization test",
+      "selection_reason": "Parent visually inspected original image before model generation; retains structure, layering, perspective, anatomy or texture challenges",
+      "visual_review_status": "reference_selection_reviewed"
+    },
+    {
+      "id": "coco128-000000000064",
+      "image": "references/coco128-000000000064.jpg",
+      "sha256": "406f84619f5197d416f60566d41ad4d58f1d10b0a182652bbda266eedbc3f1ab",
+      "category": "fine structure and environmental context",
+      "annotation_classes": [
+        "car",
+        "clock",
+        "stop sign",
+        "truck"
+      ],
+      "annotated_object_count": 4,
+      "source_split": "train",
+      "source_group": "coco128:train2017:000000000064",
+      "source_url": "https://cocodataset.org/#explore?id=64",
+      "dataset": "COCO train2017 via Ultralytics COCO128",
+      "per_image_license_status": "unverified_not_provided_in_archive",
+      "prior_exposure": "Existing training-reference pool; not an unseen generalization test",
+      "selection_reason": "Parent visually inspected original image before model generation; retains structure, layering, perspective, anatomy or texture challenges",
+      "visual_review_status": "reference_selection_reviewed"
+    },
+    {
+      "id": "coco128-000000000404",
+      "image": "references/coco128-000000000404.jpg",
+      "sha256": "c46b3242d195c8c81b6776f4bfa385ef886ff1e7cb814e2c29e03303b85403b2",
+      "category": "fine structure and environmental context",
+      "annotation_classes": [
+        "boat"
+      ],
+      "annotated_object_count": 5,
+      "source_split": "train",
+      "source_group": "coco128:train2017:000000000404",
+      "source_url": "https://cocodataset.org/#explore?id=404",
+      "dataset": "COCO train2017 via Ultralytics COCO128",
+      "per_image_license_status": "unverified_not_provided_in_archive",
+      "prior_exposure": "Existing training-reference pool; not an unseen generalization test",
+      "selection_reason": "Parent visually inspected original image before model generation; retains structure, layering, perspective, anatomy or texture challenges",
+      "visual_review_status": "reference_selection_reviewed"
+    },
+    {
+      "id": "coco128-000000000520",
+      "image": "references/coco128-000000000520.jpg",
+      "sha256": "2b971302ba56e1049294f9e0b198f37316148c8257b8d7344002aed624c45844",
+      "category": "fine structure and environmental context",
+      "annotation_classes": [
+        "bird",
+        "person"
+      ],
+      "annotated_object_count": 11,
+      "source_split": "train",
+      "source_group": "coco128:train2017:000000000520",
+      "source_url": "https://cocodataset.org/#explore?id=520",
+      "dataset": "COCO train2017 via Ultralytics COCO128",
+      "per_image_license_status": "unverified_not_provided_in_archive",
+      "prior_exposure": "Existing training-reference pool; not an unseen generalization test",
+      "selection_reason": "Parent visually inspected original image before model generation; retains structure, layering, perspective, anatomy or texture challenges",
+      "visual_review_status": "reference_selection_reviewed"
+    },
+    {
+      "id": "coco128-000000000531",
+      "image": "references/coco128-000000000531.jpg",
+      "sha256": "111bb407e512f23fcc14bbc51ad4b312b0797332aab86ecd9373808286ed30b1",
+      "category": "fine structure and environmental context",
+      "annotation_classes": [
+        "bicycle",
+        "person",
+        "sports ball",
+        "tennis racket"
+      ],
+      "annotated_object_count": 15,
+      "source_split": "train",
+      "source_group": "coco128:train2017:000000000531",
+      "source_url": "https://cocodataset.org/#explore?id=531",
+      "dataset": "COCO train2017 via Ultralytics COCO128",
+      "per_image_license_status": "unverified_not_provided_in_archive",
+      "prior_exposure": "Existing training-reference pool; not an unseen generalization test",
+      "selection_reason": "Parent visually inspected original image before model generation; retains structure, layering, perspective, anatomy or texture challenges",
+      "visual_review_status": "reference_selection_reviewed"
+    },
+    {
+      "id": "coco128-000000000612",
+      "image": "references/coco128-000000000612.jpg",
+      "sha256": "9ee977eaa2947ffa1508dfc8b6e3c179a9945ee3a55529f91ede04689f00e667",
+      "category": "fine structure and environmental context",
+      "annotation_classes": [
+        "bed",
+        "teddy bear"
+      ],
+      "annotated_object_count": 11,
+      "source_split": "train",
+      "source_group": "coco128:train2017:000000000612",
+      "source_url": "https://cocodataset.org/#explore?id=612",
+      "dataset": "COCO train2017 via Ultralytics COCO128",
+      "per_image_license_status": "unverified_not_provided_in_archive",
+      "prior_exposure": "Existing training-reference pool; not an unseen generalization test",
+      "selection_reason": "Parent visually inspected original image before model generation; retains structure, layering, perspective, anatomy or texture challenges",
+      "visual_review_status": "reference_selection_reviewed"
+    },
+    {
+      "id": "coco128-000000000110",
+      "image": "references/coco128-000000000110.jpg",
+      "sha256": "39d967c7856965853e90b9283db4a6895a034eb17fe0c84581d17af4a59edcf2",
+      "category": "food and table arrangements",
+      "annotation_classes": [
+        "chair",
+        "cup",
+        "dining table",
+        "fork",
+        "knife",
+        "person",
+        "pizza"
+      ],
+      "annotated_object_count": 24,
+      "source_split": "train",
+      "source_group": "coco128:train2017:000000000110",
+      "source_url": "https://cocodataset.org/#explore?id=110",
+      "dataset": "COCO train2017 via Ultralytics COCO128",
+      "per_image_license_status": "unverified_not_provided_in_archive",
+      "prior_exposure": "Existing training-reference pool; not an unseen generalization test",
+      "selection_reason": "Parent visually inspected original image before model generation; retains structure, layering, perspective, anatomy or texture challenges",
+      "visual_review_status": "reference_selection_reviewed"
+    },
+    {
+      "id": "coco128-000000000142",
+      "image": "references/coco128-000000000142.jpg",
+      "sha256": "3c852dc71abcf6cf06ed58202d1b2c850bb783553f05c63cd6ca511936b431aa",
+      "category": "food and table arrangements",
+      "annotation_classes": [
+        "banana",
+        "bottle",
+        "dining table",
+        "sandwich"
+      ],
+      "annotated_object_count": 4,
+      "source_split": "train",
+      "source_group": "coco128:train2017:000000000142",
+      "source_url": "https://cocodataset.org/#explore?id=142",
+      "dataset": "COCO train2017 via Ultralytics COCO128",
+      "per_image_license_status": "unverified_not_provided_in_archive",
+      "prior_exposure": "Existing training-reference pool; not an unseen generalization test",
+      "selection_reason": "Parent visually inspected original image before model generation; retains structure, layering, perspective, anatomy or texture challenges",
+      "visual_review_status": "reference_selection_reviewed"
+    },
+    {
+      "id": "coco128-000000000196",
+      "image": "references/coco128-000000000196.jpg",
+      "sha256": "1e1d801e63ed90d34ee666845ebcc17b56edef1f864d048ff588ce7073bc94a2",
+      "category": "food and table arrangements",
+      "annotation_classes": [
+        "bowl",
+        "broccoli",
+        "carrot",
+        "dining table",
+        "fork",
+        "spoon"
+      ],
+      "annotated_object_count": 42,
+      "source_split": "train",
+      "source_group": "coco128:train2017:000000000196",
+      "source_url": "https://cocodataset.org/#explore?id=196",
+      "dataset": "COCO train2017 via Ultralytics COCO128",
+      "per_image_license_status": "unverified_not_provided_in_archive",
+      "prior_exposure": "Existing training-reference pool; not an unseen generalization test",
+      "selection_reason": "Parent visually inspected original image before model generation; retains structure, layering, perspective, anatomy or texture challenges",
+      "visual_review_status": "reference_selection_reviewed"
+    },
+    {
+      "id": "coco128-000000000332",
+      "image": "references/coco128-000000000332.jpg",
+      "sha256": "8d4946138c446940ed080738744214cd75948a98fd3a1933d0031bd14144f541",
+      "category": "food and table arrangements",
+      "annotation_classes": [
+        "bowl",
+        "carrot",
+        "cup",
+        "fork"
+      ],
+      "annotated_object_count": 7,
+      "source_split": "train",
+      "source_group": "coco128:train2017:000000000332",
+      "source_url": "https://cocodataset.org/#explore?id=332",
+      "dataset": "COCO train2017 via Ultralytics COCO128",
+      "per_image_license_status": "unverified_not_provided_in_archive",
+      "prior_exposure": "Existing training-reference pool; not an unseen generalization test",
+      "selection_reason": "Parent visually inspected original image before model generation; retains structure, layering, perspective, anatomy or texture challenges",
+      "visual_review_status": "reference_selection_reviewed"
+    },
+    {
+      "id": "coco128-000000000450",
+      "image": "references/coco128-000000000450.jpg",
+      "sha256": "3b1fe58cb414f373c61990a5fed4f1a6418a02b2e8a3ed3ecef613f4e7198068",
+      "category": "food and table arrangements",
+      "annotation_classes": [
+        "cup",
+        "dining table",
+        "pizza",
+        "wine glass"
+      ],
+      "annotated_object_count": 4,
+      "source_split": "train",
+      "source_group": "coco128:train2017:000000000450",
+      "source_url": "https://cocodataset.org/#explore?id=450",
+      "dataset": "COCO train2017 via Ultralytics COCO128",
+      "per_image_license_status": "unverified_not_provided_in_archive",
+      "prior_exposure": "Existing training-reference pool; not an unseen generalization test",
+      "selection_reason": "Parent visually inspected original image before model generation; retains structure, layering, perspective, anatomy or texture challenges",
+      "visual_review_status": "reference_selection_reviewed"
+    },
+    {
+      "id": "coco128-000000000164",
+      "image": "references/coco128-000000000164.jpg",
+      "sha256": "186a1427f32ce7e5cf17052f66d5ee7cd57d7f83762001891e16195a6bda586d",
+      "category": "interiors and layered objects",
+      "annotation_classes": [
+        "bottle",
+        "bowl",
+        "chair",
+        "cup",
+        "dining table",
+        "microwave",
+        "oven",
+        "refrigerator",
+        "wine glass"
+      ],
+      "annotated_object_count": 40,
+      "source_split": "train",
+      "source_group": "coco128:train2017:000000000164",
+      "source_url": "https://cocodataset.org/#explore?id=164",
+      "dataset": "COCO train2017 via Ultralytics COCO128",
+      "per_image_license_status": "unverified_not_provided_in_archive",
+      "prior_exposure": "Existing training-reference pool; not an unseen generalization test",
+      "selection_reason": "Parent visually inspected original image before model generation; retains structure, layering, perspective, anatomy or texture challenges",
+      "visual_review_status": "reference_selection_reviewed"
+    },
+    {
+      "id": "coco128-000000000241",
+      "image": "references/coco128-000000000241.jpg",
+      "sha256": "14007b87745069ed85c6412dffc8ad11a22de98d5f5c9ae896523e12622961c5",
+      "category": "interiors and layered objects",
+      "annotation_classes": [
+        "bottle",
+        "couch",
+        "cup",
+        "handbag",
+        "person",
+        "potted plant",
+        "remote"
+      ],
+      "annotated_object_count": 14,
+      "source_split": "train",
+      "source_group": "coco128:train2017:000000000241",
+      "source_url": "https://cocodataset.org/#explore?id=241",
+      "dataset": "COCO train2017 via Ultralytics COCO128",
+      "per_image_license_status": "unverified_not_provided_in_archive",
+      "prior_exposure": "Existing training-reference pool; not an unseen generalization test",
+      "selection_reason": "Parent visually inspected original image before model generation; retains structure, layering, perspective, anatomy or texture challenges",
+      "visual_review_status": "reference_selection_reviewed"
+    },
+    {
+      "id": "coco128-000000000384",
+      "image": "references/coco128-000000000384.jpg",
+      "sha256": "dfbae064fadcaa79bd319410903bc92052349472115e2d515e0ecf3c944d1048",
+      "category": "interiors and layered objects",
+      "annotation_classes": [
+        "book",
+        "clock",
+        "couch",
+        "laptop",
+        "mouse",
+        "remote"
+      ],
+      "annotated_object_count": 11,
+      "source_split": "train",
+      "source_group": "coco128:train2017:000000000384",
+      "source_url": "https://cocodataset.org/#explore?id=384",
+      "dataset": "COCO train2017 via Ultralytics COCO128",
+      "per_image_license_status": "unverified_not_provided_in_archive",
+      "prior_exposure": "Existing training-reference pool; not an unseen generalization test",
+      "selection_reason": "Parent visually inspected original image before model generation; retains structure, layering, perspective, anatomy or texture challenges",
+      "visual_review_status": "reference_selection_reviewed"
+    },
+    {
+      "id": "coco128-000000000486",
+      "image": "references/coco128-000000000486.jpg",
+      "sha256": "cb30e9ff9b1182fc9aa328f601f0ca640236eea29ec695b57edc11a572dfbfed",
+      "category": "interiors and layered objects",
+      "annotation_classes": [
+        "bottle",
+        "bowl",
+        "knife",
+        "oven",
+        "refrigerator"
+      ],
+      "annotated_object_count": 8,
+      "source_split": "train",
+      "source_group": "coco128:train2017:000000000486",
+      "source_url": "https://cocodataset.org/#explore?id=486",
+      "dataset": "COCO train2017 via Ultralytics COCO128",
+      "per_image_license_status": "unverified_not_provided_in_archive",
+      "prior_exposure": "Existing training-reference pool; not an unseen generalization test",
+      "selection_reason": "Parent visually inspected original image before model generation; retains structure, layering, perspective, anatomy or texture challenges",
+      "visual_review_status": "reference_selection_reviewed"
+    },
+    {
+      "id": "coco128-000000000643",
+      "image": "references/coco128-000000000643.jpg",
+      "sha256": "53d61e69ccf08b42a1cefa414c69a1c03d72aba2852e1fde35c4da3df8753b3f",
+      "category": "interiors and layered objects",
+      "annotation_classes": [
+        "book",
+        "bottle",
+        "bowl",
+        "mouse",
+        "teddy bear",
+        "tv"
+      ],
+      "annotated_object_count": 20,
+      "source_split": "train",
+      "source_group": "coco128:train2017:000000000643",
+      "source_url": "https://cocodataset.org/#explore?id=643",
+      "dataset": "COCO train2017 via Ultralytics COCO128",
+      "per_image_license_status": "unverified_not_provided_in_archive",
+      "prior_exposure": "Existing training-reference pool; not an unseen generalization test",
+      "selection_reason": "Parent visually inspected original image before model generation; retains structure, layering, perspective, anatomy or texture challenges",
+      "visual_review_status": "reference_selection_reviewed"
+    },
+    {
+      "id": "coco128-000000000086",
+      "image": "references/coco128-000000000086.jpg",
+      "sha256": "f58a99916783cdf4a7619286dc46adedd4ea1143bcc2cd773c6504aa5280915a",
+      "category": "people and environmental context",
+      "annotation_classes": [
+        "handbag",
+        "motorcycle",
+        "person"
+      ],
+      "annotated_object_count": 3,
+      "source_split": "train",
+      "source_group": "coco128:train2017:000000000086",
+      "source_url": "https://cocodataset.org/#explore?id=86",
+      "dataset": "COCO train2017 via Ultralytics COCO128",
+      "per_image_license_status": "unverified_not_provided_in_archive",
+      "prior_exposure": "Existing training-reference pool; not an unseen generalization test",
+      "selection_reason": "Parent visually inspected original image before model generation; retains structure, layering, perspective, anatomy or texture challenges",
+      "visual_review_status": "reference_selection_reviewed"
+    },
+    {
+      "id": "coco128-000000000257",
+      "image": "references/coco128-000000000257.jpg",
+      "sha256": "ae711135026cbd548fa1e04edc0ee96bce57162587e0238e7f76b4dc46cf4208",
+      "category": "people and environmental context",
+      "annotation_classes": [
+        "backpack",
+        "handbag",
+        "person",
+        "traffic light",
+        "truck"
+      ],
+      "annotated_object_count": 33,
+      "source_split": "train",
+      "source_group": "coco128:train2017:000000000257",
+      "source_url": "https://cocodataset.org/#explore?id=257",
+      "dataset": "COCO train2017 via Ultralytics COCO128",
+      "per_image_license_status": "unverified_not_provided_in_archive",
+      "prior_exposure": "Existing training-reference pool; not an unseen generalization test",
+      "selection_reason": "Parent visually inspected original image before model generation; retains structure, layering, perspective, anatomy or texture challenges",
+      "visual_review_status": "reference_selection_reviewed"
+    },
+    {
+      "id": "coco128-000000000308",
+      "image": "references/coco128-000000000308.jpg",
+      "sha256": "07c410e96a812351bf385add8645b8dc2ed064902ff2ef01072be6351b428393",
+      "category": "people and environmental context",
+      "annotation_classes": [
+        "clock",
+        "person",
+        "umbrella",
+        "wine glass"
+      ],
+      "annotated_object_count": 13,
+      "source_split": "train",
+      "source_group": "coco128:train2017:000000000308",
+      "source_url": "https://cocodataset.org/#explore?id=308",
+      "dataset": "COCO train2017 via Ultralytics COCO128",
+      "per_image_license_status": "unverified_not_provided_in_archive",
+      "prior_exposure": "Existing training-reference pool; not an unseen generalization test",
+      "selection_reason": "Parent visually inspected original image before model generation; retains structure, layering, perspective, anatomy or texture challenges",
+      "visual_review_status": "reference_selection_reviewed"
+    },
+    {
+      "id": "coco128-000000000315",
+      "image": "references/coco128-000000000315.jpg",
+      "sha256": "5804350236bc0d52715f9354498d52f8d260b0e3d8f965526cd85ca6a18b7caa",
+      "category": "people and environmental context",
+      "annotation_classes": [
+        "chair",
+        "handbag",
+        "person",
+        "umbrella"
+      ],
+      "annotated_object_count": 38,
+      "source_split": "train",
+      "source_group": "coco128:train2017:000000000315",
+      "source_url": "https://cocodataset.org/#explore?id=315",
+      "dataset": "COCO train2017 via Ultralytics COCO128",
+      "per_image_license_status": "unverified_not_provided_in_archive",
+      "prior_exposure": "Existing training-reference pool; not an unseen generalization test",
+      "selection_reason": "Parent visually inspected original image before model generation; retains structure, layering, perspective, anatomy or texture challenges",
+      "visual_review_status": "reference_selection_reviewed"
+    },
+    {
+      "id": "coco128-000000000532",
+      "image": "references/coco128-000000000532.jpg",
+      "sha256": "60745e50cb857e4683d3622ac6c1e7ade63bd73ee458eb76a70455badaee2869",
+      "category": "people and environmental context",
+      "annotation_classes": [
+        "bus",
+        "handbag",
+        "person"
+      ],
+      "annotated_object_count": 8,
+      "source_split": "train",
+      "source_group": "coco128:train2017:000000000532",
+      "source_url": "https://cocodataset.org/#explore?id=532",
+      "dataset": "COCO train2017 via Ultralytics COCO128",
+      "per_image_license_status": "unverified_not_provided_in_archive",
+      "prior_exposure": "Existing training-reference pool; not an unseen generalization test",
+      "selection_reason": "Parent visually inspected original image before model generation; retains structure, layering, perspective, anatomy or texture challenges",
+      "visual_review_status": "reference_selection_reviewed"
+    },
+    {
+      "id": "coco128-000000000294",
+      "image": "references/coco128-000000000294.jpg",
+      "sha256": "66bff049c25ed6498e69a51ac65b88d5fc800233fed0f89ee07ab178f7db766d",
+      "category": "people and nearby objects",
+      "annotation_classes": [
+        "clock",
+        "fork",
+        "knife",
+        "microwave",
+        "person",
+        "spoon"
+      ],
+      "annotated_object_count": 20,
+      "source_split": "train",
+      "source_group": "coco128:train2017:000000000294",
+      "source_url": "https://cocodataset.org/#explore?id=294",
+      "dataset": "COCO train2017 via Ultralytics COCO128",
+      "per_image_license_status": "unverified_not_provided_in_archive",
+      "prior_exposure": "Existing training-reference pool; not an unseen generalization test",
+      "selection_reason": "Parent visually inspected original image before model generation; retains structure, layering, perspective, anatomy or texture challenges",
+      "visual_review_status": "reference_selection_reviewed"
+    },
+    {
+      "id": "coco128-000000000328",
+      "image": "references/coco128-000000000328.jpg",
+      "sha256": "8ba0ed80d34589221b1243e0764471d91716b3a267827cb37ecfc3cfae52cc90",
+      "category": "people and nearby objects",
+      "annotation_classes": [
+        "backpack",
+        "bench",
+        "book",
+        "car",
+        "cell phone",
+        "person",
+        "tie"
+      ],
+      "annotated_object_count": 11,
+      "source_split": "train",
+      "source_group": "coco128:train2017:000000000328",
+      "source_url": "https://cocodataset.org/#explore?id=328",
+      "dataset": "COCO train2017 via Ultralytics COCO128",
+      "per_image_license_status": "unverified_not_provided_in_archive",
+      "prior_exposure": "Existing training-reference pool; not an unseen generalization test",
+      "selection_reason": "Parent visually inspected original image before model generation; retains structure, layering, perspective, anatomy or texture challenges",
+      "visual_review_status": "reference_selection_reviewed"
+    },
+    {
+      "id": "coco128-000000000338",
+      "image": "references/coco128-000000000338.jpg",
+      "sha256": "fdf5b5b2f8227082a5542fbc33b5f8740b040d345653c33bec6158d835542d6b",
+      "category": "people and nearby objects",
+      "annotation_classes": [
+        "clock",
+        "handbag",
+        "oven",
+        "person",
+        "refrigerator"
+      ],
+      "annotated_object_count": 6,
+      "source_split": "train",
+      "source_group": "coco128:train2017:000000000338",
+      "source_url": "https://cocodataset.org/#explore?id=338",
+      "dataset": "COCO train2017 via Ultralytics COCO128",
+      "per_image_license_status": "unverified_not_provided_in_archive",
+      "prior_exposure": "Existing training-reference pool; not an unseen generalization test",
+      "selection_reason": "Parent visually inspected original image before model generation; retains structure, layering, perspective, anatomy or texture challenges",
+      "visual_review_status": "reference_selection_reviewed"
+    },
+    {
+      "id": "coco128-000000000443",
+      "image": "references/coco128-000000000443.jpg",
+      "sha256": "f6483d57885c348a27dcdc272e4bd5296c75596d7c64fe638b24dbb503209902",
+      "category": "people and nearby objects",
+      "annotation_classes": [
+        "cat",
+        "couch",
+        "person",
+        "remote"
+      ],
+      "annotated_object_count": 6,
+      "source_split": "train",
+      "source_group": "coco128:train2017:000000000443",
+      "source_url": "https://cocodataset.org/#explore?id=443",
+      "dataset": "COCO train2017 via Ultralytics COCO128",
+      "per_image_license_status": "unverified_not_provided_in_archive",
+      "prior_exposure": "Existing training-reference pool; not an unseen generalization test",
+      "selection_reason": "Parent visually inspected original image before model generation; retains structure, layering, perspective, anatomy or texture challenges",
+      "visual_review_status": "reference_selection_reviewed"
+    },
+    {
+      "id": "coco128-000000000446",
+      "image": "references/coco128-000000000446.jpg",
+      "sha256": "41f3d2ce74148a9628d29ac8ddb5eeed3a07394a55b72e75df5d418d5887ef50",
+      "category": "people and nearby objects",
+      "annotation_classes": [
+        "book",
+        "couch",
+        "person",
+        "potted plant",
+        "remote"
+      ],
+      "annotated_object_count": 13,
+      "source_split": "train",
+      "source_group": "coco128:train2017:000000000446",
+      "source_url": "https://cocodataset.org/#explore?id=446",
+      "dataset": "COCO train2017 via Ultralytics COCO128",
+      "per_image_license_status": "unverified_not_provided_in_archive",
+      "prior_exposure": "Existing training-reference pool; not an unseen generalization test",
+      "selection_reason": "Parent visually inspected original image before model generation; retains structure, layering, perspective, anatomy or texture challenges",
+      "visual_review_status": "reference_selection_reviewed"
+    },
+    {
+      "id": "coco128-000000000071",
+      "image": "references/coco128-000000000071.jpg",
+      "sha256": "5393bf6575c435daa599c1272d9e61e99c099994ae4d3755311684663fed0917",
+      "category": "vehicles and perspective",
+      "annotation_classes": [
+        "car",
+        "train",
+        "truck"
+      ],
+      "annotated_object_count": 16,
+      "source_split": "train",
+      "source_group": "coco128:train2017:000000000071",
+      "source_url": "https://cocodataset.org/#explore?id=71",
+      "dataset": "COCO train2017 via Ultralytics COCO128",
+      "per_image_license_status": "unverified_not_provided_in_archive",
+      "prior_exposure": "Existing training-reference pool; not an unseen generalization test",
+      "selection_reason": "Parent visually inspected original image before model generation; retains structure, layering, perspective, anatomy or texture challenges",
+      "visual_review_status": "reference_selection_reviewed"
+    },
+    {
+      "id": "coco128-000000000247",
+      "image": "references/coco128-000000000247.jpg",
+      "sha256": "a57c40ee95f73bb493e573bbbd593d037fdf176a02f1d3f6a3f437c8f78f805a",
+      "category": "vehicles and perspective",
+      "annotation_classes": [
+        "airplane",
+        "car"
+      ],
+      "annotated_object_count": 8,
+      "source_split": "train",
+      "source_group": "coco128:train2017:000000000247",
+      "source_url": "https://cocodataset.org/#explore?id=247",
+      "dataset": "COCO train2017 via Ultralytics COCO128",
+      "per_image_license_status": "unverified_not_provided_in_archive",
+      "prior_exposure": "Existing training-reference pool; not an unseen generalization test",
+      "selection_reason": "Parent visually inspected original image before model generation; retains structure, layering, perspective, anatomy or texture challenges",
+      "visual_review_status": "reference_selection_reviewed"
+    },
+    {
+      "id": "coco128-000000000260",
+      "image": "references/coco128-000000000260.jpg",
+      "sha256": "f70992bbd14794773e27801c4cf4ba34ca4f453eb2efded62c2a558c40e3885b",
+      "category": "vehicles and perspective",
+      "annotation_classes": [
+        "bus",
+        "car",
+        "person",
+        "suitcase"
+      ],
+      "annotated_object_count": 7,
+      "source_split": "train",
+      "source_group": "coco128:train2017:000000000260",
+      "source_url": "https://cocodataset.org/#explore?id=260",
+      "dataset": "COCO train2017 via Ultralytics COCO128",
+      "per_image_license_status": "unverified_not_provided_in_archive",
+      "prior_exposure": "Existing training-reference pool; not an unseen generalization test",
+      "selection_reason": "Parent visually inspected original image before model generation; retains structure, layering, perspective, anatomy or texture challenges",
+      "visual_review_status": "reference_selection_reviewed"
+    },
+    {
+      "id": "coco128-000000000349",
+      "image": "references/coco128-000000000349.jpg",
+      "sha256": "8ad9716416dc27aeff76bb09d936949f67627cb30948288b61c117df34501049",
+      "category": "vehicles and perspective",
+      "annotation_classes": [
+        "potted plant",
+        "train"
+      ],
+      "annotated_object_count": 4,
+      "source_split": "train",
+      "source_group": "coco128:train2017:000000000349",
+      "source_url": "https://cocodataset.org/#explore?id=349",
+      "dataset": "COCO train2017 via Ultralytics COCO128",
+      "per_image_license_status": "unverified_not_provided_in_archive",
+      "prior_exposure": "Existing training-reference pool; not an unseen generalization test",
+      "selection_reason": "Parent visually inspected original image before model generation; retains structure, layering, perspective, anatomy or texture challenges",
+      "visual_review_status": "reference_selection_reviewed"
+    },
+    {
+      "id": "coco128-000000000540",
+      "image": "references/coco128-000000000540.jpg",
+      "sha256": "32099f009fcb436bad1bd59b5d48b3e5620fa667a83db5a09879e158dd346103",
+      "category": "vehicles and perspective",
+      "annotation_classes": [
+        "airplane",
+        "bus",
+        "car",
+        "traffic light",
+        "truck"
+      ],
+      "annotated_object_count": 20,
+      "source_split": "train",
+      "source_group": "coco128:train2017:000000000540",
+      "source_url": "https://cocodataset.org/#explore?id=540",
+      "dataset": "COCO train2017 via Ultralytics COCO128",
+      "per_image_license_status": "unverified_not_provided_in_archive",
+      "prior_exposure": "Existing training-reference pool; not an unseen generalization test",
+      "selection_reason": "Parent visually inspected original image before model generation; retains structure, layering, perspective, anatomy or texture challenges",
+      "visual_review_status": "reference_selection_reviewed"
+    }
+  ],
+  "source_manifest_sha256": "272c7666d918a6265639f8766c882060f0cadc6e181a02df3289d7376c09248a",
+  "selection": "Eight structural categories, five train-pool photos each; existing 28 dev photos excluded",
+  "training_admission": "No generated demonstration is automatically admitted to SFT",
+  "count": 40,
+  "selection_changes": [
+    {
+      "removed": "coco128-000000000138",
+      "replacement": "coco128-000000000486",
+      "reason": "Original was a multi-panel collage. Replaced with a single complex kitchen photograph after visual inspection."
+    }
+  ]
+}

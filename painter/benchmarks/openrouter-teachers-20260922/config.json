@@ -1,0 +1,51 @@
+{
+  "benchmark": "ai-gateway-teachers-20260923",
+  "models": [
+    "zai/glm-5.3-flash",
+    "deepseek/deepseek-v4.1-flash",
+    "stepfun/step-5-preview",
+    "xiaomi/mimo-v2.6-flash",
+    "xiaomi/mimo-v2.6-pro"
+  ],
+  "tracks": {
+    "quality": {
+      "max_turns": 12,
+      "max_tokens": "native",
+      "episode_timeout_seconds": null,
+      "reasoning_effort": "highest_supported"
+    },
+    "speed": {
+      "max_turns": 3,
+      "max_tokens": 8192,
+      "episode_timeout_seconds": 900,
+      "reasoning_effort": "lowest_supported"
+    },
+    "screen": {
+      "max_turns": 6,
+      "max_tokens": "native",
+      "episode_timeout_seconds": null,
+      "reasoning_effort": "highest_supported"
+    }
+  },
+  "screen_reference_ids": [
+    "coco128-000000000109",
+    "coco128-000000000061",
+    "coco128-000000000064",
+    "coco128-000000000110",
+    "coco128-000000000164",
+    "coco128-000000000086",
+    "coco128-000000000294",
+    "coco128-000000000071"
+  ],
+  "temperature": 1.0,
+  "concurrency": 3,
+  "render_concurrency": 1,
+  "renderer_timeout": 180,
+  "samples_per_image": 1,
+  "catalog": "model-catalog.json",
+  "transport_script": "gateway_transport.ts",
+  "references": "refs.json",
+  "prompt": "prompt.txt",
+  "request_timeout_seconds": 3600,
+  "max_retries": 2
+}
