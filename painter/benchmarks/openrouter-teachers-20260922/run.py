@@ -393,6 +393,12 @@ def catalog_model(inputs: BenchmarkInputs, model: str) -> Mapping[str, Any]:
 
 
 def resolve_reasoning(inputs: BenchmarkInputs, model: str, track: str) -> dict[str, Any]:
+    explicit = inputs.config.get("reasoning_overrides", {})
+    if isinstance(explicit, dict) and model in explicit:
+        effort = explicit[model]
+        if effort not in {"none", "minimal", "low", "medium", "high", "xhigh", "max"}:
+            raise BenchmarkError(f"unsupported reasoning override for {model}")
+        return {"enabled": effort != "none", "effort": effort, "source": "explicit_model_override"}
     row = catalog_model(inputs, model)
     if inputs.catalog.get("profile_kind") == "gateway-unverified" or row.get("gateway_profile") == "unverified":
         return {"_omit": True, "source": "gateway_model_default"}

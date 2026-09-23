@@ -53,8 +53,17 @@ async function handle(request: Record<string, unknown>): Promise<Record<string, 
     const options: Record<string, unknown> = {
       model: gateway(value.model),
       messages: prompt.messages,
-      temperature: value.temperature,
     };
+    const effort = value.reasoning && typeof value.reasoning === "object"
+      ? (value.reasoning as Record<string, unknown>).effort : undefined;
+    if (typeof effort === "string" && ["none", "minimal", "low", "medium", "high", "xhigh"].includes(effort)) {
+      options.reasoning = effort;
+    }
+    // OpenAI GPT-6 rejects sampling controls when reasoning is enabled.
+    // Leave all existing benchmark models' temperature behavior unchanged.
+    if (!value.model.startsWith("openai/gpt-6-") || effort === "none") {
+      options.temperature = value.temperature;
+    }
     // AI SDK rejects system roles in messages. Its `instructions` option is
     // mapped to the provider's instructions field while preserving the conversation.
     if (prompt.instructions !== undefined) options.instructions = prompt.instructions;
@@ -64,9 +73,8 @@ async function handle(request: Record<string, unknown>): Promise<Record<string, 
       options.maxOutputTokens = value.max_tokens;
     }
 
-    // Reasoning controls vary by Gateway model.  The benchmark records the
-    // resolved catalog value, but deliberately leaves provider-specific
-    // options to the model default so arbitrary model IDs remain runnable.
+    // Only explicitly configured reasoning controls reach the Gateway;
+    // unknown model IDs retain their provider defaults.
     // A non-streaming response can spend several minutes generating before
     // sending headers; the Gateway/proxy then closes it despite useful work.
     // Stream internally while keeping the JSONL protocol one response/turn.

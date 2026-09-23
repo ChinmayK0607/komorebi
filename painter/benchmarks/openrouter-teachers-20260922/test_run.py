@@ -217,6 +217,22 @@ class RunTests(unittest.TestCase):
             resolved = run.resolve_reasoning(inputs, model, "quality")
             self.assertTrue(resolved.get("_omit"))
 
+    def test_explicit_reasoning_override_survives_unverified_catalog(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            _fixture(root)
+            config_path = root / "config.json"
+            config = json.loads(config_path.read_text())
+            config["reasoning_overrides"] = {"openai/gpt-6-luna": "high"}
+            config_path.write_text(json.dumps(config))
+            inputs = run.load_inputs(root, model_ids=["openai/gpt-6-luna"])
+            resolved = run.resolve_reasoning(inputs, "openai/gpt-6-luna", "quality")
+            self.assertEqual(resolved["effort"], "high")
+            self.assertEqual(resolved["source"], "explicit_model_override")
+            payload = run.build_payload([], run.settings_from_inputs(inputs, "quality"),
+                                        "openai/gpt-6-luna", reasoning=resolved)
+            self.assertEqual(payload["reasoning"]["effort"], "high")
+
     def test_screen_track_uses_highest_effort_and_stratified_references(self):
         inputs = run.load_inputs(Path(__file__).resolve().parent)
         screen_refs = run.references_for_track(inputs, "screen")
