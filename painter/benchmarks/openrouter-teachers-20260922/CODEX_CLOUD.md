@@ -66,3 +66,15 @@ wrappers select `/usr/bin` first. The next setup verified all 40 reference
 hashes, a sandboxed SwiftShader render, and a one-episode dry run with zero
 paid calls. The corresponding cloud task is
 `task_e_6ab3bb481770832ba6c23462c7a5995d`.
+
+The first paid cloud episode (`task_e_6ab3c5b9ec2c832b87d636515a30d0f2`,
+run ID `cloud-teacher-smoke-20260923`) produced an `api_error` before any
+model tokens. Its five-file evidence archive was published and its public
+SHA-256 verified at dataset revision `3ddd64cc3e7458c507dc1e25c1a0fb123e2834e2`.
+Unauthenticated GET and POST probes reached AI Gateway (HTTP 308 and 400), and
+one minimal authenticated request to its OpenAI-compatible `/v1` endpoint
+returned HTTP 200. A minimal call through the default AI SDK Gateway route
+reproduced the original `GatewayResponseError: Invalid error response format`.
+The transport therefore uses the AI SDK OpenAI-compatible provider at the
+Gateway's documented `/v1` endpoint. A paid painting rerun is required before
+claiming this change fixed generation; keep the failed archive as evidence.

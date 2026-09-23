@@ -1,4 +1,5 @@
 import { generateText } from "ai";
+import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import * as readline from "node:readline";
 import { toSdkPrompt } from "./gateway_prompt.js";
 
@@ -15,6 +16,14 @@ const apiKey = process.env.AI_GATEWAY_API_KEY;
 if (!apiKey) {
   throw new Error("AI_GATEWAY_API_KEY is not set");
 }
+// Use the Gateway's OpenAI-compatible endpoint. The default AI SDK Gateway
+// route failed to parse an error response in Codex cloud, while a direct v1
+// request to this endpoint succeeded with the same key and model.
+const gateway = createOpenAICompatible({
+  name: "vercel-ai-gateway",
+  apiKey,
+  baseURL: "https://ai-gateway.vercel.sh/v1",
+});
 
 const MAX_ERROR_CHARS = 4000;
 
@@ -42,7 +51,7 @@ async function handle(request: Record<string, unknown>): Promise<Record<string, 
 
     const prompt = toSdkPrompt(value.messages);
     const options: Record<string, unknown> = {
-      model: value.model,
+      model: gateway(value.model),
       messages: prompt.messages,
       temperature: value.temperature,
     };
