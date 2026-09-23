@@ -74,7 +74,7 @@ if ! id painter >/dev/null 2>&1; then
   useradd --create-home --shell /bin/bash painter
 fi
 [[ -f "$RENDERER" && -d "$ASSETS" ]]
-[[ -f "$BENCHMARK/run.py" && -f "$BENCHMARK/pnpm-lock.yaml" ]]
+[[ -f "$BENCHMARK/run.py" && -f "$BENCHMARK/pnpm-lock.yaml" && -x "$BENCHMARK/run_benchmark_node.sh" ]]
 if [[ -f "$REFERENCES_ARCHIVE" ]]; then
   python3 - "$REFERENCES_ARCHIVE" "$BENCHMARK" <<'PY'
 import hashlib, json, pathlib, sys, tarfile
@@ -163,6 +163,5 @@ cat <<EOF
 Ready: benchmark node environment. No benchmark request was started.
 Run manually from the node (the command prompts for the Gateway key on a TTY):
 cd $BENCHMARK
-export PLAYWRIGHT_BROWSERS_PATH=$BROWSERS
-$PY run.py --root $BENCHMARK --run --renderer $RENDERER --renderer-python $PY --browser-path $BROWSERS --run-as-user painter
+bash $BENCHMARK/run_benchmark_node.sh
 EOF

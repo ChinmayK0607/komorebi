@@ -26,12 +26,14 @@ This uses an **existing** Lium node and its installed painter renderer; it never
 For a fresh Lium node, commit the reviewed source first and upload the tracked Git bundle plus the 40 ignored reference JPEGs:
 
 ```bash
-python3 prepare_benchmark_node.py --pod painter-teacher-gateway
-lium ssh painter-teacher-gateway
-bash /root/painter/repo/painter/benchmarks/openrouter-teachers-20260922/setup_benchmark_node.sh /root/painter
+python3 prepare_benchmark_node.py --pod YOUR_POD
+lium ssh YOUR_POD
+bash /root/painter/setup_benchmark_node.sh /root/painter
+cd /root/painter/repo/painter/benchmarks/openrouter-teachers-20260922
+bash run_benchmark_node.sh --dry-run
 ```
 
-The upload script never includes `.env.local`, API keys, results, caches or model files. The node setup clones `/root/painter/source.bundle`, extracts the separate reference archive, installs Node.js 22 and pnpm, creates `/root/painter/renderer-env` with Playwright 1.58.0, Pillow 12.3.0 and tqdm, installs Chromium, creates the unprivileged `painter` user, installs the lockfile's AI SDK packages and runs a fixed 600×600 renderer smoke. It prints the exact key-prompting benchmark command after setup; it never starts paid generation.
+The upload script never includes `.env.local`, API keys, results, caches or model files. The node setup clones `/root/painter/source.bundle`, extracts the separate reference archive, installs Node.js 22 and pnpm, creates `/root/painter/renderer-env` with Playwright 1.58.0, Pillow 12.3.0 and tqdm, installs Chromium, creates the unprivileged `painter` user, installs the lockfile's AI SDK packages and runs a fixed 600×600 renderer smoke. It prints the exact key-prompting `bash .../run_benchmark_node.sh` command after setup; it never starts paid generation. Add `--dry-run` to that wrapper for a key-free node-side budget check.
 
 For a free, offline configuration/package check that neither contacts Lium nor reads an API key:
 
