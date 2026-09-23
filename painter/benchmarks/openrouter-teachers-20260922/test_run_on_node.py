@@ -71,6 +71,11 @@ class TestRunOnNode(unittest.TestCase):
         assert config.data is None
         assert module._effective_node_root(prepared, "/root/run") == "/root/run"
 
+    def test_screen_track_packages_without_expanding_all(self):
+        prepared = plan(models=["zai/glm-5.3-flash"], tracks=["screen"])
+        assert prepared.count == 40
+        assert module._parser().parse_args(["--dry-run", "--track", "all"]).track_alias == ["all"]
+
     def test_unknown_model_is_allowed_only_for_real_run_package(self):
         prepared = module.build_package_plan(
             benchmark_root=HERE, models=["provider/new-image-model"], allow_unknown_models=True
@@ -90,6 +95,7 @@ class TestRunOnNode(unittest.TestCase):
             module._api_key = lambda: (_ for _ in ()).throw(AssertionError("key read"))
             module.getpass = types.SimpleNamespace(getpass=lambda _: (_ for _ in ()).throw(AssertionError("prompt")))
             assert module.main(["--dry-run", "--track", "all"]) == 0
+            assert module.main(["--dry-run", "--track", "screen"]) == 0
         finally:
             module._api_key = original_key
             module.getpass = original_getpass

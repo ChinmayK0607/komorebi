@@ -217,6 +217,34 @@ class RunTests(unittest.TestCase):
             resolved = run.resolve_reasoning(inputs, model, "quality")
             self.assertTrue(resolved.get("_omit"))
 
+    def test_screen_track_uses_highest_effort_and_stratified_references(self):
+        inputs = run.load_inputs(Path(__file__).resolve().parent)
+        screen_refs = run.references_for_track(inputs, "screen")
+        self.assertEqual(len(screen_refs), 8)
+        self.assertEqual(len({str(ref.metadata["category"]) for ref in screen_refs}), 8)
+        self.assertEqual(len(run.jobs(inputs, track="screen")), 40)
+        self.assertEqual(len(run.jobs(inputs, track="all")), 400)
+        report = run.dry_run_report(inputs, track="screen")
+        self.assertEqual(report["episodes_total"], 40)
+        self.assertEqual(report["tracks"]["screen"]["max_turns"], 6)
+        self.assertEqual(report["tracks"]["screen"]["max_tokens"], "native")
+        self.assertEqual(report["reference_ids_selected"], [ref.id for ref in screen_refs])
+        self.assertNotIn("min_turns", report["tracks"]["screen"])
+        all_report = run.dry_run_report(inputs, track="all")
+        self.assertEqual(all_report["episodes_total"], 400)
+        self.assertEqual(set(all_report["tracks"]), {"quality", "speed"})
+
+    def test_highest_supported_reasoning_applies_to_screen(self):
+        with tempfile.TemporaryDirectory() as temp:
+            inputs = _fixture(Path(temp))
+            inputs.catalog["profile_kind"] = "catalogued"
+            inputs.config["tracks"]["screen"] = {
+                "max_turns": 6, "max_tokens": "native", "episode_timeout_seconds": None,
+                "reasoning_effort": "highest_supported",
+            }
+            resolved = run.resolve_reasoning(inputs, "test/model", "screen")
+            self.assertEqual(resolved["effort"], "high")
+
     def test_track_paths_and_dry_report(self):
         with tempfile.TemporaryDirectory() as temp:
             inputs = _fixture(Path(temp))

@@ -113,6 +113,18 @@ class PairwisePacketTests(unittest.TestCase):
         with self.assertRaisesRegex(pairwise_packet.PairwisePacketError, "reference hash mismatch"):
             pairwise_packet.build_pairwise_packet(root, temp / "packet", track="quality")
 
+    def test_screen_track_builds_its_own_packet(self):
+        root, temp = self._fixture()
+        for path in (root / "episodes").glob("*/episode.json"):
+            row = json.loads(path.read_text())
+            row["settings"]["track"] = "screen"
+            path.write_text(json.dumps(row))
+        output = temp / "screen-packet"
+        self.assertEqual(pairwise_packet.main(["--root", str(root), "--track", "screen", "--output", str(output)]), 0)
+        packet = json.loads((output / "judge-packet.json").read_text())
+        self.assertEqual(packet["coverage"]["attempted_pairs"], 6)
+        self.assertEqual(packet["coverage"]["eligible_comparisons"], 1)
+
 
 if __name__ == "__main__":
     unittest.main()

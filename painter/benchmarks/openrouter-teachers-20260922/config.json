@@ -19,8 +19,24 @@
       "max_tokens": 8192,
       "episode_timeout_seconds": 900,
       "reasoning_effort": "lowest_supported"
+    },
+    "screen": {
+      "max_turns": 6,
+      "max_tokens": "native",
+      "episode_timeout_seconds": null,
+      "reasoning_effort": "highest_supported"
     }
   },
+  "screen_reference_ids": [
+    "coco128-000000000109",
+    "coco128-000000000061",
+    "coco128-000000000064",
+    "coco128-000000000110",
+    "coco128-000000000164",
+    "coco128-000000000086",
+    "coco128-000000000294",
+    "coco128-000000000071"
+  ],
   "temperature": 1.0,
   "concurrency": 3,
   "render_concurrency": 1,

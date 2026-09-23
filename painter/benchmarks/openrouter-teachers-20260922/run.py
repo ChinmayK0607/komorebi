@@ -293,6 +293,21 @@ def load_inputs(root: Path, *, model_ids: Sequence[str] | None = None, fetch_unk
             raise BenchmarkError(f"reference hash mismatch for {ref_id}: expected {declared}, found {actual}")
         image_mime(image)
         parsed.append(Reference(ref_id, image, declared, dict(item)))
+    if "screen" in tracks:
+        screen_ids = config.get("screen_reference_ids")
+        if not isinstance(screen_ids, list) or not screen_ids or not all(isinstance(item, str) and item for item in screen_ids):
+            raise BenchmarkError("config.screen_reference_ids must be a non-empty list when the screen track is configured")
+        if len(set(screen_ids)) != len(screen_ids):
+            raise BenchmarkError("config.screen_reference_ids contains duplicate reference IDs")
+        by_id = {reference.id: reference for reference in parsed}
+        missing_screen = [item for item in screen_ids if item not in by_id]
+        if missing_screen:
+            raise BenchmarkError(f"config.screen_reference_ids contains unknown references: {', '.join(missing_screen)}")
+        screen_categories = [str(by_id[item].metadata.get("category", "")) for item in screen_ids]
+        if any(not category for category in screen_categories):
+            raise BenchmarkError("screen references must have non-empty categories in refs.json")
+        if len(set(screen_categories)) != len(screen_categories):
+            raise BenchmarkError("config.screen_reference_ids must select at most one reference per category")
     prompt = prompt_path.read_text(encoding="utf-8")
     if not prompt.strip():
         raise BenchmarkError("prompt.txt is empty")
@@ -387,16 +402,19 @@ def resolve_reasoning(inputs: BenchmarkInputs, model: str, track: str) -> dict[s
     reasoning = row.get("reasoning") or {}
     supported = reasoning.get("supported_efforts") or []
     requested = (inputs.config.get("tracks", {}).get(track) or {}).get("reasoning_effort")
-    if requested in {"highest_supported", "lowest_supported"}:
-        requested = None
-    if requested is None:
-        requested = "max" if track == "quality" else "low"
+    selection = requested
+    if selection is None:
+        selection = "max" if track in {"quality", "screen"} else "low"
     if supported:
         order = {"low": 0, "medium": 1, "high": 2, "max": 3}
-        if track == "quality":
+        if selection == "highest_supported":
             requested = max(supported, key=lambda value: order.get(value, -1))
-        else:
+        elif selection == "lowest_supported":
             requested = min(supported, key=lambda value: order.get(value, 99))
+        elif selection in supported:
+            requested = selection
+        else:
+            requested = max(supported, key=lambda value: order.get(value, -1)) if track in {"quality", "screen"} else min(supported, key=lambda value: order.get(value, 99))
         return {"enabled": True, "effort": requested, "source": "catalog_supported_effort"}
     enabled = bool(reasoning.get("mandatory") or reasoning.get("default_enabled") or True)
     return {"enabled": enabled, "source": "catalog_enabled_without_exposed_effort"}
@@ -573,6 +591,8 @@ def build_user_message(
         text += "\nRenderer feedback from the submitted program:\n" + render_feedback
     if track == "speed":
         text += "\nSpeed track: prioritize a usable first valid painting within the turn budget and keep the plan concise."
+    elif track == "screen":
+        text += "\nScreen track: aim for a strong result in roughly 4–6 turns, with six as the cap. This is a target range, not a minimum; after observing a faithful current canvas, finish immediately with FINISHED."
     user_parts: list[dict[str, Any]] = [
         {"type": "text", "text": text},
         {"type": "image_url", "image_url": {"url": image_data_uri(reference.image)}},
@@ -1683,12 +1703,39 @@ class EpisodeRunner:
         state["cost_complete"] = missing_cost == 0
 
 
+def references_for_track(inputs: BenchmarkInputs, track: str) -> tuple[Reference, ...]:
+    """Return the immutable reference set for a track.
+
+    Quality and speed retain all 40 references. Screening uses the explicit
+    one-per-category IDs in config so a small screen cannot be dominated by
+    the first category's contiguous rows in refs.json.
+    """
+    if track != "screen":
+        return inputs.references
+    screen_ids = inputs.config.get("screen_reference_ids")
+    if isinstance(screen_ids, list) and screen_ids:
+        by_id = {reference.id: reference for reference in inputs.references}
+        return tuple(by_id[item] for item in screen_ids if item in by_id)
+    # Keep hand-built test fixtures useful even when they omit the optional
+    # screen manifest: choose the first row in each category deterministically.
+    selected: list[Reference] = []
+    seen_categories: set[str] = set()
+    for reference in inputs.references:
+        category = str(reference.metadata.get("category", reference.id))
+        if category not in seen_categories:
+            selected.append(reference)
+            seen_categories.add(category)
+    return tuple(selected)
+
+
 def jobs(inputs: BenchmarkInputs, *, track: str = "all", limit: int | None = None) -> list[tuple[str, str, Reference, int]]:
-    track_names = list(inputs.config.get("tracks", {})) if track == "all" else [track]
+    # Preserve the existing quality+speed meaning of `all`. Screening is an
+    # explicit first pass, not an extra charge added to established launches.
+    track_names = ["quality", "speed"] if track == "all" else [track]
     values = [
         (track_name, model, reference, sample)
         for track_name in track_names
-        for reference in inputs.references
+        for reference in references_for_track(inputs, track_name)
         for model in inputs.config["models"]
         for sample in range(1, int(inputs.config.get("samples_per_image", 1)) + 1)
     ]
@@ -1701,11 +1748,12 @@ def dry_run_report(inputs: BenchmarkInputs, *, track: str = "all", limit: int | 
     per_track = {
         name: {
             "episodes": len(jobs(inputs, track=name)),
+            "reference_ids": [reference.id for reference in references_for_track(inputs, name)],
             "max_turns": settings_from_inputs(inputs, name)["max_turns"],
             "max_tokens": settings_from_inputs(inputs, name)["max_tokens"],
             "max_requests": len(jobs(inputs, track=name)) * settings_from_inputs(inputs, name)["max_turns"],
         }
-        for name in (list(inputs.config.get("tracks", {})) if track == "all" else [track])
+        for name in (["quality", "speed"] if track == "all" else [track])
     }
     image_bytes = sum(ref.image.stat().st_size for _, _, ref, _ in selected)
     max_context = max((len(inputs.prompt) + len(image_data_uri(ref.image)) for _, _, ref, _ in selected), default=len(inputs.prompt))
@@ -1717,6 +1765,7 @@ def dry_run_report(inputs: BenchmarkInputs, *, track: str = "all", limit: int | 
         "track": track,
         "models": list(inputs.config["models"]),
         "references": len(inputs.references),
+        "reference_ids_selected": list(dict.fromkeys(reference.id for _, _, reference, _ in selected)),
         "episodes_total": len(all_jobs),
         "episodes_selected": len(selected),
         "requests_max_selected": sum(settings_from_inputs(inputs, item[0])["max_turns"] for item in selected),
@@ -1966,6 +2015,7 @@ def run_benchmark(inputs: BenchmarkInputs, *, track: str = "all", limit: int | N
         "mode": "run",
         "track": track,
         "episodes_selected": len(selected),
+        "reference_ids_selected": list(dict.fromkeys(reference.id for _, _, reference, _ in selected)),
         "status_counts": counts,
         "total_tokens": sum(int(row.get("total_tokens") or 0) for row in results),
         "total_cost": sum(float(row.get("total_cost") or 0) for row in results),
@@ -1993,7 +2043,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     modes.add_argument("--run", action="store_true", help="run/resume paid API episodes and render each submitted sketch")
     parser.add_argument("--local", action="store_true", help="use the macOS-local Watercolour renderer (with --run)")
     parser.add_argument("--limit-episodes", type=int, help="select only the first N deterministic episodes")
-    parser.add_argument("--track", choices=["quality", "speed", "all"], default="all")
+    parser.add_argument("--track", choices=["quality", "speed", "screen", "all"], default="all")
     parser.add_argument("--renderer", type=Path)
     parser.add_argument("--renderer-python", type=Path)
     parser.add_argument("--browser-path", type=Path)

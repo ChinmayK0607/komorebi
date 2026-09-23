@@ -4,7 +4,7 @@ Prepared on 2026-09-23 as the Vercel AI Gateway migration of the 2026-09-22 teac
 
 ## Question and comparison
 
-Which image-capable teacher produces the most attractive faithful reference painting after observing and correcting its actual rendered canvas? Separately, which produces the best painting within a constrained speed budget? Compare models within each track on identical image bytes and the same versioned painting contract. Do not combine quality, latency and token counts into an arbitrary reward or rank syntax validity as beauty.
+Which image-capable teacher produces the most attractive faithful reference painting after observing and correcting its actual rendered canvas? Use a short screening pass to identify finalists, then compare those finalists in the full quality track. Separately, which produces the best painting within a constrained speed budget? Compare models within each track on identical image bytes and the same versioned painting contract. Do not combine quality, latency and token counts into an arbitrary reward or rank syntax validity as beauty.
 
 The initial exact model IDs are `zai/glm-5.3-flash`, `deepseek/deepseek-v4.1-flash`, `stepfun/step-5-preview`, `xiaomi/mimo-v2.6-flash`, and `xiaomi/mimo-v2.6-pro`. IDs are passed unchanged to the AI SDK Gateway. The checked-in catalog is provenance only; the runner does not invent context or image capability limits for new IDs, and records the provider's runtime probe error when unsupported. Public sources: [AI Gateway models and providers](https://vercel.com/docs/ai-gateway/models-and-providers) and [AI Gateway SDK](https://vercel.com/docs/ai-gateway/sdks-and-apis).
 
@@ -16,21 +16,21 @@ Gateway model IDs are provider model names, not immutable weight revisions. Actu
 
 The original 28 development photographs remain excluded. These references have prior project exposure; this is a matched teacher-generation comparison, **not an unseen student generalization test**. The 40 original JPEGs are bundled unchanged under `references/`. Provenance and per-image license status are retained. Images and generated artifacts stay out of Git. Do not silently upload this benchmark or its images publicly.
 
-## Two separate tracks
+## Screening, quality and speed tracks
 
-| Setting | Quality | Speed |
+| Setting | Screen | Quality | Speed |
 |---|---|---|
-| Maximum assistant turns | 12 | 3 |
-| Completion ceiling per request | Model's catalog-native ceiling, subject to remaining physical context | 8,192 tokens including reasoning |
-| Episode time budget | None beyond operational request/render deadlines | 900 active seconds |
-| Reasoning selection | Highest explicitly supported effort | Lowest explicitly supported effort |
-| Models without advertised effort control | Enable reasoning without inventing an effort enum | Enable reasoning without inventing an effort enum |
-| Temperature | 1.0 | 1.0 |
-| Samples per reference/model | 1 | 1 |
+| Maximum assistant turns | 6 (target 4–6) | 12 | 3 |
+| Completion ceiling per request | Model's catalog-native ceiling, subject to remaining physical context | Model's catalog-native ceiling, subject to remaining physical context | 8,192 tokens including reasoning |
+| Episode time budget | None beyond operational request/render deadlines | None beyond operational request/render deadlines | 900 active seconds |
+| Reasoning selection | Highest explicitly supported effort | Highest explicitly supported effort | Lowest explicitly supported effort |
+| Models without advertised effort control | Enable reasoning without inventing an effort enum | Enable reasoning without inventing an effort enum | Enable reasoning without inventing an effort enum |
+| Temperature | 1.0 | 1.0 | 1.0 |
+| Samples per reference/model | 1 | 1 | 1 |
 
-A model can finish early only after receiving an actual valid canvas. A code response is not also a finish action. Both tracks prioritize aesthetics and faithful subject structure; speed adds explicit limits. The different reasoning setting is an intentional speed strategy, so this is a practical two-mode comparison, not a controlled isolation of token budget alone. Native caps are ceilings, not requested response lengths. Do not add an arbitrary low cap to quality, truncate programs, quietly switch models, or substitute a text-only model.
+A screening run uses the eight immutable `screen_reference_ids` in `config.json`, one reference from each category rather than the first contiguous rows in `refs.json`. It is intended to screen all five default models on 40 episodes, then route selected finalists to quality on all 40 references. The 4–6 turn range is a planning target with a hard cap of six; there is no forced minimum, and a teacher may finish immediately after observing a faithful valid canvas. A code response is not also a finish action. All tracks prioritize aesthetics and faithful subject structure; speed adds explicit limits. Native caps are ceilings, not requested response lengths. Do not add an arbitrary low cap to quality or screen, truncate programs, quietly switch models, or substitute a text-only model.
 
-The complete default matrix is **400 episodes** (40 images × 5 models × 2 tracks), with at most **3,000 assistant turns before bounded service retries**. This is not a small fixed-cost API smoke test. Actual spending depends on generated reasoning/code, full conversation input, pricing changes, retries and early stopping. Saved provider usage/cost is authoritative when available; estimates and missing values must be labeled separately.
+The quality+speed default matrix is **400 episodes** (40 images × 5 models × 2 tracks), with at most **3,000 assistant turns before bounded service retries**. The separate screen track is **40 episodes** with at most **240 assistant turns**. `--track all` retains its original quality+speed meaning; run screen explicitly first. This is not a small fixed-cost API smoke test. Actual spending depends on generated reasoning/code, full conversation input, pricing changes, retries and early stopping. Saved provider usage/cost is authoritative when available; estimates and missing values must be labeled separately.
 
 ## Interaction and evidence
 

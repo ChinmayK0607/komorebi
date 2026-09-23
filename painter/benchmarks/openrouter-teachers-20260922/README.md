@@ -8,7 +8,7 @@ Everything is stored on this Mac at:
 /Users/chinmay/Documents/Codex/2026-09-07/if-they-did-speed-painting-type/painter/benchmarks/openrouter-teachers-20260922
 ```
 
-There are 40 bundled, visually checked reference images, five default models and two tracks: **400 episodes total**. The default launch renders every painting turn on the prepared Linux node. An opt-in macOS launch uses the same pinned Watercolour renderer locally, with the actual canvas returned to the teacher for inspection, revision or finishing. Inspect the selected photos in [reference-gallery.html](reference-gallery.html).
+There are 40 bundled, visually checked reference images and five default models. Quality and speed cover all 40 references (**400 episodes**); the separate `screen` track uses one deterministic reference from each of the eight categories (**40 episodes**). The default node launch retains the quality+speed matrix. An opt-in macOS launch uses the same pinned Watercolour renderer locally, with the actual canvas returned to the teacher for inspection, revision or finishing. Inspect the selected photos in [reference-gallery.html](reference-gallery.html).
 
 ## Launch after adding credits
 
@@ -40,6 +40,14 @@ For a free, offline configuration/package check that neither contacts Lium nor r
 ```bash
 bash run_benchmark.sh --dry-run
 ```
+
+For the first screening pass, inspect the exact eight-reference, no-network budget with:
+
+```bash
+python3 run.py --root . --dry-run --track screen
+```
+
+The report lists the selected reference IDs, `episodes_total: 40`, a six-turn cap, native output allowance and zero paid calls. Run this track first, review the resulting canvases, then send only the strongest finalists through the 12-turn `quality` track. A screen episode may finish before four turns when the teacher observes a faithful current canvas; four to six turns is a target range, not a minimum.
 
 ## Run entirely on this Mac
 
@@ -100,11 +108,12 @@ Keys here are Vercel AI Gateway account keys. Omitted model overrides use `defau
 |---|---:|---|---|
 | `quality` | Up to 12 | Native model ceiling, limited only by available context | No artificial episode time cap |
 | `speed` | Up to 3 | 8,192 tokens per turn, including reasoning | 900 active seconds |
-| `all` (default) | Both tracks | Separate results | 400 episodes |
+| `screen` | Up to 6 (target 4–6) | Native model ceiling, limited only by available context | No artificial episode time cap |
+| `all` (default) | Quality and speed | Separate results | 400 episodes |
 
-Quality uses the native Gateway model behavior; speed uses an explicit 8,192-token output ceiling. Models without an advertised effort selector use the provider default without an invented effort setting. Each mode can stop early after inspecting a valid canvas. Both request faithful, attractive paintings; there is no synthetic additive aesthetic score.
+Quality and screening use the native Gateway model behavior and highest explicitly supported reasoning effort; speed uses an explicit 8,192-token output ceiling and lowest supported effort. Models without an advertised effort selector use the provider default without an invented effort setting. Each mode can stop early after inspecting a valid canvas. All request faithful, attractive paintings; there is no synthetic additive aesthetic score.
 
-Native output ceilings can be large. The full run has at most 3,000 assistant requests before retries, but actual duration and cost depend on how much the models generate and when they finish. API and rendering times, queue waits, token breakdowns, provider identifiers and reported costs are retained. Unknown costs are marked missing, not assumed to be zero. One sample per image/model/track does not estimate sampling variance.
+Native output ceilings can be large. The quality+speed default has at most 3,000 assistant requests before retries; the separate `screen` track has at most 240. Actual duration and cost depend on generated reasoning/code, full conversation input, pricing changes, retries and early stopping. API and rendering times, queue waits, token breakdowns, provider identifiers and reported costs are retained. Unknown costs are marked missing, not assumed to be zero. One sample per image/model/track does not estimate sampling variance.
 
 ## Progress, resume and artifacts
 

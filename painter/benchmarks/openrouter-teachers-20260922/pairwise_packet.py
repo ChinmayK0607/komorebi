@@ -583,7 +583,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", type=Path, required=True, help="collected result directory containing episodes/")
     parser.add_argument("--output", type=Path, help="output directory (default: ROOT/review/pairwise)")
-    parser.add_argument("--track", choices=("quality", "speed", "all"), default="all")
+    parser.add_argument("--track", choices=("quality", "speed", "screen", "all"), default="all")
     parser.add_argument("--seed", default=DEFAULT_SEED)
     parser.add_argument("--reference-root", type=Path, help="optional benchmark root containing references/ and refs.json")
     args = parser.parse_args(argv)

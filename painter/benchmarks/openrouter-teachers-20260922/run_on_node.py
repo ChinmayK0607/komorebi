@@ -122,19 +122,31 @@ def _validate_prepared_config(config: Path, refs_manifest: Path) -> tuple[dict[s
     if not isinstance(models, list) or not models or not all(isinstance(item, str) and item for item in models):
         raise BenchmarkLaunchError("config must contain a non-empty model id list")
     tracks = document.get("tracks")
-    if not isinstance(tracks, dict) or set(tracks) != {"quality", "speed"}:
-        raise BenchmarkLaunchError("config must define quality and speed tracks")
+    if not isinstance(tracks, dict) or set(tracks) != {"quality", "speed", "screen"}:
+        raise BenchmarkLaunchError("config must define quality, speed and screen tracks")
     quality = tracks["quality"]
     speed = tracks["speed"]
+    screen = tracks["screen"]
     if quality.get("max_turns") != 12 or speed.get("max_turns") != 3 or speed.get("max_tokens") != 8192:
         raise BenchmarkLaunchError("track limits do not match the prepared benchmark")
     if speed.get("episode_timeout_seconds") != 900:
         raise BenchmarkLaunchError("speed track timeout must be 900 seconds")
+    if screen.get("max_turns") != 6 or screen.get("max_tokens") != "native" or screen.get("episode_timeout_seconds") is not None or screen.get("reasoning_effort") != "highest_supported":
+        raise BenchmarkLaunchError("screen track limits do not match the prepared benchmark")
     references = _load_json(refs_manifest, label="reference manifest")
     if not isinstance(references, dict) or not isinstance(references.get("references"), list):
         raise BenchmarkLaunchError("reference manifest must contain a references list")
     if len(references["references"]) != MAX_REFERENCE_COUNT:
         raise BenchmarkLaunchError("reference manifest must contain exactly 40 images")
+    screen_ids = document.get("screen_reference_ids")
+    by_id = {row.get("id"): row for row in references["references"] if isinstance(row, dict)}
+    if not isinstance(screen_ids, list) or len(screen_ids) != 8 or len(set(screen_ids)) != 8:
+        raise BenchmarkLaunchError("screen_reference_ids must contain eight unique references")
+    if any(item not in by_id for item in screen_ids):
+        raise BenchmarkLaunchError("screen_reference_ids contains an unknown reference")
+    categories = [by_id[item].get("category") for item in screen_ids]
+    if any(not isinstance(category, str) or not category for category in categories) or len(set(categories)) != 8:
+        raise BenchmarkLaunchError("screen_reference_ids must select one reference per category")
     return document, references["references"]
 
 
@@ -185,8 +197,8 @@ def build_package_plan(
         raise BenchmarkLaunchError("prepared references must contain exactly 40 JPEGs")
 
     selected_tracks = tuple(tracks) if tracks is not None else ("quality", "speed")
-    if not selected_tracks or any(track not in {"quality", "speed"} for track in selected_tracks):
-        raise BenchmarkLaunchError("tracks must contain quality and/or speed")
+    if not selected_tracks or any(track not in {"quality", "speed", "screen"} for track in selected_tracks):
+        raise BenchmarkLaunchError("tracks must contain quality, speed and/or screen")
     if len(set(selected_tracks)) != len(selected_tracks):
         raise BenchmarkLaunchError("tracks contains duplicates")
     files = [
@@ -563,9 +575,9 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--known-hosts", type=Path)
     parser.add_argument("--api-key-file", type=Path, help="local protected plaintext key or JSON {default,models} bundle")
     parser.add_argument("--models", nargs="+", help="catalogued model ids; defaults to all prepared models")
-    parser.add_argument("--tracks", nargs="+", choices=("quality", "speed"), default=("quality", "speed"))
-    parser.add_argument("--track", nargs="+", choices=("quality", "speed", "all"), dest="track_alias",
-                        help="alias for --tracks; use 'all' for both tracks")
+    parser.add_argument("--tracks", nargs="+", choices=("quality", "speed", "screen"), default=("quality", "speed"))
+    parser.add_argument("--track", nargs="+", choices=("quality", "speed", "screen", "all"), dest="track_alias",
+                        help="alias for --tracks; use 'all' for quality and speed")
     parser.add_argument("--limit-episodes", type=int, help="run only the first N deterministic episodes")
     parser.add_argument("--dry-run", action="store_true")
     return parser
@@ -580,6 +592,8 @@ def main(argv: list[str] | None = None) -> int:
             tracks = ("quality", "speed") if "all" in args.track_alias else tuple(args.track_alias)
         else:
             tracks = tuple(args.tracks)
+        if set(tracks) not in ({"quality"}, {"speed"}, {"screen"}, {"quality", "speed"}):
+            raise BenchmarkLaunchError("run screen separately; multi-track launch supports quality+speed only")
         if args.limit_episodes is not None and args.limit_episodes <= 0:
             raise BenchmarkLaunchError("--limit-episodes must be positive")
         plan = build_package_plan(
