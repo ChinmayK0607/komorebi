@@ -9,6 +9,7 @@ episodes/
 collected/
 artifacts/
 benchmark-output/
+teacher-campaigns/
 *.jsonl
 progress.json
 run-summary.json

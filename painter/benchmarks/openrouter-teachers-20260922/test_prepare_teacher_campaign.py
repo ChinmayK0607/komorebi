@@ -22,6 +22,10 @@ def _write_image(path: Path, marker: bytes) -> str:
 
 
 class TestPrepareTeacherCampaign(unittest.TestCase):
+    def test_generated_node_campaign_parent_is_ignored(self):
+        ignore = (HERE / ".gitignore").read_text(encoding="utf-8").splitlines()
+        self.assertIn("teacher-campaigns/", ignore)
+
     def _fixture(self, count: int = 6) -> tuple[Path, Path, dict[str, str]]:
         root = Path(tempfile.mkdtemp(prefix="teacher-campaign-test-"))
         images = root / "images"
