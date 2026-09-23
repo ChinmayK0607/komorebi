@@ -108,7 +108,9 @@ Native output ceilings can be large. The full run has at most 3,000 assistant re
 
 ## Progress, resume and artifacts
 
-`tqdm` shows episode progress while generation runs. Persistent progress and event files supplement the terminal display. Rerun the same command to resume. Completed matching responses are reused, including when only rendering needs retry. Adding another model should preserve already completed results for the existing models. Changing the prompt, renderer or generation settings is a different experiment and must not silently reuse incompatible completed episodes.
+`tqdm` shows episode progress while generation runs, and the runner prints phase lines to stderr for each episode and turn. While a provider request is pending, a heartbeat appears every five seconds with the elapsed time, completed turns and known cumulative tokens. The current transport uses AI SDK `generateText`, so this is not a live token stream: prompt, completion and total token usage become available only after each provider response returns. The durable `progress.json` file includes a `live` field with the latest phase snapshot and cumulative known token count.
+
+Rerun the same command to resume. Completed matching responses are reused, including when only rendering needs retry. Adding another model should preserve already completed results for the existing models. Changing the prompt, renderer or generation settings is a different experiment and must not silently reuse incompatible completed episodes.
 
 The node retains the complete output tree, and the wrapper collects available artifacts under `results-ai-gateway-20260923/` in this folder. Open `results-ai-gateway-20260923/gallery.html` after collection; raw trajectories are in `results-ai-gateway-20260923/episodes/`, with `results-ai-gateway-20260923/progress.json` and `results-ai-gateway-20260923/events.jsonl` for progress. Keep the terminal running for the foreground launch. If disconnected, outputs remain on the node for a subsequent resume/collection; do not release the node until desired evidence has been collected.
 

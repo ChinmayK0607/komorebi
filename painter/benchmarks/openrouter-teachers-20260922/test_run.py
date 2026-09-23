@@ -1,4 +1,5 @@
 import json
+import io
 import sys
 import tempfile
 import time
@@ -35,6 +36,100 @@ def _fixture(root: Path) -> run.BenchmarkInputs:
 
 
 class RunTests(unittest.TestCase):
+    def test_progress_reporter_is_truthful_until_response_usage_exists(self):
+        stream = io.StringIO()
+        reporter = run.ProgressReporter(episodes_total=1, stream=stream)
+        common = {
+            "job_id": "episode-1", "episode_number": 1, "model": "test/model",
+            "reference_id": "r1", "turn": 1, "max_turns": 2,
+        }
+        reporter.emit({**common, "phase": "waiting_for_provider", "total_tokens": 0})
+        reporter.emit({
+            **common, "phase": "response_received", "total_tokens": 12,
+            "prompt_tokens": 5, "completion_tokens": 7, "response_total_tokens": 12,
+        })
+        reporter.emit({
+            **common, "phase": "episode_complete", "status": "turn_limit",
+            "turns_completed": 1, "total_tokens": 12,
+        })
+        output = stream.getvalue()
+        self.assertIn("phase=waiting_for_provider", output)
+        self.assertIn("current_response_tokens=unknown (provider response pending; no live token stream)", output)
+        self.assertIn("response_tokens=prompt:5 completion:7 total:12", output)
+        self.assertIn("known_tokens=12", output)
+        self.assertNotIn("prompt", output.split("phase=waiting_for_provider", 1)[1].split("\n", 1)[0])
+
+    def test_progress_reporter_clears_phase_and_reuse_fields(self):
+        stream = io.StringIO()
+        reporter = run.ProgressReporter(episodes_total=1, stream=stream)
+        common = {
+            "job_id": "episode-1", "episode_number": 1, "model": "test/model",
+            "reference_id": "r1", "max_turns": 2,
+        }
+        first = reporter.emit({
+            **common, "turn": 1, "phase": "waiting_for_provider",
+            "phase_elapsed_seconds": 9.0, "total_tokens": 0,
+        })
+        reused = reporter.emit({
+            **common, "turn": 1, "phase": "response_reused", "api_reused": True,
+            "prompt_tokens": 2, "completion_tokens": 3, "response_total_tokens": 5,
+            "total_tokens": 5,
+        })
+        reporter.emit({**common, "turn": 1, "phase": "rendering", "total_tokens": 5})
+        reporter.emit({
+            **common, "turn": 2, "phase": "waiting_for_provider",
+            "phase_elapsed_seconds": 4.0, "total_tokens": 5,
+        })
+        reporter.emit({**common, "turn": 2, "phase": "response_received", "total_tokens": 11})
+        self.assertGreater(reused["sequence"], first["sequence"])
+        lines = stream.getvalue().splitlines()
+        rendering = next(line for line in lines if "phase=rendering" in line)
+        response = next(line for line in lines if "phase=response_received" in line)
+        self.assertNotIn("api=reused", rendering)
+        self.assertNotIn("phase_elapsed=00m09s", response)
+        self.assertNotIn("prompt:2", response)
+
+    def test_episode_runner_emits_provider_heartbeat_and_phases_offline(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            inputs = _fixture(root)
+            ref = inputs.references[0]
+            settings = run.settings_from_inputs(inputs, "quality")
+            settings["max_turns"] = 1
+            episode = root / "episodes" / run.job_id("test/model", "r1", track="quality")
+            events = []
+
+            class Client:
+                api_key = "secret"
+                timeout = 2
+
+                def complete(self, payload, **kwargs):
+                    time.sleep(0.03)
+                    return {
+                        "choices": [{"message": {"content": "plan\n```js\nfunction draw(){noLoop()}\n```"}, "finish_reason": "stop"}],
+                        "usage": {"prompt_tokens": 4, "completion_tokens": 6, "total_tokens": 10},
+                    }
+
+            def render(**kwargs):
+                output = Path(kwargs["output"])
+                output.write_bytes(b"canvas")
+                return {"valid": True, "receipt": {"valid": True}, "canvas_sha256": run.sha_file(output)}
+
+            result = run.EpisodeRunner(
+                inputs, "test/model", ref, 1, episode_dir=episode, client=Client(),
+                render_fn=render, render_lock=__import__("threading").Semaphore(1),
+                renderer_options={}, settings=settings, on_progress=events.append,
+                progress_heartbeat_seconds=0.01,
+            ).run()
+            self.assertEqual(result["status"], "turn_limit")
+            phases = [event["phase"] for event in events]
+            self.assertIn("waiting_for_provider", phases)
+            self.assertIn("response_received", phases)
+            self.assertIn("rendering", phases)
+            self.assertIn("turn_complete", phases)
+            response_event = next(event for event in events if event["phase"] == "response_received")
+            self.assertEqual(response_event["total_tokens"], 10)
+
     def test_local_dotenv_reads_only_the_gateway_key(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
@@ -86,6 +181,11 @@ class RunTests(unittest.TestCase):
         self.assertEqual(code, "new();\n")
         self.assertEqual(plan, "plan\n\nmore")
         self.assertIsNone(run.parse_program("FINISHED")[0])
+        self.assertTrue(run.is_finished_text("The observed canvas matches the reference.\nFINISHED"))
+        self.assertTrue(run.is_finished_text("**Reason**: The current canvas matches the reference. FINISHED"))
+        self.assertTrue(run.is_finished_text("**Reason**: The current canvas matches the reference.\nFINISHED."))
+        self.assertFalse(run.is_finished_text("The explanation mentions FINISHED but does not finish."))
+        self.assertFalse(run.is_finished_text("```js\n// FINISHED\n```"))
 
     def test_gateway_response_preserves_usage_and_redacts_errors(self):
         response = {"id": "x", "choices": [{"message": {"content": "ok"}, "finish_reason": "stop"}], "usage": {"prompt_tokens": 4, "completion_tokens": 6, "total_tokens": 10, "cost": None}}
@@ -215,7 +315,7 @@ class RunTests(unittest.TestCase):
             episode = root / "episodes" / run.job_id("test/model", "r1", track="quality")
             replies = [
                 "first plan\n```javascript\nfunction draw(){noLoop()}\n```",
-                "The observed canvas matches the reference.\nFINISHED",
+                "**Reason**: The observed canvas matches the reference. FINISHED",
             ]
             sent = []
             class Client:
@@ -230,6 +330,9 @@ class RunTests(unittest.TestCase):
                 return {"valid": True, "receipt": {"valid": True}, "canvas_sha256": run.sha_file(output)}
             result = run.EpisodeRunner(inputs, "test/model", ref, 1, episode_dir=episode, client=Client(), render_fn=render, render_lock=__import__("threading").Semaphore(1), renderer_options={}, settings=settings).run()
             self.assertEqual(result["status"], "complete")
+            self.assertEqual(len(result["turns"]), 2)
+            self.assertTrue(result["turns"][0]["render"]["valid"])
+            self.assertTrue(result["turns"][1]["finished_observed"])
             self.assertEqual(len(sent), 2)
             self.assertEqual([message["role"] for message in sent[1]["messages"]], ["system", "user", "assistant", "user"])
             self.assertIn("CURRENT CANVAS", sent[1]["messages"][-1]["content"][0]["text"])

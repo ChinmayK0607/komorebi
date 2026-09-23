@@ -40,8 +40,23 @@ from typing import Any, Callable, Iterable, Mapping, Sequence
 try:
     from tqdm import tqdm
 except ImportError:  # pragma: no cover - Linux launch pins tqdm
+    class _FallbackTqdm:
+        """Small no-op tqdm substitute that still behaves like an iterator."""
+
+        def __init__(self, iterable=None, **kwargs):
+            self.iterable = iterable if iterable is not None else []
+
+        def __iter__(self):
+            return iter(self.iterable)
+
+        def set_postfix(self, **kwargs):
+            return None
+
+        def close(self):
+            return None
+
     def tqdm(iterable=None, **kwargs):
-        return iterable if iterable is not None else []
+        return _FallbackTqdm(iterable, **kwargs)
 
 
 SCHEMA = "painter.ai-gateway-teachers.v1"
@@ -50,6 +65,7 @@ TRANSPORT_SCRIPT = "gateway_transport.ts"
 DEFAULT_MAX_RETRIES = 3
 DEFAULT_TIMEOUT = 180.0
 DEFAULT_MAX_ERROR_CHARS = 4000
+PROGRESS_HEARTBEAT_SECONDS = 5.0
 EXPECTED_MODELS = (
     "zai/glm-5.3-flash",
     "deepseek/deepseek-v4.1-flash",
@@ -625,6 +641,160 @@ def build_payload(messages: Sequence[Mapping[str, Any]], settings: Mapping[str, 
     return payload
 
 
+def format_elapsed(seconds: float) -> str:
+    """Format a monotonic duration without implying a clock timestamp."""
+
+    seconds = max(0, int(seconds))
+    minutes, remainder = divmod(seconds, 60)
+    hours, minutes = divmod(minutes, 60)
+    if hours:
+        return f"{hours}h{minutes:02d}m{remainder:02d}s"
+    return f"{minutes:02d}m{remainder:02d}s"
+
+
+class ProgressReporter:
+    """Print bounded, stderr-only live benchmark status.
+
+    The Gateway transport currently uses ``generateText`` and returns only
+    after a provider response is complete.  While that call is pending this
+    reporter deliberately says that the provider response is still pending;
+    it does not estimate or imply streamed token counts.
+    """
+
+    def __init__(self, *, episodes_total: int, stream: Any = None):
+        self.episodes_total = episodes_total
+        self.stream = stream or sys.stderr
+        self._lock = threading.Lock()
+        self._active: dict[str, dict[str, Any]] = {}
+        self._finished_tokens: dict[str, int] = {}
+        self._finished_turns = 0
+        self._sequence = 0
+
+    def _write(self, line: str) -> None:
+        # tqdm.write preserves an active tqdm line when tqdm is installed.  A
+        # plain stderr write keeps the fallback and non-TTY paths dependency
+        # free.  Both paths remain outside stdout/JSONL transport.
+        writer = getattr(tqdm, "write", None)
+        try:
+            if callable(writer):
+                writer(line, file=self.stream)
+            else:
+                print(line, file=self.stream, flush=True)
+        except (OSError, ValueError):
+            # A closed terminal stream must never turn a benchmark result into
+            # an API or renderer failure.
+            return
+
+    @staticmethod
+    def _token_value(value: Any) -> int | None:
+        if isinstance(value, bool):
+            return None
+        if isinstance(value, (int, float)):
+            return int(value)
+        return None
+
+    def emit(self, event: Mapping[str, Any]) -> dict[str, Any]:
+        """Record one phase and print it; return a safe progress snapshot."""
+
+        job_id_value = str(event.get("job_id") or "unknown")
+        with self._lock:
+            active = self._active.get(job_id_value)
+            if active is None:
+                active = {
+                    "started_monotonic": time.monotonic(),
+                    "episode_number": event.get("episode_number"),
+                    "episodes_total": self.episodes_total,
+                    "model": str(event.get("model") or "unknown"),
+                    "reference_id": str(event.get("reference_id") or "unknown"),
+                    "turn": 0,
+                    "max_turns": event.get("max_turns"),
+                    "turns_completed": 0,
+                    "total_tokens": 0,
+                    "phase": "starting",
+                    "status": "pending",
+                }
+                self._active[job_id_value] = active
+            previous_phase = active.get("phase")
+            previous_turn = active.get("turn")
+            phase = str(event.get("phase") or previous_phase or "working")
+            turn = event.get("turn")
+            if phase != previous_phase or (turn is not None and turn != previous_turn):
+                # These values describe only the phase/turn that emitted them;
+                # retaining them would make a later line claim stale timing,
+                # usage, or response reuse.
+                for key in (
+                    "phase_elapsed_seconds", "prompt_tokens", "completion_tokens",
+                    "response_total_tokens", "api_reused",
+                ):
+                    active.pop(key, None)
+            active.update({
+                key: event[key]
+                for key in (
+                    "episode_number", "model", "reference_id", "turn", "max_turns",
+                    "turns_completed", "status", "phase_elapsed_seconds",
+                    "prompt_tokens", "completion_tokens", "response_total_tokens",
+                    "api_reused",
+                )
+                if key in event and event[key] is not None
+            })
+            episode_total = self._token_value(event.get("total_tokens"))
+            if episode_total is not None:
+                active["total_tokens"] = max(0, episode_total)
+            active["phase"] = phase
+            elapsed = time.monotonic() - float(active["started_monotonic"])
+            if phase == "turn_complete":
+                self._finished_turns += 1
+            if phase == "episode_complete":
+                self._finished_tokens[job_id_value] = int(active.get("total_tokens") or 0)
+                self._active.pop(job_id_value, None)
+            known_tokens = sum(int(item.get("total_tokens") or 0) for item in self._active.values())
+            known_tokens += sum(self._finished_tokens.values())
+            self._sequence += 1
+            snapshot = {
+                "job_id": job_id_value,
+                "sequence": self._sequence,
+                "phase": phase,
+                "model": active["model"],
+                "reference_id": active["reference_id"],
+                "turn": active.get("turn", 0),
+                "turns_completed": active.get("turns_completed", 0),
+                "status": active.get("status", "pending"),
+                "elapsed_seconds": round(elapsed, 3),
+                "total_tokens": known_tokens,
+                "episode_total_tokens": int(active.get("total_tokens") or 0),
+            }
+            line = self._line(active, phase=phase, elapsed=elapsed, known_tokens=known_tokens)
+        self._write(line)
+        return snapshot
+
+    def _line(self, active: Mapping[str, Any], *, phase: str, elapsed: float, known_tokens: int) -> str:
+        number = active.get("episode_number") or "?"
+        total = active.get("episodes_total") or self.episodes_total
+        model = safe_slug(str(active.get("model") or "unknown"))
+        reference = safe_slug(str(active.get("reference_id") or "unknown"))
+        turn = active.get("turn") or 0
+        max_turns = active.get("max_turns") or "?"
+        turns_completed = active.get("turns_completed") or 0
+        line = (
+            f"[teacher] episode {number}/{total} model={model} ref={reference} "
+            f"turn={turn}/{max_turns} phase={phase} elapsed={format_elapsed(elapsed)} "
+            f"turns_completed={turns_completed} known_tokens={known_tokens}"
+        )
+        phase_elapsed = active.get("phase_elapsed_seconds")
+        if isinstance(phase_elapsed, (int, float)):
+            line += f" phase_elapsed={format_elapsed(float(phase_elapsed))}"
+        if phase == "waiting_for_provider":
+            line += " current_response_tokens=unknown (provider response pending; no live token stream)"
+        elif phase == "response_received":
+            prompt = active.get("prompt_tokens")
+            completion = active.get("completion_tokens")
+            response_total = active.get("response_total_tokens")
+            line += f" response_tokens=prompt:{prompt if prompt is not None else '?'} completion:{completion if completion is not None else '?'} total:{response_total if response_total is not None else '?'}"
+        if active.get("api_reused"):
+            line += " api=reused"
+        return line
+
+
 class GatewayClient:
     """Persistent AI SDK JSONL transport with bounded retry.
 
@@ -871,7 +1041,28 @@ def cost_value(usage: Mapping[str, Any]) -> float | None:
 
 
 def is_finished_text(text: str) -> bool:
-    return bool(re.search(r"(?im)^\s*FINISHED\s*[.!]?\s*$", text or ""))
+    """Recognize the two finish forms allowed by the teacher prompt.
+
+    A model may put its brief reason in a Markdown ``**Reason**:`` paragraph
+    and append the finish marker to that paragraph.  Keep the broader marker
+    out of ordinary prose and code by requiring either the historical
+    standalone line or that explicit reason label, with ``FINISHED`` as the
+    final token.  Fenced responses are never finish-only responses; callers
+    still parse and render their program first.
+    """
+
+    value = str(text or "")
+    if "```" in value:
+        return False
+    if re.fullmatch(r"\s*FINISHED\s*[.!]?\s*", value, flags=re.IGNORECASE):
+        return True
+    if re.search(r"(?im)^\s*FINISHED\s*[.!]?\s*$", value):
+        return True
+    return bool(re.fullmatch(
+        r"\s*\*\*Reason\*\*\s*:\s*.+?\s+FINISHED\s*[.!]?\s*",
+        value,
+        flags=re.IGNORECASE | re.DOTALL,
+    ))
 
 
 def _relative(path: Path, root: Path) -> str:
@@ -1059,6 +1250,8 @@ class EpisodeRunner:
         *, episode_dir: Path, client: GatewayClient, render_fn: Callable[..., dict[str, Any]],
         render_lock: threading.Semaphore, renderer_options: Mapping[str, Any], settings: Mapping[str, Any],
         on_turn: Callable[[Mapping[str, Any], int], None] | None = None,
+        on_progress: Callable[[Mapping[str, Any]], None] | None = None,
+        progress_heartbeat_seconds: float = PROGRESS_HEARTBEAT_SECONDS,
     ):
         self.inputs = inputs
         self.model = model
@@ -1072,6 +1265,8 @@ class EpisodeRunner:
         self.renderer_options = renderer_options
         self.settings = settings
         self.on_turn = on_turn
+        self.on_progress = on_progress
+        self.progress_heartbeat_seconds = max(0.1, float(progress_heartbeat_seconds))
         self.model_info = model_limits(inputs, model, settings)
         self.reasoning = resolve_reasoning(inputs, model, str(settings["track"]))
 
@@ -1102,6 +1297,54 @@ class EpisodeRunner:
     def _notify_turn(self, state: Mapping[str, Any], turn: int) -> None:
         if self.on_turn:
             self.on_turn(state, turn)
+
+    def _notify_progress(self, phase: str, turn: int, state: Mapping[str, Any] | None = None, **details: Any) -> None:
+        if not self.on_progress:
+            return
+        event: dict[str, Any] = {
+            "job_id": self.episode_path.parent.name,
+            "model": self.model,
+            "reference_id": self.reference.id,
+            "sample": self.sample,
+            "track": self.settings.get("track"),
+            "turn": turn,
+            "max_turns": self.settings.get("max_turns"),
+            "phase": phase,
+        }
+        if state is not None:
+            event.update({
+                "status": state.get("status"),
+                "turns_completed": len(state.get("turns", [])),
+                "total_tokens": state.get("total_tokens"),
+            })
+        event.update(details)
+        try:
+            self.on_progress(event)
+        except Exception:
+            # Observability must never change benchmark semantics.
+            return
+
+    def _with_progress_heartbeat(self, *, turn: int, phase: str, operation: Callable[[], Any]) -> Any:
+        """Run a blocking operation while reporting truthful elapsed heartbeats."""
+
+        started = time.monotonic()
+        stopped = threading.Event()
+        self._notify_progress(phase, turn, phase_elapsed_seconds=0.0)
+
+        def heartbeat() -> None:
+            while not stopped.wait(self.progress_heartbeat_seconds):
+                self._notify_progress(
+                    phase, turn,
+                    phase_elapsed_seconds=round(time.monotonic() - started, 3),
+                )
+
+        thread = threading.Thread(target=heartbeat, name=f"teacher-progress-{phase}", daemon=True)
+        thread.start()
+        try:
+            return operation()
+        finally:
+            stopped.set()
+            thread.join(timeout=max(1.0, self.progress_heartbeat_seconds + 0.5))
 
     def _turn_path(self, turn: int) -> Path:
         return self.episode_dir / f"turn-{turn:02d}.json"
@@ -1149,9 +1392,11 @@ class EpisodeRunner:
                 previous_response = old_turn["response"]["raw_text"]
             render_feedback = old_turn.get("render_feedback")
         start_turn = len(state.get("turns", [])) + 1
+        self._notify_progress("episode_started", 0, state=state)
         # Turn artifacts can outlive a process after the episode state was
         # written.  Reconstruct from them only when the state contains the turn.
         for turn in range(start_turn, int(self.settings["max_turns"]) + 1):
+            self._notify_progress("preparing_turn", turn, state=state)
             episode_timeout = self.settings.get("episode_timeout_seconds")
             if episode_timeout is not None and active_seconds() >= float(episode_timeout):
                 state["status"] = "deadline_censored"
@@ -1211,9 +1456,21 @@ class EpisodeRunner:
                         deadline_at = time.monotonic() + remaining
                     else:
                         deadline_at = None
-                    raw = self.client.complete(payload, deadline=deadline_at)
+                    raw = self._with_progress_heartbeat(
+                        turn=turn,
+                        phase="waiting_for_provider",
+                        operation=lambda: self.client.complete(payload, deadline=deadline_at),
+                    )
                     self.client.timeout = old_timeout
                     response = response_record(raw)
+                    usage = response.get("usage") or {}
+                    self._notify_progress(
+                        "response_received", turn, state=state,
+                        prompt_tokens=usage.get("prompt_tokens"),
+                        completion_tokens=usage.get("completion_tokens"),
+                        response_total_tokens=token_total(usage),
+                        total_tokens=int(state.get("total_tokens") or 0) + token_total(usage),
+                    )
                     turn_record = {
                         "schema": SCHEMA,
                         "turn": turn,
@@ -1230,6 +1487,7 @@ class EpisodeRunner:
                 except APIError as exc:
                     if "old_timeout" in locals():
                         self.client.timeout = old_timeout
+                    self._notify_progress("provider_error", turn, state=state, status="api_error")
                     turn_record = {
                         "schema": SCHEMA,
                         "turn": turn,
@@ -1262,6 +1520,14 @@ class EpisodeRunner:
             if reused_response:
                 turn_record["api_reused"] = True
                 atomic_json(api_path, turn_record)
+                reused_usage = (turn_record.get("response") or {}).get("usage") or {}
+                self._notify_progress(
+                    "response_reused", turn, state=state, api_reused=True,
+                    prompt_tokens=reused_usage.get("prompt_tokens"),
+                    completion_tokens=reused_usage.get("completion_tokens"),
+                    response_total_tokens=token_total(reused_usage),
+                    total_tokens=int(state.get("total_tokens") or 0) + token_total(reused_usage),
+                )
             response = turn_record.get("response") or {}
             reply = response.get("raw_text") or ""
             program, plan = parse_program(reply)
@@ -1315,10 +1581,14 @@ class EpisodeRunner:
                                 if remaining <= 0:
                                     render = {"valid": False, "service_failure": False, "deadline_censored": True, "error_code": "episode_deadline"}
                             if remaining is None or remaining > 0:
-                                render = self.render_fn(
-                                    root=self.inputs.root, source=self.inputs.root / turn_record["program"],
-                                    output=canvas_path, timeout=max(1, min(int(self.inputs.config.get("renderer_timeout", 180)), int(remaining) if remaining is not None else int(self.inputs.config.get("renderer_timeout", 180)))),
-                                    **self.renderer_options,
+                                render = self._with_progress_heartbeat(
+                                    turn=turn,
+                                    phase="rendering",
+                                    operation=lambda: self.render_fn(
+                                        root=self.inputs.root, source=self.inputs.root / turn_record["program"],
+                                        output=canvas_path, timeout=max(1, min(int(self.inputs.config.get("renderer_timeout", 180)), int(remaining) if remaining is not None else int(self.inputs.config.get("renderer_timeout", 180)))),
+                                        **self.renderer_options,
+                                    ),
                                 )
                         finally:
                             self.render_lock.release()
@@ -1349,6 +1619,7 @@ class EpisodeRunner:
                 self._update_totals(state)
                 atomic_json(api_path, turn_record)
                 self._save(state)
+                self._notify_progress("turn_complete", turn, state=state)
                 self._notify_turn(state, turn)
                 return state
             else:
@@ -1369,6 +1640,7 @@ class EpisodeRunner:
             self._update_totals(state)
             atomic_json(api_path, turn_record)
             self._save(state)
+            self._notify_progress("turn_complete", turn, state=state)
             self._notify_turn(state, turn)
             previous_response = reply
             render_feedback = feedback
@@ -1529,11 +1801,30 @@ def run_benchmark(inputs: BenchmarkInputs, *, track: str = "all", limit: int | N
         "episodes_requested": len(selected),
         "episodes_completed": 0,
         "turns_completed": 0,
+        "total_tokens": 0,
         "status_counts": {},
         "current": None,
+        "live": None,
+        "live_sequence": 0,
         "started_at": time.time(),
     }
     atomic_json(progress_path, progress)
+    progress_reporter = ProgressReporter(episodes_total=len(selected))
+
+    def on_progress(event: Mapping[str, Any]) -> None:
+        snapshot = progress_reporter.emit(event)
+        with progress_lock:
+            if int(snapshot.get("sequence") or 0) < int(progress.get("live_sequence") or 0):
+                return
+            progress["live_sequence"] = snapshot["sequence"]
+            progress["live"] = snapshot
+            progress["total_tokens"] = snapshot["total_tokens"]
+            progress["current"] = {
+                key: event.get(key)
+                for key in ("job_id", "track", "model", "reference_id", "turn", "phase", "status")
+                if event.get(key) is not None
+            }
+            atomic_json(progress_path, progress)
 
     def on_turn(state: Mapping[str, Any], turn: int) -> None:
         with progress_lock:
@@ -1582,18 +1873,63 @@ def run_benchmark(inputs: BenchmarkInputs, *, track: str = "all", limit: int | N
         client.timeout = float(settings["api_timeout_seconds"])
         client.max_retries = int(settings["max_retries"])
         directory = root / "episodes" / job_id(model, reference.id, sample, track_name)
+        episode_job_id = job_id(model, reference.id, sample, track_name)
+        episode_number = selected.index(item) + 1
+        on_progress({
+            "job_id": episode_job_id,
+            "episode_number": episode_number,
+            "episodes_total": len(selected),
+            "model": model,
+            "reference_id": reference.id,
+            "track": track_name,
+            "turn": 0,
+            "max_turns": settings["max_turns"],
+            "phase": "starting",
+            "status": "pending",
+            "total_tokens": 0,
+        })
         runner = EpisodeRunner(
             inputs, model, reference, sample, episode_dir=directory, client=client,
-            render_fn=render_program, render_lock=render_lock, renderer_options=renderer_options, settings=settings, on_turn=on_turn,
+            render_fn=render_program, render_lock=render_lock, renderer_options=renderer_options, settings=settings,
+            on_turn=on_turn, on_progress=lambda event: on_progress({**event, "episode_number": episode_number, "episodes_total": len(selected)}),
         )
         try:
-            return runner.run()
+            result = runner.run()
+            on_progress({
+                "job_id": episode_job_id,
+                "episode_number": episode_number,
+                "episodes_total": len(selected),
+                "model": model,
+                "reference_id": reference.id,
+                "track": track_name,
+                "turn": len(result.get("turns", [])),
+                "max_turns": settings["max_turns"],
+                "phase": "episode_complete",
+                "status": result.get("status"),
+                "turns_completed": len(result.get("turns", [])),
+                "total_tokens": result.get("total_tokens"),
+            })
+            return result
         except Exception as exc:
             state = runner._load_or_init()
             state["status"] = "api_error"
             state["fatal_error"] = redact(f"{type(exc).__name__}: {exc}")
             state["traceback"] = traceback.format_exc(limit=3)
             runner._save(state)
+            on_progress({
+                "job_id": episode_job_id,
+                "episode_number": episode_number,
+                "episodes_total": len(selected),
+                "model": model,
+                "reference_id": reference.id,
+                "track": track_name,
+                "turn": len(state.get("turns", [])),
+                "max_turns": settings["max_turns"],
+                "phase": "episode_complete",
+                "status": "api_error",
+                "turns_completed": len(state.get("turns", [])),
+                "total_tokens": state.get("total_tokens"),
+            })
             return state
 
     workers = int(inputs.config.get("concurrency", 3))
