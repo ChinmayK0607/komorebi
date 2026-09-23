@@ -36,6 +36,15 @@ TRANSPORT_ATTEMPTS = 5
 TRANSPORT_BACKOFF_SECONDS = (2.0, 4.0, 8.0, 16.0)
 DISK_PRESSURE_BACKOFF_SECONDS = (5.0, 10.0, 20.0, 30.0)
 LOCAL_FREE_SPACE_FLOOR_BYTES = 1024 * 1024 * 1024
+_MUTABLE_BATCH_PREFIXES = (
+    "labels-",
+    "execution-",
+    "stdout-",
+    "stderr-",
+    "events-",
+    "last-message-",
+)
+_MUTABLE_BATCH_FILENAMES = frozenset({"receipt-summary.json", "cli-judge-summary.json"})
 
 
 def _sha(path: Path) -> str:
@@ -50,6 +59,33 @@ def _batch_name(value: str) -> str:
     if not isinstance(value, str) or not BATCH_PATTERN.fullmatch(value):
         raise ValueError("batch must be a simple filename-safe name")
     return value
+
+
+def _is_mutable_batch_member(path: Path) -> bool:
+    """Identify local judge outputs excluded from staged-input identity."""
+
+    if "receipts" in path.parts:
+        return True
+    return path.name in _MUTABLE_BATCH_FILENAMES or path.name.startswith(_MUTABLE_BATCH_PREFIXES)
+
+
+def _staged_input_sha256(batch_dir: Path) -> str:
+    """Hash the immutable staged inputs while ignoring resumable judge output."""
+
+    digest = hashlib.sha256()
+    for path in sorted(batch_dir.rglob("*")):
+        if path.is_symlink():
+            raise ValueError(f"staged input is a symlink: {path}")
+        if not path.is_file():
+            continue
+        relative = path.relative_to(batch_dir)
+        if _is_mutable_batch_member(relative):
+            continue
+        digest.update(relative.as_posix().encode("utf-8"))
+        digest.update(b"\0")
+        digest.update(_sha(path).encode("ascii"))
+        digest.update(b"\0")
+    return digest.hexdigest()
 
 
 def _ssh(args: argparse.Namespace) -> list[str]:
@@ -119,6 +155,7 @@ def _safe_members(tar: tarfile.TarFile, batch: str) -> None:
 
 
 def _copy_tree_verified(source: Path, destination: Path) -> None:
+    source_files: set[Path] = set()
     for path in source.rglob("*"):
         relative = path.relative_to(source)
         target = destination / relative
@@ -129,12 +166,22 @@ def _copy_tree_verified(source: Path, destination: Path) -> None:
         else:
             if path.is_symlink() or not path.is_file():
                 raise ValueError(f"unsupported queue member: {path}")
+            source_files.add(relative)
             if target.exists():
                 if target.is_symlink() or not target.is_file() or _sha(target) != _sha(path):
                     raise ValueError(f"conflicting queue file: {target}")
             else:
                 target.parent.mkdir(parents=True, exist_ok=True)
                 target.write_bytes(path.read_bytes())
+    # A reused local batch may contain resumable judge output, but any other
+    # file absent from the newly downloaded assignment would silently mix two
+    # remote exports.  Refuse that case instead of carrying stale inputs.
+    for path in destination.rglob("*"):
+        if not path.is_file():
+            continue
+        relative = path.relative_to(destination)
+        if not _is_mutable_batch_member(relative) and relative not in source_files:
+            raise ValueError(f"conflicting queue file: {path}")
 
 
 def _rewrite_local_paths(batch_dir: Path, batch: str) -> int:
@@ -208,6 +255,7 @@ def pull(args: argparse.Namespace) -> dict[str, Any]:
         "batch": batch,
         "archive_sha256": archive_sha,
         "local_batch": str(destination),
+        "staged_input_sha256": _staged_input_sha256(destination),
         "rewritten_absolute_paths": rewritten,
         "queue_protocol": "aesthetic-pairwise-v1",
         "credentials": "local_codex_cli_only",
@@ -307,6 +355,38 @@ def _remote_exit_probe(args: argparse.Namespace) -> bool:
     raise RuntimeError(f"judge bridge exit probe failed for batch {args.batch}")
 
 
+def _verify_staged_input_identity(
+    args: argparse.Namespace,
+    pulled: dict[str, Any],
+) -> None:
+    """Verify that a retained pull still names the exact local assignment."""
+
+    if pulled.get("batch") != args.batch:
+        raise ValueError(
+            f"pulled batch identity mismatch: expected {args.batch}, got {pulled.get('batch')}"
+        )
+    expected = pulled.get("staged_input_sha256")
+    local_batch = pulled.get("local_batch")
+    if expected is None or local_batch is None:
+        # Keep mocked/offline callers compatible with the transport state
+        # machine. Real pulls always write both fields above.
+        return
+    expected_path = (Path(args.local_root).resolve() / "reward-batches" / args.batch).resolve()
+    raw_actual_path = Path(local_batch)
+    if raw_actual_path.is_symlink():
+        raise ValueError(f"pulled local batch is a symlink: {raw_actual_path}")
+    actual_path = raw_actual_path.resolve()
+    if actual_path != expected_path:
+        raise ValueError(f"pulled local batch path mismatch: {actual_path}")
+    if not actual_path.is_dir() or actual_path.is_symlink():
+        raise ValueError(f"pulled local batch is missing or unsafe: {actual_path}")
+    actual = _staged_input_sha256(actual_path)
+    if actual != expected:
+        raise ValueError(
+            f"staged local batch changed for {args.batch}: expected {expected}, got {actual}"
+        )
+
+
 def _run_batch_with_transport_retry(
     args: argparse.Namespace,
     *,
@@ -316,12 +396,19 @@ def _run_batch_with_transport_retry(
     batch = args.batch
     transport_attempt = 0
     disk_pressure_attempt = 0
+    # Each completed phase is retained across retries.  In particular, once
+    # local judging succeeds, a push transport failure must never pull or
+    # rejudge the batch again.
+    pulled: dict[str, Any] | None = None
+    local: dict[str, Any] | None = None
     while True:
         if time.monotonic() >= deadline:
             raise RuntimeError(f"judge bridge transport deadline exceeded for batch {batch}")
         phase = "pull"
         try:
-            pulled = pull(args)
+            if pulled is None:
+                pulled = pull(args)
+                _verify_staged_input_identity(args, pulled)
             if pulled.get("status") == "no_pending_work":
                 phase = "exit_probe"
                 return {
@@ -329,9 +416,12 @@ def _run_batch_with_transport_retry(
                     "pull": pulled,
                     "run_exit": _remote_exit_probe(args),
                 }
-            phase = "local"
-            local = run_local(args)
+            if local is None:
+                phase = "local"
+                local = run_local(args)
+                _verify_staged_input_identity(args, pulled)
             phase = "push"
+            _verify_staged_input_identity(args, pulled)
             pushed = push(args)
             return {"batch": batch, "pull": pulled, "local": local, "push": pushed}
         except Exception as error:

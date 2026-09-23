@@ -96,6 +96,28 @@ class JudgeBridgeTests(unittest.TestCase):
                     self.assertEqual(pull.call_count, 2)
                     sleep.assert_called_once_with(2.0)
 
+    def test_batch_retries_push_without_repulling_or_rejudging_changed_remote_batch(self):
+        with TemporaryDirectory() as temp:
+            args = self._worker_args(temp)
+            args.batch = "test-batch-0001"
+            pulled = {"batch": args.batch, "status": "staged"}
+            push_failure = subprocess.CalledProcessError(255, ["ssh", "private-host"])
+            with patch.object(
+                MODULE, "pull", return_value=pulled
+            ) as pull, patch.object(
+                MODULE, "run_local", return_value={"status": "16/16 labels"}
+            ) as run_local, patch.object(
+                MODULE, "push", side_effect=[push_failure, {"status": "installed"}]
+            ) as push, patch.object(MODULE.time, "sleep") as sleep:
+                result = MODULE._run_batch_with_transport_retry(
+                    args, deadline=MODULE.time.monotonic() + 60.0
+                )
+            self.assertEqual(result["local"], {"status": "16/16 labels"})
+            self.assertEqual(pull.call_count, 1)
+            self.assertEqual(run_local.call_count, 1)
+            self.assertEqual(push.call_count, 2)
+            sleep.assert_called_once_with(2.0)
+
     def test_worker_does_not_retry_local_judge_failure(self):
         with TemporaryDirectory() as temp:
             args = self._worker_args(temp)
