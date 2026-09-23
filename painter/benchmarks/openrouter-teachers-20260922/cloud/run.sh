@@ -3,6 +3,8 @@
 set -Eeuo pipefail
 
 REPO_ROOT="$(git rev-parse --show-toplevel)"
+# Match the Node selected during setup, ahead of Codex universal's Node 20.
+export PATH="/usr/bin:/bin:$PATH"
 BENCHMARK="$REPO_ROOT/painter/benchmarks/openrouter-teachers-20260922"
 RUNTIME_ROOT="$REPO_ROOT/.painter-cloud-runtime"
 PY="$RUNTIME_ROOT/renderer-env/bin/python"
