@@ -18,7 +18,7 @@ from urllib.request import urlopen
 
 
 DATASET = "CK0607/komorebi-painter-teachers"
-RUN_NAME = re.compile(r"(?:full-(?:quality|speed)-\d\d|renderer-replay-full-quality-\d\d)-20260923\Z")
+RUN_NAME = re.compile(r"(?:full-(?:quality|speed)-\d\d|renderer-replay-full-(?:quality|speed)-\d\d)-20260923\Z")
 CANVAS = re.compile(r"episodes/[A-Za-z0-9._-]+/turn-\d\d\.png\Z")
 EPISODE = re.compile(r"episodes/[A-Za-z0-9._-]+/episode\.json\Z")
 REPLAY = re.compile(r"episodes/[A-Za-z0-9._-]+/replay\.json\Z")
@@ -115,13 +115,14 @@ def build(benchmark: Path, archives: list[Path], output: Path) -> dict:
                         continue
                     source = evidence.get("source") or {}
                     model, reference = source.get("model"), source.get("reference_id")
+                    track = "speed" if str(evidence.get("source_run_id", "")).startswith("full-speed-") else "quality"
                     if model not in model_ids:
                         continue
                     turn = int(evidence["source_turn"])
                     image_name = name.rsplit("/", 1)[0] + f"/turn-{turn:02d}.png"
                     image = write_asset(bundle, members, image_name, output)
                     if image:
-                        replayed[f"quality|{reference}|{model}"] = {
+                        replayed[f"{track}|{reference}|{model}"] = {
                             "canvas": image, "turn": turn, "run_id": run_id,
                             "note": "Offline render of a saved response; the teacher did not see this canvas."}
 
@@ -197,7 +198,7 @@ def main() -> int:
     paths = sorted(args.quality_dir.glob("full-quality-??-20260923.tar.gz"))
     paths += sorted(args.speed_dir.glob("full-speed-??-20260923.tar.gz"))
     if args.replay_dir:
-        paths += sorted(args.replay_dir.glob("renderer-replay-full-quality-??-20260923.tar.gz"))
+        paths += sorted(args.replay_dir.glob("renderer-replay-full-*-??-20260923.tar.gz"))
     if not paths:
         parser.error("no verified archive candidates found")
     print(json.dumps(build(args.benchmark, paths, args.output), sort_keys=True), flush=True)

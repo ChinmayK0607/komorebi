@@ -24,6 +24,8 @@ python3 build_public_selection_gallery.py \
 
 The builder checks every local archive against its public Hugging Face receipt and verifies the reference hashes. Omit `--replay-dir` until cloud renderer replays finish. The gallery marks complete finals, partial retained canvases, missing results, and offline replay canvases separately. Rendering itself stays on Linux; this script only assembles and displays existing image bytes.
 
+To rerender already-paid timeout programs in a prepared Linux cloud environment without Gateway calls, use `cloud/run_replay_batch.sh speed 00,01,02,03,04 360 2` (and a second non-overlapping shard list for the rest). Each shard is independently hash-verified before running, publishes a separate verified public archive, and reports whether the program became valid or still timed out. `--workers 2` is an explicit throughput choice, not a measured speedup claim; compare elapsed times and failures before increasing concurrency.
+
 ## Launch after adding credits
 
 From Terminal:

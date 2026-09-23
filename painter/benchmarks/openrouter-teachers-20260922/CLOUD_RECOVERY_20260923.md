@@ -218,3 +218,14 @@ The local gallery path is
 The page's inline JavaScript passed a syntax check, and all referenced local
 assets exist. Rebuild with `--replay-dir` as the cloud replays publish verified
 archives; the user will make the teacher choice from the paintings.
+
+The final two original quality shards subsequently published verified public
+receipts and passed independent anonymous archive reconstruction. Shard `05`
+is 47,997,201 bytes with SHA-256
+`f588c70577542f0968bda9b29386d59464de7fd2cdf0bf7d7181159c93ee70cf`;
+shard `06` is 10,538,204 bytes with SHA-256
+`18cd416612ea42d640a2d8b57ae05798ca1a4697fb53c5aff683c7a1690264ac`.
+The original quality track now has all **200/200 episodes** archived; 89
+ended `renderer_error`, 73 `api_error`, 25 `turn_limit`, 11 `complete`, and 2
+`invalid`. The gallery was rebuilt from all 20 original quality and speed shards
+and now has 400 candidate episodes. No replay archive was included yet.
