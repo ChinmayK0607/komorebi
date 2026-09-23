@@ -27,5 +27,6 @@ stage-manifest.json
 runtime-receipt.json
 renderer-smoke/
 .local-venv/
+node_modules/
 source.bundle
 references-manifest.json

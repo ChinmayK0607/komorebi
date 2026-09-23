@@ -8,8 +8,9 @@ at immutable revision `811564c415aac98601754ce6133de33bf25cd69d`.
 The dataset card and `refs.json` retain provenance; per-image licensing has not
 been established by those records.
 
-Create a Codex cloud environment for the `codex/painter-teacher-cloud` branch
-of `ChinmayK0607/komorebi`. Set the environment setup command to:
+The `komorebi-painter-teachers` Codex cloud environment is configured for
+`ChinmayK0607/komorebi`. Select branch `codex/painter-teacher-cloud`. Its
+environment setup command is:
 
 ```bash
 bash painter/benchmarks/openrouter-teachers-20260922/cloud/setup.sh
@@ -55,6 +56,13 @@ not execute, so scale only after one cloud task completes and the public
 receipt is verified. Full benchmark runs are many-hour jobs at the observed
 provider latency; Codex cloud execution lifetime is not established here.
 
-The ongoing rented-node screen is a separate run. Leave it running to
-completion, collect its evidence, and release that node only after its archive
-is hash-verified. Do not merge its artifacts into a cloud run receipt.
+The rented-node 12-episode screen completed and its archive was hash-verified
+from the public dataset at `runs/rented-screen-12-20260923/`. The rented node
+was released. Do not merge its artifacts into a cloud run receipt.
+
+The first Codex cloud setup attempt failed because the universal image put its
+Node 20 ahead of the installed Node 22. Commit `9ccdb83` made the cloud
+wrappers select `/usr/bin` first. The next setup verified all 40 reference
+hashes, a sandboxed SwiftShader render, and a one-episode dry run with zero
+paid calls. The corresponding cloud task is
+`task_e_6ab3bb481770832ba6c23462c7a5995d`.
