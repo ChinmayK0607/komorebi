@@ -115,6 +115,13 @@ Keys here are Vercel AI Gateway account keys. Omitted model overrides use `defau
 
 Quality and screening use the native Gateway model behavior and highest explicitly supported reasoning effort; speed uses an explicit 8,192-token output ceiling and lowest supported effort. Models without an advertised effort selector use the provider default without an invented effort setting. Each mode can stop early after inspecting a valid canvas. All request faithful, attractive paintings; there is no synthetic additive aesthetic score.
 
+For bounded cloud tasks, `--start-episode` is a zero-based offset and
+`--limit-episodes` is the number of consecutive jobs to select. The screen
+orders five models for each reference, so `--track screen --start-episode 5
+--limit-episodes 5` selects all five models on the second screen reference.
+Use a distinct `PAINTER_RUN_ID` for each slice; the dry-run report and result
+summary record the offset.
+
 Native output ceilings can be large. The quality+speed default has at most 3,000 assistant requests before retries; the separate `screen` track has at most 240. Actual duration and cost depend on generated reasoning/code, full conversation input, pricing changes, retries and early stopping. API and rendering times, queue waits, token breakdowns, provider identifiers and reported costs are retained. Unknown costs are marked missing, not assumed to be zero. One sample per image/model/track does not estimate sampling variance.
 
 ## Progress, resume and artifacts

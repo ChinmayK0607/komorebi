@@ -1728,7 +1728,7 @@ def references_for_track(inputs: BenchmarkInputs, track: str) -> tuple[Reference
     return tuple(selected)
 
 
-def jobs(inputs: BenchmarkInputs, *, track: str = "all", limit: int | None = None) -> list[tuple[str, str, Reference, int]]:
+def jobs(inputs: BenchmarkInputs, *, track: str = "all", limit: int | None = None, start: int = 0) -> list[tuple[str, str, Reference, int]]:
     # Preserve the existing quality+speed meaning of `all`. Screening is an
     # explicit first pass, not an extra charge added to established launches.
     track_names = ["quality", "speed"] if track == "all" else [track]
@@ -1739,11 +1739,11 @@ def jobs(inputs: BenchmarkInputs, *, track: str = "all", limit: int | None = Non
         for model in inputs.config["models"]
         for sample in range(1, int(inputs.config.get("samples_per_image", 1)) + 1)
     ]
-    return values[:limit] if limit is not None else values
+    return values[start:start + limit] if limit is not None else values[start:]
 
 
-def dry_run_report(inputs: BenchmarkInputs, *, track: str = "all", limit: int | None = None) -> dict[str, Any]:
-    selected = jobs(inputs, track=track, limit=limit)
+def dry_run_report(inputs: BenchmarkInputs, *, track: str = "all", limit: int | None = None, start: int = 0) -> dict[str, Any]:
+    selected = jobs(inputs, track=track, limit=limit, start=start)
     all_jobs = jobs(inputs, track=track)
     per_track = {
         name: {
@@ -1768,6 +1768,7 @@ def dry_run_report(inputs: BenchmarkInputs, *, track: str = "all", limit: int | 
         "reference_ids_selected": list(dict.fromkeys(reference.id for _, _, reference, _ in selected)),
         "episodes_total": len(all_jobs),
         "episodes_selected": len(selected),
+        "start_episode": start,
         "requests_max_selected": sum(settings_from_inputs(inputs, item[0])["max_turns"] for item in selected),
         "requests_max_total": sum(settings_from_inputs(inputs, item[0])["max_turns"] for item in all_jobs),
         "samples_per_image": int(inputs.config.get("samples_per_image", 1)),
@@ -1817,7 +1818,7 @@ def preflight_renderer(inputs: BenchmarkInputs, overrides: Mapping[str, Any]) ->
     }
 
 
-def run_benchmark(inputs: BenchmarkInputs, *, track: str = "all", limit: int | None = None, renderer_options: Mapping[str, Any], api_key: str | Mapping[str, str] | None = None) -> dict[str, Any]:
+def run_benchmark(inputs: BenchmarkInputs, *, track: str = "all", limit: int | None = None, start: int = 0, renderer_options: Mapping[str, Any], api_key: str | Mapping[str, str] | None = None) -> dict[str, Any]:
     lock_handle = inputs.root.joinpath(".benchmark.lock").open("a+")
     try:
         fcntl.flock(lock_handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
@@ -1832,7 +1833,9 @@ def run_benchmark(inputs: BenchmarkInputs, *, track: str = "all", limit: int | N
         default_key = getpass.getpass("Vercel AI Gateway API key (input hidden): ").strip()
     if not default_key and not configured_keys:
         raise APIError("AI_GATEWAY_API_KEY is not set; dry-run does not need a key")
-    selected = jobs(inputs, track=track, limit=limit)
+    selected = jobs(inputs, track=track, limit=limit, start=start)
+    if not selected:
+        raise BenchmarkError("episode slice is empty; check --start-episode and --limit-episodes")
     render_lock = threading.Semaphore(int(inputs.config.get("render_concurrency", 1)))
     root = inputs.root
     transport_script = str(inputs.config.get("transport_script", TRANSPORT_SCRIPT))
@@ -2015,6 +2018,7 @@ def run_benchmark(inputs: BenchmarkInputs, *, track: str = "all", limit: int | N
         "mode": "run",
         "track": track,
         "episodes_selected": len(selected),
+        "start_episode": start,
         "reference_ids_selected": list(dict.fromkeys(reference.id for _, _, reference, _ in selected)),
         "status_counts": counts,
         "total_tokens": sum(int(row.get("total_tokens") or 0) for row in results),
@@ -2042,7 +2046,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     modes.add_argument("--dry-run", action="store_true", help="validate inputs and print the request budget; no key or network")
     modes.add_argument("--run", action="store_true", help="run/resume paid API episodes and render each submitted sketch")
     parser.add_argument("--local", action="store_true", help="use the macOS-local Watercolour renderer (with --run)")
-    parser.add_argument("--limit-episodes", type=int, help="select only the first N deterministic episodes")
+    parser.add_argument("--limit-episodes", type=int, help="select N deterministic episodes from --start-episode")
+    parser.add_argument("--start-episode", type=int, default=0, help="zero-based offset in the deterministic episode order")
     parser.add_argument("--track", choices=["quality", "speed", "screen", "all"], default="all")
     parser.add_argument("--renderer", type=Path)
     parser.add_argument("--renderer-python", type=Path)
@@ -2054,6 +2059,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = parser.parse_args(argv)
     if args.limit_episodes is not None and args.limit_episodes <= 0:
         parser.error("--limit-episodes must be positive")
+    if args.start_episode < 0:
+        parser.error("--start-episode must be nonnegative")
     try:
         requested_models = None
         if args.models:
@@ -2064,7 +2071,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 raise BenchmarkError("--models needs at least one model ID")
         inputs = load_inputs(args.root, model_ids=requested_models, fetch_unknown=args.run)
         if args.dry_run:
-            print(json.dumps(dry_run_report(inputs, track=args.track, limit=args.limit_episodes), indent=2, sort_keys=True))
+            print(json.dumps(dry_run_report(inputs, track=args.track, limit=args.limit_episodes, start=args.start_episode), indent=2, sort_keys=True))
             return 0
         if args.local and not args.run:
             raise BenchmarkError("--local is only valid with --run")
@@ -2089,7 +2096,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 key = key_text
             if not key:
                 raise BenchmarkError("--api-key-file is empty")
-        summary = run_benchmark(inputs, track=args.track, limit=args.limit_episodes, renderer_options=renderer, api_key=key)
+        summary = run_benchmark(inputs, track=args.track, limit=args.limit_episodes, start=args.start_episode, renderer_options=renderer, api_key=key)
         print(json.dumps(summary, indent=2, sort_keys=True))
         return 0
     except BenchmarkError as exc:

@@ -224,6 +224,13 @@ class RunTests(unittest.TestCase):
         self.assertEqual(len({str(ref.metadata["category"]) for ref in screen_refs}), 8)
         self.assertEqual(len(run.jobs(inputs, track="screen")), 40)
         self.assertEqual(len(run.jobs(inputs, track="all")), 400)
+        first_slice = run.jobs(inputs, track="screen", start=0, limit=5)
+        second_slice = run.jobs(inputs, track="screen", start=5, limit=5)
+        self.assertEqual({item[2].id for item in first_slice}, {screen_refs[0].id})
+        self.assertEqual({item[2].id for item in second_slice}, {screen_refs[1].id})
+        self.assertFalse({(track, model, ref.id, sample) for track, model, ref, sample in first_slice} &
+                         {(track, model, ref.id, sample) for track, model, ref, sample in second_slice})
+        self.assertEqual(run.dry_run_report(inputs, track="screen", start=5, limit=5)["start_episode"], 5)
         report = run.dry_run_report(inputs, track="screen")
         self.assertEqual(report["episodes_total"], 40)
         self.assertEqual(report["tracks"]["screen"]["max_turns"], 6)
