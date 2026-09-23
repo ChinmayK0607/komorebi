@@ -1615,7 +1615,9 @@ def run_benchmark(inputs: BenchmarkInputs, *, track: str = "all", limit: int | N
                         "turn": len(result.get("turns", [])), "status": status,
                     }
                     atomic_json(progress_path, progress)
-                    progress_bar.set_postfix(done=f"{progress['episodes_completed']}/{progress['episodes_requested']}", status=status)
+                    set_postfix = getattr(progress_bar, "set_postfix", None)
+                    if callable(set_postfix):
+                        set_postfix(done=f"{progress['episodes_completed']}/{progress['episodes_requested']}", status=status)
     finally:
         client_pool.close()
     progress["finished_at"] = time.time()

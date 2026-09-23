@@ -125,6 +125,50 @@ class RunTests(unittest.TestCase):
             self.assertEqual(report["episodes_total"], 2)
             self.assertEqual(report["requests_max_total"], 3)
 
+    def test_run_benchmark_survives_generator_progress_fallback(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            inputs = _fixture(root)
+            renderer = root / "renderer.py"
+            renderer_python = root / "python"
+            renderer.write_text("# renderer\n")
+            renderer_python.write_text("# python\n")
+            result = {
+                "status": "turn_limit", "job_id": "job", "settings": {"track": "quality"},
+                "model": "test/model", "reference_id": "r1", "turns": [],
+                "total_tokens": 0, "total_cost": 0, "cost_missing_turns": 0,
+                "cost_complete": True,
+            }
+            class FakeClient:
+                timeout = 0
+                max_retries = 0
+
+            with patch.object(run, "GatewayClientPool") as pool_class:
+                with patch.object(run, "EpisodeRunner") as runner_class:
+                    pool_class.return_value.get.return_value = FakeClient()
+                    runner_class.return_value.run.return_value = result
+                    with patch.object(run, "tqdm", side_effect=lambda iterable, **_: iter(iterable)):
+                        summary = run.run_benchmark(
+                            inputs, track="quality", limit=1,
+                            renderer_options={
+                                "renderer": renderer, "renderer_python": renderer_python,
+                                "browser_path": None, "run_as_user": None, "local": True,
+                            },
+                            api_key="test-key",
+                        )
+            self.assertEqual(summary["status_counts"], {"turn_limit": 1})
+            self.assertEqual(json.loads((root / "progress.json").read_text())["episodes_completed"], 1)
+
+    def test_node_setup_checks_and_installs_pinned_tqdm(self):
+        setup = (Path(__file__).resolve().parent / "setup_benchmark_node.sh").read_text()
+        self.assertIn('m.version("tqdm") == "4.67.1"', setup)
+        self.assertIn('"tqdm==$TQDM_VERSION"', setup)
+        syntax = __import__("subprocess").run(
+            ["bash", "-n", str(Path(__file__).resolve().parent / "setup_benchmark_node.sh")],
+            capture_output=True, text=True, check=False,
+        )
+        self.assertEqual(syntax.returncode, 0, syntax.stderr)
+
     def test_resume_reuses_completed_response_after_renderer_failure(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)

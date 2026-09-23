@@ -192,6 +192,7 @@ def build_package_plan(
     files = [
         _package_file(runner_path, RUNNER_NAME),
         _package_file(root / "gateway_transport.ts", "gateway_transport.ts"),
+        _package_file(root / "gateway_prompt.ts", "gateway_prompt.ts"),
         _package_file(root / "package.json", "package.json"),
         _package_file(root / "pnpm-lock.yaml", "pnpm-lock.yaml"),
         _package_file(root / "pnpm-workspace.yaml", "pnpm-workspace.yaml"),

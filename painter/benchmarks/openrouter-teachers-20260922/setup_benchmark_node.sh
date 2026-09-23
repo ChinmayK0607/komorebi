@@ -66,6 +66,7 @@ ASSETS="$CODE_ROOT/vendor/integrations/watercolour/assets"
 BENCHMARK="$CODE_ROOT/benchmarks/openrouter-teachers-20260922"
 PY="$ROOT/renderer-env/bin/python"
 BROWSERS="$ROOT/browsers"
+TQDM_VERSION="4.67.1"
 if [[ "$(pnpm --version 2>/dev/null || true)" != "10.15.1" ]]; then
   npm install --global pnpm@10.15.1
 fi
@@ -109,9 +110,9 @@ with tarfile.open(archive_path, "r:gz") as archive:
 PY
 fi
 [[ $(find "$BENCHMARK/references" -maxdepth 1 -type f -name '*.jpg' | wc -l) -eq 40 ]]
-if [[ ! -x "$PY" ]] || ! "$PY" -c 'import importlib.metadata as m; assert m.version("playwright") == "1.58.0" and m.version("Pillow") == "12.3.0"' >/dev/null 2>&1; then
+if [[ ! -x "$PY" ]] || ! "$PY" -c 'import importlib.metadata as m; assert m.version("playwright") == "1.58.0" and m.version("Pillow") == "12.3.0" and m.version("tqdm") == "4.67.1"' >/dev/null 2>&1; then
   python3 -m venv "$ROOT/renderer-env"
-  "$PY" -m pip install --disable-pip-version-check --no-input playwright==1.58.0 pillow==12.3.0 >"$ROOT/logs/renderer-install.log" 2>&1
+  "$PY" -m pip install --disable-pip-version-check --no-input playwright==1.58.0 pillow==12.3.0 "tqdm==$TQDM_VERSION" >"$ROOT/logs/renderer-install.log" 2>&1
 fi
 browser_ok=false
 if [[ -d "$BROWSERS" ]] && "$PY" - "$BROWSERS" <<'PY'

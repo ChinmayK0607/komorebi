@@ -1,5 +1,6 @@
 import { generateText } from "ai";
 import * as readline from "node:readline";
+import { toSdkPrompt } from "./gateway_prompt.js";
 
 /**
  * Long lived JSONL transport for the Python benchmark runner.
@@ -22,53 +23,6 @@ function redact(value: unknown): string {
   return text.replaceAll(apiKey!, "[REDACTED]").slice(-MAX_ERROR_CHARS);
 }
 
-function imagePart(part: Record<string, unknown>): Record<string, unknown> {
-  const imageUrl = part.image_url;
-  if (!imageUrl || typeof imageUrl !== "object") {
-    throw new Error("image_url message part is malformed");
-  }
-  const url = (imageUrl as Record<string, unknown>).url;
-  if (typeof url !== "string" || !url.startsWith("data:")) {
-    throw new Error("image_url must contain a data URI");
-  }
-  return { type: "image", image: url };
-}
-
-function toSdkMessages(messages: unknown): Array<Record<string, unknown>> {
-  if (!Array.isArray(messages)) {
-    throw new Error("messages must be an array");
-  }
-  return messages.map((message) => {
-    if (!message || typeof message !== "object") {
-      throw new Error("message must be an object");
-    }
-    const input = message as Record<string, unknown>;
-    const role = input.role;
-    if (role !== "system" && role !== "user" && role !== "assistant") {
-      throw new Error("message role is unsupported");
-    }
-    const content = input.content;
-    if (typeof content === "string") {
-      return { role, content };
-    }
-    if (!Array.isArray(content)) {
-      throw new Error("message content must be text or parts");
-    }
-    const parts = content.map((part) => {
-      if (typeof part === "string") return { type: "text", text: part };
-      if (!part || typeof part !== "object") throw new Error("message part is malformed");
-      const value = part as Record<string, unknown>;
-      if (value.type === "text") {
-        if (typeof value.text !== "string") throw new Error("text part is malformed");
-        return { type: "text", text: value.text };
-      }
-      if (value.type === "image_url") return imagePart(value);
-      throw new Error(`unsupported message part type: ${String(value.type)}`);
-    });
-    return { role, content: parts };
-  });
-}
-
 function statusOf(error: unknown): number | undefined {
   if (!error || typeof error !== "object") return undefined;
   const value = error as Record<string, unknown>;
@@ -86,11 +40,15 @@ async function handle(request: Record<string, unknown>): Promise<Record<string, 
     const value = payload as Record<string, unknown>;
     if (typeof value.model !== "string" || !value.model) throw new Error("model must be a non-empty string");
 
+    const prompt = toSdkPrompt(value.messages);
     const options: Record<string, unknown> = {
       model: value.model,
-      messages: toSdkMessages(value.messages),
+      messages: prompt.messages,
       temperature: value.temperature,
     };
+    // AI SDK rejects system roles in messages. Its `instructions` option is
+    // mapped to the provider's instructions field while preserving the conversation.
+    if (prompt.instructions !== undefined) options.instructions = prompt.instructions;
     // AI SDK uses maxOutputTokens; omitting it preserves the provider's native
     // completion ceiling for the quality track.
     if (typeof value.max_tokens === "number" && value.max_tokens > 0) {
