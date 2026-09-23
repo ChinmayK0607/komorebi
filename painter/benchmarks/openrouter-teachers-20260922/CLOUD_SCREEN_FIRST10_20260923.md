@@ -42,4 +42,37 @@ and comparison below describe the launch decision, not observed results.
   [`runs/cloud-screen-first10-20260923/`](https://huggingface.co/datasets/CK0607/komorebi-painter-teachers/tree/main/runs/cloud-screen-first10-20260923).
   Verify it before using outputs as training data.
 
-Results, visual labels, cost and next decision are pending task completion.
+## Observed result and decision
+
+All ten episodes finished in 59m12.8s wall time, with 30 provider requests and
+569,986 reported tokens. The statuses were two `turn_limit`, six
+`renderer_error`, and two `api_error`. Four of ten episode records retain a
+valid final canvas, including two that subsequently ended in a renderer error.
+The six renderer errors were **hard 180-second render timeouts**, not evidence
+that the corresponding paintings were visually poor. On reference `061`, all
+five models hit that deadline at some point. The two API errors yielded no
+model tokens. All 28 token-bearing turns lack provider-cost metadata, so the
+recorded $0.00 known cost is not total spend.
+
+| Model | Valid final canvas | Episodes | Reported tokens |
+| --- | ---: | ---: | ---: |
+| DeepSeek V4.1 Flash | 1 | 2 | 187,703 |
+| Step-5 Preview | 1 | 2 | 86,998 |
+| MiMo V2.6 Flash | 0 | 2 | 9,640 |
+| MiMo V2.6 Pro | 1 | 2 | 144,210 |
+| GLM 5.3 Flash | 1 | 2 | 141,435 |
+
+The LFS exit upload failed with HTTP 501. A follow-up reused the **existing**
+9,480,549-byte archive without any paid model calls and published ten regular
+Git Base64 parts plus a [public receipt](https://huggingface.co/datasets/CK0607/komorebi-painter-teachers/blob/main/runs/cloud-screen-first10-20260923/receipt.json).
+I independently fetched the parts anonymously at immutable HF dataset commit
+`1afad82156cc8f8c4238592db7ee08424f911072`; the reassembled SHA-256
+matched the preserved archive and receipt:
+`19f3f704abff83b6b143c8765cf99933349bb8287284493b19c1f884e84e9a86`.
+
+**Decision:** Do not rank teachers from these two references or count renderer
+timeouts as aesthetic losses. The user-authorized 40-reference quality and
+speed benchmark is running in independent cloud shards. Evaluate visual
+quality on its valid canvases and treat the timed-out programs as censored;
+where useful, rerender saved programs with a longer deadline before spending
+on new model calls. No blind visual labels have been assigned yet.

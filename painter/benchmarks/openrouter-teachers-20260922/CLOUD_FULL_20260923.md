@@ -73,6 +73,41 @@ and hash-verified.
 | speed | 09 | 180 | 20 | `full-speed-09-20260923` | [task](https://chatgpt.com/codex/cloud/tasks/task_e_6ab3e257e65c832bb037b94bffadeeae) |
 
 Launch source commit: `10f047ac91204bf1260e9325d4003f9a7d4e57a3`.
-All 20 tasks were submitted on 2026-09-23 UTC. Submission confirms task creation;
-it does not establish that paid episodes have started or completed. Results,
-cost, receipt verification, and next decision remain pending.
+All 20 tasks were submitted on 2026-09-23 UTC. Each quality and speed track
+ran separately; results below distinguish verified completion from submission.
+
+## Speed track: complete, visual ranking pending
+
+All ten speed shards completed and published public
+[HF run directories](https://huggingface.co/datasets/CK0607/komorebi-painter-teachers/tree/main/runs)
+named `full-speed-00-20260923` through `full-speed-09-20260923`.
+Each has a `receipt.json` and Base64 text-part archive. I anonymously fetched
+and reassembled **all ten** at their receipts' immutable dataset revisions and
+independently matched each archive byte count and SHA-256. The archives contain
+200 distinct model/reference episodes, 579 response turns and 5,703,928
+reported tokens. There are 579 provider requests in the summaries. Cost
+metadata is missing for 574 turns; known cost of $0.00 is not total spend.
+
+| Model | Valid final canvas / 40 | Turn limit | Invalid | Render timeout | Deadline censored |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| GLM 5.3 Flash | 31 | 22 | 6 | 11 | 1 |
+| DeepSeek V4.1 Flash | 21 | 19 | 10 | 11 | 0 |
+| MiMo V2.6 Pro | 21 | 15 | 17 | 8 | 0 |
+| MiMo V2.6 Flash | 14 | 13 | 19 | 5 | 3 |
+| Step-5 Preview | 9 | 6 | 30 | 3 | 1 |
+| **Total** | **96 / 200** | **75** | **82** | **38** | **5** |
+
+Every `renderer_error` in the speed track is a hard 180-second render timeout.
+Valid-final counts include retained earlier canvases in 13 `invalid` and eight
+`renderer_error` episodes. One unblinded look at reference `109` found
+recognizable river, bank and grass composition in three valid paintings, but
+small details and geometry remain rough. This is not a pairwise teacher ranking.
+The next decision is to visually compare a diverse, category-balanced sample,
+classify invalid programs, and distinguish render-time censoring from model
+quality before accepting teacher demonstrations.
+
+## Quality track: running
+
+The ten quality shards were still running at the speed-track readout. No
+quality archive had been publicly verified yet. Its outcomes, cost and visual
+comparison against speed remain pending.
