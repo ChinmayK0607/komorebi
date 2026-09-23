@@ -79,12 +79,16 @@ class TestPrepareTeacherCampaign(unittest.TestCase):
         self.assertTrue((output / "file-hashes.sha256").is_file())
         self.assertFalse(os_access_writable(output / "campaign-manifest.json"))
 
-    def test_rejects_benchmark_holdout_overlap_by_hash(self):
+    def test_excludes_and_records_benchmark_holdout_overlap_by_hash(self):
         root, training, hashes = self._fixture()
         holdout = root / "holdout.json"
         holdout.write_text(json.dumps({"references": [{"id": "eval", "image": "images/train-000.jpg", "sha256": hashes["train-000"]}]}), encoding="utf-8")
-        with self.assertRaisesRegex(module.CampaignError, "overlaps the benchmark evaluation holdout"):
-            module.prepare_campaign(output=root / "campaign", training_manifest=training, reference_root=root, model="zai/glm-5.3-flash", benchmark_refs=holdout, counts={"short": 2, "medium": 2, "long": 2})
+        summary = module.prepare_campaign(output=root / "campaign", training_manifest=training, reference_root=root, model="zai/glm-5.3-flash", benchmark_refs=holdout, counts={"short": 1, "medium": 1, "long": 1})
+        self.assertEqual(summary["excluded_benchmark_holdout_overlap_count"], 1)
+        self.assertEqual(summary["excluded_benchmark_holdout_overlap"][0]["id"], "train-000")
+        for stage in ("short-02", "medium-05", "long-12"):
+            refs = json.loads((root / "campaign" / stage / "refs.json").read_text(encoding="utf-8"))["references"]
+            self.assertNotIn("train-000", {entry["id"] for entry in refs})
 
     def test_rejects_benchmark_refs_as_training_manifest(self):
         root, _, _ = self._fixture()

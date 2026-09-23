@@ -3,7 +3,7 @@
 
 The benchmark's 40 references are an evaluation holdout.  This command therefore
 requires a separate training-reference manifest, verifies every referenced image,
-rejects SHA-256 overlap with ``refs.json``, and writes three independent quality
+excludes and records SHA-256 overlap with ``refs.json``, and writes three independent quality
 campaign roots.  The roots are ready to copy to a Linux node; this command never
 reads credentials, invokes the provider, launches a node, or runs the benchmark.
 
@@ -183,7 +183,7 @@ def _split(entry: Mapping[str, Any]) -> str | None:
     return None
 
 
-def load_training_entries(path: Path, *, reference_root: Path | None, holdout_hashes: set[str], split: str) -> tuple[list[dict[str, Any]], str]:
+def load_training_entries(path: Path, *, reference_root: Path | None, holdout_hashes: set[str], split: str) -> tuple[list[dict[str, Any]], str, list[dict[str, Any]]]:
     path = path.resolve()
     if path == DEFAULT_BENCHMARK_REFS.resolve():
         raise CampaignError("the benchmark refs.json is an evaluation holdout; pass a separate training manifest")
@@ -193,6 +193,7 @@ def load_training_entries(path: Path, *, reference_root: Path | None, holdout_ha
     seen_ids: set[str] = set()
     seen_hashes: set[str] = set()
     result: list[dict[str, Any]] = []
+    excluded_holdout: list[dict[str, Any]] = []
     for index, source in enumerate(entries, 1):
         ident = _entry_id(source, index)
         if ident in seen_ids:
@@ -215,9 +216,8 @@ def load_training_entries(path: Path, *, reference_root: Path | None, holdout_ha
         if declared is not None and declared != actual_sha:
             raise CampaignError(f"training reference hash mismatch for {ident}: declared {declared}, found {actual_sha}")
         if actual_sha in holdout_hashes:
-            raise CampaignError(
-                f"training reference {ident} overlaps the benchmark evaluation holdout by SHA-256 ({actual_sha})"
-            )
+            excluded_holdout.append({"id": ident, "sha256": actual_sha, "source_split": source_split, "reason": "benchmark_holdout_sha256_overlap"})
+            continue
         if actual_sha in seen_hashes:
             raise CampaignError(f"duplicate training image SHA-256 after filtering: {ident} ({actual_sha})")
         seen_hashes.add(actual_sha)
@@ -227,7 +227,7 @@ def load_training_entries(path: Path, *, reference_root: Path | None, holdout_ha
         result.append(row)
     if not result:
         raise CampaignError(f"no training references remain after split={split!r} filtering")
-    return result, source_sha
+    return result, source_sha, excluded_holdout
 
 
 def _diverse_order(rows: Iterable[dict[str, Any]], *, reverse: bool = False) -> list[dict[str, Any]]:
@@ -332,7 +332,7 @@ def _write_stage(stage_root: Path, stage: str, max_turns: int, model: str, rows:
         "references": references,
         "count": len(references),
         "selection": {"stage": stage, "max_turns": max_turns, "split": split, "source_manifest_sha256": source_sha, "benchmark_holdout_refs_sha256": holdout_sha},
-        "training_admission": "external training manifest only; every image is hash checked and absent from benchmark refs.json",
+        "training_admission": "external training manifest only; every selected image is hash checked and absent from benchmark refs.json",
         "ordering_rule": "disjoint ascending complexity bands with round-robin source-kind/family strata; complexity is a heuristic and requires visual review",
     }
     write_json(stage_root / "refs.json", refs)
@@ -375,7 +375,7 @@ echo "bash $BENCHMARK_ROOT/run_benchmark_node.sh --root $CAMPAIGN_ROOT/long-12 -
 
 
 def _campaign_readme(campaign_slug: str, model: str) -> str:
-    return f"""# Selected-teacher campaign setup\n\nThis is a dry-run setup for `{model}` (`{campaign_slug}`). It contains three independent quality roots:\n\n- `short-02/`: maximum 2 turns\n- `medium-05/`: maximum 5 turns\n- `long-12/`: maximum 12 turns\n\nAll three stages use the model's native output allowance. The images came from a separate training manifest, were SHA-256 checked, and were rejected if they overlapped the benchmark evaluation holdout. Complexity ordering is a deterministic heuristic; visually review generated episodes before admission.\n\n`launch_commands.sh` only prints the exact node launch commands. It does not start a provider request, rent a node, or prepare a node. Copy this entire campaign directory to the node under `teacher-campaigns/{campaign_slug}/`, then run the printed commands explicitly, one stage at a time.\n\nIntegrity files:\n\n- `campaign-manifest.sha256` checks `campaign-manifest.json`.\n- `file-hashes.sha256` checks `file-hashes.json`; the latter records every setup file except the integrity files themselves.\n"""
+    return f"""# Selected-teacher campaign setup\n\nThis is a dry-run setup for `{model}` (`{campaign_slug}`). It contains three independent quality roots:\n\n- `short-02/`: maximum 2 turns\n- `medium-05/`: maximum 5 turns\n- `long-12/`: maximum 12 turns\n\nAll three stages use the model's native output allowance. The images came from a separate training manifest, were SHA-256 checked, and any overlap with the benchmark evaluation holdout was excluded and recorded in `campaign-manifest.json`. Complexity ordering is a deterministic heuristic; visually review generated episodes before admission.\n\n`launch_commands.sh` only prints the exact node launch commands. It does not start a provider request, rent a node, or prepare a node. Copy this entire campaign directory to the node under `teacher-campaigns/{campaign_slug}/`, then run the printed commands explicitly, one stage at a time.\n\nIntegrity files:\n\n- `campaign-manifest.sha256` checks `campaign-manifest.json`.\n- `file-hashes.sha256` checks `file-hashes.json`; the latter records every setup file except the integrity files themselves.\n"""
 
 
 def prepare_campaign(*, output: Path, training_manifest: Path, reference_root: Path | None, model: str, benchmark_refs: Path, counts: Mapping[str, int], split: str = "train") -> dict[str, Any]:
@@ -394,7 +394,7 @@ def prepare_campaign(*, output: Path, training_manifest: Path, reference_root: P
     if not holdout_hashes:
         raise CampaignError("benchmark holdout manifest has no SHA-256 hashes")
     holdout_sha = sha_file(benchmark_refs.resolve())
-    rows, source_sha = load_training_entries(training_manifest, reference_root=reference_root, holdout_hashes=holdout_hashes, split=split)
+    rows, source_sha, excluded_holdout = load_training_entries(training_manifest, reference_root=reference_root, holdout_hashes=holdout_hashes, split=split)
     selected = select_stage_rows(rows, counts)
     slug = f"{_safe_slug(model)}-{source_sha[:12]}"
     parent = output.parent
@@ -409,7 +409,7 @@ def prepare_campaign(*, output: Path, training_manifest: Path, reference_root: P
         launch_path.write_text(launch, encoding="utf-8")
         launch_path.chmod(launch_path.stat().st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
         (temporary / "README.md").write_text(_campaign_readme(slug, model), encoding="utf-8")
-        summary = {"schema": SCHEMA, "campaign_id": slug, "selected_teacher_model": model, "training_manifest": str(training_manifest.resolve()), "training_manifest_sha256": source_sha, "benchmark_holdout_manifest": str(benchmark_refs.resolve()), "benchmark_holdout_manifest_sha256": holdout_sha, "split": split, "counts": dict(counts), "stages": {stage: {"max_turns": turns, "max_tokens": "native", "references": len(selected[stage.split("-")[0]])} for stage, turns in STAGES}, "launch_script": "launch_commands.sh", "no_provider_calls": True, "no_benchmark_results_reused": True}
+        summary = {"schema": SCHEMA, "campaign_id": slug, "selected_teacher_model": model, "training_manifest": str(training_manifest.resolve()), "training_manifest_sha256": source_sha, "benchmark_holdout_manifest": str(benchmark_refs.resolve()), "benchmark_holdout_manifest_sha256": holdout_sha, "split": split, "counts": dict(counts), "excluded_benchmark_holdout_overlap": excluded_holdout, "excluded_benchmark_holdout_overlap_count": len(excluded_holdout), "stages": {stage: {"max_turns": turns, "max_tokens": "native", "references": len(selected[stage.split("-")[0]])} for stage, turns in STAGES}, "launch_script": "launch_commands.sh", "no_provider_calls": True, "no_benchmark_results_reused": True}
         write_json(temporary / "campaign-manifest.json", summary)
         hashes = _file_hashes(temporary)
         write_json(temporary / "file-hashes.json", hashes)
