@@ -12,6 +12,18 @@ Everything is stored on this Mac at:
 
 There are 40 bundled, visually checked reference images and five default models. Quality and speed cover all 40 references (**400 episodes**); the separate `screen` track uses one deterministic reference from each of the eight categories (**40 episodes**). The default node launch retains the quality+speed matrix. An opt-in macOS launch uses the same pinned Watercolour renderer locally, with the actual canvas returned to the teacher for inspection, revision or finishing. Inspect the selected photos in [reference-gallery.html](reference-gallery.html).
 
+To compare already-paid cloud outputs without another model call, first fetch the public shard archives into separate quality and speed directories using `cloud/fetch_results.py`. Then build the offline selection gallery:
+
+```bash
+python3 build_public_selection_gallery.py \
+  --quality-dir /path/to/verified-quality-archives \
+  --speed-dir /path/to/verified-speed-archives \
+  --replay-dir /path/to/verified-replay-archives \
+  --output results-ai-gateway-20260923/selection-gallery
+```
+
+The builder checks every local archive against its public Hugging Face receipt and verifies the reference hashes. Omit `--replay-dir` until cloud renderer replays finish. The gallery marks complete finals, partial retained canvases, missing results, and offline replay canvases separately. Rendering itself stays on Linux; this script only assembles and displays existing image bytes.
+
 ## Launch after adding credits
 
 From Terminal:

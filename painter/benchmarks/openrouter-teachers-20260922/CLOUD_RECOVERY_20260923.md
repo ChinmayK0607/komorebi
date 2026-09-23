@@ -194,3 +194,27 @@ each concurrent program. A focused overlap test and all 19 Python tests pass.
 No claim of measured wall-time speedup is made until a Linux replay compares
 the same programs at one versus two workers. The already-running tasks remain
 on their original source commit and retain their serial timing baseline.
+
+## User selection gallery
+
+The user requested a visual choice of teacher before further paid generation.
+A just-submitted GLM-only continuation was [cancelled during cloud setup](https://chatgpt.com/codex/cloud/tasks/task_e_6ab418aeec20832b81130abaa8cc0a8f),
+before its benchmark command began. No new paid teacher generation was
+recorded for that task. The provisional GLM preference is not a final winner.
+
+`build_public_selection_gallery.py` assembles an offline, interactive view of
+reference images beside five candidate models. It independently checks every
+local archive's SHA-256 and size against its public HF receipt and checks each
+reference image hash. Its first local build contains **360 distinct original
+episodes from 18 verified archives** (160 quality, 200 speed), 40 references,
+and 205 image assets. Quality has 30 terminal valid canvases and 69 episodes
+with any retained valid canvas; speed has 75 terminal valid canvases and 96
+with any retained valid canvas. Terminal, partial, missing, and future offline
+replay paintings are displayed with distinct badges. These are coverage
+figures, not pairwise quality scores. The generated HTML, manifest, and image
+assets are ignored by Git; the repeatable builder and instructions are tracked.
+The local gallery path is
+`painter/benchmarks/openrouter-teachers-20260922/results-ai-gateway-20260923/selection-gallery/index.html`.
+The page's inline JavaScript passed a syntax check, and all referenced local
+assets exist. Rebuild with `--replay-dir` as the cloud replays publish verified
+archives; the user will make the teacher choice from the paintings.
