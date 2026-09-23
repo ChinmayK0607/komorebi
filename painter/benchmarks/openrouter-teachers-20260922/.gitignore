@@ -6,6 +6,7 @@ private/
 *.log
 __pycache__/
 episodes/
+replays/
 collected/
 artifacts/
 benchmark-output/

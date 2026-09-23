@@ -18,7 +18,7 @@ from urllib.request import urlopen
 from huggingface_hub import CommitOperationAdd, HfApi
 
 DATASET = "CK0607/komorebi-painter-teachers"
-TOP_LEVEL = ("progress.json", "events.jsonl", "run-summary.json", "gallery.html")
+TOP_LEVEL = ("progress.json", "events.jsonl", "run-summary.json", "gallery.html", "restored-source.json")
 PART_RAW_BYTES = 384 * 1024
 PARTS_PER_COMMIT = 8
 

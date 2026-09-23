@@ -227,8 +227,8 @@ def main():
                 'error_code': 'render_timeout' if timed_out else 'renderer_error',
                 'error': f'{type(error).__name__}: {error}'}))
         return
-    if not 1 <= args.workers <= 4 or not 1 <= args.timeout <= 180:
-        parser.error('Use 1..4 workers and a 1..180 second deadline')
+    if not 1 <= args.workers <= 4 or not 1 <= args.timeout <= 900:
+        parser.error('Use 1..4 workers and a 1..900 second deadline')
     if bool(args.output) == bool(args.output_dir) or (args.output and len(args.sources) != 1):
         parser.error('Use --output for one source or --output-dir for a batch')
     outputs = [args.output or args.output_dir / (p.stem + '.png') for p in args.sources]

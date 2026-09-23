@@ -1159,8 +1159,8 @@ def render_program(
     for path in (source, renderer, renderer_python):
         if not path.is_file():
             raise BenchmarkError(f"renderer input is missing: {path}")
-    if not 1 <= int(timeout) <= 180:
-        raise BenchmarkError("renderer timeout must be between 1 and 180 seconds")
+    if not 1 <= int(timeout) <= 900:
+        raise BenchmarkError("renderer timeout must be between 1 and 900 seconds")
     source = source.resolve()
     output = output.resolve()
     output.parent.mkdir(parents=True, exist_ok=True)
@@ -1272,6 +1272,7 @@ class EpisodeRunner:
         on_turn: Callable[[Mapping[str, Any], int], None] | None = None,
         on_progress: Callable[[Mapping[str, Any]], None] | None = None,
         progress_heartbeat_seconds: float = PROGRESS_HEARTBEAT_SECONDS,
+        renderer_timeout_override: int | None = None,
     ):
         self.inputs = inputs
         self.model = model
@@ -1287,6 +1288,7 @@ class EpisodeRunner:
         self.on_turn = on_turn
         self.on_progress = on_progress
         self.progress_heartbeat_seconds = max(0.1, float(progress_heartbeat_seconds))
+        self.renderer_timeout_override = renderer_timeout_override
         self.model_info = model_limits(inputs, model, settings)
         self.reasoning = resolve_reasoning(inputs, model, str(settings["track"]))
 
@@ -1601,12 +1603,15 @@ class EpisodeRunner:
                                 if remaining <= 0:
                                     render = {"valid": False, "service_failure": False, "deadline_censored": True, "error_code": "episode_deadline"}
                             if remaining is None or remaining > 0:
+                                render_timeout = int(self.renderer_timeout_override or self.inputs.config.get("renderer_timeout", 180))
+                                if remaining is not None:
+                                    render_timeout = min(render_timeout, int(remaining))
                                 render = self._with_progress_heartbeat(
                                     turn=turn,
                                     phase="rendering",
                                     operation=lambda: self.render_fn(
                                         root=self.inputs.root, source=self.inputs.root / turn_record["program"],
-                                        output=canvas_path, timeout=max(1, min(int(self.inputs.config.get("renderer_timeout", 180)), int(remaining) if remaining is not None else int(self.inputs.config.get("renderer_timeout", 180)))),
+                                        output=canvas_path, timeout=max(1, render_timeout),
                                         **self.renderer_options,
                                     ),
                                 )
@@ -1818,7 +1823,9 @@ def preflight_renderer(inputs: BenchmarkInputs, overrides: Mapping[str, Any]) ->
     }
 
 
-def run_benchmark(inputs: BenchmarkInputs, *, track: str = "all", limit: int | None = None, start: int = 0, renderer_options: Mapping[str, Any], api_key: str | Mapping[str, str] | None = None) -> dict[str, Any]:
+def run_benchmark(inputs: BenchmarkInputs, *, track: str = "all", limit: int | None = None, start: int = 0, renderer_options: Mapping[str, Any], api_key: str | Mapping[str, str] | None = None, renderer_timeout_override: int | None = None) -> dict[str, Any]:
+    if renderer_timeout_override is not None and not 1 <= renderer_timeout_override <= 900:
+        raise BenchmarkError("renderer timeout override must be between 1 and 900 seconds")
     lock_handle = inputs.root.joinpath(".benchmark.lock").open("a+")
     try:
         fcntl.flock(lock_handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
@@ -1918,13 +1925,24 @@ def run_benchmark(inputs: BenchmarkInputs, *, track: str = "all", limit: int | N
             "browser_path": str(renderer_options.get("browser_path")) if renderer_options.get("browser_path") else None,
             "run_as_user": renderer_options.get("run_as_user"),
         }
+        directory = root / "episodes" / job_id(model, reference.id, sample, track_name)
+        old_episode = _load_json(directory / "episode.json")
+        if old_episode is not None and isinstance(old_episode.get("settings"), dict):
+            prior_settings = old_episode["settings"]
+            # Rendering code is not part of the model request. Keep the old
+            # binding so a completed response can be reused when only the
+            # renderer is upgraded for a censored episode. The new renderer's
+            # hash is retained in each new canvas receipt and run summary.
+            old_core = {k: v for k, v in prior_settings.items() if k != "renderer_identity"}
+            new_core = {k: v for k, v in settings.items() if k != "renderer_identity"}
+            if old_core == new_core:
+                settings = prior_settings
         model_key = (configured_keys or {}).get(model) or (configured_keys or {}).get("default") or default_key
         if not model_key:
             raise APIError(f"no API key configured for model {model}")
         client = client_pool.get(model_key)
         client.timeout = float(settings["api_timeout_seconds"])
         client.max_retries = int(settings["max_retries"])
-        directory = root / "episodes" / job_id(model, reference.id, sample, track_name)
         episode_job_id = job_id(model, reference.id, sample, track_name)
         episode_number = selected.index(item) + 1
         on_progress({
@@ -1943,6 +1961,7 @@ def run_benchmark(inputs: BenchmarkInputs, *, track: str = "all", limit: int | N
         runner = EpisodeRunner(
             inputs, model, reference, sample, episode_dir=directory, client=client,
             render_fn=render_program, render_lock=render_lock, renderer_options=renderer_options, settings=settings,
+            renderer_timeout_override=renderer_timeout_override,
             on_turn=on_turn, on_progress=lambda event: on_progress({**event, "episode_number": episode_number, "episodes_total": len(selected)}),
         )
         try:
@@ -2033,6 +2052,9 @@ def run_benchmark(inputs: BenchmarkInputs, *, track: str = "all", limit: int | N
         "resumed_response_turns": sum(
             sum(1 for turn in row.get("turns", []) if turn.get("api_reused")) for row in results
         ),
+        "renderer_timeout_override_seconds": renderer_timeout_override,
+        "renderer_sha256": sha_file(Path(renderer_options["renderer"])),
+        "recovered_from_run_id": os.environ.get("PAINTER_SOURCE_RUN_ID"),
         "completed_at": time.time(),
     }
     atomic_json(root / "run-summary.json", summary)
@@ -2054,6 +2076,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--browser-path", type=Path)
     parser.add_argument("--run-as-user", default=None)
     parser.add_argument("--renderer-backend", choices=["metal", "swiftshader"], help="local Chromium graphics backend")
+    parser.add_argument("--renderer-timeout-override", type=int, help="explicit recovery render deadline, recorded in summary")
     parser.add_argument("--api-key-file", type=Path, help="read a key from a protected file without recording it")
     parser.add_argument("--models", action="append", help="override models for this invocation; repeat or comma-separate IDs")
     args = parser.parse_args(argv)
@@ -2096,7 +2119,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 key = key_text
             if not key:
                 raise BenchmarkError("--api-key-file is empty")
-        summary = run_benchmark(inputs, track=args.track, limit=args.limit_episodes, start=args.start_episode, renderer_options=renderer, api_key=key)
+        summary = run_benchmark(inputs, track=args.track, limit=args.limit_episodes, start=args.start_episode, renderer_options=renderer, api_key=key, renderer_timeout_override=args.renderer_timeout_override)
         print(json.dumps(summary, indent=2, sort_keys=True))
         return 0
     except BenchmarkError as exc:

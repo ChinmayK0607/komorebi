@@ -341,6 +341,42 @@ class RunTests(unittest.TestCase):
             self.assertEqual(second["status"], "turn_limit")
             self.assertTrue(second["final_valid_canvas"])
 
+    def test_recovery_preserves_old_request_binding_with_new_renderer(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            inputs = _fixture(root)
+            renderer = root / "new-renderer.py"
+            renderer.write_text("# renderer upgrade\n")
+            python = root / "python"
+            python.write_text("# runtime\n")
+            old_settings = run.settings_from_inputs(inputs, "quality")
+            old_settings["renderer_identity"] = {"renderer_sha256": "old-renderer"}
+            episode = root / "episodes" / run.job_id("test/model", "r1", track="quality")
+            episode.mkdir(parents=True)
+            (episode / "episode.json").write_text(json.dumps(run.make_episode_record(
+                inputs, "test/model", inputs.references[0], 1, old_settings,
+            )))
+            result = {
+                "status": "renderer_error", "job_id": episode.name,
+                "settings": old_settings, "model": "test/model", "reference_id": "r1",
+                "turns": [], "total_tokens": 0, "total_cost": 0,
+                "cost_missing_turns": 0, "cost_complete": True,
+            }
+            with patch.object(run, "GatewayClientPool") as pool_class, \
+                 patch.object(run, "EpisodeRunner") as runner_class, \
+                 patch.object(run, "tqdm", side_effect=lambda iterable, **_: iter(iterable)):
+                pool_class.return_value.get.return_value = type("Client", (), {"timeout": 1, "max_retries": 1})()
+                runner_class.return_value.run.return_value = result
+                summary = run.run_benchmark(
+                    inputs, track="quality", limit=1, api_key="test-key",
+                    renderer_options={"renderer": renderer, "renderer_python": python,
+                                      "browser_path": None, "run_as_user": None, "local": True},
+                    renderer_timeout_override=600,
+                )
+                self.assertEqual(runner_class.call_args.kwargs["settings"], old_settings)
+                self.assertEqual(runner_class.call_args.kwargs["renderer_timeout_override"], 600)
+                self.assertEqual(summary["renderer_timeout_override_seconds"], 600)
+
     def test_second_turn_reconstructs_full_history_and_current_image(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)

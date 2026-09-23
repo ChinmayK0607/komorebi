@@ -1,4 +1,4 @@
-import { generateText } from "ai";
+import { streamText } from "ai";
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import * as readline from "node:readline";
 import { toSdkPrompt } from "./gateway_prompt.js";
@@ -67,15 +67,24 @@ async function handle(request: Record<string, unknown>): Promise<Record<string, 
     // Reasoning controls vary by Gateway model.  The benchmark records the
     // resolved catalog value, but deliberately leaves provider-specific
     // options to the model default so arbitrary model IDs remain runnable.
-    const result = await generateText(options as never);
-    const usage = (result as unknown as Record<string, unknown>).usage;
+    // A non-streaming response can spend several minutes generating before
+    // sending headers; the Gateway/proxy then closes it despite useful work.
+    // Stream internally while keeping the JSONL protocol one response/turn.
+    // Python owns bounded retries so the SDK must not silently repeat calls.
+    options.maxRetries = 0;
+    const result = streamText(options as never);
+    let text = "";
+    for await (const part of result.fullStream) {
+      if (part.type === "text-delta") text += part.text;
+      if (part.type === "error") throw part.error;
+    }
+    const usage = await result.usage;
     const usageObject = usage && typeof usage === "object" ? usage as Record<string, unknown> : {};
     const inputTokens = usageObject.inputTokens;
     const outputTokens = usageObject.outputTokens;
     const totalTokens = usageObject.totalTokens;
-    const response = (result as unknown as Record<string, unknown>).response;
+    const response = await result.response;
     const responseObject = response && typeof response === "object" ? response as Record<string, unknown> : {};
-    const providerMetadata = (result as unknown as Record<string, unknown>).providerMetadata;
     return {
       id,
       ok: true,
@@ -83,8 +92,8 @@ async function handle(request: Record<string, unknown>): Promise<Record<string, 
         id: responseObject.id,
         model: responseObject.modelId ?? value.model,
         choices: [{
-          message: { content: result.text },
-          finish_reason: result.finishReason,
+          message: { content: text },
+          finish_reason: await result.finishReason,
         }],
         usage: {
           prompt_tokens: inputTokens,
@@ -95,7 +104,7 @@ async function handle(request: Record<string, unknown>): Promise<Record<string, 
           cost: null,
         },
         provider: responseObject.provider,
-        provider_metadata: providerMetadata,
+        provider_metadata: await result.providerMetadata,
       },
     };
   } catch (error) {
@@ -106,7 +115,8 @@ async function handle(request: Record<string, unknown>): Promise<Record<string, 
       error: {
         message: redact(error),
         status,
-        retryable: status === 429 || (status !== undefined && status >= 500),
+        retryable: status === 429 || (status !== undefined && status >= 500) ||
+          (status === undefined && /timeout|connect|closed|network|fetch failed/i.test(redact(error))),
       },
     };
   }
