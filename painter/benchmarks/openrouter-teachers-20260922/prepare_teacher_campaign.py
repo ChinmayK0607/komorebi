@@ -364,9 +364,11 @@ def _launch_script(campaign_slug: str, model: str) -> str:
     quoted_model = _shell_quote(model)
     return f"""#!/usr/bin/env bash
 set -Eeuo pipefail
-# Dry-run preparation wrote this file; invoking it is the explicit paid launch.
+# Dry-run preparation wrote this file; invoking it only prints commands and makes no paid calls.
 BENCHMARK_ROOT="${{BENCHMARK_ROOT:-/root/painter/repo/painter/benchmarks/openrouter-teachers-20260922}}"
-CAMPAIGN_ROOT="${{CAMPAIGN_ROOT:-$BENCHMARK_ROOT/teacher-campaigns/{campaign_slug}}}"
+# Resolve the physical campaign directory so arbitrary output basenames and
+# copies work.  CAMPAIGN_ROOT remains an explicit override for node layouts.
+CAMPAIGN_ROOT="${{CAMPAIGN_ROOT:-$(cd -- "$(dirname -- "${{BASH_SOURCE[0]}}")" && pwd -P)}}"
 echo 'Prepared commands (run one at a time; this script itself does not launch them):'
 echo "bash $BENCHMARK_ROOT/run_benchmark_node.sh --root $CAMPAIGN_ROOT/short-02 --models {quoted_model} --track quality"
 echo "bash $BENCHMARK_ROOT/run_benchmark_node.sh --root $CAMPAIGN_ROOT/medium-05 --models {quoted_model} --track quality"

@@ -5,6 +5,7 @@ import importlib.util
 import json
 from pathlib import Path
 import stat
+import subprocess
 import tempfile
 import unittest
 
@@ -64,6 +65,10 @@ class TestPrepareTeacherCampaign(unittest.TestCase):
         launch = (output / "launch_commands.sh").read_text(encoding="utf-8")
         self.assertEqual(launch.count("--track quality"), 3)
         self.assertIn("--models 'zai/glm-5.3-flash'", launch)
+        printed = subprocess.run(["bash", str(output / "launch_commands.sh")], capture_output=True, text=True, check=True).stdout
+        self.assertIn(str(output / "short-02"), printed)
+        self.assertIn(str(output / "medium-05"), printed)
+        self.assertIn(str(output / "long-12"), printed)
         stage_ids: list[set[str]] = []
         for stage, max_turns in (("short-02", 2), ("medium-05", 5), ("long-12", 12)):
             stage_root = output / stage
