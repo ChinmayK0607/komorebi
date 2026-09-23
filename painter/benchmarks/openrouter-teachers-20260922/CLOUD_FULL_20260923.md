@@ -51,25 +51,28 @@ and hash-verified.
 
 | Track | Shard | Zero-based start | Episodes | Run ID | Cloud task |
 | --- | ---: | ---: | ---: | --- | --- |
-| quality | 00 | 0 | 20 | `full-quality-00-20260923` | pending |
-| quality | 01 | 20 | 20 | `full-quality-01-20260923` | pending |
-| quality | 02 | 40 | 20 | `full-quality-02-20260923` | pending |
-| quality | 03 | 60 | 20 | `full-quality-03-20260923` | pending |
-| quality | 04 | 80 | 20 | `full-quality-04-20260923` | pending |
-| quality | 05 | 100 | 20 | `full-quality-05-20260923` | pending |
-| quality | 06 | 120 | 20 | `full-quality-06-20260923` | pending |
-| quality | 07 | 140 | 20 | `full-quality-07-20260923` | pending |
-| quality | 08 | 160 | 20 | `full-quality-08-20260923` | pending |
-| quality | 09 | 180 | 20 | `full-quality-09-20260923` | pending |
-| speed | 00 | 0 | 20 | `full-speed-00-20260923` | pending |
-| speed | 01 | 20 | 20 | `full-speed-01-20260923` | pending |
-| speed | 02 | 40 | 20 | `full-speed-02-20260923` | pending |
-| speed | 03 | 60 | 20 | `full-speed-03-20260923` | pending |
-| speed | 04 | 80 | 20 | `full-speed-04-20260923` | pending |
-| speed | 05 | 100 | 20 | `full-speed-05-20260923` | pending |
-| speed | 06 | 120 | 20 | `full-speed-06-20260923` | pending |
-| speed | 07 | 140 | 20 | `full-speed-07-20260923` | pending |
-| speed | 08 | 160 | 20 | `full-speed-08-20260923` | pending |
-| speed | 09 | 180 | 20 | `full-speed-09-20260923` | pending |
+| quality | 00 | 0 | 20 | `full-quality-00-20260923` | [task](https://chatgpt.com/codex/cloud/tasks/task_e_6ab3e1811f60832bbc129d6e66cb03c0) |
+| quality | 01 | 20 | 20 | `full-quality-01-20260923` | [task](https://chatgpt.com/codex/cloud/tasks/task_e_6ab3e198a4ec832b8f1d626c4f9583aa) |
+| quality | 02 | 40 | 20 | `full-quality-02-20260923` | [task](https://chatgpt.com/codex/cloud/tasks/task_e_6ab3e19d9b0c832b9d17b004857fa8b5) |
+| quality | 03 | 60 | 20 | `full-quality-03-20260923` | [task](https://chatgpt.com/codex/cloud/tasks/task_e_6ab3e1a27a64832b944b94772e7393d6) |
+| quality | 04 | 80 | 20 | `full-quality-04-20260923` | [task](https://chatgpt.com/codex/cloud/tasks/task_e_6ab3e1a78f84832bb5759daf2bfd979d) |
+| quality | 05 | 100 | 20 | `full-quality-05-20260923` | [task](https://chatgpt.com/codex/cloud/tasks/task_e_6ab3e1d0f2c4832ba89192303d1aeb45) |
+| quality | 06 | 120 | 20 | `full-quality-06-20260923` | [task](https://chatgpt.com/codex/cloud/tasks/task_e_6ab3e1d51114832bafd2868129063d8c) |
+| quality | 07 | 140 | 20 | `full-quality-07-20260923` | [task](https://chatgpt.com/codex/cloud/tasks/task_e_6ab3e1d9c14c832bb9b3b34780ee4ead) |
+| quality | 08 | 160 | 20 | `full-quality-08-20260923` | [task](https://chatgpt.com/codex/cloud/tasks/task_e_6ab3e1de9884832bbe3f1445b31296fe) |
+| quality | 09 | 180 | 20 | `full-quality-09-20260923` | [task](https://chatgpt.com/codex/cloud/tasks/task_e_6ab3e1e30270832ba016c4f0ddd1a46e) |
+| speed | 00 | 0 | 20 | `full-speed-00-20260923` | [task](https://chatgpt.com/codex/cloud/tasks/task_e_6ab3e1f1848c832bae58b9bce16ecaf8) |
+| speed | 01 | 20 | 20 | `full-speed-01-20260923` | [task](https://chatgpt.com/codex/cloud/tasks/task_e_6ab3e1f66670832b99a702e4b1212094) |
+| speed | 02 | 40 | 20 | `full-speed-02-20260923` | [task](https://chatgpt.com/codex/cloud/tasks/task_e_6ab3e1fb6068832b8eaaf892291efd38) |
+| speed | 03 | 60 | 20 | `full-speed-03-20260923` | [task](https://chatgpt.com/codex/cloud/tasks/task_e_6ab3e1ffd5a4832baaf23153998c96b9) |
+| speed | 04 | 80 | 20 | `full-speed-04-20260923` | [task](https://chatgpt.com/codex/cloud/tasks/task_e_6ab3e2049848832ba4cc62b5cd1ad783) |
+| speed | 05 | 100 | 20 | `full-speed-05-20260923` | [task](https://chatgpt.com/codex/cloud/tasks/task_e_6ab3e2145b40832ba730d3acff20d9bc) |
+| speed | 06 | 120 | 20 | `full-speed-06-20260923` | [task](https://chatgpt.com/codex/cloud/tasks/task_e_6ab3e2197288832b98434c03445c6b9e) |
+| speed | 07 | 140 | 20 | `full-speed-07-20260923` | [task](https://chatgpt.com/codex/cloud/tasks/task_e_6ab3e21dd6dc832bb114db8c125eb2d8) |
+| speed | 08 | 160 | 20 | `full-speed-08-20260923` | [task](https://chatgpt.com/codex/cloud/tasks/task_e_6ab3e23f9cc0832bb7e53cc553963e18) |
+| speed | 09 | 180 | 20 | `full-speed-09-20260923` | [task](https://chatgpt.com/codex/cloud/tasks/task_e_6ab3e257e65c832bb037b94bffadeeae) |
 
-Launch source commit: pending. Results and next decision: pending.
+Launch source commit: `10f047ac91204bf1260e9325d4003f9a7d4e57a3`.
+All 20 tasks were submitted on 2026-09-23 UTC. Submission confirms task creation;
+it does not establish that paid episodes have started or completed. Results,
+cost, receipt verification, and next decision remain pending.
