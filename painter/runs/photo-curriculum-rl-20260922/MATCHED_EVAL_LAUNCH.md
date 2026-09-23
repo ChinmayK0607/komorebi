@@ -9,11 +9,32 @@ output tokens per turn, 32,768 context, and a 180-second renderer deadline.
 
 The GPU phase has a hard 2,700-second (45-minute) deadline covering vLLM
 startup and both evaluation workers. It starts one 27B vLLM server on each GPU,
-records `nvidia-smi` telemetry, preserves every worker output under
+records `nvidia-smi` telemetry, preserves launcher metadata and logs under
 `eval-runs/photo-curriculum-rl-20260922-step24/`, and kills only process groups
-whose leaders it started. Quality scoring is offline; the launcher does not
-contact a judge or upload results. A timeout leaves partial rollouts and a
-`completion.json` status of `worker_failed` for review.
+whose leaders it started. Prime's generated turn traces and canvases follow
+the config's relative `output_root` and are written separately under
+`evaluation-rollouts/photo-sft-step512/` and
+`evaluation-rollouts/photo-rl-step24/`. Quality scoring is offline; the
+launcher does not contact a judge or upload results. A timeout leaves partial
+rollouts and a `completion.json` status of `worker_failed` for review.
+
+After the workers have stopped, collect both trees and the launcher evidence
+with this read/copy command (the destination is a separate evidence folder):
+
+```bash
+set -Eeuo pipefail
+RUN=/root/painter/runs/photo-curriculum-rl-20260922
+EVAL="$RUN/eval-runs/photo-curriculum-rl-20260922-step24"
+OUT="$RUN/collected-eval-step24"
+mkdir -p "$OUT/evaluation-rollouts" "$OUT/eval-runs"
+cp -a /root/painter/evaluation-rollouts/photo-sft-step512 "$OUT/evaluation-rollouts/"
+cp -a /root/painter/evaluation-rollouts/photo-rl-step24 "$OUT/evaluation-rollouts/"
+cp -a "$EVAL" "$OUT/eval-runs/"
+```
+
+The copy preserves invalid programs, failed renders, turn records, and
+launcher logs for later review; it does not delete or alter either source
+tree.
 
 On the prepared node, after staging the 28-case source manifest and its
 reference files under `eval-source/`, the exact invocation is:
