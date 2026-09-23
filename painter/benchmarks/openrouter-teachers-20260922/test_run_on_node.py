@@ -66,7 +66,7 @@ class TestRunOnNode(unittest.TestCase):
 
 
     def test_models_and_track_selection_is_versioned_in_config(self):
-        prepared = plan(models=["z-ai/glm-5.3-flash"], tracks=["speed"])
+        prepared = plan(models=["zai/glm-5.3-flash"], tracks=["speed"])
         config = next(item for item in prepared.files if item.archive_name == "config.json")
         assert config.data is None
         assert module._effective_node_root(prepared, "/root/run") == "/root/run"
@@ -78,9 +78,9 @@ class TestRunOnNode(unittest.TestCase):
         assert prepared.count == 40
 
 
-    def test_unknown_model_is_rejected_without_network(self):
-        with self.assertRaisesRegex(module.BenchmarkLaunchError, "offline catalog"):
-            plan(models=["provider/new-image-model"])
+    def test_unknown_model_is_preserved_without_catalog_network(self):
+        prepared = plan(models=["provider/new-image-model"])
+        assert prepared.count == 40
 
 
     def test_dry_run_does_not_read_key_or_discover(self):
@@ -101,7 +101,7 @@ class TestRunOnNode(unittest.TestCase):
         result = module.run_benchmark(
             plan=plan(), pod="painter-photo-rl", node_root="/node/run", output_dir=tmp_path,
             identity=None, known_hosts=None, discover=lambda *a, **k: "connection",
-            transport_factory=FakeTransport, api_key=b"secret-value", models=["z-ai/glm-5.3-flash", "xiaomi/mimo-v2.6-pro"],
+            transport_factory=FakeTransport, api_key=b"secret-value", models=["zai/glm-5.3-flash", "xiaomi/mimo-v2.6-pro"],
             tracks=("quality",), limit_episodes=1,
         )
         assert result == 0
@@ -115,7 +115,7 @@ class TestRunOnNode(unittest.TestCase):
         assert "--api-key-file" in command
         assert "--track" in command and "quality" in command
         model_index = command.index("--models")
-        assert command[model_index + 1] == "z-ai/glm-5.3-flash,xiaomi/mimo-v2.6-pro"
+        assert command[model_index + 1] == "zai/glm-5.3-flash,xiaomi/mimo-v2.6-pro"
         assert "--limit-episodes" in command
         key_inputs = [payload for argv, payload in transport.calls if payload == b"secret-value"]
         assert key_inputs == [b"secret-value"]
@@ -125,13 +125,13 @@ class TestRunOnNode(unittest.TestCase):
     def test_runner_cli_accepts_wrapper_offline_mode(self):
         result = subprocess.run(
             [sys.executable, str(HERE / "run.py"), "--root", str(HERE), "--dry-run",
-             "--track", "all", "--models", "z-ai/glm-5.3-flash",
+             "--track", "all", "--models", "zai/glm-5.3-flash",
              "--models", "xiaomi/mimo-v2.6-pro", "--limit-episodes", "1"],
             capture_output=True, text=True, check=False,
         )
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn('"paid_calls_made": 0', result.stdout)
-        self.assertIn("z-ai/glm-5.3-flash", result.stdout)
+        self.assertIn("zai/glm-5.3-flash", result.stdout)
         self.assertIn("xiaomi/mimo-v2.6-pro", result.stdout)
 
 
@@ -144,6 +144,33 @@ class TestRunOnNode(unittest.TestCase):
             archive.addfile(info, io.BytesIO(b"x"))
         with self.assertRaisesRegex(module.BenchmarkLaunchError, "unsafe member"):
             module._safe_extract(archive_path, tmp_path / "out")
+
+    def test_collect_script_keeps_results_and_excludes_dependency_caches_and_dotenv(self):
+        tmp_path = Path(__import__("tempfile").mkdtemp(prefix="teacher-collect-test-"))
+        keep = tmp_path / "results" / "episode.json"
+        keep.parent.mkdir(parents=True)
+        keep.write_text('{"status":"complete"}\n')
+        for relative in (
+            "node_modules/ai/index.js",
+            ".pnpm-store/v3/files/cache.bin",
+            ".cache/tool/cache.bin",
+            ".env.local",
+            "private/ai-gateway.key",
+            "logs/token.secret",
+        ):
+            path = tmp_path / relative
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(b"excluded")
+        completed = subprocess.run(
+            [sys.executable, "-c", module._collect_script(), str(tmp_path)],
+            capture_output=True,
+            check=True,
+        )
+        with tarfile.open(fileobj=io.BytesIO(completed.stdout), mode="r:gz") as archive:
+            names = set(archive.getnames())
+        assert "results/episode.json" in names
+        assert not any(name.startswith(("node_modules/", ".pnpm-store/", ".cache/", "private/", "logs/")) for name in names)
+        assert ".env.local" not in names
 
 if __name__ == "__main__":
     unittest.main()

@@ -1,14 +1,14 @@
 # Multiturn painting teacher comparison
 
-Prepared on 2026-09-22. **Not launched. No paid OpenRouter requests have been made for this benchmark.** The user will launch after funding the account. Existing RL continues independently; this benchmark neither rents nor stops GPUs.
+Prepared on 2026-09-23 as the Vercel AI Gateway migration of the 2026-09-22 teacher benchmark. **Not launched. No paid Gateway requests have been made for this benchmark.** Existing RL continues independently; this benchmark neither rents nor stops GPUs.
 
 ## Question and comparison
 
 Which image-capable teacher produces the most attractive faithful reference painting after observing and correcting its actual rendered canvas? Separately, which produces the best painting within a constrained speed budget? Compare models within each track on identical image bytes and the same versioned painting contract. Do not combine quality, latency and token counts into an arbitrary reward or rank syntax validity as beauty.
 
-The initial exact model IDs are `z-ai/glm-5.3-flash`, `deepseek/deepseek-v4.1-flash`, `stepfun/step-3.7-flash`, `xiaomi/mimo-v2.6-flash`, and `xiaomi/mimo-v2.6-pro`. The current OpenRouter catalog lists Step 3.7 Flash as StepFun's latest image-capable entry, rather than an entry literally named preview. The catalog snapshot, native limits, supported parameters, reasoning options and prices are saved in `model-catalog.json`. Public sources: [model catalog](https://openrouter.ai/api/v1/models), [StepFun entry](https://openrouter.ai/stepfun/step-3.7-flash), and [reasoning-token accounting](https://openrouter.ai/docs/guides/best-practices/reasoning-tokens).
+The initial exact model IDs are `zai/glm-5.3-flash`, `deepseek/deepseek-v4.1-flash`, `stepfun/step-3.7-flash`, `xiaomi/mimo-v2.6-flash`, and `xiaomi/mimo-v2.6-pro`. IDs are passed unchanged to the AI SDK Gateway. The checked-in catalog is provenance only; the runner does not invent context or image capability limits for new IDs, and records the provider's runtime probe error when unsupported. Public sources: [AI Gateway models and providers](https://vercel.com/docs/ai-gateway/models-and-providers) and [AI Gateway SDK](https://vercel.com/docs/ai-gateway/sdks-and-apis).
 
-OpenRouter IDs are provider model names, not immutable weight revisions. Actual response model/provider identifiers must remain in raw receipts. Provider routing and catalog revisions can change; do not claim immutable weights or hardware-matched latency.
+Gateway model IDs are provider model names, not immutable weight revisions. Actual response model/provider identifiers remain in raw receipts. Provider routing and catalog revisions can change; do not claim immutable weights or hardware-matched latency.
 
 ## References
 

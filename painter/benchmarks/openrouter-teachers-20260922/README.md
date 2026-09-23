@@ -1,6 +1,6 @@
-# Run the painting teacher benchmark
+# Run the AI Gateway painting teacher benchmark
 
-**Prepared, not started. No paid model calls have been made.**
+**Prepared, not started. No teacher benchmark episodes have been run.**
 
 Everything is stored on this Mac at:
 
@@ -19,9 +19,9 @@ cd /Users/chinmay/Documents/Codex/2026-09-07/if-they-did-speed-painting-type/pai
 bash run_benchmark.sh --pod painter-photo-rl
 ```
 
-The launcher asks for the OpenRouter API key with input hidden. Alternatively, it accepts `OPENROUTER_API_KEY` from the environment. It does not save the supplied key on this Mac or include it in artifacts. On the node, its temporary credential file is private and removed when the wrapper exits normally or through its cleanup handler. If the connection is lost during cleanup, follow the printed cleanup warning.
+The launcher reads `AI_GATEWAY_API_KEY` from the ignored `.env.local` file or the environment and otherwise asks for it with input hidden. It does not save the supplied key on this Mac or include it in artifacts. On the node, its temporary credential file is private and removed when the wrapper exits normally or through its cleanup handler. If the connection is lost during cleanup, follow the printed cleanup warning.
 
-This uses an **existing** Lium node and its installed painter renderer; it never rents or stops GPUs. The current default node name is `painter-photo-rl`. If that pod has been released, select another prepared Linux node with `--pod NAME`. The Mac needs Python 3.10+, SSH, and the authenticated Lium CLI used by this workspace. The Linux node needs the project's pinned renderer, Playwright browser installation and unprivileged `painter` user. The wrapper creates `/root/painter/benchmarks/openrouter-teachers-20260922/.benchmark-venv` with `tqdm` if needed, without mutating the shared training or renderer environments.
+This uses an **existing** Lium node and its installed painter renderer; it never rents or stops GPUs. The current default node name is `painter-photo-rl`. If that pod has been released, select another prepared Linux node with `--pod NAME`. The Mac needs Python 3.10+, SSH, and the authenticated Lium CLI used by this workspace. The Linux node needs the project's pinned renderer, Playwright browser installation, Node.js/pnpm, and unprivileged `painter` user. The wrapper creates isolated Python and Node environments under `/root/painter/benchmarks/ai-gateway-teachers-20260923`, without mutating the shared training or renderer environments.
 
 For a free, offline configuration/package check that neither contacts Lium nor reads an API key:
 
@@ -31,31 +31,31 @@ bash run_benchmark.sh --dry-run
 
 ## Choose models, track or keys
 
-Use exact OpenRouter model IDs:
+Use exact Vercel AI Gateway model IDs:
 
 ```bash
 bash run_benchmark.sh --pod painter-photo-rl \
-  --models z-ai/glm-5.3-flash xiaomi/mimo-v2.6-pro \
+  --models zai/glm-5.3-flash xiaomi/mimo-v2.6-pro \
   --track quality
 ```
 
 Default IDs:
 
-- `z-ai/glm-5.3-flash`
+- `zai/glm-5.3-flash`
 - `deepseek/deepseek-v4.1-flash`
 - `stepfun/step-3.7-flash`
 - `xiaomi/mimo-v2.6-flash`
 - `xiaomi/mimo-v2.6-pro`
 
-You can also edit the model list in `config.json`. New IDs must support image input. The public catalog supplies capabilities and native limits; the runner records resolved metadata rather than silently substituting another model. StepFun 3.7 Flash is the current image-capable catalog entry used for the requested latest preview.
+You can also edit the model list in `config.json`. IDs are passed byte-for-byte to the AI SDK and Gateway. The offline catalog is provenance only; a new or unsupported model is probed at runtime and its redacted provider error is recorded without inventing capability limits. StepFun 3.7 Flash is the current image-capable entry used for the requested latest preview.
 
 For separate keys per model, create a JSON file **outside this benchmark folder**, such as `~/.config/painter-benchmark-keys.json`:
 
 ```json
 {
-  "default": "YOUR_SHARED_OPENROUTER_KEY",
+  "default": "YOUR_SHARED_AI_GATEWAY_KEY",
   "models": {
-    "z-ai/glm-5.3-flash": "YOUR_OPTIONAL_GLM_KEY",
+    "zai/glm-5.3-flash": "YOUR_OPTIONAL_GLM_KEY",
     "xiaomi/mimo-v2.6-pro": "YOUR_OPTIONAL_XIAOMI_KEY"
   }
 }
@@ -67,7 +67,7 @@ bash run_benchmark.sh --pod painter-photo-rl \
   --api-key-file ~/.config/painter-benchmark-keys.json
 ```
 
-Keys here are OpenRouter account keys, not direct vendor endpoint credentials. Omitted model overrides use `default`. Do not paste real keys into `config.json`, the shell script or this README.
+Keys here are Vercel AI Gateway account keys. Omitted model overrides use `default`. Do not paste real keys into `config.json`, the shell script or this README.
 
 ## Track settings
 
@@ -77,7 +77,7 @@ Keys here are OpenRouter account keys, not direct vendor endpoint credentials. O
 | `speed` | Up to 3 | 8,192 tokens per turn, including reasoning | 900 active seconds |
 | `all` (default) | Both tracks | Separate results | 400 episodes |
 
-Quality uses the highest advertised reasoning effort; speed uses the lowest. Models without an advertised effort selector have reasoning enabled without an invented effort setting. Each mode can stop early after inspecting a valid canvas. Both request faithful, attractive paintings; there is no synthetic additive aesthetic score.
+Quality uses the native Gateway model behavior; speed uses an explicit 8,192-token output ceiling. Models without an advertised effort selector use the provider default without an invented effort setting. Each mode can stop early after inspecting a valid canvas. Both request faithful, attractive paintings; there is no synthetic additive aesthetic score.
 
 Native output ceilings can be large. The full run has at most 3,000 assistant requests before retries, but actual duration and cost depend on how much the models generate and when they finish. API and rendering times, queue waits, token breakdowns, provider identifiers and reported costs are retained. Unknown costs are marked missing, not assumed to be zero. One sample per image/model/track does not estimate sampling variance.
 
@@ -85,7 +85,7 @@ Native output ceilings can be large. The full run has at most 3,000 assistant re
 
 `tqdm` shows episode progress while generation runs. Persistent progress and event files supplement the terminal display. Rerun the same command to resume. Completed matching responses are reused, including when only rendering needs retry. Adding another model should preserve already completed results for the existing models. Changing the prompt, renderer or generation settings is a different experiment and must not silently reuse incompatible completed episodes.
 
-The node retains the complete output tree, and the wrapper collects available artifacts under `results/` in this folder. Open `results/gallery.html` after collection; raw trajectories are in `results/episodes/`, with `results/progress.json` and `results/events.jsonl` for progress. Keep the terminal running for the foreground launch. If disconnected, outputs remain on the node for a subsequent resume/collection; do not release the node until desired evidence has been collected.
+The node retains the complete output tree, and the wrapper collects available artifacts under `results-ai-gateway-20260923/` in this folder. Open `results-ai-gateway-20260923/gallery.html` after collection; raw trajectories are in `results-ai-gateway-20260923/episodes/`, with `results-ai-gateway-20260923/progress.json` and `results-ai-gateway-20260923/events.jsonl` for progress. Keep the terminal running for the foreground launch. If disconnected, outputs remain on the node for a subsequent resume/collection; do not release the node until desired evidence has been collected.
 
 Stored evidence includes:
 
@@ -100,4 +100,4 @@ All demonstrations are candidates for later review. Executable code or a self-de
 
 ## Validation before handoff
 
-16 offline tests pass, including the real runner CLI with multiple model IDs. The Linux node passed the fixed-sketch sandbox render with matching source/canvas hashes and the isolated `tqdm` environment bootstrap. No OpenRouter generation request was made; paid API behavior remains to be exercised after funding. Details: [VALIDATION.md](VALIDATION.md).
+Offline tests cover the real runner CLI with multiple model IDs, including arbitrary Gateway IDs. The Linux node passed the fixed-sketch sandbox render with matching source/canvas hashes and the isolated `tqdm` environment bootstrap. Paid Gateway generation remains to be exercised after funding. Details: [VALIDATION.md](VALIDATION.md).

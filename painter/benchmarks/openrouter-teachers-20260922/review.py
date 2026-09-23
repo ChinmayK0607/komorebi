@@ -77,7 +77,7 @@ def build_reference_gallery(root: Path, output: Path | None = None) -> Path:
         )
     page = _page(
         "Reference gallery",
-        "<h1>OpenRouter teacher benchmark references</h1>"
+        "<h1>AI Gateway teacher benchmark references</h1>"
         "<p>Offline selection preview. No API calls or generated outputs are used.</p>"
         '<section class="grid">' + "".join(cards) + "</section>",
     )
@@ -135,7 +135,7 @@ def build_gallery(root: Path, output: Path | None = None, *, build_blind: bool =
             destination = blind_root / blind_id
             destination.mkdir(parents=True, exist_ok=True)
             ref = root / str(row.get("reference_image", ""))
-            comparison = {"id": blind_id, "protocol_version": "painter.openrouter-teachers.blind.v1", "images": {}}
+            comparison = {"id": blind_id, "protocol_version": "painter.ai-gateway-teachers.blind.v1", "images": {}}
             for role, source_value in (("reference", row.get("reference_image")), ("first", row.get("first_valid_canvas")), ("final", row.get("final_valid_canvas"))):
                 source = root / str(source_value) if source_value else None
                 if source and source.is_file():
@@ -145,8 +145,8 @@ def build_gallery(root: Path, output: Path | None = None, *, build_blind: bool =
             blind_comparisons.append(comparison)
             blind_map[blind_id] = {"job_id": row.get("job_id"), "model": row.get("model"), "track": row.get("track"), "reference_id": row.get("reference_id")}
     page = _page(
-        "OpenRouter teacher benchmark gallery",
-        "<h1>OpenRouter teacher benchmark</h1>"
+        "AI Gateway teacher benchmark gallery",
+        "<h1>AI Gateway teacher benchmark</h1>"
         "<p>Generated from local episode receipts. Raw response and program links remain available before a render exists.</p>"
         + "".join(cards),
     )
@@ -155,8 +155,8 @@ def build_gallery(root: Path, output: Path | None = None, *, build_blind: bool =
     if build_blind:
         review = root / "review"
         review.mkdir(parents=True, exist_ok=True)
-        (review / "blind-map.json").write_text(json.dumps({"schema": "painter.openrouter-teachers.blind-map.v1", "created_at": time.time(), "items": blind_map}, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-        (review / "judge-packet.json").write_text(json.dumps({"schema": "painter.openrouter-teachers.blind.v1", "comparisons": blind_comparisons}, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        (review / "blind-map.json").write_text(json.dumps({"schema": "painter.ai-gateway-teachers.blind-map.v1", "created_at": time.time(), "items": blind_map}, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        (review / "judge-packet.json").write_text(json.dumps({"schema": "painter.ai-gateway-teachers.blind.v1", "comparisons": blind_comparisons}, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     return output
 
 
@@ -187,4 +187,3 @@ def main(argv: list[str] | None = None) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

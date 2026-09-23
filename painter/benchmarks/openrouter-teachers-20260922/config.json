@@ -1,7 +1,7 @@
 {
-  "benchmark": "openrouter-teachers-20260922",
+  "benchmark": "ai-gateway-teachers-20260923",
   "models": [
-    "z-ai/glm-5.3-flash",
+    "zai/glm-5.3-flash",
     "deepseek/deepseek-v4.1-flash",
     "stepfun/step-3.7-flash",
     "xiaomi/mimo-v2.6-flash",
@@ -27,6 +27,7 @@
   "renderer_timeout": 180,
   "samples_per_image": 1,
   "catalog": "model-catalog.json",
+  "transport_script": "gateway_transport.ts",
   "references": "refs.json",
   "prompt": "prompt.txt",
   "request_timeout_seconds": 3600,

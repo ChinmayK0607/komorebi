@@ -2,7 +2,7 @@
 """Run one explicit Linux-only smoke render through the benchmark renderer.
 
 The smoke sketch is fixed and contains one p5.brush polygon and line.  No
-OpenRouter/API/model code is imported or called.  The output directory is
+AI Gateway/API/model code is imported or called.  The output directory is
 isolated from benchmark episodes and training artifacts; use ``--output-dir``
 to point it at a disposable directory on the Linux node.
 """
@@ -140,7 +140,7 @@ def run_smoke(
     )
     valid = bool(renderer_result.get("valid")) and output_exists and receipt_hashes_match
     smoke = {
-        "schema": "painter.openrouter-teacher-renderer-smoke.v1",
+        "schema": "painter.ai-gateway-teacher-renderer-smoke.v1",
         "valid": valid,
         "service_failure": bool(renderer_result.get("service_failure")),
         "error_code": renderer_result.get("error_code"),

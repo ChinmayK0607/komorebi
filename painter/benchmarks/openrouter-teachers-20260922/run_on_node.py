@@ -1,10 +1,10 @@
-"""Run the prepared OpenRouter teacher benchmark on an existing Linux node.
+"""Run the prepared Vercel AI Gateway teacher benchmark on an existing Linux node.
 
 The Mac-side wrapper stages only the benchmark code, JSON/TXT configuration,
 the reviewed JPEG references, and a hash manifest. It never creates or stops a
 pod. The node reuses its installed renderer environment and runs the benchmark
 foreground so an interrupted invocation can be resumed by rerunning the same command. The
-OpenRouter key is written only to a node-private ephemeral file over SSH and
+AI Gateway key is written only to a node-private ephemeral file over SSH and
 is removed in ``finally``; it is never an argv value, archive member, or log.
 
 The wrapper and ``run.py`` share one explicit CLI: ``--root``, ``--run``,
@@ -38,15 +38,15 @@ REPO_ROOT = ROOT.parents[2]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 DEFAULT_POD = "painter-photo-rl"
-DEFAULT_NODE_ROOT = "/root/painter/benchmarks/openrouter-teachers-20260922"
+DEFAULT_NODE_ROOT = "/root/painter/benchmarks/ai-gateway-teachers-20260923"
 DEFAULT_NODE_RENDERER = "/root/painter/vendor/integrations/watercolour/renderer.py"
 DEFAULT_NODE_RENDERER_PYTHON = "/root/painter/renderer-env/bin/python"
 DEFAULT_NODE_BROWSERS = "/root/painter/browsers"
-DEFAULT_KEY_PATH = "/root/painter/benchmarks/openrouter-teachers-20260922/private/openrouter.key"
+DEFAULT_KEY_PATH = "/root/painter/benchmarks/ai-gateway-teachers-20260923/private/ai-gateway.key"
 RUNNER_NAME = "run.py"
 STAGE_MANIFEST_NAME = "stage-manifest.json"
 MAX_REFERENCE_COUNT = 40
-SECRET_ENV = "OPENROUTER_API_KEY"
+SECRET_ENV = "AI_GATEWAY_API_KEY"
 
 
 class BenchmarkLaunchError(RuntimeError):
@@ -116,8 +116,8 @@ def _load_json(path: Path, *, label: str) -> Any:
 
 def _validate_prepared_config(config: Path, refs_manifest: Path) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     document = _load_json(config, label="benchmark config")
-    if not isinstance(document, dict) or document.get("benchmark") != "openrouter-teachers-20260922":
-        raise BenchmarkLaunchError("config benchmark identity is not openrouter-teachers-20260922")
+    if not isinstance(document, dict) or document.get("benchmark") != "ai-gateway-teachers-20260923":
+        raise BenchmarkLaunchError("config benchmark identity is not ai-gateway-teachers-20260923")
     models = document.get("models")
     if not isinstance(models, list) or not models or not all(isinstance(item, str) and item for item in models):
         raise BenchmarkLaunchError("config must contain a non-empty model id list")
@@ -167,11 +167,9 @@ def build_package_plan(
     requested_models = list(models) if models is not None else list(document["models"])
     if not requested_models or not all(isinstance(item, str) and item for item in requested_models):
         raise BenchmarkLaunchError("models must contain at least one non-empty model id")
-    unknown = sorted(set(requested_models) - catalog_models)
-    if unknown and not allow_unknown_models:
-        raise BenchmarkLaunchError(
-            "unknown model id(s) absent from the offline catalog: " + ", ".join(unknown)
-        )
+    # Gateway model IDs are intentionally open ended.  The Gateway request is
+    # the capability probe; packaging must preserve the exact user-supplied
+    # IDs instead of inventing an offline allowlist.
     by_name = {str(row.get("image")): row for row in manifest_rows if isinstance(row, dict)}
     reference_files: list[PackageFile] = []
     for image_name, row in sorted(by_name.items()):
@@ -193,6 +191,11 @@ def build_package_plan(
         raise BenchmarkLaunchError("tracks contains duplicates")
     files = [
         _package_file(runner_path, RUNNER_NAME),
+        _package_file(root / "gateway_transport.ts", "gateway_transport.ts"),
+        _package_file(root / "package.json", "package.json"),
+        _package_file(root / "pnpm-lock.yaml", "pnpm-lock.yaml"),
+        _package_file(root / "pnpm-workspace.yaml", "pnpm-workspace.yaml"),
+        _package_file(root / "tsconfig.json", "tsconfig.json"),
         _package_file(config_path, "config.json"),
         _package_file(prompt_path, "prompt.txt"),
         _package_file(root / "contract.json", "contract.json"),
@@ -214,7 +217,7 @@ def _stage_manifest(plan: PackagePlan) -> bytes:
         {"path": item.archive_name, "bytes": item.bytes, "sha256": item.sha256}
         for item in (*plan.files, *plan.references)
     ]
-    return json.dumps({"schema": "openrouter-teacher-stage-v1", "files": entries}, indent=2, sort_keys=True).encode() + b"\n"
+    return json.dumps({"schema": "ai-gateway-teacher-stage-v1", "files": entries}, indent=2, sort_keys=True).encode() + b"\n"
 
 
 def _archive(plan: PackagePlan) -> bytes:
@@ -267,7 +270,7 @@ with tarfile.open(fileobj=sys.stdin.buffer, mode="r:gz") as archive:
             temporary.write_bytes(data)
             temporary.chmod(0o644)
             temporary.replace(target)
-if not isinstance(manifest, dict) or manifest.get("schema") != "openrouter-teacher-stage-v1":
+if not isinstance(manifest, dict) or manifest.get("schema") != "ai-gateway-teacher-stage-v1":
     raise SystemExit("missing stage manifest")
 print(json.dumps({"status": "staged", "files": len(manifest.get("files", []))}, sort_keys=True))
 '''
@@ -304,15 +307,32 @@ print(python)
 '''
 
 
+def _ensure_gateway_env_script() -> str:
+    return r'''import pathlib, subprocess, sys
+root = pathlib.Path(sys.argv[1]).expanduser()
+probe = subprocess.run(["pnpm", "exec", "tsx", "--version"], cwd=root, check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+if probe.returncode:
+    subprocess.run(["pnpm", "install", "--frozen-lockfile", "--ignore-scripts"], cwd=root, check=True)
+subprocess.run(["pnpm", "exec", "tsx", "--version"], cwd=root, check=True, stdout=subprocess.DEVNULL)
+print("ready")
+'''
+
+
 def _collect_script() -> str:
     return r'''import pathlib, sys, tarfile
 root = pathlib.Path(sys.argv[1]).expanduser()
+excluded_parts = {
+    ".benchmark-venv", ".pnpm-store", "node_modules", ".cache", "cache",
+    "__pycache__", ".git", "private", "keys", "credentials",
+}
+excluded_suffixes = (".key", ".pem", ".token", ".secret", ".credentials")
 with tarfile.open(fileobj=sys.stdout.buffer, mode="w|gz") as archive:
     for path in sorted(root.rglob("*")):
         if not path.is_file() or path.is_symlink():
             continue
         relative = path.relative_to(root)
-        if ".benchmark-venv" in relative.parts or "private" in relative.parts or path.name.endswith((".key", ".pem", ".token")):
+        name = path.name.lower()
+        if excluded_parts.intersection(relative.parts) or name.startswith(".env") or name.endswith(excluded_suffixes):
             continue
         archive.add(path, arcname=relative.as_posix(), recursive=False)
 '''
@@ -370,10 +390,22 @@ class SSHTransport:
 def _api_key() -> bytes:
     value = __import__("os").environ.get(SECRET_ENV)
     if value is None:
-        value = getpass.getpass("OpenRouter API key (used only for this run): ")
+        # Read only the one expected assignment from the ignored local dotenv
+        # file.  The value stays in memory and is never printed or archived.
+        dotenv = ROOT / ".env.local"
+        try:
+            for line in dotenv.read_text(encoding="utf-8").splitlines():
+                stripped = line.strip()
+                if stripped.startswith(f"{SECRET_ENV}="):
+                    value = stripped.split("=", 1)[1].strip().strip("\"'")
+                    break
+        except FileNotFoundError:
+            pass
+    if value is None:
+        value = getpass.getpass("Vercel AI Gateway API key (used only for this run): ")
     value = value.strip()
     if not value:
-        raise BenchmarkLaunchError("OpenRouter API key is empty")
+        raise BenchmarkLaunchError("AI Gateway API key is empty")
     return value.encode()
 
 
@@ -413,6 +445,8 @@ def _plan_json(plan: PackagePlan, *, pod: str, node_root: str) -> dict[str, Any]
         "package_bytes": sum(item.bytes for item in (*plan.files, *plan.references)),
         "reference_count": plan.count,
         "runner": plan.runner.name,
+        "provider": "vercel-ai-gateway",
+        "transport": "ai-sdk-generateText-jsonl",
         "renderer": {
             "python": DEFAULT_NODE_RENDERER_PYTHON,
             "module": DEFAULT_NODE_RENDERER,
@@ -447,7 +481,7 @@ def run_benchmark(
     connection = discover(pod, user="root")
     transport = transport_factory(connection, identity=identity, known_hosts=known_hosts)
     root = node_root.rstrip("/")
-    key_path = f"{root}/private/openrouter.key"
+    key_path = f"{root}/private/ai-gateway.key"
     archive = _archive(plan)
     key_bundle = api_key if api_key is not None else _api_key_bundle(None)
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -466,6 +500,7 @@ def run_benchmark(
         expected_runner = f"{root}/.benchmark-venv/bin/python"
         if runner_env != expected_runner:
             raise BenchmarkLaunchError("node benchmark environment returned an unexpected interpreter")
+        transport.run(["python3", "-c", _ensure_gateway_env_script(), root], timeout=1200)
         transport.run(["python3", "-c", _key_write_script(), key_path], input_bytes=key_bundle, timeout=30)
         command = [
             runner_env, f"{root}/{RUNNER_NAME}",
@@ -522,7 +557,7 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--config", type=Path)
     parser.add_argument("--prompt", type=Path)
     parser.add_argument("--node-root", default=DEFAULT_NODE_ROOT)
-    parser.add_argument("--output-dir", type=Path, default=ROOT / "results")
+    parser.add_argument("--output-dir", type=Path, default=ROOT / "results-ai-gateway-20260923")
     parser.add_argument("--identity", type=Path)
     parser.add_argument("--known-hosts", type=Path)
     parser.add_argument("--api-key-file", type=Path, help="local protected plaintext key or JSON {default,models} bundle")

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Resumable OpenRouter image-to-p5.brush teacher benchmark.
+"""Resumable Vercel AI Gateway image-to-p5.brush teacher benchmark.
 
 This runner is deliberately standard-library only.  It performs no network
 request unless ``--run`` is supplied.  A run is five-model (or whatever the
@@ -32,8 +32,6 @@ import tempfile
 import threading
 import time
 import traceback
-import urllib.error
-import urllib.request
 import uuid
 from dataclasses import dataclass
 from pathlib import Path
@@ -46,13 +44,14 @@ except ImportError:  # pragma: no cover - Linux launch pins tqdm
         return iterable if iterable is not None else []
 
 
-SCHEMA = "painter.openrouter-teachers.v2"
-DEFAULT_ENDPOINT = "https://openrouter.ai/api/v1/chat/completions"
+SCHEMA = "painter.ai-gateway-teachers.v1"
+PROVIDER = "vercel-ai-gateway"
+TRANSPORT_SCRIPT = "gateway_transport.ts"
 DEFAULT_MAX_RETRIES = 3
 DEFAULT_TIMEOUT = 180.0
 DEFAULT_MAX_ERROR_CHARS = 4000
 EXPECTED_MODELS = (
-    "z-ai/glm-5.3-flash",
+    "zai/glm-5.3-flash",
     "deepseek/deepseek-v4.1-flash",
     "stepfun/step-3.7-flash",
     "xiaomi/mimo-v2.6-flash",
@@ -71,7 +70,7 @@ class BenchmarkError(RuntimeError):
 
 
 class APIError(BenchmarkError):
-    """An HTTP or malformed OpenRouter response error."""
+    """An AI Gateway transport or malformed response error."""
 
     def __init__(self, message: str, *, status: int | None = None, retryable: bool = False,
                  response_body: str | None = None):
@@ -153,7 +152,7 @@ def parse_program(reply: str) -> tuple[str | None, str]:
 
 
 def extract_content(message: Any) -> str:
-    """Extract assistant text while tolerating OpenRouter content parts."""
+    """Extract assistant text while tolerating AI SDK content parts."""
 
     if isinstance(message, str):
         return message
@@ -206,14 +205,6 @@ def _validate_hash(value: Any, label: str) -> str:
     if not isinstance(value, str) or len(value) != 64 or any(char not in HEX for char in value.lower()):
         raise BenchmarkError(f"{label} must be a lowercase SHA-256 hex string")
     return value.lower()
-
-
-def _catalog_fetch(url: str) -> list[dict[str, Any]]:
-    request = urllib.request.Request(url, headers={"Accept": "application/json"}, method="GET")
-    with urllib.request.urlopen(request, timeout=30) as response:
-        payload = json.loads(response.read().decode("utf-8"))
-    rows = payload.get("data") if isinstance(payload, dict) else None
-    return [row for row in rows if isinstance(row, dict)] if isinstance(rows, list) else []
 
 
 def load_inputs(root: Path, *, model_ids: Sequence[str] | None = None, fetch_unknown: bool = False) -> BenchmarkInputs:
@@ -301,31 +292,23 @@ def load_inputs(root: Path, *, model_ids: Sequence[str] | None = None, fetch_unk
         raise BenchmarkError(f"invalid model catalog JSON: {exc}") from exc
     catalog_models = catalog.get("models") if isinstance(catalog, dict) else None
     catalog_by_id = {row.get("id"): row for row in catalog_models or [] if isinstance(row, dict) and isinstance(row.get("id"), str)}
+    # Gateway accepts arbitrary ``provider/model`` IDs.  The checked-in
+    # catalog is useful provenance when it has a profile, but it must not be a
+    # capability allowlist or trigger a provider catalog fetch.  Unknown IDs
+    # receive an explicitly unverified profile; the Gateway request itself is
+    # the capability probe and its redacted error is retained in the episode.
     missing = [model for model in models if model not in catalog_by_id]
+    for model in missing:
+        catalog_by_id[model] = {"id": model, "gateway_profile": "unverified"}
     if missing:
-        if not fetch_unknown:
-            raise BenchmarkError("model catalog has no verified entry for: " + ", ".join(missing) + "; dry-run is offline, add a verified catalog entry or use --run to fetch the public catalog")
-        catalog_url = str(config.get("catalog_url", "https://openrouter.ai/api/v1/models"))
-        try:
-            fetched = _catalog_fetch(catalog_url)
-        except Exception as exc:
-            raise BenchmarkError(f"could not fetch public model catalog: {type(exc).__name__}") from exc
-        for row in fetched:
-            if row.get("id") in missing:
-                catalog_by_id[row["id"]] = row
-        still_missing = [model for model in missing if model not in catalog_by_id]
-        if still_missing:
-            raise BenchmarkError("public catalog has no requested model: " + ", ".join(still_missing))
+        catalog = dict(catalog)
         catalog["models"] = list(catalog_by_id.values())
-        atomic_json(catalog_path, catalog)
-        catalog_sha = sha_file(catalog_path)
-    else:
-        catalog_sha = sha_file(catalog_path)
+    catalog_sha = sha_file(catalog_path)
     for model in models:
         architecture = catalog_by_id[model].get("architecture") or {}
         modalities = architecture.get("input_modalities") or []
-        if "image" not in str(architecture.get("modality", "")) and "image" not in modalities:
-            raise BenchmarkError(f"catalog entry for {model} does not advertise image input")
+        # Gateway model availability and multimodal support are probed by the
+        # SDK request; the offline profile is advisory and never an allowlist.
     if model_ids is not None:
         config = dict(config)
         config["models"] = list(models)
@@ -362,7 +345,9 @@ def settings_from_inputs(inputs: BenchmarkInputs, track: str) -> dict[str, Any]:
         "episode_timeout_seconds": track_config.get("episode_timeout_seconds"),
         "temperature": config.get("temperature", 0.7),
         "samples_per_image": _positive_int(config, "samples_per_image", default=1),
-        "endpoint": config.get("endpoint", DEFAULT_ENDPOINT),
+        "provider": PROVIDER,
+        "transport": "ai-sdk",
+        "transport_script": str(config.get("transport_script", TRANSPORT_SCRIPT)),
         "api_timeout_seconds": float(config.get("request_timeout_seconds", config.get("api_timeout_seconds", DEFAULT_TIMEOUT))),
         "max_retries": _positive_int(config, "max_retries", default=DEFAULT_MAX_RETRIES),
         "reasoning": config.get("reasoning", {}),
@@ -378,6 +363,8 @@ def catalog_model(inputs: BenchmarkInputs, model: str) -> Mapping[str, Any]:
 
 def resolve_reasoning(inputs: BenchmarkInputs, model: str, track: str) -> dict[str, Any]:
     row = catalog_model(inputs, model)
+    if inputs.catalog.get("profile_kind") == "gateway-unverified" or row.get("gateway_profile") == "unverified":
+        return {"_omit": True, "source": "gateway_model_default"}
     supported_parameters = set(row.get("supported_parameters") or [])
     if supported_parameters and not ({"reasoning", "reasoning_effort", "include_reasoning"} & supported_parameters):
         return {"_omit": True, "source": "catalog_reasoning_unsupported"}
@@ -401,18 +388,29 @@ def resolve_reasoning(inputs: BenchmarkInputs, model: str, track: str) -> dict[s
 
 def model_limits(inputs: BenchmarkInputs, model: str, settings: Mapping[str, Any]) -> dict[str, Any]:
     row = catalog_model(inputs, model)
+    if inputs.catalog.get("profile_kind") == "gateway-unverified" or row.get("gateway_profile") == "unverified":
+        return {
+            "native_ceiling": None,
+            "provider_context_length": None,
+            "requested_max_tokens": None if settings["max_tokens"] == "native" else int(settings["max_tokens"]),
+        }
     provider = row.get("top_provider") or {}
     ceiling = provider.get("max_completion_tokens")
     context = provider.get("context_length") or row.get("context_length")
+    # Gateway model profiles are intentionally optional.  When a user passes a
+    # model absent from the offline catalog, omit the native ceiling and let
+    # the provider decide it; only the explicit speed-track ceiling is known.
     if not isinstance(ceiling, int) or ceiling <= 0:
-        raise BenchmarkError(f"catalog max_completion_tokens missing for {model}")
+        ceiling = None
     if not isinstance(context, int) or context <= 0:
-        raise BenchmarkError(f"catalog context_length missing for {model}")
-    requested = ceiling if settings["max_tokens"] == "native" else int(settings["max_tokens"])
-    return {"native_ceiling": ceiling, "provider_context_length": context, "requested_max_tokens": min(requested, ceiling)}
+        context = None
+    requested = None if settings["max_tokens"] == "native" else int(settings["max_tokens"])
+    if requested is not None and ceiling is not None:
+        requested = min(requested, ceiling)
+    return {"native_ceiling": ceiling, "provider_context_length": context, "requested_max_tokens": requested}
 
 
-def context_accounting(messages: Sequence[Mapping[str, Any]], model_info: Mapping[str, Any], requested_max: int) -> dict[str, Any]:
+def context_accounting(messages: Sequence[Mapping[str, Any]], model_info: Mapping[str, Any], requested_max: int | None) -> dict[str, Any]:
     text_bytes = 0
     image_count = 0
     for message in messages:
@@ -433,9 +431,13 @@ def context_accounting(messages: Sequence[Mapping[str, Any]], model_info: Mappin
     # provider's tokenizer may be much more efficient.
     estimated_text_tokens = text_bytes
     estimated_input_tokens = estimated_text_tokens + image_count * image_allowance
-    context_limit = int(model_info["provider_context_length"])
-    physical_remaining = context_limit - estimated_input_tokens - 128
-    effective = min(int(requested_max), max(0, physical_remaining))
+    context_limit = model_info.get("provider_context_length")
+    if isinstance(context_limit, int) and context_limit > 0:
+        physical_remaining: int | None = context_limit - estimated_input_tokens - 128
+        effective: int | None = min(int(requested_max), max(0, physical_remaining)) if requested_max is not None else max(0, physical_remaining)
+    else:
+        physical_remaining = None
+        effective = requested_max
     return {
         "text_utf8_bytes": text_bytes,
         "estimated_text_tokens_upper_bound": estimated_text_tokens,
@@ -443,18 +445,20 @@ def context_accounting(messages: Sequence[Mapping[str, Any]], model_info: Mappin
         "image_token_allowance_each": image_allowance,
         "estimated_input_tokens": estimated_input_tokens,
         "provider_context_length": context_limit,
-        "native_completion_ceiling": int(model_info["native_ceiling"]),
-        "requested_max_tokens": int(requested_max),
-        "physical_remaining_context": max(0, physical_remaining),
+        "native_completion_ceiling": model_info.get("native_ceiling"),
+        "requested_max_tokens": int(requested_max) if requested_max is not None else None,
+        "physical_remaining_context": max(0, physical_remaining) if physical_remaining is not None else None,
         "effective_max_tokens": effective,
-        "reduction_reason": "physical_context_remaining" if effective < int(requested_max) else None,
-        "context_exhausted": physical_remaining <= 0,
+        "reduction_reason": "physical_context_remaining" if physical_remaining is not None and requested_max is not None and effective < int(requested_max) else None,
+        "context_exhausted": physical_remaining is not None and physical_remaining <= 0,
     }
 
 
 def job_id(model: str, reference_id: str, sample: int = 1, track: str = "quality") -> str:
     model_tag = f"{safe_slug(model)}-{sha_bytes(model.encode('utf-8'))[:8]}"
-    return f"{safe_slug(track)}--{model_tag}--{safe_slug(reference_id)}--s{sample:02d}"
+    # Provider prefix keeps yesterday's OpenRouter episode directories
+    # incompatible even when a model/reference/track name is unchanged.
+    return f"gateway--{safe_slug(track)}--{model_tag}--{safe_slug(reference_id)}--s{sample:02d}"
 
 
 def request_binding(
@@ -467,6 +471,8 @@ def request_binding(
 
     return {
         "schema": SCHEMA,
+        "provider": PROVIDER,
+        "transport": "ai-sdk-generateText-jsonl",
         "model": model,
         "reference_id": reference.id,
         "reference_sha256": reference.sha256,
@@ -477,7 +483,9 @@ def request_binding(
         "settings": {
             "max_tokens": context["effective_max_tokens"],
             "temperature": settings["temperature"],
-            "endpoint": settings["endpoint"],
+            "provider": settings["provider"],
+            "transport": settings["transport"],
+            "transport_script": settings["transport_script"],
         },
         "reasoning": dict(reasoning),
         "context_accounting": dict(context),
@@ -598,14 +606,15 @@ def build_conversation_messages(
 
 def build_payload(messages: Sequence[Mapping[str, Any]], settings: Mapping[str, Any], model: str,
                   *, max_tokens: int | None = None, reasoning: Mapping[str, Any] | None = None) -> dict[str, Any]:
-    max_tokens = int(max_tokens if max_tokens is not None else settings["max_tokens"])
+    requested_max_tokens = max_tokens if max_tokens is not None else settings.get("max_tokens")
     reasoning = dict(reasoning or {})
     payload = {
         "model": model,
         "messages": list(messages),
-        "max_tokens": max_tokens,
         "temperature": settings["temperature"],
     }
+    if requested_max_tokens is not None and requested_max_tokens != "native":
+        payload["max_tokens"] = int(requested_max_tokens)
     if not reasoning.get("_omit"):
         # ``source`` is provenance for the receipt/fingerprint only; the
         # provider schema accepts the reasoning controls, not our metadata.
@@ -616,109 +625,188 @@ def build_payload(messages: Sequence[Mapping[str, Any]], settings: Mapping[str, 
     return payload
 
 
-class OpenRouterClient:
-    """Small urllib client with bounded retry and secret-free errors."""
+class GatewayClient:
+    """Persistent AI SDK JSONL transport with bounded retry.
 
-    def __init__(self, *, endpoint: str, api_key: str, timeout: float = DEFAULT_TIMEOUT,
-                 opener: Callable[..., Any] | None = None, sleep: Callable[[float], None] = time.sleep,
-                 max_retries: int = DEFAULT_MAX_RETRIES):
+    A process is shared by all episodes for one API-key bundle.  The Node
+    transport can answer requests out of order, so concurrent Python workers
+    do not create one Node process per turn or per episode.
+    """
+
+    def __init__(
+        self, *, api_key: str, root: Path, timeout: float = DEFAULT_TIMEOUT,
+        max_retries: int = DEFAULT_MAX_RETRIES, transport_script: str = TRANSPORT_SCRIPT,
+        command: Sequence[str] | None = None, sleep: Callable[[float], None] = time.sleep,
+    ):
         if not api_key:
-            raise APIError("OPENROUTER_API_KEY is not set")
-        self.endpoint = endpoint
+            raise APIError("AI_GATEWAY_API_KEY is not set")
         self.api_key = api_key
+        self.root = root.resolve()
         self.timeout = timeout
-        self.opener = opener or urllib.request.urlopen
-        self.sleep = sleep
         self.max_retries = max_retries
+        self.sleep = sleep
+        script = (self.root / transport_script).resolve()
+        if self.root not in script.parents or not script.is_file():
+            raise APIError(f"AI SDK transport script is missing: {script}")
+        self.command = list(command or ("pnpm", "exec", "tsx", script.name))
+        child_env = os.environ.copy()
+        child_env.pop("OPENROUTER_API_KEY", None)
+        child_env["AI_GATEWAY_API_KEY"] = api_key
+        try:
+            self.process = subprocess.Popen(
+                self.command, cwd=str(self.root), env=child_env,
+                stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                text=True, bufsize=1,
+            )
+        except (OSError, ValueError) as exc:
+            raise APIError(f"AI SDK transport could not start: {type(exc).__name__}", retryable=True) from exc
+        self._write_lock = threading.Lock()
+        self._pending_lock = threading.Lock()
+        self._pending: dict[str, tuple[threading.Event, dict[str, Any]]] = {}
+        self._stderr_tail = ""
+        self.last_attempts = 0
+        self._reader = threading.Thread(target=self._read_responses, name="ai-gateway-jsonl", daemon=True)
+        self._reader.start()
+        self._stderr_reader = threading.Thread(target=self._read_stderr, name="ai-gateway-stderr", daemon=True)
+        self._stderr_reader.start()
+
+    def _read_responses(self) -> None:
+        stream = self.process.stdout
+        if stream is None:
+            return
+        for line in stream:
+            try:
+                value = json.loads(line)
+                if not isinstance(value, dict):
+                    continue
+            except json.JSONDecodeError:
+                continue
+            request_id = value.get("id")
+            if not isinstance(request_id, str):
+                continue
+            with self._pending_lock:
+                item = self._pending.get(request_id)
+                if item is not None:
+                    item[1]["value"] = value
+                    item[0].set()
+        with self._pending_lock:
+            for event, result in self._pending.values():
+                result["value"] = {"ok": False, "error": {"message": "AI SDK transport exited", "retryable": True}}
+                event.set()
+
+    def _read_stderr(self) -> None:
+        stream = self.process.stderr
+        if stream is None:
+            return
+        for line in stream:
+            self._stderr_tail = redact((self._stderr_tail + line)[-DEFAULT_MAX_ERROR_CHARS:], self.api_key)
 
     def complete(self, payload: Mapping[str, Any], *, deadline: float | None = None) -> dict[str, Any]:
-        body = canonical(payload)
         last: APIError | None = None
         self.last_attempts = 0
         for attempt in range(self.max_retries + 1):
             self.last_attempts = attempt + 1
             if deadline is not None and time.monotonic() >= deadline:
                 raise APIError("episode deadline reached", retryable=False)
-            request = urllib.request.Request(
-                self.endpoint,
-                data=body,
-                headers={
-                    "Authorization": f"Bearer {self.api_key}",
-                    "Content-Type": "application/json",
-                    "Accept": "application/json",
-                    "HTTP-Referer": "https://openrouter.ai/",
-                    "X-Title": "p5.brush teacher benchmark",
-                },
-                method="POST",
-            )
+            request_id = uuid.uuid4().hex
+            event = threading.Event()
+            result_box: dict[str, Any] = {}
+            with self._pending_lock:
+                self._pending[request_id] = (event, result_box)
             started = time.monotonic()
             try:
-                with self.opener(request, timeout=self.timeout) as response:
-                    status = int(getattr(response, "status", response.getcode()))
-                    response_bytes = response.read()
-                elapsed = round(time.monotonic() - started, 3)
-                text = response_bytes.decode("utf-8", errors="replace")
-                if status in {429} or 500 <= status <= 599:
-                    error = APIError(
-                        f"OpenRouter HTTP {status}", status=status, retryable=True,
-                        response_body=redact(text, self.api_key)[-DEFAULT_MAX_ERROR_CHARS:],
-                    )
-                    last = error
-                    if attempt < self.max_retries:
-                        delay = min(30.0, 2.0 ** attempt)
-                        if deadline is not None and time.monotonic() + delay >= deadline:
-                            raise APIError("episode deadline reached during retry backoff", retryable=False)
-                        self.sleep(delay)
-                        continue
-                    raise error
-                if status < 200 or status >= 300:
+                line = json.dumps({"id": request_id, "payload": payload}, ensure_ascii=False, separators=(",", ":")) + "\n"
+                with self._write_lock:
+                    if self.process.poll() is not None or self.process.stdin is None:
+                        raise APIError("AI SDK transport exited", retryable=True)
+                    self.process.stdin.write(line)
+                    self.process.stdin.flush()
+                wait_seconds = float(self.timeout)
+                if deadline is not None:
+                    wait_seconds = min(wait_seconds, max(0.0, deadline - time.monotonic()))
+                if not event.wait(wait_seconds):
+                    raise APIError("AI Gateway request timed out", retryable=True)
+                value = result_box.get("value")
+                if not isinstance(value, dict):
+                    raise APIError("AI SDK transport returned no response", retryable=True)
+                if not value.get("ok"):
+                    error = value.get("error") if isinstance(value.get("error"), dict) else {}
+                    message = redact(str(error.get("message") or "AI Gateway request failed"), self.api_key)
                     raise APIError(
-                        f"OpenRouter HTTP {status}", status=status, retryable=False,
-                        response_body=redact(text, self.api_key)[-DEFAULT_MAX_ERROR_CHARS:],
+                        "AI Gateway request failed", status=error.get("status") if isinstance(error.get("status"), int) else None,
+                        retryable=bool(error.get("retryable")), response_body=message,
                     )
-                try:
-                    decoded = json.loads(text)
-                except json.JSONDecodeError as exc:
-                    raise APIError("OpenRouter returned invalid JSON", status=status, response_body=redact(text, self.api_key)[-DEFAULT_MAX_ERROR_CHARS:]) from exc
-                if not isinstance(decoded, dict):
-                    raise APIError("OpenRouter returned a non-object JSON response", status=status)
-                decoded["_latency_seconds"] = elapsed
-                decoded["_http_status"] = status
-                decoded["_attempts"] = self.last_attempts
-                return decoded
-            except urllib.error.HTTPError as exc:
-                status = int(exc.code)
-                try:
-                    body_text = exc.read().decode("utf-8", errors="replace")
-                except Exception:
-                    body_text = str(exc)
-                error = APIError(
-                    f"OpenRouter HTTP {status}", status=status, retryable=status == 429 or status >= 500,
-                    response_body=redact(body_text, self.api_key)[-DEFAULT_MAX_ERROR_CHARS:],
+                response = value.get("response")
+                if not isinstance(response, dict):
+                    raise APIError("AI SDK transport returned malformed response", retryable=True)
+                response["_latency_seconds"] = round(time.monotonic() - started, 3)
+                response["_attempts"] = self.last_attempts
+                return response
+            except APIError as exc:
+                last = exc
+                if not exc.retryable or attempt >= self.max_retries:
+                    raise
+                delay = min(30.0, 2.0 ** attempt)
+                if deadline is not None and time.monotonic() + delay >= deadline:
+                    raise APIError("episode deadline reached during retry backoff", retryable=False)
+                self.sleep(delay)
+            except (BrokenPipeError, OSError, ValueError) as exc:
+                last = APIError(f"AI SDK transport error: {type(exc).__name__}", retryable=True)
+                if attempt >= self.max_retries:
+                    raise last from exc
+                self.sleep(min(30.0, 2.0 ** attempt))
+            finally:
+                with self._pending_lock:
+                    self._pending.pop(request_id, None)
+        raise last or APIError("AI Gateway request failed")
+
+    def close(self) -> None:
+        process = getattr(self, "process", None)
+        if process is None or process.poll() is not None:
+            return
+        try:
+            if process.stdin is not None:
+                process.stdin.close()
+        except OSError:
+            pass
+        try:
+            process.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            process.terminate()
+            try:
+                process.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                process.kill()
+
+
+class GatewayClientPool:
+    """Lazily create one persistent transport per distinct key."""
+
+    def __init__(self, *, root: Path, timeout: float, max_retries: int, transport_script: str):
+        self.root = root
+        self.timeout = timeout
+        self.max_retries = max_retries
+        self.transport_script = transport_script
+        self._lock = threading.Lock()
+        self._clients: dict[str, GatewayClient] = {}
+
+    def get(self, api_key: str) -> GatewayClient:
+        with self._lock:
+            client = self._clients.get(api_key)
+            if client is None:
+                client = GatewayClient(
+                    api_key=api_key, root=self.root, timeout=self.timeout,
+                    max_retries=self.max_retries, transport_script=self.transport_script,
                 )
-                last = error
-                if error.retryable and attempt < self.max_retries:
-                    retry_after = exc.headers.get("Retry-After") if exc.headers else None
-                    try:
-                        delay = min(30.0, max(0.0, float(retry_after))) if retry_after else min(30.0, 2.0 ** attempt)
-                    except ValueError:
-                        delay = min(30.0, 2.0 ** attempt)
-                    if deadline is not None and time.monotonic() + delay >= deadline:
-                        raise APIError("episode deadline reached during retry backoff", retryable=False)
-                    self.sleep(delay)
-                    continue
-                raise error from exc
-            except (urllib.error.URLError, TimeoutError, OSError) as exc:
-                error = APIError(f"OpenRouter connection error: {type(exc).__name__}", retryable=True)
-                last = error
-                if attempt < self.max_retries:
-                    delay = min(30.0, 2.0 ** attempt)
-                    if deadline is not None and time.monotonic() + delay >= deadline:
-                        raise APIError("episode deadline reached during retry backoff", retryable=False)
-                    self.sleep(delay)
-                    continue
-                raise error from exc
-        raise last or APIError("OpenRouter request failed")
+                self._clients[api_key] = client
+            return client
+
+    def close(self) -> None:
+        with self._lock:
+            clients = list(self._clients.values())
+            self._clients.clear()
+        for client in clients:
+            client.close()
 
 
 def normalize_usage(response: Mapping[str, Any]) -> dict[str, Any]:
@@ -918,7 +1006,7 @@ def make_episode_record(inputs: BenchmarkInputs, model: str, reference: Referenc
 class EpisodeRunner:
     def __init__(
         self, inputs: BenchmarkInputs, model: str, reference: Reference, sample: int,
-        *, episode_dir: Path, client: OpenRouterClient, render_fn: Callable[..., dict[str, Any]],
+        *, episode_dir: Path, client: GatewayClient, render_fn: Callable[..., dict[str, Any]],
         render_lock: threading.Semaphore, renderer_options: Mapping[str, Any], settings: Mapping[str, Any],
         on_turn: Callable[[Mapping[str, Any], int], None] | None = None,
     ):
@@ -1042,7 +1130,7 @@ class EpisodeRunner:
             api_path = self._turn_path(turn)
             turn_record = self._load_reusable_response(turn, request_fp)
             reused_response = turn_record is not None
-            if context["effective_max_tokens"] <= 0:
+            if context["effective_max_tokens"] is not None and context["effective_max_tokens"] <= 0:
                 turn_record = {
                     "schema": SCHEMA,
                     "turn": turn,
@@ -1301,6 +1389,8 @@ def dry_run_report(inputs: BenchmarkInputs, *, track: str = "all", limit: int | 
     max_context = max((len(inputs.prompt) + len(image_data_uri(ref.image)) for _, _, ref, _ in selected), default=len(inputs.prompt))
     return {
         "schema": SCHEMA,
+        "provider": PROVIDER,
+        "transport": "ai-sdk-generateText-jsonl",
         "mode": "dry-run",
         "track": track,
         "models": list(inputs.config["models"]),
@@ -1346,14 +1436,20 @@ def run_benchmark(inputs: BenchmarkInputs, *, track: str = "all", limit: int | N
         lock_handle.close()
         raise BenchmarkError("another benchmark run already holds the output lock") from exc
     configured_keys: Mapping[str, str] | None = api_key if isinstance(api_key, Mapping) else None
-    default_key = None if configured_keys is not None else (api_key or os.environ.get("OPENROUTER_API_KEY"))
+    default_key = None if configured_keys is not None else (api_key or os.environ.get("AI_GATEWAY_API_KEY"))
     if not default_key and configured_keys is None and sys.stdin.isatty():
-        default_key = getpass.getpass("OpenRouter API key (input hidden): ").strip()
+        default_key = getpass.getpass("Vercel AI Gateway API key (input hidden): ").strip()
     if not default_key and not configured_keys:
-        raise APIError("OPENROUTER_API_KEY is not set; dry-run does not need a key")
+        raise APIError("AI_GATEWAY_API_KEY is not set; dry-run does not need a key")
     selected = jobs(inputs, track=track, limit=limit)
     render_lock = threading.Semaphore(int(inputs.config.get("render_concurrency", 1)))
     root = inputs.root
+    transport_script = str(inputs.config.get("transport_script", TRANSPORT_SCRIPT))
+    client_pool = GatewayClientPool(
+        root=root, timeout=float(inputs.config.get("request_timeout_seconds", DEFAULT_TIMEOUT)),
+        max_retries=int(inputs.config.get("max_retries", DEFAULT_MAX_RETRIES)),
+        transport_script=transport_script,
+    )
     progress_path = root / "progress.json"
     events_path = root / "events.jsonl"
     progress_lock = threading.Lock()
@@ -1412,10 +1508,9 @@ def run_benchmark(inputs: BenchmarkInputs, *, track: str = "all", limit: int | N
         model_key = (configured_keys or {}).get(model) or (configured_keys or {}).get("default") or default_key
         if not model_key:
             raise APIError(f"no API key configured for model {model}")
-        client = OpenRouterClient(
-            endpoint=str(settings["endpoint"]), api_key=model_key, timeout=float(settings["api_timeout_seconds"]),
-            max_retries=int(settings["max_retries"]),
-        )
+        client = client_pool.get(model_key)
+        client.timeout = float(settings["api_timeout_seconds"])
+        client.max_retries = int(settings["max_retries"])
         directory = root / "episodes" / job_id(model, reference.id, sample, track_name)
         runner = EpisodeRunner(
             inputs, model, reference, sample, episode_dir=directory, client=client,
@@ -1433,23 +1528,26 @@ def run_benchmark(inputs: BenchmarkInputs, *, track: str = "all", limit: int | N
 
     workers = int(inputs.config.get("concurrency", 3))
     results: list[dict[str, Any]] = []
-    with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as pool:
-        future_map = {pool.submit(run_one, item): item for item in selected}
-        progress_bar = tqdm(concurrent.futures.as_completed(future_map), total=len(future_map), desc="teacher episodes", unit="episode")
-        for future in progress_bar:
-            result = future.result()
-            results.append(result)
-            with progress_lock:
-                progress["episodes_completed"] += 1
-                status = str(result.get("status", "unknown"))
-                progress["status_counts"][status] = progress["status_counts"].get(status, 0) + 1
-                progress["current"] = {
-                    "job_id": result.get("job_id"), "track": result.get("settings", {}).get("track"),
-                    "model": result.get("model"), "reference_id": result.get("reference_id"),
-                    "turn": len(result.get("turns", [])), "status": status,
-                }
-                atomic_json(progress_path, progress)
-                progress_bar.set_postfix(done=f"{progress['episodes_completed']}/{progress['episodes_requested']}", status=status)
+    try:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as pool:
+            future_map = {pool.submit(run_one, item): item for item in selected}
+            progress_bar = tqdm(concurrent.futures.as_completed(future_map), total=len(future_map), desc="teacher episodes", unit="episode")
+            for future in progress_bar:
+                result = future.result()
+                results.append(result)
+                with progress_lock:
+                    progress["episodes_completed"] += 1
+                    status = str(result.get("status", "unknown"))
+                    progress["status_counts"][status] = progress["status_counts"].get(status, 0) + 1
+                    progress["current"] = {
+                        "job_id": result.get("job_id"), "track": result.get("settings", {}).get("track"),
+                        "model": result.get("model"), "reference_id": result.get("reference_id"),
+                        "turn": len(result.get("turns", [])), "status": status,
+                    }
+                    atomic_json(progress_path, progress)
+                    progress_bar.set_postfix(done=f"{progress['episodes_completed']}/{progress['episodes_requested']}", status=status)
+    finally:
+        client_pool.close()
     progress["finished_at"] = time.time()
     atomic_json(progress_path, progress)
     counts: dict[str, int] = {}

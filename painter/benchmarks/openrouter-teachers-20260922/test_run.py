@@ -1,33 +1,13 @@
-import io
 import json
 import sys
 import tempfile
 import time
 import unittest
-import urllib.error
 from pathlib import Path
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import run
-
-
-class _Response:
-    def __init__(self, payload, status=200):
-        self.status = status
-        self._payload = payload
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, *args):
-        return False
-
-    def read(self):
-        return json.dumps(self._payload).encode()
-
-    def getcode(self):
-        return self.status
 
 
 def _fixture(root: Path) -> run.BenchmarkInputs:
@@ -62,21 +42,11 @@ class RunTests(unittest.TestCase):
         self.assertEqual(plan, "plan\n\nmore")
         self.assertIsNone(run.parse_program("FINISHED")[0])
 
-    def test_http_retry_redacts_key_and_preserves_usage(self):
-        calls = []
-
-        def opener(request, timeout):
-            calls.append((request, timeout))
-            if len(calls) == 1:
-                raise urllib.error.HTTPError(request.full_url, 429, "busy", {"Retry-After": "0"}, io.BytesIO(b'{"error":"Bearer secret"}'))
-            return _Response({"id": "x", "choices": [{"message": {"content": "ok"}, "finish_reason": "stop"}], "usage": {"prompt_tokens": 4, "completion_tokens": 6, "total_tokens": 10, "cost": 0.25}})
-
-        client = run.OpenRouterClient(endpoint="https://example.invalid", api_key="secret", opener=opener, sleep=lambda _: None, max_retries=1)
-        response = client.complete({"model": "m", "messages": []})
-        self.assertEqual(response["usage"]["total_tokens"], 10)
-        self.assertEqual(len(calls), 2)
-        self.assertIn("Bearer", calls[0][0].headers["Authorization"])
-        self.assertEqual(run.response_record(response)["usage"]["cost"], 0.25)
+    def test_gateway_response_preserves_usage_and_redacts_errors(self):
+        response = {"id": "x", "choices": [{"message": {"content": "ok"}, "finish_reason": "stop"}], "usage": {"prompt_tokens": 4, "completion_tokens": 6, "total_tokens": 10, "cost": None}}
+        self.assertEqual(run.response_record(response)["usage"]["total_tokens"], 10)
+        self.assertIsNone(run.response_record(response)["usage"]["cost"])
+        self.assertEqual(run.redact("Bearer secret", "secret"), "Bearer [REDACTED]")
         nested = {"usage": {"completion_tokens_details": {"reasoning_tokens": 3}}}
         self.assertEqual(run.normalize_usage(nested)["reasoning_tokens"], 3)
 
@@ -93,15 +63,14 @@ class RunTests(unittest.TestCase):
         self.assertNotIn("_omit", payload["reasoning"])
         inputs = run.load_inputs(Path(__file__).resolve().parent)
         expected_quality = {
-            "z-ai/glm-5.3-flash": "max", "deepseek/deepseek-v4.1-flash": "max",
-            "stepfun/step-3.7-flash": "high", "xiaomi/mimo-v2.6-flash": None,
-            "xiaomi/mimo-v2.6-pro": None,
+            "zai/glm-5.3-flash", "deepseek/deepseek-v4.1-flash",
+            "stepfun/step-3.7-flash", "xiaomi/mimo-v2.6-flash",
+            "xiaomi/mimo-v2.6-pro",
         }
         self.assertEqual(set(inputs.config["models"]), set(expected_quality))
-        for model, effort in expected_quality.items():
+        for model in expected_quality:
             resolved = run.resolve_reasoning(inputs, model, "quality")
-            self.assertTrue(resolved.get("enabled"))
-            self.assertEqual(resolved.get("effort"), effort)
+            self.assertTrue(resolved.get("_omit"))
 
     def test_track_paths_and_dry_report(self):
         with tempfile.TemporaryDirectory() as temp:

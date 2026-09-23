@@ -28,6 +28,7 @@ prime-adapter-venv/
 renderer-env/
 runtime/
 node_modules/
+.pnpm-store/
 *.egg-info/
 
 # Credentials, host material, and local configuration.

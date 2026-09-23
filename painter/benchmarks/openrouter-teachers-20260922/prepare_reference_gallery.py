@@ -165,7 +165,7 @@ def render_gallery(refs_path: Path = DEFAULT_REFS, output_path: Path = DEFAULT_O
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>OpenRouter teacher benchmark references</title>
+<title>AI Gateway teacher benchmark references</title>
 <style>
 :root {{ color-scheme: light; --ink:#1f2937; --muted:#596579; --line:#dbe2ea; --card:#fff; --wash:#f4f7fb; --accent:#255db5; }}
 * {{ box-sizing:border-box; }}
@@ -199,7 +199,7 @@ a {{ color:var(--accent); }}
 <body>
 <main>
 <header>
-<h1>OpenRouter teacher benchmark references</h1>
+<h1>AI Gateway teacher benchmark references</h1>
 <p class="lede">Reference images for provenance and prompt-set review. This page contains no model outputs or judgments. Open an image to inspect its original full-resolution JPG; the gallery does not transform image bytes.</p>
 <p class="stats"><span><strong>{len(entries)}</strong> references</span><span><strong>{len(grouped)}</strong> categories</span><span>manifest SHA-256: <strong>{_escape(manifest_hash)}</strong></span><span>generated from <strong>{_escape(Path(refs_path).name)}</strong></span></p>
 </header>
