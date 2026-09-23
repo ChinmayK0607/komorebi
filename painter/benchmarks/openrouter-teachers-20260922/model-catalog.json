@@ -210,14 +210,13 @@
       }
     },
     {
-      "id": "stepfun/step-3.7-flash",
-      "name": "StepFun: Step 3.7 Flash",
+      "id": "stepfun/step-5-preview",
+      "name": "StepFun: Step 5 Preview",
       "architecture": {
-        "modality": "text+image+video->text",
+        "modality": "text+image->text",
         "input_modalities": [
           "text",
-          "image",
-          "video"
+          "image"
         ],
         "output_modalities": [
           "text"
@@ -225,55 +224,33 @@
         "tokenizer": "Other",
         "instruct_type": null
       },
-      "context_length": 262144,
+      "context_length": 1000000,
       "top_provider": {
-        "context_length": 256000,
-        "max_completion_tokens": 230400,
-        "is_moderated": false
+        "context_length": 1000000,
+        "max_completion_tokens": 1000000
       },
       "supported_parameters": [
-        "frequency_penalty",
-        "include_reasoning",
-        "logit_bias",
-        "logprobs",
         "max_tokens",
-        "min_p",
-        "presence_penalty",
-        "reasoning",
-        "reasoning_effort",
-        "repetition_penalty",
-        "response_format",
-        "seed",
-        "stop",
-        "structured_outputs",
         "temperature",
-        "tool_choice",
-        "tools",
-        "top_k",
-        "top_logprobs",
-        "top_p"
+        "stop",
+        "reasoning",
+        "include_reasoning",
+        "response_format",
+        "structured_outputs"
       ],
       "pricing": {
-        "prompt": "0.0000002",
-        "completion": "0.00000115",
-        "input_cache_read": "0.00000004"
+        "prompt": "0.000001",
+        "completion": "0.0000027",
+        "input_cache_read": "0.00000005"
       },
-      "default_parameters": {
-        "temperature": null,
-        "top_p": null,
-        "top_k": null,
-        "frequency_penalty": null,
-        "presence_penalty": null,
-        "repetition_penalty": null
-      },
+      "default_parameters": {},
       "reasoning": {
-        "mandatory": true,
+        "mandatory": false,
         "supported_efforts": [
-          "high",
+          "low",
           "medium",
-          "low"
-        ],
-        "default_effort": "medium"
+          "high"
+        ]
       }
     },
     {

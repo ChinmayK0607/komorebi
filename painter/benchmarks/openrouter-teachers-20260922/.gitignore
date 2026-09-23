@@ -25,3 +25,6 @@ reference-gallery.html
 stage-manifest.json
 runtime-receipt.json
 renderer-smoke/
+.local-venv/
+source.bundle
+references-manifest.json

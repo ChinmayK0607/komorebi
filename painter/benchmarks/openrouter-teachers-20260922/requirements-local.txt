@@ -1,0 +1,5 @@
+# Dependencies for the opt-in macOS-local renderer.  The AI SDK transport
+# remains the checked-in pnpm/AI SDK path and is bootstrapped separately.
+Pillow>=10,<13
+playwright==1.58.0
+tqdm>=4.66,<5

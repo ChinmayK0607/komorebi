@@ -35,6 +35,51 @@ def _fixture(root: Path) -> run.BenchmarkInputs:
 
 
 class RunTests(unittest.TestCase):
+    def test_local_dotenv_reads_only_the_gateway_key(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            (root / ".env.local").write_text(
+                "UNRELATED=do-not-load\nAI_GATEWAY_API_KEY='local-secret'\n"
+            )
+            self.assertEqual(run.local_dotenv_api_key(root), "local-secret")
+
+    def test_local_renderer_uses_metal_and_scrubs_key_from_child(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            source = root / "program.js"
+            renderer = root / "renderer.py"
+            renderer_python = root / "python"
+            output = root / "canvas.png"
+            source.write_text("function setup() {}\n")
+            renderer.write_text("# renderer\n")
+            renderer_python.write_text("# python\n")
+            observed = {}
+
+            def fake_run(command, **kwargs):
+                observed["command"] = command
+                observed["env"] = kwargs["env"]
+                output_path = Path(command[command.index("--output") + 1])
+                output_path.write_bytes(b"png")
+                receipt = {
+                    "valid": True,
+                    "source_sha256": run.sha_file(source),
+                    "png_sha256": run.sha_file(output_path),
+                }
+                output_path.with_suffix(".json").write_text(json.dumps(receipt))
+                return __import__("subprocess").CompletedProcess(command, 0, stderr="")
+
+            with patch.object(run.sys, "platform", "darwin"):
+                with patch.dict(run.os.environ, {"AI_GATEWAY_API_KEY": "secret"}, clear=False):
+                    with patch.object(run.subprocess, "run", side_effect=fake_run):
+                        result = run.render_program(
+                            root=root, source=source, output=output, renderer=renderer,
+                            renderer_python=renderer_python, local=True,
+                        )
+            self.assertTrue(result["valid"])
+            self.assertNotIn("runuser", observed["command"])
+            self.assertEqual(observed["command"][-1], "metal")
+            self.assertNotIn("AI_GATEWAY_API_KEY", observed["env"])
+
     def test_content_extraction_and_last_complete_fence(self):
         self.assertEqual(run.extract_content([{"type": "text", "text": "a"}, {"type": "text", "text": "b"}]), "a\nb")
         code, plan = run.parse_program("plan\n```javascript\nold();\n```\nmore\n```js\nnew();\n```")
@@ -64,7 +109,7 @@ class RunTests(unittest.TestCase):
         inputs = run.load_inputs(Path(__file__).resolve().parent)
         expected_quality = {
             "zai/glm-5.3-flash", "deepseek/deepseek-v4.1-flash",
-            "stepfun/step-3.7-flash", "xiaomi/mimo-v2.6-flash",
+            "stepfun/step-5-preview", "xiaomi/mimo-v2.6-flash",
             "xiaomi/mimo-v2.6-pro",
         }
         self.assertEqual(set(inputs.config["models"]), set(expected_quality))

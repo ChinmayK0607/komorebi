@@ -8,7 +8,7 @@ Everything is stored on this Mac at:
 /Users/chinmay/Documents/Codex/2026-09-07/if-they-did-speed-painting-type/painter/benchmarks/openrouter-teachers-20260922
 ```
 
-There are 40 bundled, visually checked reference images, five default models and two tracks: **400 episodes total**. Every painting turn is rendered on Linux, and its actual canvas is returned to the teacher for inspection, revision or finishing. Inspect the selected photos in [reference-gallery.html](reference-gallery.html).
+There are 40 bundled, visually checked reference images, five default models and two tracks: **400 episodes total**. The default launch renders every painting turn on the prepared Linux node. An opt-in macOS launch uses the same pinned Watercolour renderer locally, with the actual canvas returned to the teacher for inspection, revision or finishing. Inspect the selected photos in [reference-gallery.html](reference-gallery.html).
 
 ## Launch after adding credits
 
@@ -23,11 +23,34 @@ The launcher reads `AI_GATEWAY_API_KEY` from the ignored `.env.local` file or th
 
 This uses an **existing** Lium node and its installed painter renderer; it never rents or stops GPUs. The current default node name is `painter-photo-rl`. If that pod has been released, select another prepared Linux node with `--pod NAME`. The Mac needs Python 3.10+, SSH, and the authenticated Lium CLI used by this workspace. The Linux node needs the project's pinned renderer, Playwright browser installation, Node.js/pnpm, and unprivileged `painter` user. The wrapper creates isolated Python and Node environments under `/root/painter/benchmarks/ai-gateway-teachers-20260923`, without mutating the shared training or renderer environments.
 
+For a fresh Lium node, commit the reviewed source first and upload the tracked Git bundle plus the 40 ignored reference JPEGs:
+
+```bash
+python3 prepare_benchmark_node.py --pod painter-teacher-gateway
+lium ssh painter-teacher-gateway
+bash /root/painter/repo/painter/benchmarks/openrouter-teachers-20260922/setup_benchmark_node.sh /root/painter
+```
+
+The upload script never includes `.env.local`, API keys, results, caches or model files. The node setup clones `/root/painter/source.bundle`, extracts the separate reference archive, installs Node.js 22 and pnpm, creates `/root/painter/renderer-env` with Playwright 1.58.0, Pillow 12.3.0 and tqdm, installs Chromium, creates the unprivileged `painter` user, installs the lockfile's AI SDK packages and runs a fixed 600×600 renderer smoke. It prints the exact key-prompting benchmark command after setup; it never starts paid generation.
+
 For a free, offline configuration/package check that neither contacts Lium nor reads an API key:
 
 ```bash
 bash run_benchmark.sh --dry-run
 ```
+
+## Run entirely on this Mac
+
+Use the local mode when the benchmark should use the Mac's CPU/GPU and browser instead of a Linux node:
+
+```bash
+cd /Users/chinmay/Documents/Codex/2026-09-07/if-they-did-speed-painting-type/painter/benchmarks/openrouter-teachers-20260922
+bash run_benchmark.sh --local --models zai/glm-5.3-flash --track speed --limit-episodes 1
+```
+
+The first real local run creates the ignored `.local-venv/`, installs the pinned `playwright`, Pillow and `tqdm` dependencies, and installs Chromium under the ignored `work/playwright-browsers/` directory when it is not already available. Node.js/pnpm is still used for the checked-in Vercel AI SDK transport. macOS 12 or newer, Python 3.10+, and a working `pnpm` are required. The renderer defaults to Chromium's Metal backend; `--renderer-backend swiftshader` is available if Metal is unavailable.
+
+Local mode reads only the `AI_GATEWAY_API_KEY` assignment from this benchmark's ignored `.env.local`; it does not source or execute the file, print the key, put it in an argv value, or pass it to the renderer/browser. The same key can be supplied through the environment or hidden prompt. Requests still go to the paid Vercel AI Gateway, so use `--dry-run` first and start with `--limit-episodes 1`.
 
 ## Choose models, track or keys
 
@@ -43,11 +66,11 @@ Default IDs:
 
 - `zai/glm-5.3-flash`
 - `deepseek/deepseek-v4.1-flash`
-- `stepfun/step-3.7-flash`
+- `stepfun/step-5-preview`
 - `xiaomi/mimo-v2.6-flash`
 - `xiaomi/mimo-v2.6-pro`
 
-You can also edit the model list in `config.json`. IDs are passed byte-for-byte to the AI SDK and Gateway. The offline catalog is provenance only; a new or unsupported model is probed at runtime and its redacted provider error is recorded without inventing capability limits. StepFun 3.7 Flash is the current image-capable entry used for the requested latest preview.
+You can also edit the model list in `config.json`. IDs are passed byte-for-byte to the AI SDK and Gateway. The offline catalog is provenance only; a new or unsupported model is probed at runtime and its redacted provider error is recorded without inventing capability limits. Step 5 Preview is listed as image-capable by the public Gateway model catalog; its runtime availability and billing remain provider-controlled.
 
 For separate keys per model, create a JSON file **outside this benchmark folder**, such as `~/.config/painter-benchmark-keys.json`:
 

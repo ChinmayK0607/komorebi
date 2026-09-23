@@ -53,7 +53,7 @@ DEFAULT_MAX_ERROR_CHARS = 4000
 EXPECTED_MODELS = (
     "zai/glm-5.3-flash",
     "deepseek/deepseek-v4.1-flash",
-    "stepfun/step-3.7-flash",
+    "stepfun/step-5-preview",
     "xiaomi/mimo-v2.6-flash",
     "xiaomi/mimo-v2.6-pro",
 )
@@ -889,6 +889,38 @@ def _load_json(path: Path) -> dict[str, Any] | None:
     return value if isinstance(value, dict) else None
 
 
+def local_dotenv_api_key(root: Path) -> str | None:
+    """Read only ``AI_GATEWAY_API_KEY`` from the ignored local dotenv file.
+
+    The local launcher uses this instead of sourcing the file in a shell.  A
+    dotenv file is user-controlled input, so executing it would both be
+    surprising and needlessly expose unrelated variables to the benchmark.
+    The key stays in memory and is never included in a progress or result
+    record.
+    """
+
+    path = root / ".env.local"
+    try:
+        lines = path.read_text(encoding="utf-8").splitlines()
+    except FileNotFoundError:
+        return None
+    except (OSError, UnicodeDecodeError) as exc:
+        raise BenchmarkError(f"could not read local dotenv file: {path}") from exc
+    for line in lines:
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#"):
+            continue
+        name, separator, value = stripped.partition("=")
+        if separator and name.strip() == "AI_GATEWAY_API_KEY":
+            value = value.strip()
+            if len(value) >= 2 and value[0] == value[-1] and value[0] in {"'", '"'}:
+                value = value[1:-1]
+            if not value or "\x00" in value:
+                raise BenchmarkError("AI_GATEWAY_API_KEY in .env.local is empty or invalid")
+            return value
+    return None
+
+
 def _render_result_is_service_failure(result: Mapping[str, Any]) -> bool:
     return bool(result.get("service_failure") or result.get("error_code") in {"renderer_error", "render_timeout", "worker_failure"})
 
@@ -896,11 +928,23 @@ def _render_result_is_service_failure(result: Mapping[str, Any]) -> bool:
 def render_program(
     *, root: Path, source: Path, output: Path, renderer: Path, renderer_python: Path,
     timeout: int = 180, browser_path: Path | None = None, run_as_user: str = "painter",
+    local: bool = False, renderer_backend: str = "metal",
 ) -> dict[str, Any]:
-    """Invoke the existing Linux sandbox renderer with a secret-free child env."""
+    """Invoke the pinned renderer with a secret-free child environment.
 
-    if sys.platform != "linux":
-        raise BenchmarkError("rendering generated JavaScript is Linux-only")
+    Linux keeps the existing unprivileged ``runuser`` boundary.  The explicit
+    local mode is for macOS, where the same renderer can use Chromium's Metal
+    backend under the current user.  It is opt-in so a normal node launch
+    cannot accidentally run with a weaker local process boundary.
+    """
+
+    if local:
+        if sys.platform != "darwin":
+            raise BenchmarkError("--local rendering requires macOS")
+        if renderer_backend not in {"metal", "swiftshader"}:
+            raise BenchmarkError("local renderer backend must be metal or swiftshader")
+    elif sys.platform != "linux":
+        raise BenchmarkError("rendering generated JavaScript is Linux-only; use --local on macOS")
     for path in (source, renderer, renderer_python):
         if not path.is_file():
             raise BenchmarkError(f"renderer input is missing: {path}")
@@ -909,15 +953,21 @@ def render_program(
     source = source.resolve()
     output = output.resolve()
     output.parent.mkdir(parents=True, exist_ok=True)
-    os.chmod(output.parent, 0o777)
-    command = [
-        "/usr/sbin/runuser", "-u", run_as_user, "--", str(renderer_python.absolute()), str(renderer.absolute()),
-        str(source), "--output", str(output), "--timeout", str(int(timeout)), "--backend", "swiftshader",
-    ]
+    os.chmod(output.parent, 0o700 if local else 0o777)
+    if local:
+        command = [
+            str(renderer_python.absolute()), str(renderer.absolute()), str(source), "--output", str(output),
+            "--timeout", str(int(timeout)), "--backend", renderer_backend,
+        ]
+    else:
+        command = [
+            "/usr/sbin/runuser", "-u", run_as_user, "--", str(renderer_python.absolute()), str(renderer.absolute()),
+            str(source), "--output", str(output), "--timeout", str(int(timeout)), "--backend", "swiftshader",
+        ]
     temp_root = Path(tempfile.mkdtemp(prefix="brush-render-env-"))
     # ``runuser -u painter`` must be able to enter the temporary HOME/TMPDIR;
     # the renderer itself still runs with a fresh profile and no credentials.
-    temp_root.chmod(0o777)
+    temp_root.chmod(0o777 if not local else 0o700)
     child_env = {
         "PATH": os.environ.get("PATH", "/usr/bin:/bin"),
         "HOME": str(temp_root),
@@ -1412,10 +1462,26 @@ def dry_run_report(inputs: BenchmarkInputs, *, track: str = "all", limit: int | 
 
 
 def preflight_renderer(inputs: BenchmarkInputs, overrides: Mapping[str, Any]) -> dict[str, Any]:
-    if sys.platform != "linux":
-        raise BenchmarkError("--run requires Linux because generated JavaScript must use the isolated renderer")
-    renderer = Path(overrides.get("renderer") or inputs.config.get("renderer") or inputs.root / "../../native_painting_renderer.py")
-    renderer_python = Path(overrides.get("renderer_python") or inputs.config.get("renderer_python") or inputs.root / "../../renderer-env/bin/python")
+    local = bool(overrides.get("local"))
+    if local:
+        if sys.platform != "darwin":
+            raise BenchmarkError("--local requires macOS; use the existing node launcher on Linux")
+        renderer = Path(
+            overrides.get("renderer")
+            or inputs.config.get("local_renderer")
+            or inputs.root / "../../vendor/integrations/watercolour/renderer.py"
+        )
+        renderer_python = Path(overrides.get("renderer_python") or sys.executable)
+        default_browser = os.environ.get("PLAYWRIGHT_BROWSERS_PATH")
+        if not default_browser:
+            workspace_browsers = inputs.root.parents[2] / "work/playwright-browsers"
+            default_browser = str(workspace_browsers) if workspace_browsers.is_dir() else None
+    else:
+        if sys.platform != "linux":
+            raise BenchmarkError("--run requires Linux; use --local on macOS")
+        renderer = Path(overrides.get("renderer") or inputs.config.get("renderer") or inputs.root / "../../native_painting_renderer.py")
+        renderer_python = Path(overrides.get("renderer_python") or inputs.config.get("renderer_python") or inputs.root / "../../renderer-env/bin/python")
+        default_browser = None
     if not renderer.is_file():
         raise BenchmarkError(f"renderer is missing: {renderer}")
     if not renderer_python.is_file():
@@ -1423,8 +1489,10 @@ def preflight_renderer(inputs: BenchmarkInputs, overrides: Mapping[str, Any]) ->
     return {
         "renderer": renderer.absolute(),
         "renderer_python": renderer_python.absolute(),
-        "browser_path": Path(overrides["browser_path"]).resolve() if overrides.get("browser_path") else None,
-        "run_as_user": overrides.get("run_as_user") or inputs.config.get("run_as_user", "painter"),
+        "browser_path": Path(overrides["browser_path"]).resolve() if overrides.get("browser_path") else (Path(default_browser).resolve() if default_browser else None),
+        "run_as_user": None if local else (overrides.get("run_as_user") or inputs.config.get("run_as_user", "painter")),
+        "local": local,
+        "renderer_backend": overrides.get("renderer_backend") or ("metal" if local else "swiftshader"),
     }
 
 
@@ -1437,6 +1505,8 @@ def run_benchmark(inputs: BenchmarkInputs, *, track: str = "all", limit: int | N
         raise BenchmarkError("another benchmark run already holds the output lock") from exc
     configured_keys: Mapping[str, str] | None = api_key if isinstance(api_key, Mapping) else None
     default_key = None if configured_keys is not None else (api_key or os.environ.get("AI_GATEWAY_API_KEY"))
+    if not default_key and configured_keys is None and renderer_options.get("local"):
+        default_key = local_dotenv_api_key(root)
     if not default_key and configured_keys is None and sys.stdin.isatty():
         default_key = getpass.getpass("Vercel AI Gateway API key (input hidden): ").strip()
     if not default_key and not configured_keys:
@@ -1582,13 +1652,15 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parent)
     modes = parser.add_mutually_exclusive_group(required=True)
     modes.add_argument("--dry-run", action="store_true", help="validate inputs and print the request budget; no key or network")
-    modes.add_argument("--run", action="store_true", help="run/resume paid API episodes and isolated Linux rendering")
+    modes.add_argument("--run", action="store_true", help="run/resume paid API episodes and render each submitted sketch")
+    parser.add_argument("--local", action="store_true", help="use the macOS-local Watercolour renderer (with --run)")
     parser.add_argument("--limit-episodes", type=int, help="select only the first N deterministic episodes")
     parser.add_argument("--track", choices=["quality", "speed", "all"], default="all")
     parser.add_argument("--renderer", type=Path)
     parser.add_argument("--renderer-python", type=Path)
     parser.add_argument("--browser-path", type=Path)
     parser.add_argument("--run-as-user", default=None)
+    parser.add_argument("--renderer-backend", choices=["metal", "swiftshader"], help="local Chromium graphics backend")
     parser.add_argument("--api-key-file", type=Path, help="read a key from a protected file without recording it")
     parser.add_argument("--models", action="append", help="override models for this invocation; repeat or comma-separate IDs")
     args = parser.parse_args(argv)
@@ -1606,6 +1678,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         if args.dry_run:
             print(json.dumps(dry_run_report(inputs, track=args.track, limit=args.limit_episodes), indent=2, sort_keys=True))
             return 0
+        if args.local and not args.run:
+            raise BenchmarkError("--local is only valid with --run")
         renderer = preflight_renderer(inputs, vars(args))
         key = None
         if args.api_key_file:
