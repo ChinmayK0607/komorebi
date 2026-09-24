@@ -100,6 +100,7 @@ def build_gallery(root: Path, output: Path | None = None, *, build_blind: bool =
         episode_path = row["_path"]
         episode_dir = episode_path.parent
         turns = row.get("turns") or []
+        reference = _link(root, row.get("reference_image"))
         first = _link(root, row.get("first_valid_canvas"))
         final = _link(root, row.get("final_valid_canvas"))
         turn_html: list[str] = []
@@ -119,13 +120,15 @@ def build_gallery(root: Path, output: Path | None = None, *, build_blind: bool =
                 f'<figure>{image}<figcaption>Turn {number}: {html.escape(validity)} · '
                 f'{html.escape(str(usage.get("total_tokens") or "?"))} tokens · {links}</figcaption></figure>'
             )
+        reference_image = f'<img loading="lazy" src="{html.escape(reference)}" alt="reference image">' if reference else "<div class=missing>Missing reference</div>"
         first_image = f'<img loading="lazy" src="{html.escape(first)}" alt="first valid canvas">' if first else "<div class=missing>Missing</div>"
         final_image = f'<img loading="lazy" src="{html.escape(final)}" alt="final valid canvas">' if final else "<div class=missing>Missing</div>"
         cards.append(
             f'<article><h2>{html.escape(str(row.get("track")))} · {html.escape(str(row.get("model")))} · '
             f'{html.escape(str(row.get("reference_id")))}</h2><p>Status: <code>{html.escape(str(row.get("status")))}</code> · '
             f'{html.escape(str(row.get("total_tokens", "?")))} tokens · known cost {html.escape(str(row.get("known_cost", row.get("total_cost", "?"))))}</p>'
-            f'<div class="compare"><figure>{first_image}<figcaption>First valid canvas</figcaption></figure>'
+            f'<div class="compare"><figure>{reference_image}<figcaption>Reference</figcaption></figure>'
+            f'<figure>{first_image}<figcaption>First valid canvas</figcaption></figure>'
             f'<figure>{final_image}<figcaption>Final valid canvas</figcaption></figure></div>'
             f'<div class="turns">{"".join(turn_html)}</div></article>'
         )
