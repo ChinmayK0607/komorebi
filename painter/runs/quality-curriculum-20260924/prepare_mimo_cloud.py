@@ -6,13 +6,11 @@ from __future__ import annotations
 import argparse
 import hashlib
 from http.client import HTTPException
-import io
 import json
 from pathlib import Path
 import shutil
 import time
 from urllib.request import urlopen
-import zipfile
 
 ROOT = Path(__file__).resolve().parents[3]
 RUN = Path(__file__).resolve().parent
@@ -20,7 +18,7 @@ BENCH = ROOT / "painter/benchmarks/openrouter-teachers-20260922"
 OUT = ROOT / "painter/collected/quality-curriculum-20260924/mimo-cloud"
 DATASET = "CK0607/komorebi-painter-teachers"
 REF_REVISION = "076a548be0b731c6a33f31749c905ade8b6546de"
-COCO_URL = "https://github.com/ultralytics/assets/releases/download/v0.0.0/coco128.zip"
+HARD_REVISION = "2a379e4f866ff1bb3e185e89a59ca7fc28367f7e"
 COCO_SHA256 = "61e5e3028863d8ffc3b81d6a514603954889f0edd5e4b44c4ce60b2da99aeb8e"
 
 
@@ -59,38 +57,21 @@ def stage(tier: str, model: str) -> Path:
     stage_name = f"{tier}-{model.rsplit('-', 1)[-1]}"
     dest = OUT / stage_name
     (dest / "references").mkdir(parents=True, exist_ok=True)
-    archive = None
-    if tier == "hard":
-        raw = fetch(COCO_URL)
-        if sha(raw) != COCO_SHA256:
-            raise ValueError("official COCO128 archive hash mismatch")
-        archive = zipfile.ZipFile(io.BytesIO(raw))
     selected = []
-    try:
-        for row in rows:
-            ident = row["id"]
-            if tier == "easy":
-                url = (f"https://huggingface.co/datasets/{DATASET}/resolve/{REF_REVISION}/"
-                       f"curricula/quality-20260924/references/{ident}.png?download=true")
-                data = fetch(url)
-                suffix = ".png"
-            else:
-                number = ident.removeprefix("coco128-")
-                matches = [name for name in archive.namelist() if name.endswith(f"/images/train2017/{number}.jpg")]
-                if len(matches) != 1:
-                    raise ValueError(f"COCO128 source missing or ambiguous: {ident}")
-                data = archive.read(matches[0])
-                suffix = ".jpg"
-            if sha(data) != row["sha256"]:
-                raise ValueError(f"reference hash mismatch: {ident}")
-            target = dest / "references" / f"{ident}{suffix}"
-            target.write_bytes(data)
-            selected.append({"id": ident, "image": f"references/{target.name}",
-                             "sha256": row["sha256"], "split": "train", "category": row["description"],
-                             "tier": row["tier"], "source_kind": row["source_kind"]})
-    finally:
-        if archive is not None:
-            archive.close()
+    for row in rows:
+        ident = row["id"]
+        suffix = ".png" if tier == "easy" else ".jpg"
+        revision = REF_REVISION if tier == "easy" else HARD_REVISION
+        url = (f"https://huggingface.co/datasets/{DATASET}/resolve/{revision}/"
+               f"curricula/quality-20260924/references/{ident}{suffix}?download=true")
+        data = fetch(url)
+        if sha(data) != row["sha256"]:
+            raise ValueError(f"reference hash mismatch: {ident}")
+        target = dest / "references" / f"{ident}{suffix}"
+        target.write_bytes(data)
+        selected.append({"id": ident, "image": f"references/{target.name}",
+                         "sha256": row["sha256"], "split": "train", "category": row["description"],
+                         "tier": row["tier"], "source_kind": row["source_kind"]})
     config = {
         "benchmark": f"quality-curriculum-{tier}-{model.rsplit('-', 1)[-1]}-20260924",
         "models": [model],
@@ -111,6 +92,7 @@ def stage(tier: str, model: str) -> Path:
     source = {"schema": "painter.mimo-curriculum-source.v1", "tier": tier, "model": model,
               "reference_manifest_sha256": sha(manifest_bytes),
               "public_easy_revision": REF_REVISION if tier == "easy" else None,
+              "public_hard_revision": HARD_REVISION if tier == "hard" else None,
               "official_coco128_sha256": COCO_SHA256 if tier == "hard" else None,
               "reference_ids": [r["id"] for r in rows], "status": "candidate_generation_only"}
     (dest / "restored-source.json").write_text(json.dumps(source, indent=2, sort_keys=True) + "\n")
