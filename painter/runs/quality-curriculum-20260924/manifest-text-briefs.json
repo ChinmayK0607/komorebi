@@ -1,0 +1,20 @@
+{
+  "schema": "painter.quality-curriculum.text-briefs.v1",
+  "status": "candidate_prompts_only_no_teacher_targets",
+  "split": "train",
+  "task_mode": "text_prompt_to_paint",
+  "briefs": [
+    {"id": "brief-001", "tier": "clean_form", "prompt": "Paint one cream ceramic mug with a round handle on a pale wood table. Soft warm light comes from the left; the wall behind it is muted blue-gray. Leave the background quiet and keep the cup's rim and handle distinct."},
+    {"id": "brief-002", "tier": "clean_form", "prompt": "Paint a ripe yellow pear with one dark green leaf resting on natural linen. The pear should be the only fruit, centered with a soft shadow and warm side light."},
+    {"id": "brief-003", "tier": "clean_form", "prompt": "Paint a single scarlet poppy on a slender stem in a small clear vase by a bright window. Preserve the open petals, dark center, and generous cream-colored negative space."},
+    {"id": "brief-004", "tier": "clean_form", "prompt": "Paint a blue wooden toy sailboat with two cream sails on a pale shelf. The hull should read as wood, with afternoon light and a quiet sea-glass wall behind it."},
+    {"id": "brief-005", "tier": "recognizable_subject", "prompt": "Paint a small white cottage with a red tiled roof in a meadow. Show the front and one side wall, a short path, two windows, and soft blue morning sky. Keep the architecture legible without drawing every roof tile."},
+    {"id": "brief-006", "tier": "recognizable_subject", "prompt": "Paint a terracotta pot with one fern on a cream windowsill. Several fronds arch in different directions, and the left window lights the leaves. Make the plant lush while keeping the pot and background simple."},
+    {"id": "brief-007", "tier": "recognizable_subject", "prompt": "Paint a yellow school bus seen from the front-left three-quarter view on an empty sunlit road. Keep the long side, front windshield, row of windows, and two visible wheels correctly aligned."},
+    {"id": "brief-008", "tier": "recognizable_subject", "prompt": "Paint a calm black bear standing on pale rocky ground with a blurred green woodland behind it. Keep the head, shoulders, four legs, and ground shadow coherent; simplify tiny fur marks."},
+    {"id": "brief-009", "tier": "spatial_relations", "prompt": "Paint a white cup of coffee on a blue saucer, with one silver spoon to its left and one small pastry in the upper-left corner of a warm wooden table. Use the saucer to anchor the cup and keep the latte surface readable."},
+    {"id": "brief-010", "tier": "spatial_relations", "prompt": "Paint a white dog standing on grass and holding a large purple frisbee in its mouth. Show all four legs, a readable face, and the disc overlapping the chest without covering the eyes."},
+    {"id": "brief-011", "tier": "spatial_relations", "prompt": "Paint two elephants on pale earth: a smaller calf partly behind and reaching over a larger calf in front. Keep their trunks, ears, legs, scale difference, and overlap clear against a soft green background."},
+    {"id": "brief-012", "tier": "spatial_relations", "prompt": "Paint a brown dog looking out from the open side of a white pontoon boat on dark water. Keep the broad boat hull, railing, cabin opening, dog face, and reflection in distinct layers."}
+  ]
+}

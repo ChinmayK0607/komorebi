@@ -1,0 +1,135 @@
+{
+  "archive": "painter/collected/quality-curriculum-20260924/manual-render-handoff.tar.gz",
+  "bytes": 942689,
+  "contents": [
+    {
+      "path": "painter/runs/quality-curriculum-20260924/reference-manifest.json",
+      "sha256": "dfa0ac3b3ac524cc2d5279d9bde4cfdaf5dc890dff0fd8ee60e81a43105bab87"
+    },
+    {
+      "path": "painter/runs/quality-curriculum-20260924/manual-program-manifest.json",
+      "sha256": "c681f8d1b6ee5f017ba642f21eb1b4b778032cdc6b3c93236bbcc7abc4ac856b"
+    },
+    {
+      "path": "painter/runs/quality-curriculum-20260924/setup_manual_node.sh",
+      "sha256": "3b338e9a71a5bbc6d466048c3573ccc7cd4887b2729adcafa682467fac27dc57"
+    },
+    {
+      "path": "painter/vendor/integrations/watercolour/renderer.py",
+      "sha256": "ad7ba24d632f0f16989741560c3af0fe42e426275c1df01954b60ddd69b63395"
+    },
+    {
+      "path": "painter/vendor/integrations/watercolour/assets/ATTRIBUTION.md",
+      "sha256": "5394e87d53545a331765cb9d159e43b59e587b4d0559c89dd5a747f4c2a9af80"
+    },
+    {
+      "path": "painter/vendor/integrations/watercolour/assets/UPSTREAM-LICENSE",
+      "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4"
+    },
+    {
+      "path": "painter/vendor/integrations/watercolour/assets/VERSIONS",
+      "sha256": "8493f4be8b2714625da05fa870a53b5af2c1963958d2a9f4070be7a8cbd14643"
+    },
+    {
+      "path": "painter/vendor/integrations/watercolour/assets/p5-LICENSE",
+      "sha256": "eb2f25f8f165d5f20682c1ce7e99ce69144ecfd80fbed8c17dfd327ecd8b6cb6"
+    },
+    {
+      "path": "painter/vendor/integrations/watercolour/assets/p5.brush-LICENSE",
+      "sha256": "cabbece1a276329fa28ab40f1c99af3af2b7852a329551a9a485b2199616583a"
+    },
+    {
+      "path": "painter/vendor/integrations/watercolour/assets/p5.brush.js",
+      "sha256": "9c6e271a78e5dcb23c9cfa9d085775317fe5fb2188f976465c83c1f7965d1ec8"
+    },
+    {
+      "path": "painter/vendor/integrations/watercolour/assets/p5.min.js",
+      "sha256": "87adc350e8ec0e9bced22d4f03c181bdd208dc997d3956ab3ec2e90537643c9a"
+    },
+    {
+      "path": "painter/collected/quality-curriculum-20260924/references/coco128-000000000092.jpg",
+      "sha256": "886950d096ad454f0bbb9a63167c795bd49eb9d4c0cb24a72888b3429d11900a"
+    },
+    {
+      "path": "painter/collected/quality-curriculum-20260924/manual/coco128-000000000092/v1.js",
+      "sha256": "51cdc8fbff9585cca0d5a1d34fe7c6e04436057ecd4b9f043534b10f092730b1"
+    },
+    {
+      "path": "painter/collected/quality-curriculum-20260924/references/coco128-000000000025.jpg",
+      "sha256": "9f016b98f31e4fe826910e56ee39fa0c2889f48d38cc5f4f6b6421c8c5fc7214"
+    },
+    {
+      "path": "painter/collected/quality-curriculum-20260924/manual/coco128-000000000025/v1.js",
+      "sha256": "a80a7c03f5a84f1fa7fb2187de885e8a620c86d374f18c16a8bbfcbe1a9e8bfc"
+    },
+    {
+      "path": "painter/collected/quality-curriculum-20260924/references/coco128-000000000034.jpg",
+      "sha256": "0e67e637241ac2fbf132aa2b6cc9775b474b520e1c9a99dbef377063a5a48b85"
+    },
+    {
+      "path": "painter/collected/quality-curriculum-20260924/manual/coco128-000000000034/v1.js",
+      "sha256": "436d37babe8cfedd1cdd16b1066198c369b4bdae367e2a5a73bcad086b246cca"
+    },
+    {
+      "path": "painter/collected/quality-curriculum-20260924/references/coco128-000000000263.jpg",
+      "sha256": "4abc27b830dedd072dab619c6b7f2467886f601e41b0cc8c2de888f57cf90d7b"
+    },
+    {
+      "path": "painter/collected/quality-curriculum-20260924/manual/coco128-000000000263/v1.js",
+      "sha256": "3d91f452777b53c075364a843dc4c59c252743ab3c06fb55fd819128e37192b9"
+    },
+    {
+      "path": "painter/collected/quality-curriculum-20260924/references/coco128-000000000394.jpg",
+      "sha256": "2cf78c1cfa98714d2ed8a643f931c39511bbb6085fddf157b27ed709089e0343"
+    },
+    {
+      "path": "painter/collected/quality-curriculum-20260924/manual/coco128-000000000394/v1.js",
+      "sha256": "e4cc17329d51c308f32968d9967cd9f39e8726455085a70e6f0ffde685bb25d6"
+    },
+    {
+      "path": "painter/collected/quality-curriculum-20260924/references/coco128-000000000400.jpg",
+      "sha256": "7b78338d4c7a30f7c38eb3bf11a7623a195e10926359adfd7281d6ce99e42dcb"
+    },
+    {
+      "path": "painter/collected/quality-curriculum-20260924/manual/coco128-000000000400/v1.js",
+      "sha256": "87f3011f36b67ab83dc8a891689839ffdbfdec496c0330ec1169d25d8eed171d"
+    },
+    {
+      "path": "painter/collected/quality-curriculum-20260924/references/coco128-000000000471.jpg",
+      "sha256": "8f473ca6e651f74a74efea3673445230f6bb7d6ae92f76bf3c1e523853ec3995"
+    },
+    {
+      "path": "painter/collected/quality-curriculum-20260924/manual/coco128-000000000471/v1.js",
+      "sha256": "41878c9fce6367b2a4ab7c6ce0d5d34f781f8a1413d10234e85231133818e0fc"
+    },
+    {
+      "path": "painter/collected/quality-curriculum-20260924/references/coco128-000000000491.jpg",
+      "sha256": "9d5732e879b066bfe8a38e3fcad64836fa1a5ac9f507625082c4b14fe449f993"
+    },
+    {
+      "path": "painter/collected/quality-curriculum-20260924/manual/coco128-000000000491/v1.js",
+      "sha256": "e9852ead25523534ff3402f291479982638e2f9cfe5a7d76a01fe4ab061ded47"
+    },
+    {
+      "path": "painter/collected/quality-curriculum-20260924/references/coco128-000000000605.jpg",
+      "sha256": "9135dd0723240d2d4f64ce2173901a0f23a222dea98b72e1259c28f28fa2aab6"
+    },
+    {
+      "path": "painter/collected/quality-curriculum-20260924/manual/coco128-000000000605/v1.js",
+      "sha256": "677d1d1d3575a7a7546edd66be209982f0a2e424597522e66d153109c190f6c6"
+    },
+    {
+      "path": "painter/collected/quality-curriculum-20260924/references/coco128-000000000650.jpg",
+      "sha256": "9bb45795336c1d05189fe51a77e04270cd1da8929d62060926798f3dd2d25204"
+    },
+    {
+      "path": "painter/collected/quality-curriculum-20260924/manual/coco128-000000000650/v1.js",
+      "sha256": "36c3886d5af9b67902ad7b02515b41aa2a509eddfd0c12d423848caca6b44327"
+    }
+  ],
+  "credential_files_included": false,
+  "file_count": 31,
+  "note": "Prepared locally only; upload requires separate authorization.",
+  "schema": "painter.manual-render-handoff.v1",
+  "sha256": "79454e9aa60f88de6ab6dcfbcda9890384cdd239201243a0724af85082768a80"
+}

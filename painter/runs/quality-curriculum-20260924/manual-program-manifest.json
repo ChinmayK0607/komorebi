@@ -1,0 +1,87 @@
+{
+  "count": 10,
+  "note": "Authored programs are not teacher data until Linux render, visual inspection, and revision.",
+  "programs": [
+    {
+      "program_path": "painter/collected/quality-curriculum-20260924/manual/coco128-000000000092/v1.js",
+      "program_sha256": "51cdc8fbff9585cca0d5a1d34fe7c6e04436057ecd4b9f043534b10f092730b1",
+      "reference_id": "coco128-000000000092",
+      "reference_sha256": "886950d096ad454f0bbb9a63167c795bd49eb9d4c0cb24a72888b3429d11900a",
+      "shape_count": 31,
+      "status": "authored_unrendered"
+    },
+    {
+      "program_path": "painter/collected/quality-curriculum-20260924/manual/coco128-000000000025/v1.js",
+      "program_sha256": "a80a7c03f5a84f1fa7fb2187de885e8a620c86d374f18c16a8bbfcbe1a9e8bfc",
+      "reference_id": "coco128-000000000025",
+      "reference_sha256": "9f016b98f31e4fe826910e56ee39fa0c2889f48d38cc5f4f6b6421c8c5fc7214",
+      "shape_count": 47,
+      "status": "authored_unrendered"
+    },
+    {
+      "program_path": "painter/collected/quality-curriculum-20260924/manual/coco128-000000000034/v1.js",
+      "program_sha256": "436d37babe8cfedd1cdd16b1066198c369b4bdae367e2a5a73bcad086b246cca",
+      "reference_id": "coco128-000000000034",
+      "reference_sha256": "0e67e637241ac2fbf132aa2b6cc9775b474b520e1c9a99dbef377063a5a48b85",
+      "shape_count": 46,
+      "status": "authored_unrendered"
+    },
+    {
+      "program_path": "painter/collected/quality-curriculum-20260924/manual/coco128-000000000263/v1.js",
+      "program_sha256": "3d91f452777b53c075364a843dc4c59c252743ab3c06fb55fd819128e37192b9",
+      "reference_id": "coco128-000000000263",
+      "reference_sha256": "4abc27b830dedd072dab619c6b7f2467886f601e41b0cc8c2de888f57cf90d7b",
+      "shape_count": 31,
+      "status": "authored_unrendered"
+    },
+    {
+      "program_path": "painter/collected/quality-curriculum-20260924/manual/coco128-000000000394/v1.js",
+      "program_sha256": "e4cc17329d51c308f32968d9967cd9f39e8726455085a70e6f0ffde685bb25d6",
+      "reference_id": "coco128-000000000394",
+      "reference_sha256": "2cf78c1cfa98714d2ed8a643f931c39511bbb6085fddf157b27ed709089e0343",
+      "shape_count": 26,
+      "status": "authored_unrendered"
+    },
+    {
+      "program_path": "painter/collected/quality-curriculum-20260924/manual/coco128-000000000400/v1.js",
+      "program_sha256": "87f3011f36b67ab83dc8a891689839ffdbfdec496c0330ec1169d25d8eed171d",
+      "reference_id": "coco128-000000000400",
+      "reference_sha256": "7b78338d4c7a30f7c38eb3bf11a7623a195e10926359adfd7281d6ce99e42dcb",
+      "shape_count": 32,
+      "status": "authored_unrendered"
+    },
+    {
+      "program_path": "painter/collected/quality-curriculum-20260924/manual/coco128-000000000471/v1.js",
+      "program_sha256": "41878c9fce6367b2a4ab7c6ce0d5d34f781f8a1413d10234e85231133818e0fc",
+      "reference_id": "coco128-000000000471",
+      "reference_sha256": "8f473ca6e651f74a74efea3673445230f6bb7d6ae92f76bf3c1e523853ec3995",
+      "shape_count": 36,
+      "status": "authored_unrendered"
+    },
+    {
+      "program_path": "painter/collected/quality-curriculum-20260924/manual/coco128-000000000491/v1.js",
+      "program_sha256": "e9852ead25523534ff3402f291479982638e2f9cfe5a7d76a01fe4ab061ded47",
+      "reference_id": "coco128-000000000491",
+      "reference_sha256": "9d5732e879b066bfe8a38e3fcad64836fa1a5ac9f507625082c4b14fe449f993",
+      "shape_count": 28,
+      "status": "authored_unrendered"
+    },
+    {
+      "program_path": "painter/collected/quality-curriculum-20260924/manual/coco128-000000000605/v1.js",
+      "program_sha256": "677d1d1d3575a7a7546edd66be209982f0a2e424597522e66d153109c190f6c6",
+      "reference_id": "coco128-000000000605",
+      "reference_sha256": "9135dd0723240d2d4f64ce2173901a0f23a222dea98b72e1259c28f28fa2aab6",
+      "shape_count": 34,
+      "status": "authored_unrendered"
+    },
+    {
+      "program_path": "painter/collected/quality-curriculum-20260924/manual/coco128-000000000650/v1.js",
+      "program_sha256": "36c3886d5af9b67902ad7b02515b41aa2a509eddfd0c12d423848caca6b44327",
+      "reference_id": "coco128-000000000650",
+      "reference_sha256": "9bb45795336c1d05189fe51a77e04270cd1da8929d62060926798f3dd2d25204",
+      "shape_count": 42,
+      "status": "authored_unrendered"
+    }
+  ],
+  "schema": "painter.manual-teachers.v1"
+}
