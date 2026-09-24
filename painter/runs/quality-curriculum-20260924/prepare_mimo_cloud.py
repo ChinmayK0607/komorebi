@@ -86,7 +86,8 @@ def stage(tier: str, model: str) -> Path:
     }
     (dest / "refs.json").write_text(json.dumps({"version": 1, "count": len(selected), "references": selected}, indent=2, sort_keys=True) + "\n")
     (dest / "config.json").write_text(json.dumps(config, indent=2, sort_keys=True) + "\n")
-    for name in ("prompt.txt", "contract.json", "model-catalog.json", "gateway_transport.ts",
+    shutil.copyfile(RUN / "quality-prompt.txt", dest / "prompt.txt")
+    for name in ("contract.json", "model-catalog.json", "gateway_transport.ts",
                  "gateway_prompt.ts", "package.json", "pnpm-lock.yaml", "pnpm-workspace.yaml", "tsconfig.json"):
         shutil.copyfile(BENCH / name, dest / name)
     source = {"schema": "painter.mimo-curriculum-source.v1", "tier": tier, "model": model,
