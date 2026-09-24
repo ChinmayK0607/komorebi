@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # Idempotent renderer/AI-SDK bootstrap for one fresh Linux benchmark node.
 set -Eeuo pipefail
+BOOTSTRAP_PHASE=preflight
+trap 'printf "Renderer bootstrap failed in %s at line %s\n" "$BOOTSTRAP_PHASE" "$LINENO" >&2' ERR
 ROOT=$(realpath "${1:?node workspace required}")
 [[ "$ROOT" == /* && "$ROOT" != "/" && $(uname -s) == Linux ]]
 [[ ${EUID:-$(id -u)} -eq 0 ]]
@@ -28,6 +30,7 @@ if [[ "$python_ok" != true || ! -x /usr/sbin/runuser || ! -x /usr/bin/curl || ! 
 fi
 node_major=$(node --version | sed -E 's/^v([0-9]+).*/\1/' || true)
 if ! [[ "$node_major" =~ ^[0-9]+$ ]] || (( node_major < 22 )); then
+  BOOTSTRAP_PHASE=node-install
   curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
   apt_install nodejs
 fi
@@ -68,8 +71,10 @@ PY="$ROOT/renderer-env/bin/python"
 BROWSERS="$ROOT/browsers"
 TQDM_VERSION="4.67.1"
 if [[ "$(pnpm --version 2>/dev/null || true)" != "10.15.1" ]]; then
+  BOOTSTRAP_PHASE=pnpm-install
   npm install --global pnpm@10.15.1
 fi
+BOOTSTRAP_PHASE=source-check
 [[ "$(pnpm --version)" == "10.15.1" ]]
 if ! id painter >/dev/null 2>&1; then
   useradd --create-home --shell /bin/bash painter
@@ -109,8 +114,10 @@ with tarfile.open(archive_path, "r:gz") as archive:
         target.chmod(0o644)
 PY
 fi
+BOOTSTRAP_PHASE=reference-check
 [[ $(find "$BENCHMARK/references" -maxdepth 1 -type f -name '*.jpg' | wc -l) -eq 40 ]]
 if [[ ! -x "$PY" ]] || ! "$PY" -c 'import importlib.metadata as m; assert m.version("playwright") == "1.58.0" and m.version("Pillow") == "12.3.0" and m.version("tqdm") == "4.67.1"' >/dev/null 2>&1; then
+  BOOTSTRAP_PHASE=python-packages
   python3 -m venv "$ROOT/renderer-env"
   "$PY" -m pip install --disable-pip-version-check --no-input playwright==1.58.0 pillow==12.3.0 "tqdm==$TQDM_VERSION" >"$ROOT/logs/renderer-install.log" 2>&1
 fi
@@ -123,6 +130,7 @@ raise SystemExit(0 if any(p.is_file() and os.access(p,os.X_OK) and p.name in {"c
 PY
 then browser_ok=true; fi
 if [[ "$browser_ok" != true ]]; then
+  BOOTSTRAP_PHASE=chromium-install
   PLAYWRIGHT_BROWSERS_PATH="$BROWSERS" "$PY" -m playwright install --with-deps chromium >>"$ROOT/logs/renderer-install.log" 2>&1
 fi
 
@@ -130,6 +138,7 @@ fi
 # directory. This is separate from the renderer environment and is safe to
 # repeat because the lockfile is authoritative.
 (cd "$BENCHMARK" && pnpm install --frozen-lockfile --ignore-scripts) >"$ROOT/logs/benchmark-pnpm-install.log" 2>&1
+BOOTSTRAP_PHASE=renderer-smoke
 cursor="$ROOT"
 while [[ "$cursor" != / ]]; do chmod o+x "$cursor"; cursor=$(dirname "$cursor"); done
 chmod -R a+rX "$CODE_ROOT/vendor" "$ROOT/renderer-env" "$ROOT/browsers"
