@@ -24,7 +24,10 @@ for source in /etc/apt/sources.list.d/*; do
   fi
 done
 
-python3 "$BENCHMARK/cloud/fetch_references.py" --root "$BENCHMARK"
+# Curriculum tasks fetch only their own hash-pinned training references in the
+# task phase. The 40 held-out benchmark images are not needed to provision the
+# renderer and can make every cloud VM depend on an unrelated HF download.
+export PAINTER_SETUP_SKIP_BENCHMARK_REFERENCES=1
 # Codex universal prepends mise's Node 20. The node bootstrap installs
 # Node 22 in /usr/bin; keep that binary first for its version checks.
 export PATH="/usr/bin:/bin:$PATH"
@@ -43,5 +46,4 @@ done
 [[ "$ready" == true ]] || { echo 'Renderer bootstrap failed after 3 attempts' >&2; exit 1; }
 "$RUNTIME_ROOT/renderer-env/bin/python" -m pip install \
   --disable-pip-version-check --no-input 'huggingface_hub>=1.0,<2'
-"$RUNTIME_ROOT/renderer-env/bin/python" "$BENCHMARK/run.py" \
-  --root "$BENCHMARK" --dry-run --track screen --limit-episodes 1
+echo 'Cloud renderer is ready; curriculum reference verification runs in the task phase.'

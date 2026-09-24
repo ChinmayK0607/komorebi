@@ -115,7 +115,9 @@ with tarfile.open(archive_path, "r:gz") as archive:
 PY
 fi
 BOOTSTRAP_PHASE=reference-check
-[[ $(find "$BENCHMARK/references" -maxdepth 1 -type f -name '*.jpg' | wc -l) -eq 40 ]]
+if [[ "${PAINTER_SETUP_SKIP_BENCHMARK_REFERENCES:-0}" != 1 ]]; then
+  [[ $(find "$BENCHMARK/references" -maxdepth 1 -type f -name '*.jpg' | wc -l) -eq 40 ]]
+fi
 if [[ ! -x "$PY" ]] || ! "$PY" -c 'import importlib.metadata as m; assert m.version("playwright") == "1.58.0" and m.version("Pillow") == "12.3.0" and m.version("tqdm") == "4.67.1"' >/dev/null 2>&1; then
   BOOTSTRAP_PHASE=python-packages
   python3 -m venv "$ROOT/renderer-env"
