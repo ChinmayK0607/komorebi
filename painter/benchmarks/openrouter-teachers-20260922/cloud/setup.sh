@@ -28,10 +28,19 @@ python3 "$BENCHMARK/cloud/fetch_references.py" --root "$BENCHMARK"
 # Codex universal prepends mise's Node 20. The node bootstrap installs
 # Node 22 in /usr/bin; keep that binary first for its version checks.
 export PATH="/usr/bin:/bin:$PATH"
-SOURCE_BUNDLE="$RUNTIME_ROOT/no-source-bundle" \
-REPO_ROOT="$REPO_ROOT" \
-REFERENCES_ARCHIVE="$RUNTIME_ROOT/no-reference-archive" \
-  bash "$BENCHMARK/setup_benchmark_node.sh" "$RUNTIME_ROOT"
+ready=false
+for attempt in 1 2 3; do
+  if SOURCE_BUNDLE="$RUNTIME_ROOT/no-source-bundle" \
+     REPO_ROOT="$REPO_ROOT" \
+     REFERENCES_ARCHIVE="$RUNTIME_ROOT/no-reference-archive" \
+     bash "$BENCHMARK/setup_benchmark_node.sh" "$RUNTIME_ROOT"; then
+    ready=true
+    break
+  fi
+  echo "Renderer bootstrap attempt $attempt failed; retrying transient package/network error" >&2
+  sleep $((attempt * 5))
+done
+[[ "$ready" == true ]] || { echo 'Renderer bootstrap failed after 3 attempts' >&2; exit 1; }
 "$RUNTIME_ROOT/renderer-env/bin/python" -m pip install \
   --disable-pip-version-check --no-input 'huggingface_hub>=1.0,<2'
 "$RUNTIME_ROOT/renderer-env/bin/python" "$BENCHMARK/run.py" \
