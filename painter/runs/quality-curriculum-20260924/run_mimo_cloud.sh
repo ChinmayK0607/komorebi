@@ -22,7 +22,16 @@ case "$MODEL" in xiaomi/mimo-v2.6-flash|xiaomi/mimo-v2.6-pro) ;; *) echo 'unexpe
 [[ -n "${AI_GATEWAY_API_KEY:-}" && -n "${HF_TOKEN:-}" ]] || { echo 'Gateway and HF environment credentials are required' >&2; exit 2; }
 
 STAGE="$($PY "$RUN/prepare_mimo_cloud.py" --tier "$TIER" --model "$MODEL" | $PY -c 'import json,sys; print(json.load(sys.stdin)["stage_root"])')"
-(cd "$STAGE" && env -u AI_GATEWAY_API_KEY -u HF_TOKEN pnpm install --frozen-lockfile --ignore-scripts --silent)
+installed=false
+for attempt in 1 2 3; do
+  if (cd "$STAGE" && env -u AI_GATEWAY_API_KEY -u HF_TOKEN pnpm install --frozen-lockfile --ignore-scripts --silent); then
+    installed=true
+    break
+  fi
+  echo "Stage dependency install attempt $attempt failed; retrying" >&2
+  sleep $((attempt * 5))
+done
+[[ "$installed" == true ]] || { echo 'Stage dependency install failed after 3 attempts' >&2; exit 1; }
 if [[ "$TIER" == easy ]]; then LIMITS=(2 4 7); else LIMITS=(2 5 10); fi
 
 publish() {
