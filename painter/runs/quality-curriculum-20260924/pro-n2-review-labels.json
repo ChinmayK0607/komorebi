@@ -1,0 +1,19 @@
+{
+  "schema": "painter.ai-gateway-teachers.review-labels.v1",
+  "source_run_id": "mimo-quality-hard-pro-20260924-n2",
+  "source_bundle_sha256": "239df7b5077cdaa3f0cffb0a6dd3b039d17abd71dd80293a938c7ca74a0141a3",
+  "labels": [
+    {
+      "job_id": "gateway--quality--xiaomi-mimo-v2.6-pro-dabee5e3--coco128-000000000025--s01",
+      "admitted": false,
+      "visual_review": "Turn 5 improves the two-giraffe layout, but the main giraffe has a blocky face, stunted legs, and weak anatomy; the foliage is mechanical. Turn 6 fails the renderer deadline.",
+      "main_issue": "insufficient visual quality and final render failure"
+    },
+    {
+      "job_id": "gateway--quality--xiaomi-mimo-v2.6-pro-dabee5e3--coco128-000000000034--s01",
+      "admitted": false,
+      "visual_review": "No canvas was produced. Gateway returned a maximum-stream-duration error for the first response.",
+      "main_issue": "provider error before rendering"
+    }
+  ]
+}
