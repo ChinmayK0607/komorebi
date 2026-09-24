@@ -1,0 +1,19 @@
+{
+  "schema": "painter.ai-gateway-teachers.review-labels.v1",
+  "source_run_id": "mimo-quality-easy-flash-20260924-n2",
+  "source_bundle_sha256": "caefe357a68c556ea6f991e559769d175bb30904caf89b9d921b8a8907b4377b",
+  "labels": [
+    {
+      "job_id": "gateway--quality--xiaomi-mimo-v2.6-flash-60cd64be--simple-cup--s01",
+      "admitted": false,
+      "visual_review": "The final valid canvas makes the mug body and handle nearly transparent against the wall and tabletop. It does not preserve the solid ceramic form of the reference. Turn 5 exceeded the renderer deadline.",
+      "main_issue": "transparent subject and final render failure"
+    },
+    {
+      "job_id": "gateway--quality--xiaomi-mimo-v2.6-flash-60cd64be--simple-pear--s01",
+      "admitted": false,
+      "visual_review": "Turn 6 gives a recognizable pear with the right broad placement, but the tabletop is a dense rectilinear grid, the shading remains flat and mechanical, and the fruit does not meet the attractive high-quality demonstration bar.",
+      "main_issue": "mechanical texture and insufficient visual quality"
+    }
+  ]
+}
