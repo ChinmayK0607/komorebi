@@ -440,7 +440,11 @@ def build_curriculum(
             excluded.append({"job_id": job_id, "reason": "reference_missing_training_manifest"})
             continue
         if split is not None:
-            if manifest_entry.get("source_split") != split:
+            source_split = manifest_entry.get("source_split")
+            declared_split = manifest_entry.get("split")
+            if (source_split is not None and declared_split is not None and source_split != declared_split):
+                raise CurriculumError(f"conflicting reference split for {reference_id}")
+            if (source_split if source_split is not None else declared_split) != split:
                 excluded.append({"job_id": job_id, "reason": "reference_split_mismatch"})
                 continue
         expected = manifest_entry.get("sha256")

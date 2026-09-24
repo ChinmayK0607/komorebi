@@ -105,6 +105,21 @@ class CurriculumTests(unittest.TestCase):
         reasons = {row["job_id"]: row["reason"] for row in map(json.loads, (self.temp / "curriculum/excluded.jsonl").read_text().splitlines())}
         self.assertEqual(reasons["bad-job"], "episode_status:invalid")
 
+    def test_accepts_split_field_from_campaign_manifest(self) -> None:
+        manifest = json.loads(self.training_manifest.read_text())
+        entry = manifest["references"][0]
+        entry["split"] = entry.pop("source_split")
+        self.training_manifest.write_text(json.dumps(manifest), encoding="utf-8")
+        summary = self._build(self.temp / "split-alias")
+        self.assertEqual(summary["accepted_total"], 2)
+
+    def test_conflicting_split_fields_fail_closed(self) -> None:
+        manifest = json.loads(self.training_manifest.read_text())
+        manifest["references"][0]["split"] = "validation"
+        self.training_manifest.write_text(json.dumps(manifest), encoding="utf-8")
+        with self.assertRaisesRegex(build_curriculum.CurriculumError, "conflicting reference split"):
+            self._build(self.temp / "conflicting-split")
+
     def test_evaluation_overlap_fails_closed(self) -> None:
         overlapping = self.temp / "holdout-overlap.json"
         overlapping.write_text(json.dumps({"references": [{"id": "train-ref", "sha256": self.reference_sha}]}), encoding="utf-8")
