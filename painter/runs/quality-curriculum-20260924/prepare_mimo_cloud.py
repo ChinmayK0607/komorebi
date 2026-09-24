@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+from http.client import HTTPException
 import io
 import json
 from pathlib import Path
@@ -28,12 +29,12 @@ def sha(data: bytes) -> str:
 
 
 def fetch(url: str) -> bytes:
-    for attempt in range(4):
+    for attempt in range(6):
         try:
             with urlopen(url, timeout=180) as response:
                 return response.read()
-        except (OSError, TimeoutError):
-            if attempt == 3:
+        except (OSError, TimeoutError, HTTPException):
+            if attempt == 5:
                 raise
             time.sleep(2 ** attempt)
     raise AssertionError("unreachable")
