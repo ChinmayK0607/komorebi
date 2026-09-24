@@ -25,11 +25,15 @@ root=pathlib.Path(sys.argv[1]); tier=sys.argv[2]
 path=root/'config.json'; config=json.loads(path.read_text())
 quality=config['tracks']['quality']
 quality.update(max_turns=6 if tier=='easy' else 8,
-               max_tokens=16384 if tier=='easy' else 24576)
-config.update(request_timeout_seconds=900,renderer_timeout=240 if tier=='easy' else 300)
+               max_tokens=16384 if tier=='easy' else 24576,
+               episode_timeout_seconds=2400 if tier=='easy' else 3600)
+config.update(request_timeout_seconds=900,renderer_timeout=240 if tier=='easy' else 300,
+              max_retries=0)
 path.write_text(json.dumps(config,indent=2,sort_keys=True)+'\n')
 source_path=root/'restored-source.json'; source=json.loads(source_path.read_text())
 source['campaign_profile']={'max_turns':quality['max_turns'],
+                            'episode_timeout_seconds':quality['episode_timeout_seconds'],
+                            'max_retries':config['max_retries'],
                             'max_completion_tokens':quality['max_tokens'],
                             'request_timeout_seconds':config['request_timeout_seconds'],
                             'renderer_timeout_seconds':config['renderer_timeout'],

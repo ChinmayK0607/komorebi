@@ -26,6 +26,7 @@ config['tracks']['quality'].update(max_turns=6, max_tokens=32768)
 config['concurrency'] = 1
 config['renderer_timeout'] = 300
 config['request_timeout_seconds'] = 900
+config['max_retries']=0
 config_path.write_text(json.dumps(config, indent=2, sort_keys=True) + '\n')
 prompt_path = root / 'prompt.txt'
 prompt_path.write_text(prompt_path.read_text() + '\nValid brush names are pen, rotring, 2B, HB, 2H, cpencil, pastel, crayon, charcoal, spray, and marker. Do not call brush.init() or invent brush names. Keep loops finite and geometry bounded so a 600x600 canvas renders promptly.\n')

@@ -23,6 +23,7 @@ config['tracks']['quality'].update(max_turns=6,max_tokens=16384)
 config['concurrency']=1
 config['renderer_timeout']=240
 config['request_timeout_seconds']=900
+config['max_retries']=0
 config_path.write_text(json.dumps(config,indent=2,sort_keys=True)+'\n')
 prompt_path=root/'prompt.txt'
 source_path=root/'restored-source.json'
