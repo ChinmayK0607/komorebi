@@ -52,7 +52,9 @@ def main() -> None:
     subprocess.run([sys.executable, str(BENCH / "cloud/fetch_results.py"), run_id, str(archive)], check=True)
     count = unpack_checked(archive, root)
     gallery = root / "gallery.html"
-    subprocess.run([sys.executable, str(BENCH / "review.py"), "--root", str(root), "--output", str(gallery)], check=True)
+    # Link verified renders directly; copying a blind packet can fill a small review disk.
+    subprocess.run([sys.executable, str(BENCH / "review.py"), "--root", str(root),
+                    "--no-blind", "--output", str(gallery)], check=True)
     print(json.dumps({"run_id": run_id, "verified_archive": str(archive), "files": count,
                       "gallery": str(gallery)}, sort_keys=True))
 
