@@ -43,6 +43,7 @@ SOURCES = {
     "painter/native_painting.py": ROOT / "painter/native_painting.py",
     "painter/native_painting_eval.py": ROOT / "painter/native_painting_eval.py",
     "painter/native_painting_renderer.py": ROOT / "painter/native_painting_renderer.py",
+    "painter/native_painting_report.py": ROOT / "painter/native_painting_report.py",
     "painter/eval-prep/eval-manifest.json": PHOTO / "eval-prep/eval-manifest.json",
 }
 
