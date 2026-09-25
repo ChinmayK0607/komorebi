@@ -23,16 +23,36 @@ cleanup() {
   exit "$status"
 }
 trap cleanup EXIT INT TERM
-bash "$RUN/launch_multiturn_eval.sh" "$RUN" baseline > "$RUN/campaign-baseline.log" 2>&1 &
-BASELINE_PID=$!
-bash "$RUN/launch_multiturn_sft.sh" "$RUN" > "$RUN/campaign-training.log" 2>&1 &
-TRAIN_PID=$!
-set +e
-wait "$TRAIN_PID"; training_status=$?
-TRAIN_PID=''
-wait "$BASELINE_PID"; baseline_status=$?
-BASELINE_PID=''
-set -e
+GPU_COUNT="$(nvidia-smi --query-gpu=index --format=csv,noheader | wc -l | tr -d ' ')"
+[[ "$GPU_COUNT" =~ ^[0-9]+$ ]] && (( GPU_COUNT >= 1 )) || {
+  echo 'no CUDA GPU found for campaign' >&2; exit 2;
+}
+if (( GPU_COUNT >= 2 )); then
+  mode=parallel_two_gpu
+  export EVAL_GPU=1
+  bash "$RUN/launch_multiturn_eval.sh" "$RUN" baseline > "$RUN/campaign-baseline.log" 2>&1 &
+  BASELINE_PID=$!
+  bash "$RUN/launch_multiturn_sft.sh" "$RUN" > "$RUN/campaign-training.log" 2>&1 &
+  TRAIN_PID=$!
+  set +e
+  wait "$TRAIN_PID"; training_status=$?
+  TRAIN_PID=''
+  wait "$BASELINE_PID"; baseline_status=$?
+  BASELINE_PID=''
+  set -e
+else
+  mode=sequential_one_gpu
+  export EVAL_GPU=0
+  set +e
+  bash "$RUN/launch_multiturn_sft.sh" "$RUN" > "$RUN/campaign-training.log" 2>&1
+  training_status=$?
+  baseline_status=99
+  if (( training_status == 0 )); then
+    bash "$RUN/launch_multiturn_eval.sh" "$RUN" baseline > "$RUN/campaign-baseline.log" 2>&1
+    baseline_status=$?
+  fi
+  set -e
+fi
 trained_status=99
 if (( training_status == 0 )); then
   set +e
@@ -40,11 +60,11 @@ if (( training_status == 0 )); then
   trained_status=$?
   set -e
 fi
-python3 - "$RUN" "$training_status" "$baseline_status" "$trained_status" <<'PY'
+python3 - "$RUN" "$training_status" "$baseline_status" "$trained_status" "$mode" <<'PY'
 import json,pathlib,sys
-root=pathlib.Path(sys.argv[1]);training,baseline,trained=map(int,sys.argv[2:])
+root=pathlib.Path(sys.argv[1]);training,baseline,trained=map(int,sys.argv[2:5])
 record={'schema':'painter.multiturn-campaign.v1','training_exit':training,
-        'baseline_eval_exit':baseline,'trained_eval_exit':trained,
+        'baseline_eval_exit':baseline,'trained_eval_exit':trained,'execution_mode':sys.argv[5],
         'training_checkpoints':'public HF receipts under train-output',
         'evaluation_limit':'CLI completion is not a visual-quality result; review both rollout sets'}
 (root/'campaign-completion.json').write_text(json.dumps(record,indent=2)+'\n')
