@@ -13,6 +13,7 @@ from html import escape
 import json
 from pathlib import Path
 import re
+import subprocess
 import sys
 import tarfile
 
@@ -22,7 +23,7 @@ sys.path.insert(0, str(BENCH_CLOUD))
 from fetch_results import download  # noqa: E402
 from stage_wave5_cloud import OUT, SHARDS, stage  # noqa: E402
 
-SOURCE_COMMIT = "e58fe45526d4827504745c4bc5bd13058994c094"
+REPAIRED_BASE = "e58fe45526d4827504745c4bc5bd13058994c094"
 TOP_LEVEL = {"progress.json", "events.jsonl", "run-summary.json", "gallery.html",
              "restored-source.json", "restored-public-shard.json", "renderer-smoke-result.json"}
 EPISODE_FILE = re.compile(r"episodes/[A-Za-z0-9._-]+/[A-Za-z0-9._-]+\Z")
@@ -45,7 +46,11 @@ def collect(shard: str, prefix: int) -> tuple[Path, dict]:
     from urllib.request import urlopen
     with urlopen(f"https://huggingface.co/datasets/CK0607/komorebi-painter-teachers/resolve/main/runs/{run_id}/receipt.json?download=true", timeout=60) as response:
         receipt = json.load(response)
-    if receipt.get("source_commit") != SOURCE_COMMIT or receipt.get("public_hash_verified") is not True:
+    source_commit = str(receipt.get("source_commit", ""))
+    ancestor = (re.fullmatch(r"[0-9a-f]{40}", source_commit) is not None and
+                subprocess.run(["git", "merge-base", "--is-ancestor", REPAIRED_BASE, source_commit],
+                               cwd=HERE.parents[2], check=False).returncode == 0)
+    if not ancestor or receipt.get("public_hash_verified") is not True:
         raise ValueError(f"source commit or public hash verification mismatch: {run_id}")
     evidence.mkdir(parents=True)
     total = 0
@@ -54,7 +59,8 @@ def collect(shard: str, prefix: int) -> tuple[Path, dict]:
         if len(members) != receipt["file_count"]:
             raise ValueError(f"archive member count mismatch: {run_id}")
         for member in members:
-            if not member.isfile() or member.size > 10_000_000:
+            if (not member.isfile() or member.size > 10_000_000 or
+                    any(part in {".", ".."} for part in Path(member.name).parts)):
                 raise ValueError(f"unsafe archive member: {member.name}")
             if member.name not in TOP_LEVEL and not EPISODE_FILE.fullmatch(member.name):
                 raise ValueError(f"unexpected archive path: {member.name}")
@@ -62,6 +68,8 @@ def collect(shard: str, prefix: int) -> tuple[Path, dict]:
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_bytes(bundle.extractfile(member).read())
             total += member.size
+            if total > 1_000_000_000:
+                raise ValueError("archive expands beyond 1 GB review bound")
     receipt_file.write_text(json.dumps(receipt, indent=2, sort_keys=True) + "\n")
     archive_path.unlink()
     return evidence, receipt

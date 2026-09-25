@@ -93,8 +93,8 @@ def run_smoke(
         raise RuntimeError("renderer smoke tests are Linux-only; no renderer was invoked")
     if not run_as_user or any(char.isspace() for char in run_as_user):
         raise ValueError("--run-as-user must be one non-whitespace username")
-    if not 1 <= timeout <= 180:
-        raise ValueError("--timeout must be between 1 and 180 seconds")
+    if not 1 <= timeout <= 900:
+        raise ValueError("--timeout must be between 1 and 900 seconds")
 
     output_dir = output_dir.expanduser().resolve()
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -168,7 +168,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--browser-path", type=Path, help="Playwright browser bundle, if required")
     parser.add_argument("--run-as-user", default="painter", help="unprivileged renderer user (default: painter)")
     parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT_DIR, help="isolated smoke output directory")
-    parser.add_argument("--timeout", type=int, default=180, help="renderer timeout in seconds, 1-180")
+    parser.add_argument("--timeout", type=int, default=180, help="renderer timeout in seconds, 1-900")
     args = parser.parse_args(argv)
     try:
         result = run_smoke(
