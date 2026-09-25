@@ -4,8 +4,9 @@
 The pinned Prime trainer supervises *all* assistant messages. Therefore each
 approved turn is a separate system/user/assistant example: the previous
 rendered canvas and feedback are user context, and only the next complete
-program is an assistant target. Full prior programs can exceed the 16k-token
-limit, so the model learns to revise from pixels rather than copied source.
+program is an assistant target. The released wave-4 export omitted the full
+prior program to fit 16k. Future exports can include it with an explicit flag,
+but must pass the exact processor length audit before training.
 """
 
 from __future__ import annotations
@@ -64,7 +65,7 @@ def load_episode(evidence: Path, reference_id: str) -> tuple[dict, Path]:
     return matches[0]
 
 
-def make_rows(annotations: Path, references: Path) -> tuple[list[dict], list[dict]]:
+def make_rows(annotations: Path, references: Path, *, include_prior_program: bool = False) -> tuple[list[dict], list[dict]]:
     cfg = json.loads(annotations.read_text())
     manifest = json.loads(references.read_text())
     ref_by_id = {row["id"]: row for row in manifest["references"]}
@@ -117,11 +118,13 @@ def make_rows(annotations: Path, references: Path) -> tuple[list[dict], list[dic
                 target = paint_target(plan, target_program)
                 content = [{"type": "text", "text": "REFERENCE"}, image_part(reference)]
                 if previous_valid is not None:
-                    _, old_canvas = previous_valid
+                    old_program, old_canvas = previous_valid
                     content.extend([
                         {"type": "text", "text": "CURRENT CANVAS"}, image_part(old_canvas),
                         {"type": "text", "text": "Inspect the current rendered canvas and output a complete replacement program."},
                     ])
+                    if include_prior_program:
+                        content.append({"type": "text", "text": "Current program:\n" + old_program.read_text()})
                 if previous_history:
                     content.append({"type": "text", "text": "Prior turn outcomes (context, not examples to imitate):\n" + "\n".join(previous_history[-6:])})
                 feedback = str(receipt.get("request_render_feedback") or "").strip()
@@ -161,14 +164,18 @@ def main() -> None:
     p.add_argument("--annotations", type=Path, required=True)
     p.add_argument("--references", type=Path, required=True)
     p.add_argument("--output", type=Path, required=True)
+    p.add_argument("--include-prior-program", action="store_true",
+                   help="match the evaluator's current-program prompt; requires exact length audit")
     args = p.parse_args()
-    rows, audit = make_rows(args.annotations, args.references)
+    rows, audit = make_rows(args.annotations, args.references,
+                            include_prior_program=args.include_prior_program)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     raw = "".join(json.dumps(row, separators=(",", ":"), ensure_ascii=False) + "\n" for row in rows).encode()
     args.output.write_bytes(raw)
     report = {"schema": "painter.reviewed-turn-sft.v1", "rows": len(rows), "output_sha256": sha(raw),
               "annotations_sha256": sha(args.annotations.read_bytes()), "references_sha256": sha(args.references.read_bytes()),
               "embedded_image_max_edge": MAX_IMAGE_EDGE,
+              "include_prior_program": args.include_prior_program,
               "admissions": audit, "loss_target": "last assistant only; previous turns are user context"}
     args.output.with_suffix(".audit.json").write_text(json.dumps(report, indent=2) + "\n")
     print(json.dumps({"rows": len(rows), "sha256": sha(raw), "audit": str(args.output.with_suffix('.audit.json'))}))
