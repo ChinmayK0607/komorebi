@@ -55,15 +55,14 @@ def build(reviewed: Path, foundation: Path, foundation_val: Path, output: Path, 
         for row in epoch:
             staged.append((row, exposure))
     planned = len(staged)
-    if len(staged) % 3:
-        # Explicitly repeat the earliest distinct reviewed turns to complete
-        # the last optimizer group, instead of dropping valid examples.
-        for i in range(3 - len(staged) % 3):
-            staged.append((turns[i], repeats))
-    while (len(staged) // 3) % checkpoint_multiple:
-        # Every full group contains three reviewed examples.  Padding to the
-        # next public-checkpoint boundary makes the final model durable.
-        staged.append((turns[(len(staged) - planned) % len(turns)], repeats + 1))
+    padding_pool = list(turns)
+    rng.shuffle(padding_pool)
+    padding_count = 0
+    while len(staged) % 3 or (len(staged) // 3) % checkpoint_multiple:
+        # Every full group contains three reviewed examples. Deterministically
+        # cycle a shuffled pool for the small amount of checkpoint padding.
+        staged.append((padding_pool[padding_count % len(padding_pool)], repeats + padding_count // len(padding_pool)))
+        padding_count += 1
     retained_pool = list(retained)
     rng.shuffle(retained_pool)
     output.mkdir(parents=True, exist_ok=True)
@@ -97,6 +96,7 @@ def build(reviewed: Path, foundation: Path, foundation_val: Path, output: Path, 
         "reviewed_rows": len(turns), "reviewed_scenes": len(seen_groups),
         "reviewed_exposures": len(staged), "retention_exposures": len(emissions) // 4,
         "checkpoint_multiple": checkpoint_multiple, "padding_exposures": len(staged) - planned,
+        "padding_fraction_of_planned_reviewed": round((len(staged) - planned) / planned, 6),
         "optimizer_steps_at_batch_4": len(emissions) // 4, "validation_rows": len(heldout),
         "training_source_kinds": dict(Counter(row["source_kind"] for row in emissions)),
         "input_sha256": {"reviewed": sha(reviewed), "foundation": sha(foundation), "foundation_validation": sha(foundation_val)},

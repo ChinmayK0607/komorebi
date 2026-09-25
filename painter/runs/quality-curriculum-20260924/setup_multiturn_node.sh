@@ -46,5 +46,6 @@ PY
   --run-name multiturn-sft-20260925-v1 --steps "$STEPS" --seq-len 16384 \
   --gpus-per-node 1 --num-train-gpus 1 --dp-replicate 1 --dp-shard 1 \
   --global-batch-size 4 --micro-batch-size 1 --learning-rate 0.000003 \
-  --checkpoint-interval 16 --validation-interval 16 --seed 20260925
+  --checkpoint-interval "$CHECKPOINT_MULTIPLE" \
+  --validation-interval "$CHECKPOINT_MULTIPLE" --seed 20260925
 echo "Setup complete; launch with: bash $RUN/launch_multiturn_sft.sh $RUN"
