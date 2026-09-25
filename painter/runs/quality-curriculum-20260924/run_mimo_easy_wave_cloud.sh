@@ -7,10 +7,10 @@ RUN="$ROOT/painter/runs/quality-curriculum-20260924"
 BENCH="$ROOT/painter/benchmarks/openrouter-teachers-20260922"
 RUNTIME="$ROOT/.painter-cloud-runtime"
 PY="$RUNTIME/renderer-env/bin/python"
-RUN_ID="${PAINTER_RUN_ID:-mimo-pro-easy-wave1-20260925}"
-STAGE_NAME="${PAINTER_STAGE_NAME:-easy-pro-wave1-20260925}"
-[[ "$RUN_ID" =~ ^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$ ]] || { echo 'invalid PAINTER_RUN_ID' >&2; exit 2; }
-[[ "$STAGE_NAME" =~ ^[a-z0-9][a-z0-9._-]{0,63}$ ]] || { echo 'invalid PAINTER_STAGE_NAME' >&2; exit 2; }
+RUN_ID="${PAINTER_EASY_WAVE_RUN_ID:-mimo-pro-easy-wave1-20260925}"
+STAGE_NAME="${PAINTER_EASY_WAVE_STAGE_NAME:-easy-pro-wave1-20260925}"
+[[ "$RUN_ID" =~ ^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$ ]] || { echo 'invalid PAINTER_EASY_WAVE_RUN_ID' >&2; exit 2; }
+[[ "$STAGE_NAME" =~ ^[a-z0-9][a-z0-9._-]{0,63}$ ]] || { echo 'invalid PAINTER_EASY_WAVE_STAGE_NAME' >&2; exit 2; }
 
 export PATH="/usr/bin:/bin:$PATH"
 export NODE_USE_ENV_PROXY=1
