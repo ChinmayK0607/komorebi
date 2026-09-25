@@ -88,6 +88,11 @@ def make_rows(annotations: Path, references: Path) -> tuple[list[dict], list[dic
                 found.add(number)
                 if not valid:
                     raise ValueError(f"approved turn has no valid canvas: {reference_id} T{number}")
+                if previous_valid is not None:
+                    previous_program, previous_canvas = previous_valid
+                    if (sha(previous_program.read_bytes()) == sha(program.read_bytes())
+                            or sha(previous_canvas.read_bytes()) == sha(canvas.read_bytes())):
+                        raise ValueError(f"approved revision made no change: {reference_id} T{number}")
                 target_program = program.read_text()
                 validate_teacher_program(target_program)
                 plan = str(receipt.get("plan") or "Inspect the image and improve the complete painting.").strip()
