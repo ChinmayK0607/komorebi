@@ -96,8 +96,13 @@ def page(prefix: int, entries: list[tuple[str, Path, dict]]) -> Path:
             for turn in episode.get("turns", []):
                 number = turn["turn"]
                 valid = bool((turn.get("render") or {}).get("valid")) and bool(turn.get("canvas"))
+                # The renderer may save a partial PNG even when JavaScript
+                # fails or times out. Show it with an invalid label for review;
+                # the exporter still rejects it as a supervised target.
                 canvas = turn.get("canvas")
-                href = f"../{shard}/{evidence.name}/{canvas}" if valid else None
+                candidate = episode_file.parent / f"turn-{number:02d}.png"
+                image_rel = canvas if valid else (str(candidate.relative_to(evidence)) if candidate.is_file() else None)
+                href = f"../{shard}/{evidence.name}/{image_rel}" if image_rel else None
                 error = str(turn.get("render_error") or turn.get("api_error") or "")[:300]
                 label = f"T{number}: {'rendered' if valid else 'invalid'}"
                 image = (f'<a href="{escape(href)}"><img loading="lazy" src="{escape(href)}" alt="{escape(reference_id)} turn {number}"></a>'
