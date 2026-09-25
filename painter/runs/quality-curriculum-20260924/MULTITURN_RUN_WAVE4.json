@@ -1,0 +1,84 @@
+{
+  "schema": "painter.multiturn-sft-experiment.v1",
+  "status": "training_in_progress",
+  "date_utc": "2026-09-25",
+  "hypothesis": "Visual-state-conditioned SFT on reviewed teacher improvements raises first-paint and two-turn final visual quality against the public photo SFT step-512 adapter on frozen unseen photos.",
+  "matched_baseline": {
+    "model": "Qwen/Qwen3.8-27B",
+    "base_revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+    "adapter_repo": "CK0607/qwen3.8-27b-brush-painting",
+    "adapter_revision": "adf687e5b321514eda7be6eab050434fdc8e44ff",
+    "adapter_weights_sha256": "bea72b066986faa1b92b9dc539c710093181ee916b99323e2b2498f318ac1740"
+  },
+  "data": {
+    "reviewed_admissions": "turn-admissions-wave4.json",
+    "reviewed_scenes": 16,
+    "reviewed_targets": 38,
+    "reviewed_jsonl_sha256": "6de85c426673cae3d81003d84cdf5991d2c7e4288e2fbfc2c4912ccb5e6d0029",
+    "mixed_train_sha256": "e1a67162d7f40350a1fbd072d7ef4fcdd971de280d6e37ebfaa0a5ff671e1891",
+    "mixed_validation_sha256": "7f8773c2ce8fca1317e037099a522c2b0572d90af414961a7ec1e23c903efe39",
+    "reviewed_exposures": 120,
+    "procedural_exposures": 40,
+    "padding_exposures": 6,
+    "source_kinds": [
+      "simple_generated_references",
+      "COCO128_train_photos",
+      "already_paid_MiMo_benchmark_reuse"
+    ]
+  },
+  "teacher_provenance": {
+    "new_wave_model": "xiaomi/mimo-v2.6-pro",
+    "public_dataset": "CK0607/komorebi-painter-teachers",
+    "dataset_revision": "fab82ab46d94becf279d973c99989328364c3ba8",
+    "archive_sha256": "0f65ab1cca0a1b639657355d02ed47d1e010135d9d2bc660df092635249d1c35",
+    "generator_source_commit": "862c28929151e62dfcedb2823fadc4e430ae7ad2",
+    "new_wave_requests": 36,
+    "new_wave_total_tokens": 830003,
+    "provider_cost": "unavailable; all 36 cost fields missing"
+  },
+  "training": {
+    "source_branch": "codex/painter-multiturn-sft",
+    "source_commit": "296fce2",
+    "prime_revision": "26b3131d2716a4f8210b165df584b83b4bc54f61",
+    "config_sha256": "75a13e55fd385c3d36a198fd29c2d18fe4745fb1143fef5ed3542354d1add7fe",
+    "planned_steps": 40,
+    "batch_size": 4,
+    "learning_rate": 3e-06,
+    "seq_len": 16384,
+    "checkpoint_every_steps": 8,
+    "public_checkpoint_repo": "CK0607/qwen3.8-27b-brush-painting",
+    "exact_processor_audit": {
+      "status": "passed",
+      "max_tokens": 10220,
+      "assistant_only_loss": true,
+      "no_truncation": true
+    }
+  },
+  "evaluation": {
+    "frozen_manifest_sha256": "9943878cc43d48f1cf9ff60e5af633089bf2bd8d45141216531363cad8f1c878",
+    "cases": 28,
+    "max_turns_per_case": 2,
+    "comparability": "same reference, seed, scaffold, token limit and render settings; each policy sees its own canvas",
+    "limitation": "not a fixed-draft correction test",
+    "visual_result": "pending"
+  },
+  "hardware": {
+    "node_type": "2x NVIDIA RTX PRO 6000 Blackwell Server Edition 96 GB",
+    "listed_usd_per_hour": 2.38,
+    "started_utc": "2026-09-25T14:16:09Z",
+    "trainer_gpu": 0,
+    "baseline_eval_gpu": 1,
+    "cost_and_full_window_utilization": "pending"
+  },
+  "failures": [
+    {
+      "stage": "first_launch",
+      "training_exit": 1,
+      "baseline_eval_exit": 1,
+      "optimizer_updates": 0,
+      "cause": "non-newline-terminated protected token read failed under set -e; native taskset absent from evaluator PYTHONPATH",
+      "action": "fixed both scripts and preserved attempt-one logs on node"
+    }
+  ],
+  "next_decision": "Compare public final checkpoint and step-512 baseline paintings on the frozen 28-photo two-turn eval before promotion."
+}

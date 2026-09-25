@@ -23,7 +23,11 @@ PORT=8100
 GPU="${EVAL_GPU:-1}"
 mkdir -p "$EVAL_ROOT" "$EVAL_ROOT/cache"
 exec 8>"$EVAL_ROOT/eval.lock"
-flock -n 8 || { echo 'evaluation already running for this policy' >&2; exit 2; }
+if [[ "$POLICY" == trained ]]; then
+  flock -w 7200 8 || { echo 'timed out waiting for trained evaluation' >&2; exit 2; }
+else
+  flock -n 8 || { echo 'evaluation already running for this policy' >&2; exit 2; }
+fi
 if [[ "$POLICY" == baseline ]]; then
   ADAPTER="$(cat "$RUN/initial-adapter-path.txt")"
 else
@@ -53,6 +57,20 @@ else:
     if sha(weight)!=expected:raise ValueError('trained adapter hash differs from public receipt')
 print(json.dumps({'policy':policy,'adapter_sha256':sha(weight),'manifest_sha256':sha(manifest)}))
 PY
+if [[ "$POLICY" == trained && -f "$EVAL_ROOT/completion.json" ]]; then
+  "$PY" - "$EVAL_ROOT/completion.json" "$ADAPTER/adapter_model.safetensors" "$MANIFEST" <<'PY'
+import hashlib,json,pathlib,sys
+record=json.loads(pathlib.Path(sys.argv[1]).read_text())
+def sha(p):return hashlib.sha256(pathlib.Path(p).read_bytes()).hexdigest()
+if (record.get('status')!='completed' or record.get('policy')!='trained'
+        or record.get('adapter_sha256')!=sha(sys.argv[2])
+        or record.get('manifest_sha256')!=sha(sys.argv[3])
+        or record.get('case_count')!=28 or record.get('max_turns')!=2):
+    raise ValueError('existing trained evaluation is not the matched completed run')
+print('matched trained evaluation already complete; skipping duplicate')
+PY
+  exit 0
+fi
 CUDA_HOME="$($PY -c 'import sysconfig; print(sysconfig.get_paths()["purelib"] + "/nvidia/cu13")')"
 [[ -d "$CUDA_HOME" ]] || { echo 'CUDA 13 runtime missing' >&2; exit 2; }
 export CUDA_HOME PATH="$PRIME_ROOT/.venv/bin:$CUDA_HOME/bin:$RUN/bootstrap/bin:$PATH"

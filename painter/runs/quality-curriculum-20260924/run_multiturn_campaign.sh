@@ -10,10 +10,11 @@ exec 9>"$RUN/campaign.lock"
 flock -n 9 || { echo 'campaign already running' >&2; exit 2; }
 TRAIN_PID=''
 BASELINE_PID=''
+TRAINED_PID=''
 cleanup() {
   local status=$?
   trap - EXIT INT TERM
-  for pid in "$TRAIN_PID" "$BASELINE_PID"; do
+  for pid in "$TRAIN_PID" "$BASELINE_PID" "$TRAINED_PID"; do
     if [[ -n "$pid" ]] && kill -0 "$pid" 2>/dev/null; then
       kill -TERM "$pid" 2>/dev/null || true
       wait "$pid" 2>/dev/null || true
@@ -37,8 +38,20 @@ if (( GPU_COUNT >= 2 )); then
   set +e
   wait "$TRAIN_PID"; training_status=$?
   TRAIN_PID=''
+  trained_status=99
+  if (( training_status == 0 )); then
+    # The trainer has released GPU 0. Evaluate the trained adapter there while
+    # the baseline continues on GPU 1, avoiding a long idle-GPU tail.
+    export EVAL_GPU=0
+    bash "$RUN/launch_multiturn_eval.sh" "$RUN" trained > "$RUN/campaign-trained.log" 2>&1 &
+    TRAINED_PID=$!
+  fi
   wait "$BASELINE_PID"; baseline_status=$?
   BASELINE_PID=''
+  if [[ -n "$TRAINED_PID" ]]; then
+    wait "$TRAINED_PID"; trained_status=$?
+    TRAINED_PID=''
+  fi
   set -e
 else
   mode=sequential_one_gpu
@@ -52,13 +65,13 @@ else
     baseline_status=$?
   fi
   set -e
-fi
-trained_status=99
-if (( training_status == 0 )); then
-  set +e
-  bash "$RUN/launch_multiturn_eval.sh" "$RUN" trained > "$RUN/campaign-trained.log" 2>&1
-  trained_status=$?
-  set -e
+  trained_status=99
+  if (( training_status == 0 )); then
+    set +e
+    bash "$RUN/launch_multiturn_eval.sh" "$RUN" trained > "$RUN/campaign-trained.log" 2>&1
+    trained_status=$?
+    set -e
+  fi
 fi
 python3 - "$RUN" "$training_status" "$baseline_status" "$trained_status" "$mode" <<'PY'
 import json,pathlib,sys
