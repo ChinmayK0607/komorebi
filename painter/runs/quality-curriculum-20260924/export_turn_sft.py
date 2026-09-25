@@ -69,6 +69,7 @@ def make_rows(annotations: Path, references: Path) -> tuple[list[dict], list[dic
             raise ValueError(f"invalid approved turns: {reference_id}")
         previous_valid = None
         previous_history = []
+        last_failed_program = None
         found = set()
         for turn in sorted(episode["turns"], key=lambda item: item["turn"]):
             number = turn["turn"]
@@ -109,6 +110,8 @@ def make_rows(annotations: Path, references: Path) -> tuple[list[dict], list[dic
                     ])
                 if previous_history:
                     content.append({"type": "text", "text": "Prior turn outcomes (context, not examples to imitate):\n" + "\n".join(previous_history[-6:])})
+                if last_failed_program is not None:
+                    content.append({"type": "text", "text": "Last failed sketch (repair context, never a target):\n" + last_failed_program})
                 feedback = str(receipt.get("request_render_feedback") or "").strip()
                 content.append({"type": "text", "text": (feedback + "\n" if feedback else "") + NEXT_VERSION})
                 ident = f"mimo__{reference_id}__turn_{number:02d}"
@@ -132,6 +135,9 @@ def make_rows(annotations: Path, references: Path) -> tuple[list[dict], list[dic
             previous_history.append(f"Turn {number}: {outcome}")
             if valid:
                 previous_valid = (program, canvas)
+                last_failed_program = None
+            elif receipt.get("program"):
+                last_failed_program = under(evidence, receipt["program"]).read_text()[:24000]
         if found != approved:
             raise ValueError(f"approved turn absent: {reference_id}: {sorted(approved - found)}")
         audit.append({"reference_id": reference_id, "selected_turns": sorted(approved), "all_turns": len(episode["turns"]),
