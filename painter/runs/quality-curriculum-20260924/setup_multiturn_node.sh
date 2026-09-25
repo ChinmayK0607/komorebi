@@ -3,11 +3,31 @@
 set -Eeuo pipefail
 RUN="$(cd "${1:?usage: setup_multiturn_node.sh RUN_DIRECTORY}" && pwd -P)"
 [[ "$(uname -s)" == Linux ]] || { echo 'setup requires Linux' >&2; exit 2; }
-[[ -f "$RUN/data/mix-manifest.json" && -f "$RUN/private/hf-token" ]] || {
-  echo 'mixed data or protected HF credential missing' >&2; exit 2;
+[[ -f "$RUN/expected-mix-manifest.json" && -f "$RUN/private/hf-token" ]] || {
+  echo 'mix manifest or protected HF credential missing' >&2; exit 2;
 }
 chmod 700 "$RUN/private"
 chmod 600 "$RUN/private/hf-token"
+read -r REPEATS SEED CHECKPOINT_MULTIPLE < <(python3 - "$RUN/expected-mix-manifest.json" <<'PY'
+import json,sys
+x=json.load(open(sys.argv[1]))
+print(x['reviewed_repeats'],x['seed'],x['checkpoint_multiple'])
+PY
+)
+python3 "$RUN/build_multiturn_mix.py" \
+  --reviewed "$RUN/data-input/reviewed.jsonl" \
+  --foundation "$RUN/data-input/foundation.jsonl" \
+  --foundation-validation "$RUN/data-input/foundation-validation.jsonl" \
+  --output "$RUN/data" --repeats "$REPEATS" --seed "$SEED" \
+  --checkpoint-multiple "$CHECKPOINT_MULTIPLE" > "$RUN/data-rebuild.json"
+python3 - "$RUN" <<'PY'
+import json,pathlib,sys
+root=pathlib.Path(sys.argv[1])
+actual=json.loads((root/'data/mix-manifest.json').read_text())
+expected=json.loads((root/'expected-mix-manifest.json').read_text())
+if actual != expected:raise ValueError('rebuilt mix differs from reviewed expected manifest')
+print('Finite mixed data rebuilt and hash-verified')
+PY
 export HF_TOKEN_PATH="$RUN/private/hf-token"
 export BRUSH_ROOT="$RUN/source/brush-rl"
 export BRUSH_MODEL_PROFILE=qwen38_27b
