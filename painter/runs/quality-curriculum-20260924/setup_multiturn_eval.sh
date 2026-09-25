@@ -23,6 +23,6 @@ chmod -R a+rX "$RUN/painter/renderer-env" "$RUN/painter/browsers" \
   --root "$RUN/painter" --manifest "$RUN/painter/eval-prep/eval-manifest.json" \
   --policy-label eval-preflight --model preflight --expected-count 28 \
   --output-dir "$RUN/eval-preflight" --config "$RUN/eval-preflight.toml" \
-  --max-tokens 8192 --max-turns 1 --rollout-timeout 1800 --context-length 16384 \
+  --max-tokens 8192 --max-turns 2 --rollout-timeout 1800 --context-length 16384 \
   > "$RUN/eval-preflight.json"
 echo 'Renderer installed and frozen 28-photo eval references hash-verified.'
