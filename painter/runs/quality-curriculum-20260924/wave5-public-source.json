@@ -1,0 +1,9 @@
+{
+  "schema": "painter.mimo-wave5-public-source.v1",
+  "repo": "CK0607/komorebi-painter-teachers",
+  "revision": "823ff0568e0bd7caf136b94479f4dfccefac11bc",
+  "path": "curricula/multiturn-wave5/photo-source.tar.gz",
+  "archive_sha256": "cb388eb0f5552659e837fad3c43cd9f1c26945dba49978421092295373fc733e",
+  "manifest_sha256": "7f0d5d83361305a2758a12112bf9a037a7c9b88f03eb8a35340d7ec5c6b4975f",
+  "anonymous_hash_verified": true
+}
