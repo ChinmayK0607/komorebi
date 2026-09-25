@@ -30,9 +30,12 @@ def emit(path: Path, rows: list[dict]) -> str:
     return hashlib.sha256(data).hexdigest()
 
 
-def build(reviewed: Path, foundation: Path, foundation_val: Path, output: Path, *, repeats: int, seed: int) -> dict:
+def build(reviewed: Path, foundation: Path, foundation_val: Path, output: Path, *, repeats: int, seed: int,
+          checkpoint_multiple: int = 16) -> dict:
     if not 1 <= repeats <= 8:
         raise ValueError("reviewed-turn repeats must be 1..8")
+    if not 1 <= checkpoint_multiple <= 128:
+        raise ValueError("checkpoint_multiple must be 1..128")
     turns, retained, validation = read(reviewed), read(foundation), read(foundation_val)
     if any(row.get("split") != "train" for row in turns + retained):
         raise ValueError("training input has a non-train row")
@@ -51,11 +54,16 @@ def build(reviewed: Path, foundation: Path, foundation_val: Path, output: Path, 
             rng.shuffle(epoch)
         for row in epoch:
             staged.append((row, exposure))
+    planned = len(staged)
     if len(staged) % 3:
         # Explicitly repeat the earliest distinct reviewed turns to complete
         # the last optimizer group, instead of dropping valid examples.
         for i in range(3 - len(staged) % 3):
             staged.append((turns[i], repeats))
+    while (len(staged) // 3) % checkpoint_multiple:
+        # Every full group contains three reviewed examples.  Padding to the
+        # next public-checkpoint boundary makes the final model durable.
+        staged.append((turns[(len(staged) - planned) % len(turns)], repeats + 1))
     retained_pool = list(retained)
     rng.shuffle(retained_pool)
     output.mkdir(parents=True, exist_ok=True)
@@ -88,6 +96,7 @@ def build(reviewed: Path, foundation: Path, foundation_val: Path, output: Path, 
         "schema": "painter.multiturn-sft-mix.v1", "seed": seed, "reviewed_repeats": repeats,
         "reviewed_rows": len(turns), "reviewed_scenes": len(seen_groups),
         "reviewed_exposures": len(staged), "retention_exposures": len(emissions) // 4,
+        "checkpoint_multiple": checkpoint_multiple, "padding_exposures": len(staged) - planned,
         "optimizer_steps_at_batch_4": len(emissions) // 4, "validation_rows": len(heldout),
         "training_source_kinds": dict(Counter(row["source_kind"] for row in emissions)),
         "input_sha256": {"reviewed": sha(reviewed), "foundation": sha(foundation), "foundation_validation": sha(foundation_val)},
@@ -108,9 +117,10 @@ def main() -> None:
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--repeats", type=int, default=4)
     parser.add_argument("--seed", type=int, default=20260925)
+    parser.add_argument("--checkpoint-multiple", type=int, default=16)
     args = parser.parse_args()
     print(json.dumps(build(args.reviewed, args.foundation, args.foundation_validation, args.output,
-                           repeats=args.repeats, seed=args.seed), indent=2))
+                           repeats=args.repeats, seed=args.seed, checkpoint_multiple=args.checkpoint_multiple), indent=2))
 
 
 if __name__ == "__main__":
