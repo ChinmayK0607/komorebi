@@ -101,7 +101,8 @@ def make_rows(annotations: Path, references: Path) -> tuple[list[dict], list[dic
                     ])
                 if previous_history:
                     content.append({"type": "text", "text": "Prior turn outcomes (context, not examples to imitate):\n" + "\n".join(previous_history[-6:])})
-                content.append({"type": "text", "text": (receipt.get("request_render_feedback") or NEXT_VERSION) + "\n" + NEXT_VERSION})
+                feedback = str(receipt.get("request_render_feedback") or "").strip()
+                content.append({"type": "text", "text": (feedback + "\n" if feedback else "") + NEXT_VERSION})
                 ident = f"mimo__{reference_id}__turn_{number:02d}"
                 rows.append({
                     "id": ident, "source_group": reference_id, "split": "train", "family": ref_meta.get("description", reference_id),
