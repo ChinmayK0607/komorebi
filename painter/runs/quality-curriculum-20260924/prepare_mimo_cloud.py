@@ -8,6 +8,7 @@ import hashlib
 from http.client import HTTPException
 import json
 from pathlib import Path
+import re
 import shutil
 import time
 from urllib.request import urlopen
@@ -38,7 +39,7 @@ def fetch(url: str) -> bytes:
     raise AssertionError("unreachable")
 
 
-def stage(tier: str, model: str) -> Path:
+def stage(tier: str, model: str, stage_name: str | None = None) -> Path:
     if tier not in {"easy", "hard"}:
         raise ValueError("tier must be easy or hard")
     if model not in {"xiaomi/mimo-v2.6-flash", "xiaomi/mimo-v2.6-pro"}:
@@ -54,7 +55,9 @@ def stage(tier: str, model: str) -> Path:
     holdout_hashes = {r["sha256"] for r in benchmark["references"]}
     if any(r["id"] in holdout_ids or r["sha256"] in holdout_hashes or r["split"] != "train" for r in rows):
         raise ValueError("training reference overlaps benchmark holdout or is not train split")
-    stage_name = f"{tier}-{model.rsplit('-', 1)[-1]}"
+    stage_name = stage_name or f"{tier}-{model.rsplit('-', 1)[-1]}"
+    if not re.fullmatch(r"[a-z0-9][a-z0-9._-]{0,63}", stage_name):
+        raise ValueError("stage name must be a safe relative directory name")
     dest = OUT / stage_name
     (dest / "references").mkdir(parents=True, exist_ok=True)
     selected = []
@@ -106,8 +109,9 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--tier", choices=("easy", "hard"), required=True)
     parser.add_argument("--model", choices=("xiaomi/mimo-v2.6-flash", "xiaomi/mimo-v2.6-pro"), required=True)
+    parser.add_argument("--stage-name", help="unique stage directory for a fresh probe; default keeps historical behavior")
     args = parser.parse_args()
-    stage(args.tier, args.model)
+    stage(args.tier, args.model, args.stage_name)
 
 
 if __name__ == "__main__":
