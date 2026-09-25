@@ -93,6 +93,7 @@ def page(prefix: int, entries: list[tuple[str, Path, dict]]) -> Path:
             ref_url = f"../{shard}/{reference['image']}"
             turns = []
             queue_turns = []
+            preview_href = ref_url
             for turn in episode.get("turns", []):
                 number = turn["turn"]
                 valid = bool((turn.get("render") or {}).get("valid")) and bool(turn.get("canvas"))
@@ -103,6 +104,8 @@ def page(prefix: int, entries: list[tuple[str, Path, dict]]) -> Path:
                 candidate = episode_file.parent / f"turn-{number:02d}.png"
                 image_rel = canvas if valid else (str(candidate.relative_to(evidence)) if candidate.is_file() else None)
                 href = f"../{shard}/{evidence.name}/{image_rel}" if image_rel else None
+                if href:
+                    preview_href = href
                 error = str(turn.get("render_error") or turn.get("api_error") or "")[:300]
                 label = f"T{number}: {'rendered' if valid else 'invalid'}"
                 image = (f'<a href="{escape(href)}"><img loading="lazy" src="{escape(href)}" alt="{escape(reference_id)} turn {number}"></a>'
@@ -111,14 +114,16 @@ def page(prefix: int, entries: list[tuple[str, Path, dict]]) -> Path:
                 queue_turns.append({"turn": number, "renderer_valid": valid,
                                     "canvas_sha256": turn.get("current_canvas_sha256") if valid else None,
                                     "quality_review": None, "visual_improvement_over_prior": None})
-            cards.append(f'<details><summary><b>{escape(reference_id)}</b> · {escape(shard)} · {escape(episode.get("status", "unknown"))} · {len(turns)} turns</summary>'
+            cards.append(f'<details><summary><img class="thumb" src="{escape(preview_href)}" alt="latest attempt">'
+                         f'<span><b>{escape(reference_id)}</b><br>{escape(shard)} · {escape(episode.get("status", "unknown"))} · {len(turns)} turns</span></summary>'
                          f'<div class="frames"><figure><a href="{escape(ref_url)}"><img loading="lazy" src="{escape(ref_url)}" alt="reference"></a><figcaption>Reference</figcaption></figure>{"".join(turns)}</div></details>')
             queue.append({"shard": shard, "run_id": receipt["run_id"], "reference_id": reference_id,
                           "status": episode.get("status"), "turns": queue_turns})
     html = f"""<!doctype html><meta charset="utf-8"><title>Wave 5 turn review</title>
 <style>body{{font:16px system-ui;background:#191b1e;color:#eee;margin:24px}}h1{{font-size:1.6rem}}p{{color:#bbb}}
 details{{background:#282b30;border:1px solid #46494e;border-radius:10px;margin:12px 0;padding:12px}}
-summary{{cursor:pointer}}.frames{{display:flex;gap:12px;overflow-x:auto;padding-top:12px}}
+summary{{cursor:pointer;display:flex;align-items:center;gap:12px}}summary .thumb{{width:96px;height:72px;object-fit:contain;background:#eee}}
+.frames{{display:flex;gap:12px;overflow-x:auto;padding-top:12px}}.frames figure:first-child{{position:sticky;left:0;background:#282b30;z-index:1}}
 figure{{margin:0;min-width:220px;max-width:330px}}img{{width:100%;height:240px;object-fit:contain;background:#eee}}
 figcaption{{font-size:.9rem}}small{{display:block;color:#f4a8a8;overflow-wrap:anywhere}}
 .missing{{height:240px;display:grid;place-items:center;background:#433}}a{{color:#a9d8ff}}</style>
