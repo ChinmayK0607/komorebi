@@ -94,7 +94,10 @@ def make_rows(annotations: Path, references: Path) -> tuple[list[dict], list[dic
                             or sha(previous_canvas.read_bytes()) == sha(canvas.read_bytes())):
                         raise ValueError(f"approved revision made no change: {reference_id} T{number}")
                 target_program = program.read_text()
-                validate_teacher_program(target_program)
+                try:
+                    validate_teacher_program(target_program)
+                except ValueError as exc:
+                    raise ValueError(f"approved program contract mismatch: {reference_id} T{number}: {exc}") from exc
                 plan = str(receipt.get("plan") or "Inspect the image and improve the complete painting.").strip()
                 target = paint_target(plan, target_program)
                 content = [{"type": "text", "text": "REFERENCE"}, image_part(reference)]

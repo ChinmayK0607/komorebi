@@ -1,0 +1,47 @@
+{
+  "schema": "painter.reviewed-turn-admissions.v1",
+  "reviewer": "parent visual review 2026-09-25; user accepted general easy-scene painting quality but did not label exact turns",
+  "episodes": [
+    {
+      "evidence_root": "painter/collected/quality-curriculum-20260924/mimo-cloud/pro-cup-repair-v2/evidence",
+      "reference_id": "simple-cup",
+      "supervise_turns": [1, 2, 3],
+      "reason": "cup structure improves through T3; T4 loses the stronger lighting of T3"
+    },
+    {
+      "evidence_root": "painter/collected/quality-curriculum-20260924/mimo-cloud/easy-pro-wave1-20260925/evidence",
+      "reference_id": "simple-poppy",
+      "supervise_turns": [1, 2, 3, 4],
+      "reason": "all four are recognizable and the flower/vase treatment develops across turns"
+    },
+    {
+      "evidence_root": "painter/collected/quality-curriculum-20260924/mimo-cloud/easy-pro-wave1-20260925/evidence",
+      "reference_id": "simple-sailboat",
+      "supervise_turns": [2],
+      "reason": "T2 has two distinct sails and a readable hull; T3 weakens sail separation and T4 is invalid"
+    },
+    {
+      "evidence_root": "painter/collected/quality-curriculum-20260924/mimo-cloud/easy-pro-wave1-20260925/evidence",
+      "reference_id": "simple-cottage",
+      "supervise_turns": [2, 4],
+      "reason": "T2 and T4 are coherent; T4 improves house silhouette and roof while T1/T3 are invalid"
+    },
+    {
+      "evidence_root": "painter/collected/quality-curriculum-20260924/mimo-cloud/pro-cake-probe/evidence",
+      "reference_id": "coco128-000000000092",
+      "supervise_turns": [2, 3, 4, 5, 6],
+      "reason": "T1 is black; T2-T6 progressively model the layered cake and fork with valid recognizable canvases"
+    },
+    {
+      "evidence_root": "painter/collected/quality-curriculum-20260924/mimo-cloud/diverse-pro-easy-20260925/evidence",
+      "reference_id": "simple-orange",
+      "supervise_turns": [1, 4],
+      "reason": "T1 gives a recognizable orange, leaf and plate; T4 restores the fruit silhouette with better modeled texture after T2's sliced-looking regression and invalid T3"
+    }
+  ],
+  "excluded": [
+    {"reference_id": "simple-pear", "reason": "best-looking T3 has a nested coordinate translation outside the current canvas-pixel contract; T4 moves the pear off-canvas"},
+    {"reference_id": "simple-orange", "turns": [2, 3], "reason": "T2 introduces an implausible sliced lobe, T3 is invalid"},
+    {"reference_id": "simple-fern", "reason": "T1 invalid; T2-T4 render attractively but use nested per-leaflet translate/rotate transforms forbidden by the current canvas-pixel contract"}
+  ]
+}
