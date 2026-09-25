@@ -5,8 +5,9 @@ The pinned Prime trainer supervises *all* assistant messages. Therefore each
 approved turn is a separate system/user/assistant example: the previous
 rendered canvas and feedback are user context, and only the next complete
 program is an assistant target. The released wave-4 export omitted the full
-prior program to fit 16k. Future exports can include it with an explicit flag,
-but must pass the exact processor length audit before training.
+prior program to fit 16k. Future exports can include the current program or
+the last failed attempt with explicit flags, but must pass the exact processor
+length audit before training.
 """
 
 from __future__ import annotations
@@ -65,7 +66,8 @@ def load_episode(evidence: Path, reference_id: str) -> tuple[dict, Path]:
     return matches[0]
 
 
-def make_rows(annotations: Path, references: Path, *, include_prior_program: bool = False) -> tuple[list[dict], list[dict]]:
+def make_rows(annotations: Path, references: Path, *, include_prior_program: bool = False,
+              include_last_attempt_program: bool = False) -> tuple[list[dict], list[dict]]:
     cfg = json.loads(annotations.read_text())
     manifest = json.loads(references.read_text())
     ref_by_id = {row["id"]: row for row in manifest["references"]}
@@ -84,6 +86,7 @@ def make_rows(annotations: Path, references: Path, *, include_prior_program: boo
         if not approved or any(not isinstance(t, int) or t < 1 for t in approved):
             raise ValueError(f"invalid approved turns: {reference_id}")
         previous_valid = None
+        previous_attempt_program = None
         previous_history = []
         found = set()
         for turn in sorted(episode["turns"], key=lambda item: item["turn"]):
@@ -92,6 +95,7 @@ def make_rows(annotations: Path, references: Path, *, include_prior_program: boo
             if receipt.get("turn") != number or receipt.get("request_binding", {}).get("reference_sha256") != ref_meta["sha256"]:
                 raise ValueError(f"turn receipt mismatch: {reference_id} T{number}")
             render = receipt.get("render") or {}
+            attempt_program = under(evidence, receipt["program"]) if receipt.get("program") else None
             valid = render.get("valid") is True and bool(receipt.get("program")) and bool(receipt.get("canvas"))
             program = canvas = None
             if valid:
@@ -125,6 +129,12 @@ def make_rows(annotations: Path, references: Path, *, include_prior_program: boo
                     ])
                     if include_prior_program:
                         content.append({"type": "text", "text": "Current program:\n" + old_program.read_text()})
+                if (include_last_attempt_program and previous_attempt_program is not None and
+                        not (include_prior_program and previous_valid is not None and
+                             previous_attempt_program == previous_valid[0])):
+                    content.append({"type": "text", "text":
+                                    "Most recent attempted program (context; replace it completely):\n" +
+                                    previous_attempt_program.read_text()})
                 if previous_history:
                     content.append({"type": "text", "text": "Prior turn outcomes (context, not examples to imitate):\n" + "\n".join(previous_history[-6:])})
                 feedback = str(receipt.get("request_render_feedback") or "").strip()
@@ -150,6 +160,7 @@ def make_rows(annotations: Path, references: Path, *, include_prior_program: boo
             previous_history.append(f"Turn {number}: {outcome}")
             if valid:
                 previous_valid = (program, canvas)
+            previous_attempt_program = attempt_program
         if found != approved:
             raise ValueError(f"approved turn absent: {reference_id}: {sorted(approved - found)}")
         audit.append({"reference_id": reference_id, "selected_turns": sorted(approved), "all_turns": len(episode["turns"]),
@@ -166,9 +177,12 @@ def main() -> None:
     p.add_argument("--output", type=Path, required=True)
     p.add_argument("--include-prior-program", action="store_true",
                    help="match the evaluator's current-program prompt; requires exact length audit")
+    p.add_argument("--include-last-attempt-program", action="store_true",
+                   help="show the immediately preceding code, including a failed attempt; requires exact length audit")
     args = p.parse_args()
     rows, audit = make_rows(args.annotations, args.references,
-                            include_prior_program=args.include_prior_program)
+                            include_prior_program=args.include_prior_program,
+                            include_last_attempt_program=args.include_last_attempt_program)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     raw = "".join(json.dumps(row, separators=(",", ":"), ensure_ascii=False) + "\n" for row in rows).encode()
     args.output.write_bytes(raw)
@@ -176,6 +190,7 @@ def main() -> None:
               "annotations_sha256": sha(args.annotations.read_bytes()), "references_sha256": sha(args.references.read_bytes()),
               "embedded_image_max_edge": MAX_IMAGE_EDGE,
               "include_prior_program": args.include_prior_program,
+              "include_last_attempt_program": args.include_last_attempt_program,
               "admissions": audit, "loss_target": "last assistant only; previous turns are user context"}
     args.output.with_suffix(".audit.json").write_text(json.dumps(report, indent=2) + "\n")
     print(json.dumps({"rows": len(rows), "sha256": sha(raw), "audit": str(args.output.with_suffix('.audit.json'))}))
