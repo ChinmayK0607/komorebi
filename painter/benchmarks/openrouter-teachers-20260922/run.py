@@ -1165,6 +1165,27 @@ def invalid_render_feedback(render: Mapping[str, Any], program: str) -> str:
     return feedback
 
 
+def native_polygon_fill_feedback(program: str) -> str | None:
+    """Flag the concrete brush/native API mix that hid the cup's shading.
+
+    This is advisory: a valid render is retained, and only a ``poly`` helper
+    visibly built from p5's native shape API triggers the warning.
+    """
+
+    helper = re.search(r"function\s+poly\s*\([^)]*\)\s*\{([\s\S]{0,400}?)\}", program)
+    if not helper or "beginShape(" not in helper.group(1) or "vertex(" not in helper.group(1):
+        return None
+    if not re.search(r"brush\.fill\([^;\n]*\);\s*poly\s*\(", program):
+        return None
+    return (
+        "The sketch calls brush.fill() before poly(), but poly() uses p5's "
+        "native beginShape()/vertex() API. brush.fill() does not color that "
+        "native polygon. Use p5 fill(r,g,b,alpha) before native poly(), or "
+        "brush.polygon(points) after brush.fill(). Inspect the actual canvas "
+        "for missing light and shadow layers."
+    )
+
+
 def render_program(
     *, root: Path, source: Path, output: Path, renderer: Path, renderer_python: Path,
     timeout: int = 180, browser_path: Path | None = None, run_as_user: str = "painter",
@@ -1655,6 +1676,9 @@ class EpisodeRunner:
                     state["final_valid_canvas"] = _relative(canvas_path, self.inputs.root)
                     last_turn_invalid = False
                     feedback = "The submitted program rendered successfully. Inspect the CURRENT CANVAS and continue revising or finish after observing it."
+                    fill_warning = native_polygon_fill_feedback(program)
+                    if fill_warning:
+                        feedback += " " + fill_warning
                 else:
                     last_turn_invalid = True
                     feedback = invalid_render_feedback(render, program)

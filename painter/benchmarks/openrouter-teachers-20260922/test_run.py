@@ -204,6 +204,13 @@ class RunTests(unittest.TestCase):
         self.assertIn("sampled vertex(x,y) points", feedback)
         self.assertNotIn("sampled vertex(x,y) points", run.invalid_render_feedback(failure, "rect(0,0,5,5);"))
 
+    def test_native_polygon_fill_warning_is_scoped_to_mixed_apis(self):
+        native = "function poly(p) { beginShape(); for (const v of p) vertex(v[0],v[1]); endShape(CLOSE); }"
+        mixed = native + "\nbrush.fill('#aabbcc', 42);\npoly([[0,0],[1,0],[0,1]]);"
+        self.assertIn("does not color", run.native_polygon_fill_feedback(mixed))
+        self.assertIsNone(run.native_polygon_fill_feedback(native + "\nfill(170,187,204,42);\npoly([]);"))
+        self.assertIsNone(run.native_polygon_fill_feedback("brush.fill('#aabbcc',42); brush.polygon([]);"))
+
     def test_gateway_response_preserves_usage_and_redacts_errors(self):
         response = {"id": "x", "choices": [{"message": {"content": "ok"}, "finish_reason": "stop"}], "usage": {"prompt_tokens": 4, "completion_tokens": 6, "total_tokens": 10, "cost": None}}
         self.assertEqual(run.response_record(response)["usage"]["total_tokens"], 10)
