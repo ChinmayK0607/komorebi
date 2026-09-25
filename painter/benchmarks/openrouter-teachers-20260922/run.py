@@ -363,6 +363,13 @@ def _positive_int(config: Mapping[str, Any], name: str, *, default: int) -> int:
     return value
 
 
+def _nonnegative_int(config: Mapping[str, Any], name: str, *, default: int) -> int:
+    value = config.get(name, default)
+    if not isinstance(value, int) or isinstance(value, bool) or value < 0:
+        raise BenchmarkError(f"config.{name} must be a nonnegative integer")
+    return value
+
+
 def settings_from_inputs(inputs: BenchmarkInputs, track: str) -> dict[str, Any]:
     config = inputs.config
     tracks = config.get("tracks", {})
@@ -380,7 +387,7 @@ def settings_from_inputs(inputs: BenchmarkInputs, track: str) -> dict[str, Any]:
         "transport": "ai-sdk",
         "transport_script": str(config.get("transport_script", TRANSPORT_SCRIPT)),
         "api_timeout_seconds": float(config.get("request_timeout_seconds", config.get("api_timeout_seconds", DEFAULT_TIMEOUT))),
-        "max_retries": _positive_int(config, "max_retries", default=DEFAULT_MAX_RETRIES),
+        "max_retries": _nonnegative_int(config, "max_retries", default=DEFAULT_MAX_RETRIES),
         "reasoning": config.get("reasoning", {}),
     }
 

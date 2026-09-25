@@ -36,6 +36,17 @@ def _fixture(root: Path) -> run.BenchmarkInputs:
 
 
 class RunTests(unittest.TestCase):
+    def test_zero_retries_is_valid_and_negative_retries_are_rejected(self):
+        with tempfile.TemporaryDirectory() as temp:
+            inputs = _fixture(Path(temp))
+            inputs.config["max_retries"] = 0
+            self.assertEqual(run.settings_from_inputs(inputs, "quality")["max_retries"], 0)
+            self.assertEqual(run.dry_run_report(inputs, track="quality", limit=1)["episodes_selected"], 1)
+            for invalid in (-1, True, 0.5):
+                inputs.config["max_retries"] = invalid
+                with self.assertRaises(run.BenchmarkError):
+                    run.settings_from_inputs(inputs, "quality")
+
     def test_progress_reporter_is_truthful_until_response_usage_exists(self):
         stream = io.StringIO()
         reporter = run.ProgressReporter(episodes_total=1, stream=stream)
