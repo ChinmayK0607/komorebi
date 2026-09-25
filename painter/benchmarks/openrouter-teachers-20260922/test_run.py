@@ -198,6 +198,12 @@ class RunTests(unittest.TestCase):
         self.assertFalse(run.is_finished_text("The explanation mentions FINISHED but does not finish."))
         self.assertFalse(run.is_finished_text("```js\n// FINISHED\n```"))
 
+    def test_curve_failure_feedback_names_the_repair(self):
+        failure = {"valid": False, "errors": ["Cannot read properties of undefined (reading 'map')"]}
+        feedback = run.invalid_render_feedback(failure, "beginShape(); bezierVertex(1,2,3,4,5,6); endShape(CLOSE);")
+        self.assertIn("sampled vertex(x,y) points", feedback)
+        self.assertNotIn("sampled vertex(x,y) points", run.invalid_render_feedback(failure, "rect(0,0,5,5);"))
+
     def test_gateway_response_preserves_usage_and_redacts_errors(self):
         response = {"id": "x", "choices": [{"message": {"content": "ok"}, "finish_reason": "stop"}], "usage": {"prompt_tokens": 4, "completion_tokens": 6, "total_tokens": 10, "cost": None}}
         self.assertEqual(run.response_record(response)["usage"]["total_tokens"], 10)

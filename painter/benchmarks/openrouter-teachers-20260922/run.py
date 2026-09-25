@@ -1153,6 +1153,18 @@ def _render_result_is_service_failure(result: Mapping[str, Any]) -> bool:
     return bool(result.get("service_failure") or result.get("error_code") in {"renderer_error", "render_timeout", "worker_failure"})
 
 
+def invalid_render_feedback(render: Mapping[str, Any], program: str) -> str:
+    error = redact(str(render.get("errors") or render.get("error") or "renderer failure"))
+    feedback = "The submitted program did not produce a valid canvas. " + error
+    if re.search(r"\bbezierVertex\s*\(", program) and ("reading 'map'" in error or 'reading "map"' in error):
+        feedback += (
+            " The pinned WEBGL renderer fails on this filled bezierVertex path. "
+            "Replace bezierVertex calls with sampled vertex(x,y) points or an ellipse; "
+            "then inspect the actual rendered subject before adding detail."
+        )
+    return feedback
+
+
 def render_program(
     *, root: Path, source: Path, output: Path, renderer: Path, renderer_python: Path,
     timeout: int = 180, browser_path: Path | None = None, run_as_user: str = "painter",
@@ -1645,7 +1657,7 @@ class EpisodeRunner:
                     feedback = "The submitted program rendered successfully. Inspect the CURRENT CANVAS and continue revising or finish after observing it."
                 else:
                     last_turn_invalid = True
-                    feedback = "The submitted program did not produce a valid canvas. " + redact(str(render.get("errors") or render.get("error") or "renderer failure"))
+                    feedback = invalid_render_feedback(render, program)
             elif is_finished_text(reply) and current_canvas is not None:
                 turn_record["finished_observed"] = True
                 turn_record["render"] = {"valid": True, "skipped": True, "finished_without_code": True}
