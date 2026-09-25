@@ -28,6 +28,7 @@ SOURCES = {
     "setup_multiturn_eval.sh": RUN / "setup_multiturn_eval.sh",
     "launch_multiturn_eval.sh": RUN / "launch_multiturn_eval.sh",
     "run_multiturn_campaign.sh": RUN / "run_multiturn_campaign.sh",
+    "finalize_multiturn_data.sh": RUN / "finalize_multiturn_data.sh",
     "train_multiturn.py": RUN / "train_multiturn.py",
     "build_multiturn_mix.py": RUN / "build_multiturn_mix.py",
     "bootstrap.sh": PHOTO / "bootstrap.sh",
