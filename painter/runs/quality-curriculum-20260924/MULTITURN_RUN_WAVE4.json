@@ -68,7 +68,20 @@
     "max_turns_per_case": 2,
     "comparability": "same reference, seed, scaffold, token limit and render settings; each policy sees its own canvas",
     "limitation": "not a fixed-draft correction test",
-    "visual_result": "pending"
+    "visual_result": "pending",
+    "optional_midpoint_checkpoint_step": 24,
+    "midpoint_rationale": "Use freed GPU 1 after baseline to check whether step 24 is visually stronger than final step 40, as prior SFT campaigns regressed after their midpoint.",
+    "baseline": {
+      "status": "completed",
+      "cases": 28,
+      "elapsed_seconds": 2056,
+      "final_canvas_valid": 17,
+      "first_turn_valid": 15,
+      "second_turn_valid": 16,
+      "two_turn_cases": 24,
+      "visual_quality": "not yet judged",
+      "config_sha256": "d97c8d168f3577156da129761da21b1837ba60c375d0735b2d38dd7e0680e88f"
+    }
   },
   "hardware": {
     "node_type": "2x NVIDIA RTX PRO 6000 Blackwell Server Edition 96 GB",

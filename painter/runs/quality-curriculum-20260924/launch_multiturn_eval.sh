@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # Frozen 28-photo two-turn evaluation; compare first paints and their revisions
-# against the same baseline on GPU 1, then evaluate the public final adapter.
+# against the same baseline; optionally compare the public step-24 midpoint.
 set -Eeuo pipefail
-RUN="$(cd "${1:?usage: launch_multiturn_eval.sh RUN_DIRECTORY baseline|trained}" && pwd -P)"
-POLICY="${2:?choose baseline or trained}"
-[[ "$POLICY" == baseline || "$POLICY" == trained ]] || exit 2
+RUN="$(cd "${1:?usage: launch_multiturn_eval.sh RUN_DIRECTORY baseline|midpoint|trained}" && pwd -P)"
+POLICY="${2:?choose baseline, midpoint or trained}"
+[[ "$POLICY" == baseline || "$POLICY" == midpoint || "$POLICY" == trained ]] || exit 2
 [[ "$(uname -s)" == Linux && -f "$RUN/env.sh" && -x "$RUN/painter/renderer-env/bin/python" ]] || {
   echo 'training bootstrap and eval renderer setup are required' >&2; exit 2;
 }
@@ -19,11 +19,11 @@ VLLM="$PRIME_ROOT/.venv/bin/vllm"
 MODEL_DIR="$(cat "$RUN/model-path.txt")"
 MANIFEST="$RUN/painter/eval-prep/eval-manifest.json"
 EVAL_ROOT="$RUN/eval/$POLICY"
-if [[ "$POLICY" == baseline ]]; then PORT=8100; else PORT=8101; fi
+case "$POLICY" in baseline) PORT=8100;; trained) PORT=8101;; midpoint) PORT=8102;; esac
 GPU="${EVAL_GPU:-1}"
 mkdir -p "$EVAL_ROOT" "$EVAL_ROOT/cache"
 exec 8>"$EVAL_ROOT/eval.lock"
-if [[ "$POLICY" == trained ]]; then
+if [[ "$POLICY" != baseline ]]; then
   flock -w 7200 8 || { echo 'timed out waiting for trained evaluation' >&2; exit 2; }
 else
   flock -n 8 || { echo 'evaluation already running for this policy' >&2; exit 2; }
@@ -31,11 +31,12 @@ fi
 if [[ "$POLICY" == baseline ]]; then
   ADAPTER="$(cat "$RUN/initial-adapter-path.txt")"
 else
-  STEP="$($PY - "$RUN/data/mix-manifest.json" <<'PY'
+  FINAL_STEP="$($PY - "$RUN/data/mix-manifest.json" <<'PY'
 import json,sys
 print(json.load(open(sys.argv[1]))['optimizer_steps_at_batch_4'])
 PY
 )"
+  if [[ "$POLICY" == midpoint ]]; then STEP=24; else STEP="$FINAL_STEP"; fi
   ADAPTER="$RUN/train-output/multiturn-sft-20260925-v1/artifacts/adapters/step_$STEP"
 fi
 "$PY" - "$RUN" "$POLICY" "$ADAPTER" "$MANIFEST" <<'PY'
@@ -57,17 +58,17 @@ else:
     if sha(weight)!=expected:raise ValueError('trained adapter hash differs from public receipt')
 print(json.dumps({'policy':policy,'adapter_sha256':sha(weight),'manifest_sha256':sha(manifest)}))
 PY
-if [[ "$POLICY" == trained && -f "$EVAL_ROOT/completion.json" ]]; then
-  "$PY" - "$EVAL_ROOT/completion.json" "$ADAPTER/adapter_model.safetensors" "$MANIFEST" <<'PY'
+if [[ "$POLICY" != baseline && -f "$EVAL_ROOT/completion.json" ]]; then
+  "$PY" - "$EVAL_ROOT/completion.json" "$ADAPTER/adapter_model.safetensors" "$MANIFEST" "$POLICY" <<'PY'
 import hashlib,json,pathlib,sys
 record=json.loads(pathlib.Path(sys.argv[1]).read_text())
 def sha(p):return hashlib.sha256(pathlib.Path(p).read_bytes()).hexdigest()
-if (record.get('status')!='completed' or record.get('policy')!='trained'
+if (record.get('status')!='completed' or record.get('policy')!=sys.argv[4]
         or record.get('adapter_sha256')!=sha(sys.argv[2])
         or record.get('manifest_sha256')!=sha(sys.argv[3])
         or record.get('case_count')!=28 or record.get('max_turns')!=2):
     raise ValueError('existing trained evaluation is not the matched completed run')
-print('matched trained evaluation already complete; skipping duplicate')
+print('matched evaluation already complete; skipping duplicate')
 PY
   exit 0
 fi
