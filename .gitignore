@@ -1,1 +1,5 @@
 /.painter-cloud-runtime/
+/painter/collected/
+__pycache__/
+*.pyc
+/error.log
