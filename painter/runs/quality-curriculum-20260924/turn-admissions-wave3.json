@@ -1,0 +1,158 @@
+{
+  "schema": "painter.reviewed-turn-admissions.v3",
+  "reviewer": "parent visual review 2026-09-25; no exact-turn human labels",
+  "episodes": [
+    {
+      "evidence_root": "painter/collected/quality-curriculum-20260924/mimo-cloud/pro-cup-repair-v2/evidence",
+      "reference_id": "simple-cup",
+      "supervise_turns": [
+        1,
+        2,
+        3
+      ],
+      "reason": "cup structure improves through T3; T4 loses the stronger lighting of T3"
+    },
+    {
+      "evidence_root": "painter/collected/quality-curriculum-20260924/mimo-cloud/easy-pro-wave1-20260925/evidence",
+      "reference_id": "simple-poppy",
+      "supervise_turns": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "reason": "all four are recognizable and the flower/vase treatment develops across turns"
+    },
+    {
+      "evidence_root": "painter/collected/quality-curriculum-20260924/mimo-cloud/easy-pro-wave1-20260925/evidence",
+      "reference_id": "simple-sailboat",
+      "supervise_turns": [
+        2
+      ],
+      "reason": "T2 has two distinct sails and a readable hull; T3 weakens sail separation and T4 is invalid"
+    },
+    {
+      "evidence_root": "painter/collected/quality-curriculum-20260924/mimo-cloud/easy-pro-wave1-20260925/evidence",
+      "reference_id": "simple-cottage",
+      "supervise_turns": [
+        2,
+        4
+      ],
+      "reason": "T2 and T4 are coherent; T4 improves house silhouette and roof while T1/T3 are invalid"
+    },
+    {
+      "evidence_root": "painter/collected/quality-curriculum-20260924/mimo-cloud/pro-cake-probe/evidence",
+      "reference_id": "coco128-000000000092",
+      "supervise_turns": [
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "reason": "T1 is black; T2-T6 progressively model the layered cake and fork with valid recognizable canvases"
+    },
+    {
+      "evidence_root": "painter/collected/quality-curriculum-20260924/mimo-cloud/diverse-pro-easy-20260925/evidence",
+      "reference_id": "simple-orange",
+      "supervise_turns": [
+        1,
+        4
+      ],
+      "reason": "T1 gives a recognizable orange, leaf and plate; T4 restores the fruit silhouette with better modeled texture after T2's sliced-looking regression and invalid T3"
+    },
+    {
+      "evidence_root": "painter/collected/quality-curriculum-20260924/mimo-benchmark-reuse/full-quality-01-20260923/evidence",
+      "reference_id": "coco128-000000000136",
+      "supervise_turns": [
+        2,
+        3,
+        4
+      ],
+      "reason": "T1 paints only the room; T2 gives both readable giraffes, T3 clarifies their heads and necks, T4 adds coherent modeling."
+    },
+    {
+      "evidence_root": "painter/collected/quality-curriculum-20260924/mimo-benchmark-reuse/full-quality-02-20260923/evidence",
+      "reference_id": "coco128-000000000143",
+      "supervise_turns": [
+        1,
+        3
+      ],
+      "reason": "T1 establishes seven readable perched birds; T3 improves separation and perches. Later turns mostly repeat or lose the subjects."
+    },
+    {
+      "evidence_root": "painter/collected/quality-curriculum-20260924/mimo-benchmark-reuse/full-quality-03-20260923/evidence",
+      "reference_id": "coco128-000000000520",
+      "supervise_turns": [
+        2,
+        3,
+        4
+      ],
+      "reason": "T1 is a black canvas; T2 paints the waterfront, and T3-T4 improve the sky and pier structure."
+    },
+    {
+      "evidence_root": "painter/collected/quality-curriculum-20260924/mimo-benchmark-reuse/full-quality-07-20260923/evidence",
+      "reference_id": "coco128-000000000532",
+      "supervise_turns": [
+        1,
+        4
+      ],
+      "reason": "T1 establishes the red bus; T4 improves its daylight color and background without losing the bus."
+    }
+  ],
+  "excluded": [
+    {
+      "reference_id": "simple-pear",
+      "reason": "best-looking T3 has a nested coordinate translation outside the current canvas-pixel contract; T4 moves the pear off-canvas"
+    },
+    {
+      "reference_id": "simple-orange",
+      "turns": [
+        2,
+        3
+      ],
+      "reason": "T2 introduces an implausible sliced lobe, T3 is invalid"
+    },
+    {
+      "reference_id": "simple-fern",
+      "reason": "T1 invalid; T2-T4 render attractively but use nested per-leaflet translate/rotate transforms forbidden by the current canvas-pixel contract"
+    },
+    {
+      "reference_id": "coco128-000000000136",
+      "turns": [
+        1,
+        5
+      ],
+      "reason": "T1 paints only background; T5 invalid."
+    },
+    {
+      "reference_id": "coco128-000000000143",
+      "turns": [
+        7,
+        8,
+        9,
+        10,
+        11
+      ],
+      "reason": "T7-T8 erase birds; T9-T10 are weaker recovery and texture; T11 invalid."
+    },
+    {
+      "reference_id": "coco128-000000000520",
+      "turns": [
+        1,
+        5
+      ],
+      "reason": "T1 black; T5 invalid."
+    },
+    {
+      "reference_id": "coco128-000000000532",
+      "turns": [
+        2,
+        3,
+        5
+      ],
+      "reason": "T2-T3 nearly duplicate earlier structure; T5 invalid."
+    }
+  ],
+  "source_note": "Four already-paid benchmark source episodes are public hash-verified candidate evidence; their reference IDs are removed from any student benchmark interpretation."
+}
