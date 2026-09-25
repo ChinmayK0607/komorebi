@@ -1,5 +1,7 @@
 # Reviewed multi-turn painting SFT — preparation, 2026-09-25
 
+**Completed result:** [Wave-4 matched evaluation](MULTITURN_RESULT_WAVE4.md) does not support promoting the multi-turn adapter: step 24 and step 40 each yielded 12/28 valid final canvases versus 17/28 for the matched photo-SFT step-512 initializer, and visual inspection favored the initializer overall. The public evidence archive is hash-verified, and the GPU node has been released. The preparation and launch details below describe the completed experiment; forward-looking statements should be read in light of this result.
+
 ## Wave-4 launch record (supersedes provisional data/setup status below)
 
 The finite nine-photo MiMo Pro teacher wave is publicly archived at HF dataset `CK0607/komorebi-painter-teachers` revision `fab82ab46d94becf279d973c99989328364c3ba8`, archive SHA-256 `0f65ab1cca0a1b639657355d02ed47d1e010135d9d2bc660df092635249d1c35`, from source commit `862c28929151e62dfcedb2823fadc4e430ae7ad2`. It made 36 Gateway requests and reported 830,003 total tokens; all 36 provider cost fields are missing, so the recorded zero subtotal is **not** a measured free run. The [admission decisions](turn-admissions-wave4.json) add 11 visually reviewed, renderer-valid, contract-valid turns from six photo scenes and reject invalid/regressive turns. Across prior simple/reused scenes and this wave, there are 38 approved targets over 16 scenes. All their reference IDs are training sources. The frozen 28-photo development manifest is disjoint by exact reference hash.

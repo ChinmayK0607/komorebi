@@ -17,6 +17,7 @@ FILES = (
     "sft.toml", "sft.setup.json", "final-data-ready.json",
     "processor-audit.json", "gpu-telemetry.csv", "gpu-telemetry-summary.json",
     "data/mix-manifest.json", "train.log",
+    "train-output/multiturn-sft-20260925-v1/artifacts/initial-adapter-audit.json",
     "eval/baseline/completion.json", "eval/baseline/eval.toml",
     "eval/baseline/eval.exit", "eval/baseline/eval.log",
     "eval/baseline/server.log", "eval/trained/completion.json",

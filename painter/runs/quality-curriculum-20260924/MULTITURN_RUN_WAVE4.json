@@ -1,6 +1,6 @@
 {
   "schema": "painter.multiturn-sft-experiment.v1",
-  "status": "matched_evaluations_in_progress",
+  "status": "evaluated_not_promoted_node_released",
   "date_utc": "2026-09-25",
   "hypothesis": "Visual-state-conditioned SFT on reviewed teacher improvements raises first-paint and two-turn final visual quality against the public photo SFT step-512 adapter on frozen unseen photos.",
   "matched_baseline": {
@@ -68,7 +68,7 @@
     "max_turns_per_case": 2,
     "comparability": "same reference, seed, scaffold, token limit and render settings; each policy sees its own canvas",
     "limitation": "not a fixed-draft correction test",
-    "visual_result": "pending",
+    "visual_result": "Parent side-by-side inspection favors baseline overall; mixed isolated wins for the new adapter, no blinded pairwise win-rate.",
     "optional_midpoint_checkpoint_step": 24,
     "midpoint_rationale": "Use freed GPU 1 after baseline to check whether step 24 is visually stronger than final step 40, as prior SFT campaigns regressed after their midpoint.",
     "baseline": {
@@ -79,9 +79,42 @@
       "first_turn_valid": 15,
       "second_turn_valid": 16,
       "two_turn_cases": 24,
-      "visual_quality": "not yet judged",
-      "config_sha256": "d97c8d168f3577156da129761da21b1837ba60c375d0735b2d38dd7e0680e88f"
-    }
+      "visual_quality": "Parent inspection: stronger recognizable structure overall than step 24 or 40.",
+      "config_sha256": "d97c8d168f3577156da129761da21b1837ba60c375d0735b2d38dd7e0680e88f",
+      "invalid_first_rescued": 2,
+      "identical_invalid_reply_repeated": 4,
+      "service_failure_cases": 3
+    },
+    "midpoint": {
+      "status": "completed",
+      "checkpoint_step": 24,
+      "adapter_sha256": "32b756dd41b5be8b3abb2a79ae19b0f01f633bc71643f1ec52b1a64c162b592b",
+      "config_sha256": "0ea3407350acabfd0a9c74b2e0efa8b489f17b123a978bfd32fd2a283a8b8036",
+      "cases": 28,
+      "elapsed_seconds": 1975,
+      "first_turn_valid": 10,
+      "second_turn_valid": 11,
+      "final_canvas_valid": 12,
+      "invalid_first_rescued": 2,
+      "identical_invalid_reply_repeated": 3,
+      "service_failure_cases": 1
+    },
+    "trained": {
+      "status": "completed",
+      "checkpoint_step": 40,
+      "adapter_sha256": "b026b2d4d9ca4d77ffdc8db856d7c72f385af44ca3aa8273ff7fc31fec4443e3",
+      "config_sha256": "b63d22a9a151feb3ff2e6831c933fb0461c6242538c00ab31e93a95007979d27",
+      "cases": 28,
+      "elapsed_seconds": 2570,
+      "first_turn_valid": 7,
+      "second_turn_valid": 8,
+      "final_canvas_valid": 12,
+      "invalid_first_rescued": 5,
+      "identical_invalid_reply_repeated": 7,
+      "service_failure_cases": 2
+    },
+    "first_turn_data_mismatch": "Revision training rows omit prior full program to fit 16k, while live two-turn evaluation retains prior assistant content and includes current program.",
+    "result_document": "MULTITURN_RESULT_WAVE4.md"
   },
   "hardware": {
     "node_type": "2x NVIDIA RTX PRO 6000 Blackwell Server Edition 96 GB",
@@ -99,7 +132,9 @@
     "training_window_gpu0_busy_fraction_ge_10_percent": 0.8605,
     "training_window_gpu1_mean_utilization_percent": 93.7984,
     "training_window_gpu1_busy_fraction_ge_10_percent": 0.938,
-    "gpu_denominator": "all parseable 10-second nvidia-smi samples per device in bounded training process window; GPU0 trainer, GPU1 simultaneous baseline eval"
+    "gpu_denominator": "all parseable 10-second nvidia-smi samples per device in bounded training process window; GPU0 trainer, GPU1 simultaneous baseline eval",
+    "last_reported_spend_usd_before_node_release": 4.17,
+    "node_released": true
   },
   "failures": [
     {
@@ -111,5 +146,15 @@
       "action": "fixed both scripts and preserved attempt-one logs on node"
     }
   ],
-  "next_decision": "Compare public final checkpoint and step-512 baseline paintings on the frozen 28-photo two-turn eval before promotion."
+  "next_decision": "Do not promote step 24 or 40. Retain photo-SFT step 512. Expand reviewed distinct-scene teacher trajectories and match correction prompt state before another GPU run.",
+  "evidence": {
+    "public_dataset": "CK0607/komorebi-painter-evaluations",
+    "revision": "afaa1219e5172c86e4805753927095c56b062cdc",
+    "path": "multiturn-sft-20260925-v1/evidence.tar.gz",
+    "archive_sha256": "d4c9e76788600095f3dc2d1b139ecf568c5f2a04ac16a491868fb396fd6bcc6e",
+    "bytes": 42616540,
+    "members": 485,
+    "anonymous_hash_verified": true,
+    "local_gallery": "painter/collected/quality-curriculum-20260924/multiturn-sft-wave4/review/index.html"
+  }
 }

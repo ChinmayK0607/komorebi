@@ -24,6 +24,8 @@ def local_image(evidence: Path, output: Path, value: str | None) -> str | None:
         except ValueError:
             return None
     candidate = evidence / path
+    if not candidate.is_file() and not path.is_absolute():
+        candidate = evidence / "painter/eval-prep" / path
     if not candidate.is_file() or not candidate.resolve().is_relative_to(evidence.resolve()):
         return None
     return os.path.relpath(candidate, output.parent)
