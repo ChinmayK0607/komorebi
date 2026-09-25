@@ -22,10 +22,13 @@ FILES = (
     "eval/baseline/server.log", "eval/trained/completion.json",
     "eval/trained/eval.toml", "eval/trained/eval.exit",
     "eval/trained/eval.log", "eval/trained/server.log",
+    "eval/midpoint/completion.json", "eval/midpoint/eval.toml",
+    "eval/midpoint/eval.exit", "eval/midpoint/eval.log",
+    "eval/midpoint/server.log",
     "painter/eval-prep/eval-manifest.json",
 )
 TREES = (
-    "eval/baseline/results", "eval/trained/results",
+    "eval/baseline/results", "eval/trained/results", "eval/midpoint/results",
     "painter/eval-prep/references", "painter/evaluation-rollouts",
     "attempt1-failed-preflight",
 )
