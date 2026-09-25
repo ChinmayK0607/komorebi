@@ -48,4 +48,5 @@ PY
   --global-batch-size 4 --micro-batch-size 1 --learning-rate 0.000003 \
   --checkpoint-interval "$CHECKPOINT_MULTIPLE" \
   --validation-interval "$CHECKPOINT_MULTIPLE" --seed 20260925
-echo "Setup complete; launch with: bash $RUN/launch_multiturn_sft.sh $RUN"
+bash "$RUN/setup_multiturn_eval.sh" "$RUN"
+echo "Setup complete; launch with: bash $RUN/run_multiturn_campaign.sh $RUN"
