@@ -1,6 +1,6 @@
 {
   "schema": "painter.multiturn-sft-experiment.v1",
-  "status": "training_in_progress",
+  "status": "matched_evaluations_in_progress",
   "date_utc": "2026-09-25",
   "hypothesis": "Visual-state-conditioned SFT on reviewed teacher improvements raises first-paint and two-turn final visual quality against the public photo SFT step-512 adapter on frozen unseen photos.",
   "matched_baseline": {
@@ -52,7 +52,15 @@
       "max_tokens": 10220,
       "assistant_only_loss": true,
       "no_truncation": true
-    }
+    },
+    "training_exit": 0,
+    "public_final_checkpoint_commit": "e80af8c90f9dfa2d7a22696dbaf9aaed3d30c8ae",
+    "public_final_checkpoint_path": "multiturn-sft-20260925-v1/step_40",
+    "public_final_adapter_sha256": "b026b2d4d9ca4d77ffdc8db856d7c72f385af44ca3aa8273ff7fc31fec4443e3",
+    "public_final_checkpoint_verified": true,
+    "procedural_validation_loss_at_start": 0.2179,
+    "procedural_validation_loss_at_step_40": 0.1842,
+    "validation_caveat": "procedural validation loss is not visual-quality evidence"
   },
   "evaluation": {
     "frozen_manifest_sha256": "9943878cc43d48f1cf9ff60e5af633089bf2bd8d45141216531363cad8f1c878",
@@ -68,7 +76,17 @@
     "started_utc": "2026-09-25T14:16:09Z",
     "trainer_gpu": 0,
     "baseline_eval_gpu": 1,
-    "cost_and_full_window_utilization": "pending"
+    "cost_and_full_window_utilization": "pending",
+    "training_window_utc": [
+      "2026-09-25T14:46:32.265169Z",
+      "2026-09-25T15:07:58.949485Z"
+    ],
+    "training_window_gpu_samples_each": 129,
+    "training_window_gpu0_mean_utilization_percent": 73.3256,
+    "training_window_gpu0_busy_fraction_ge_10_percent": 0.8605,
+    "training_window_gpu1_mean_utilization_percent": 93.7984,
+    "training_window_gpu1_busy_fraction_ge_10_percent": 0.938,
+    "gpu_denominator": "all parseable 10-second nvidia-smi samples per device in bounded training process window; GPU0 trainer, GPU1 simultaneous baseline eval"
   },
   "failures": [
     {

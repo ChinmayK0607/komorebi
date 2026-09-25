@@ -19,7 +19,7 @@ VLLM="$PRIME_ROOT/.venv/bin/vllm"
 MODEL_DIR="$(cat "$RUN/model-path.txt")"
 MANIFEST="$RUN/painter/eval-prep/eval-manifest.json"
 EVAL_ROOT="$RUN/eval/$POLICY"
-PORT=8100
+if [[ "$POLICY" == baseline ]]; then PORT=8100; else PORT=8101; fi
 GPU="${EVAL_GPU:-1}"
 mkdir -p "$EVAL_ROOT" "$EVAL_ROOT/cache"
 exec 8>"$EVAL_ROOT/eval.lock"
