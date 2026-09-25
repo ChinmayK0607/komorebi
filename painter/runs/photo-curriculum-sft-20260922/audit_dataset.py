@@ -36,6 +36,14 @@ def training_projection(row: dict) -> dict:
     return {key: row[key] for key in DATA_FIELDS if key in row}
 
 
+def dataset_path(data_dir: Path, split: str) -> Path:
+    """Resolve the same input for processing and the reported digest."""
+    candidates = data_dir / f"candidates-{split}.jsonl"
+    if candidates.is_file():
+        return candidates
+    return data_dir / f"{split}.jsonl"
+
+
 def audit(config_path: Path, output: Path, brush_root: Path) -> dict:
     if sys.platform != "linux":
         raise RuntimeError("processor audit runs on the Linux training node")
@@ -60,10 +68,10 @@ def audit(config_path: Path, output: Path, brush_root: Path) -> dict:
     renderer = create_renderer(tokenizer, config.renderer)
     renderer._processor = setup_processor(config.model)
     result = []
+    source_paths = {}
     for split in ("train", "validation"):
-        source = Path(config.data.name) / ("candidates-train.jsonl" if split == "train" else "candidates-validation.jsonl")
-        if not source.is_file():
-            source = Path(config.data.name) / (split + ".jsonl")
+        source = dataset_path(Path(config.data.name), split)
+        source_paths[split] = source
         raw_rows = list(rows(source))
         if not raw_rows:
             raise ValueError(f"{split} is empty: {source}")
@@ -112,7 +120,7 @@ def audit(config_path: Path, output: Path, brush_root: Path) -> dict:
         "max_tokens": max(r["total_tokens"] for r in result),
         "max_assistant_tokens": max(r["assistant_tokens"] for r in result),
         "dataset_sha256": {
-            split: hashlib.sha256((Path(config.data.name) / ("candidates-train.jsonl" if split == "train" else "candidates-validation.jsonl")).read_bytes()).hexdigest()
+            split: hashlib.sha256(source_paths[split].read_bytes()).hexdigest()
             for split in ("train", "validation")
         },
         "examples": result,
