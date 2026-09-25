@@ -1,0 +1,3474 @@
+{
+  "cases": [
+    {
+      "annotation_classes": [
+        "bench",
+        "book",
+        "cake",
+        "cup",
+        "dining table",
+        "handbag",
+        "knife",
+        "person",
+        "potted plant",
+        "spoon",
+        "umbrella"
+      ],
+      "annotations": [
+        {
+          "class_id": 58,
+          "class_name": "potted plant",
+          "height": 0.146778,
+          "source_line": 1,
+          "source_text": "58 0.384211 0.176424 0.101078 0.146778",
+          "width": 0.101078,
+          "x_center": 0.384211,
+          "y_center": 0.176424
+        },
+        {
+          "class_id": 60,
+          "class_name": "dining table",
+          "height": 0.694116,
+          "source_line": 2,
+          "source_text": "60 0.58357 0.652942 0.831141 0.694116",
+          "width": 0.831141,
+          "x_center": 0.58357,
+          "y_center": 0.652942
+        },
+        {
+          "class_id": 41,
+          "class_name": "cup",
+          "height": 0.259356,
+          "source_line": 3,
+          "source_text": "41 0.741516 0.589574 0.289375 0.259356",
+          "width": 0.289375,
+          "x_center": 0.741516,
+          "y_center": 0.589574
+        },
+        {
+          "class_id": 43,
+          "class_name": "knife",
+          "height": 0.330374,
+          "source_line": 4,
+          "source_text": "43 0.551609 0.760468 0.162844 0.330374",
+          "width": 0.162844,
+          "x_center": 0.551609,
+          "y_center": 0.760468
+        },
+        {
+          "class_id": 44,
+          "class_name": "spoon",
+          "height": 0.171143,
+          "source_line": 5,
+          "source_text": "44 0.608008 0.659958 0.132672 0.171143",
+          "width": 0.132672,
+          "x_center": 0.608008,
+          "y_center": 0.659958
+        },
+        {
+          "class_id": 55,
+          "class_name": "cake",
+          "height": 0.293451,
+          "source_line": 6,
+          "source_text": "55 0.37832 0.694688 0.196797 0.293451",
+          "width": 0.196797,
+          "x_center": 0.37832,
+          "y_center": 0.694688
+        },
+        {
+          "class_id": 73,
+          "class_name": "book",
+          "height": 0.192349,
+          "source_line": 7,
+          "source_text": "73 0.502742 0.49973 0.201672 0.192349",
+          "width": 0.201672,
+          "x_center": 0.502742,
+          "y_center": 0.49973
+        },
+        {
+          "class_id": 13,
+          "class_name": "bench",
+          "height": 0.170374,
+          "source_line": 8,
+          "source_text": "13 0.0502734 0.394875 0.100547 0.170374",
+          "width": 0.100547,
+          "x_center": 0.0502734,
+          "y_center": 0.394875
+        },
+        {
+          "class_id": 13,
+          "class_name": "bench",
+          "height": 0.0341788,
+          "source_line": 9,
+          "source_text": "13 0.281094 0.19657 0.0687187 0.0341788",
+          "width": 0.0687187,
+          "x_center": 0.281094,
+          "y_center": 0.19657
+        },
+        {
+          "class_id": 25,
+          "class_name": "umbrella",
+          "height": 0.217609,
+          "source_line": 10,
+          "source_text": "25 0.541289 0.108805 0.163828 0.217609",
+          "width": 0.163828,
+          "x_center": 0.541289,
+          "y_center": 0.108805
+        },
+        {
+          "class_id": 25,
+          "class_name": "umbrella",
+          "height": 0.115863,
+          "source_line": 11,
+          "source_text": "25 0.230813 0.0645634 0.051125 0.115863",
+          "width": 0.051125,
+          "x_center": 0.230813,
+          "y_center": 0.0645634
+        },
+        {
+          "class_id": 26,
+          "class_name": "handbag",
+          "height": 0.339501,
+          "source_line": 12,
+          "source_text": "26 0.542062 0.426798 0.734312 0.339501",
+          "width": 0.734312,
+          "x_center": 0.542062,
+          "y_center": 0.426798
+        },
+        {
+          "class_id": 0,
+          "class_name": "person",
+          "height": 0.0743243,
+          "source_line": 13,
+          "source_text": "0 0.711789 0.0551871 0.0355469 0.0743243",
+          "width": 0.0355469,
+          "x_center": 0.711789,
+          "y_center": 0.0551871
+        },
+        {
+          "class_id": 13,
+          "class_name": "bench",
+          "height": 0.102807,
+          "source_line": 14,
+          "source_text": "13 0.216469 0.257308 0.101562 0.102807",
+          "width": 0.101562,
+          "x_center": 0.216469,
+          "y_center": 0.257308
+        },
+        {
+          "class_id": 13,
+          "class_name": "bench",
+          "height": 0.0754054,
+          "source_line": 15,
+          "source_text": "13 0.348836 0.344044 0.0824219 0.0754054",
+          "width": 0.0824219,
+          "x_center": 0.348836,
+          "y_center": 0.344044
+        },
+        {
+          "class_id": 60,
+          "class_name": "dining table",
+          "height": 0.0486694,
+          "source_line": 16,
+          "source_text": "60 0.582313 0.222152 0.334781 0.0486694",
+          "width": 0.334781,
+          "x_center": 0.582313,
+          "y_center": 0.222152
+        },
+        {
+          "class_id": 25,
+          "class_name": "umbrella",
+          "height": 0.0925988,
+          "source_line": 17,
+          "source_text": "25 0.185305 0.0493971 0.0445156 0.0925988",
+          "width": 0.0445156,
+          "x_center": 0.185305,
+          "y_center": 0.0493971
+        }
+      ],
+      "dataset": "COCO train2017 via Ultralytics COCO128",
+      "dataset_attribution": "Microsoft COCO Consortium; Ultralytics COCO128 packaging",
+      "dataset_license_documentation": "CC BY 4.0 attribution link shown by the Ultralytics COCO128 documentation",
+      "dataset_role": "reference_only",
+      "exposure_status": "fresh_import_exposure_unknown",
+      "family": "bench",
+      "heldout_claim": false,
+      "id": "coco-capability-20260922-000000000127",
+      "member_families": [
+        "bench",
+        "book",
+        "cake",
+        "cup",
+        "dining table",
+        "handbag",
+        "knife",
+        "person",
+        "potted plant",
+        "spoon",
+        "umbrella"
+      ],
+      "mode": "fresh",
+      "object_count": 17,
+      "object_count_bucket": "ten_plus",
+      "original_annotation_classes": [
+        "bench",
+        "book",
+        "cake",
+        "cup",
+        "dining table",
+        "handbag",
+        "knife",
+        "person",
+        "potted plant",
+        "spoon",
+        "umbrella"
+      ],
+      "per_image_license": null,
+      "per_image_license_status": "unverified_not_provided_in_archive",
+      "primary_family": "bench",
+      "provenance_urls": [
+        "https://github.com/ultralytics/assets/releases/download/v0.0.0/coco128.zip",
+        "https://docs.ultralytics.com/datasets/detect/coco128",
+        "https://cocodataset.org/#home"
+      ],
+      "reference": "references/000000000127.jpg",
+      "reference_sha256": "0ce2f02f39d5d49260d91762bc9a659f8f9d516d8e416c8120306330bfd58023",
+      "selection_rank": 1,
+      "selection_reason": "greedy rank 1: score=1140; new_categories=bench,book,cake,cup,dining table,handbag,knife,person,potted plant,spoon,umbrella; new_object_count_bucket=ten_plus; new_primary_family=yes",
+      "source_group": "coco128:train2017:000000000127",
+      "source_id": "000000000127",
+      "source_image_url": "https://cocodataset.org/#explore?id=127",
+      "source_reference": "painter/runs/scaled-curriculum-20260921/real-pool/raw/coco128/images/train2017/000000000127.jpg",
+      "source_reference_sha256": "0ce2f02f39d5d49260d91762bc9a659f8f9d516d8e416c8120306330bfd58023",
+      "source_split": "dev",
+      "split": "dev",
+      "teacher_claim": false,
+      "unseen_pretraining_claim": false
+    },
+    {
+      "annotation_classes": [
+        "bowl",
+        "broccoli",
+        "orange"
+      ],
+      "annotations": [
+        {
+          "class_id": 45,
+          "class_name": "bowl",
+          "height": 0.5955,
+          "source_line": 1,
+          "source_text": "45 0.479492 0.688771 0.955609 0.5955",
+          "width": 0.955609,
+          "x_center": 0.479492,
+          "y_center": 0.688771
+        },
+        {
+          "class_id": 45,
+          "class_name": "bowl",
+          "height": 0.476417,
+          "source_line": 2,
+          "source_text": "45 0.736516 0.247188 0.498875 0.476417",
+          "width": 0.498875,
+          "x_center": 0.736516,
+          "y_center": 0.247188
+        },
+        {
+          "class_id": 50,
+          "class_name": "broccoli",
+          "height": 0.510583,
+          "source_line": 3,
+          "source_text": "50 0.637063 0.732938 0.494125 0.510583",
+          "width": 0.494125,
+          "x_center": 0.637063,
+          "y_center": 0.732938
+        },
+        {
+          "class_id": 45,
+          "class_name": "bowl",
+          "height": 0.7815,
+          "source_line": 4,
+          "source_text": "45 0.339438 0.418896 0.678875 0.7815",
+          "width": 0.678875,
+          "x_center": 0.339438,
+          "y_center": 0.418896
+        },
+        {
+          "class_id": 49,
+          "class_name": "orange",
+          "height": 0.0969375,
+          "source_line": 5,
+          "source_text": "49 0.646836 0.132552 0.118047 0.0969375",
+          "width": 0.118047,
+          "x_center": 0.646836,
+          "y_center": 0.132552
+        },
+        {
+          "class_id": 49,
+          "class_name": "orange",
+          "height": 0.0972292,
+          "source_line": 6,
+          "source_text": "49 0.773148 0.129802 0.0907344 0.0972292",
+          "width": 0.0907344,
+          "x_center": 0.773148,
+          "y_center": 0.129802
+        },
+        {
+          "class_id": 49,
+          "class_name": "orange",
+          "height": 0.146896,
+          "source_line": 7,
+          "source_text": "49 0.668297 0.226906 0.131281 0.146896",
+          "width": 0.131281,
+          "x_center": 0.668297,
+          "y_center": 0.226906
+        },
+        {
+          "class_id": 49,
+          "class_name": "orange",
+          "height": 0.148062,
+          "source_line": 8,
+          "source_text": "49 0.642859 0.0792187 0.148063 0.148062",
+          "width": 0.148063,
+          "x_center": 0.642859,
+          "y_center": 0.0792187
+        }
+      ],
+      "dataset": "COCO train2017 via Ultralytics COCO128",
+      "dataset_attribution": "Microsoft COCO Consortium; Ultralytics COCO128 packaging",
+      "dataset_license_documentation": "CC BY 4.0 attribution link shown by the Ultralytics COCO128 documentation",
+      "dataset_role": "reference_only",
+      "exposure_status": "fresh_import_exposure_unknown",
+      "family": "bowl",
+      "heldout_claim": false,
+      "id": "coco-capability-20260922-000000000009",
+      "member_families": [
+        "bowl",
+        "broccoli",
+        "orange"
+      ],
+      "mode": "fresh",
+      "object_count": 8,
+      "object_count_bucket": "five_to_nine",
+      "original_annotation_classes": [
+        "bowl",
+        "broccoli",
+        "orange"
+      ],
+      "per_image_license": null,
+      "per_image_license_status": "unverified_not_provided_in_archive",
+      "primary_family": "bowl",
+      "provenance_urls": [
+        "https://github.com/ultralytics/assets/releases/download/v0.0.0/coco128.zip",
+        "https://docs.ultralytics.com/datasets/detect/coco128",
+        "https://cocodataset.org/#home"
+      ],
+      "reference": "references/000000000009.jpg",
+      "reference_sha256": "3b0bb6bebad60a3329f1e3484434872e86998aeb7750d779b308e4a064868c2c",
+      "selection_rank": 2,
+      "selection_reason": "greedy rank 2: score=340; new_categories=bowl,broccoli,orange; new_object_count_bucket=five_to_nine; new_primary_family=yes",
+      "source_group": "coco128:train2017:000000000009",
+      "source_id": "000000000009",
+      "source_image_url": "https://cocodataset.org/#explore?id=9",
+      "source_reference": "painter/runs/scaled-curriculum-20260921/real-pool/raw/coco128/images/train2017/000000000009.jpg",
+      "source_reference_sha256": "3b0bb6bebad60a3329f1e3484434872e86998aeb7750d779b308e4a064868c2c",
+      "source_split": "dev",
+      "split": "dev",
+      "teacher_claim": false,
+      "unseen_pretraining_claim": false
+    },
+    {
+      "annotation_classes": [
+        "car",
+        "person",
+        "sports ball",
+        "tennis racket"
+      ],
+      "annotations": [
+        {
+          "class_id": 0,
+          "class_name": "person",
+          "height": 0.318396,
+          "source_line": 1,
+          "source_text": "0 0.230375 0.430385 0.070625 0.318396",
+          "width": 0.070625,
+          "x_center": 0.230375,
+          "y_center": 0.430385
+        },
+        {
+          "class_id": 38,
+          "class_name": "tennis racket",
+          "height": 0.0342083,
+          "source_line": 2,
+          "source_text": "38 0.249766 0.264875 0.0595313 0.0342083",
+          "width": 0.0595313,
+          "x_center": 0.249766,
+          "y_center": 0.264875
+        },
+        {
+          "class_id": 32,
+          "class_name": "sports ball",
+          "height": 0.0149792,
+          "source_line": 3,
+          "source_text": "32 0.199219 0.197885 0.0102188 0.0149792",
+          "width": 0.0102188,
+          "x_center": 0.199219,
+          "y_center": 0.197885
+        },
+        {
+          "class_id": 0,
+          "class_name": "person",
+          "height": 0.366896,
+          "source_line": 4,
+          "source_text": "0 0.818789 0.660177 0.204703 0.366896",
+          "width": 0.204703,
+          "x_center": 0.818789,
+          "y_center": 0.660177
+        },
+        {
+          "class_id": 2,
+          "class_name": "car",
+          "height": 0.0299375,
+          "source_line": 5,
+          "source_text": "2 0.689875 0.436823 0.0228125 0.0299375",
+          "width": 0.0228125,
+          "x_center": 0.689875,
+          "y_center": 0.436823
+        },
+        {
+          "class_id": 2,
+          "class_name": "car",
+          "height": 0.0228958,
+          "source_line": 6,
+          "source_text": "2 0.839852 0.43499 0.0255781 0.0228958",
+          "width": 0.0255781,
+          "x_center": 0.839852,
+          "y_center": 0.43499
+        },
+        {
+          "class_id": 2,
+          "class_name": "car",
+          "height": 0.0244167,
+          "source_line": 7,
+          "source_text": "2 0.541586 0.434542 0.0521094 0.0244167",
+          "width": 0.0521094,
+          "x_center": 0.541586,
+          "y_center": 0.434542
+        }
+      ],
+      "dataset": "COCO train2017 via Ultralytics COCO128",
+      "dataset_attribution": "Microsoft COCO Consortium; Ultralytics COCO128 packaging",
+      "dataset_license_documentation": "CC BY 4.0 attribution link shown by the Ultralytics COCO128 documentation",
+      "dataset_role": "reference_only",
+      "exposure_status": "fresh_import_exposure_unknown",
+      "family": "car",
+      "heldout_claim": false,
+      "id": "coco-capability-20260922-000000000419",
+      "member_families": [
+        "car",
+        "person",
+        "sports ball",
+        "tennis racket"
+      ],
+      "mode": "fresh",
+      "object_count": 7,
+      "object_count_bucket": "five_to_nine",
+      "original_annotation_classes": [
+        "car",
+        "person",
+        "sports ball",
+        "tennis racket"
+      ],
+      "per_image_license": null,
+      "per_image_license_status": "unverified_not_provided_in_archive",
+      "primary_family": "car",
+      "provenance_urls": [
+        "https://github.com/ultralytics/assets/releases/download/v0.0.0/coco128.zip",
+        "https://docs.ultralytics.com/datasets/detect/coco128",
+        "https://cocodataset.org/#home"
+      ],
+      "reference": "references/000000000419.jpg",
+      "reference_sha256": "4b4e5c24a3aafa6d591ab385cc3756f90a804212a8e060ba374d1658b69b308e",
+      "selection_rank": 3,
+      "selection_reason": "greedy rank 3: score=310; new_categories=car,sports ball,tennis racket; new_object_count_bucket=none; new_primary_family=yes",
+      "source_group": "coco128:train2017:000000000419",
+      "source_id": "000000000419",
+      "source_image_url": "https://cocodataset.org/#explore?id=419",
+      "source_reference": "painter/runs/scaled-curriculum-20260921/real-pool/raw/coco128/images/train2017/000000000419.jpg",
+      "source_reference_sha256": "4b4e5c24a3aafa6d591ab385cc3756f90a804212a8e060ba374d1658b69b308e",
+      "source_split": "dev",
+      "split": "dev",
+      "teacher_claim": false,
+      "unseen_pretraining_claim": false
+    },
+    {
+      "annotation_classes": [
+        "cat",
+        "couch",
+        "potted plant",
+        "remote"
+      ],
+      "annotations": [
+        {
+          "class_id": 58,
+          "class_name": "potted plant",
+          "height": 0.582948,
+          "source_line": 1,
+          "source_text": "58 0.912555 0.304939 0.173953 0.582948",
+          "width": 0.173953,
+          "x_center": 0.912555,
+          "y_center": 0.304939
+        },
+        {
+          "class_id": 15,
+          "class_name": "cat",
+          "height": 0.898649,
+          "source_line": 2,
+          "source_text": "15 0.323703 0.540553 0.644531 0.898649",
+          "width": 0.644531,
+          "x_center": 0.323703,
+          "y_center": 0.540553
+        },
+        {
+          "class_id": 57,
+          "class_name": "couch",
+          "height": 0.985012,
+          "source_line": 3,
+          "source_text": "57 0.484102 0.497002 0.968203 0.985012",
+          "width": 0.968203,
+          "x_center": 0.484102,
+          "y_center": 0.497002
+        },
+        {
+          "class_id": 65,
+          "class_name": "remote",
+          "height": 0.215725,
+          "source_line": 4,
+          "source_text": "65 0.826 0.594816 0.280094 0.215725",
+          "width": 0.280094,
+          "x_center": 0.826,
+          "y_center": 0.594816
+        },
+        {
+          "class_id": 65,
+          "class_name": "remote",
+          "height": 0.148649,
+          "source_line": 5,
+          "source_text": "65 0.763406 0.485356 0.309375 0.148649",
+          "width": 0.309375,
+          "x_center": 0.763406,
+          "y_center": 0.485356
+        }
+      ],
+      "dataset": "COCO train2017 via Ultralytics COCO128",
+      "dataset_attribution": "Microsoft COCO Consortium; Ultralytics COCO128 packaging",
+      "dataset_license_documentation": "CC BY 4.0 attribution link shown by the Ultralytics COCO128 documentation",
+      "dataset_role": "reference_only",
+      "exposure_status": "fresh_import_exposure_unknown",
+      "family": "cat",
+      "heldout_claim": false,
+      "id": "coco-capability-20260922-000000000599",
+      "member_families": [
+        "cat",
+        "couch",
+        "potted plant",
+        "remote"
+      ],
+      "mode": "fresh",
+      "object_count": 5,
+      "object_count_bucket": "five_to_nine",
+      "original_annotation_classes": [
+        "cat",
+        "couch",
+        "potted plant",
+        "remote"
+      ],
+      "per_image_license": null,
+      "per_image_license_status": "unverified_not_provided_in_archive",
+      "primary_family": "cat",
+      "provenance_urls": [
+        "https://github.com/ultralytics/assets/releases/download/v0.0.0/coco128.zip",
+        "https://docs.ultralytics.com/datasets/detect/coco128",
+        "https://cocodataset.org/#home"
+      ],
+      "reference": "references/000000000599.jpg",
+      "reference_sha256": "9d924b4353cca7295c149e3659866a18e78234f0dc701df119191152f4a31fec",
+      "selection_rank": 4,
+      "selection_reason": "greedy rank 4: score=310; new_categories=cat,couch,remote; new_object_count_bucket=none; new_primary_family=yes",
+      "source_group": "coco128:train2017:000000000599",
+      "source_id": "000000000599",
+      "source_image_url": "https://cocodataset.org/#explore?id=599",
+      "source_reference": "painter/runs/scaled-curriculum-20260921/real-pool/raw/coco128/images/train2017/000000000599.jpg",
+      "source_reference_sha256": "9d924b4353cca7295c149e3659866a18e78234f0dc701df119191152f4a31fec",
+      "source_split": "dev",
+      "split": "dev",
+      "teacher_claim": false,
+      "unseen_pretraining_claim": false
+    },
+    {
+      "annotation_classes": [
+        "bed",
+        "teddy bear"
+      ],
+      "annotations": [
+        {
+          "class_id": 59,
+          "class_name": "bed",
+          "height": 0.872188,
+          "source_line": 1,
+          "source_text": "59 0.51093 0.442073 0.978141 0.872188",
+          "width": 0.978141,
+          "x_center": 0.51093,
+          "y_center": 0.442073
+        },
+        {
+          "class_id": 77,
+          "class_name": "teddy bear",
+          "height": 0.0598333,
+          "source_line": 2,
+          "source_text": "77 0.858305 0.0735208 0.0749219 0.0598333",
+          "width": 0.0749219,
+          "x_center": 0.858305,
+          "y_center": 0.0735208
+        }
+      ],
+      "dataset": "COCO train2017 via Ultralytics COCO128",
+      "dataset_attribution": "Microsoft COCO Consortium; Ultralytics COCO128 packaging",
+      "dataset_license_documentation": "CC BY 4.0 attribution link shown by the Ultralytics COCO128 documentation",
+      "dataset_role": "reference_only",
+      "exposure_status": "fresh_import_exposure_unknown",
+      "family": "bed",
+      "heldout_claim": false,
+      "id": "coco-capability-20260922-000000000133",
+      "member_families": [
+        "bed",
+        "teddy bear"
+      ],
+      "mode": "fresh",
+      "object_count": 2,
+      "object_count_bucket": "two_to_four",
+      "original_annotation_classes": [
+        "bed",
+        "teddy bear"
+      ],
+      "per_image_license": null,
+      "per_image_license_status": "unverified_not_provided_in_archive",
+      "primary_family": "bed",
+      "provenance_urls": [
+        "https://github.com/ultralytics/assets/releases/download/v0.0.0/coco128.zip",
+        "https://docs.ultralytics.com/datasets/detect/coco128",
+        "https://cocodataset.org/#home"
+      ],
+      "reference": "references/000000000133.jpg",
+      "reference_sha256": "d8d2ea5e94c83ba74bef9dc52d58e0526e08d03355381683fb953db71ec529e6",
+      "selection_rank": 5,
+      "selection_reason": "greedy rank 5: score=240; new_categories=bed,teddy bear; new_object_count_bucket=two_to_four; new_primary_family=yes",
+      "source_group": "coco128:train2017:000000000133",
+      "source_id": "000000000133",
+      "source_image_url": "https://cocodataset.org/#explore?id=133",
+      "source_reference": "painter/runs/scaled-curriculum-20260921/real-pool/raw/coco128/images/train2017/000000000133.jpg",
+      "source_reference_sha256": "d8d2ea5e94c83ba74bef9dc52d58e0526e08d03355381683fb953db71ec529e6",
+      "source_split": "dev",
+      "split": "dev",
+      "teacher_claim": false,
+      "unseen_pretraining_claim": false
+    },
+    {
+      "annotation_classes": [
+        "book",
+        "knife",
+        "microwave",
+        "oven"
+      ],
+      "annotations": [
+        {
+          "class_id": 43,
+          "class_name": "knife",
+          "height": 0.275792,
+          "source_line": 1,
+          "source_text": "43 0.805492 0.357625 0.0403594 0.275792",
+          "width": 0.0403594,
+          "x_center": 0.805492,
+          "y_center": 0.357625
+        },
+        {
+          "class_id": 43,
+          "class_name": "knife",
+          "height": 0.221062,
+          "source_line": 2,
+          "source_text": "43 0.760125 0.376135 0.0308125 0.221062",
+          "width": 0.0308125,
+          "x_center": 0.760125,
+          "y_center": 0.376135
+        },
+        {
+          "class_id": 43,
+          "class_name": "knife",
+          "height": 0.287271,
+          "source_line": 3,
+          "source_text": "43 0.84693 0.35051 0.0413594 0.287271",
+          "width": 0.0413594,
+          "x_center": 0.84693,
+          "y_center": 0.35051
+        },
+        {
+          "class_id": 43,
+          "class_name": "knife",
+          "height": 0.289542,
+          "source_line": 4,
+          "source_text": "43 0.884539 0.354979 0.0326094 0.289542",
+          "width": 0.0326094,
+          "x_center": 0.884539,
+          "y_center": 0.354979
+        },
+        {
+          "class_id": 43,
+          "class_name": "knife",
+          "height": 0.297479,
+          "source_line": 5,
+          "source_text": "43 0.917523 0.34999 0.0421406 0.297479",
+          "width": 0.0421406,
+          "x_center": 0.917523,
+          "y_center": 0.34999
+        },
+        {
+          "class_id": 69,
+          "class_name": "oven",
+          "height": 0.563062,
+          "source_line": 6,
+          "source_text": "69 0.478883 0.703823 0.525328 0.563062",
+          "width": 0.525328,
+          "x_center": 0.478883,
+          "y_center": 0.703823
+        },
+        {
+          "class_id": 68,
+          "class_name": "microwave",
+          "height": 0.301896,
+          "source_line": 7,
+          "source_text": "68 0.0923438 0.241927 0.184688 0.301896",
+          "width": 0.184688,
+          "x_center": 0.0923438,
+          "y_center": 0.241927
+        },
+        {
+          "class_id": 73,
+          "class_name": "book",
+          "height": 0.06325,
+          "source_line": 8,
+          "source_text": "73 0.815477 0.727354 0.141328 0.06325",
+          "width": 0.141328,
+          "x_center": 0.815477,
+          "y_center": 0.727354
+        },
+        {
+          "class_id": 73,
+          "class_name": "book",
+          "height": 0.0702083,
+          "source_line": 9,
+          "source_text": "73 0.865914 0.795917 0.178203 0.0702083",
+          "width": 0.178203,
+          "x_center": 0.865914,
+          "y_center": 0.795917
+        },
+        {
+          "class_id": 73,
+          "class_name": "book",
+          "height": 0.104417,
+          "source_line": 10,
+          "source_text": "73 0.900883 0.891187 0.198234 0.104417",
+          "width": 0.198234,
+          "x_center": 0.900883,
+          "y_center": 0.891187
+        }
+      ],
+      "dataset": "COCO train2017 via Ultralytics COCO128",
+      "dataset_attribution": "Microsoft COCO Consortium; Ultralytics COCO128 packaging",
+      "dataset_license_documentation": "CC BY 4.0 attribution link shown by the Ultralytics COCO128 documentation",
+      "dataset_role": "reference_only",
+      "exposure_status": "fresh_import_exposure_unknown",
+      "family": "book",
+      "heldout_claim": false,
+      "id": "coco-capability-20260922-000000000089",
+      "member_families": [
+        "book",
+        "knife",
+        "microwave",
+        "oven"
+      ],
+      "mode": "fresh",
+      "object_count": 10,
+      "object_count_bucket": "ten_plus",
+      "original_annotation_classes": [
+        "book",
+        "knife",
+        "microwave",
+        "oven"
+      ],
+      "per_image_license": null,
+      "per_image_license_status": "unverified_not_provided_in_archive",
+      "primary_family": "book",
+      "provenance_urls": [
+        "https://github.com/ultralytics/assets/releases/download/v0.0.0/coco128.zip",
+        "https://docs.ultralytics.com/datasets/detect/coco128",
+        "https://cocodataset.org/#home"
+      ],
+      "reference": "references/000000000089.jpg",
+      "reference_sha256": "cc548c7e669fefde96bdb7b1454c90cf518d414b85eb36827cc78f488d622e5a",
+      "selection_rank": 6,
+      "selection_reason": "greedy rank 6: score=210; new_categories=microwave,oven; new_object_count_bucket=none; new_primary_family=yes",
+      "source_group": "coco128:train2017:000000000089",
+      "source_id": "000000000089",
+      "source_image_url": "https://cocodataset.org/#explore?id=89",
+      "source_reference": "painter/runs/scaled-curriculum-20260921/real-pool/raw/coco128/images/train2017/000000000089.jpg",
+      "source_reference_sha256": "cc548c7e669fefde96bdb7b1454c90cf518d414b85eb36827cc78f488d622e5a",
+      "source_split": "dev",
+      "split": "dev",
+      "teacher_claim": false,
+      "unseen_pretraining_claim": false
+    },
+    {
+      "annotation_classes": [
+        "sink",
+        "toothbrush"
+      ],
+      "annotations": [
+        {
+          "class_id": 71,
+          "class_name": "sink",
+          "height": 0.764062,
+          "source_line": 1,
+          "source_text": "71 0.500844 0.60899 0.998312 0.764062",
+          "width": 0.998312,
+          "x_center": 0.500844,
+          "y_center": 0.60899
+        },
+        {
+          "class_id": 71,
+          "class_name": "sink",
+          "height": 0.228667,
+          "source_line": 2,
+          "source_text": "71 0.23793 0.427583 0.475859 0.228667",
+          "width": 0.475859,
+          "x_center": 0.23793,
+          "y_center": 0.427583
+        },
+        {
+          "class_id": 79,
+          "class_name": "toothbrush",
+          "height": 0.185188,
+          "source_line": 3,
+          "source_text": "79 0.396391 0.447198 0.299625 0.185188",
+          "width": 0.299625,
+          "x_center": 0.396391,
+          "y_center": 0.447198
+        },
+        {
+          "class_id": 79,
+          "class_name": "toothbrush",
+          "height": 0.171438,
+          "source_line": 4,
+          "source_text": "79 0.213313 0.34026 0.247406 0.171438",
+          "width": 0.247406,
+          "x_center": 0.213313,
+          "y_center": 0.34026
+        }
+      ],
+      "dataset": "COCO train2017 via Ultralytics COCO128",
+      "dataset_attribution": "Microsoft COCO Consortium; Ultralytics COCO128 packaging",
+      "dataset_license_documentation": "CC BY 4.0 attribution link shown by the Ultralytics COCO128 documentation",
+      "dataset_role": "reference_only",
+      "exposure_status": "fresh_import_exposure_unknown",
+      "family": "sink",
+      "heldout_claim": false,
+      "id": "coco-capability-20260922-000000000208",
+      "member_families": [
+        "sink",
+        "toothbrush"
+      ],
+      "mode": "fresh",
+      "object_count": 4,
+      "object_count_bucket": "two_to_four",
+      "original_annotation_classes": [
+        "sink",
+        "toothbrush"
+      ],
+      "per_image_license": null,
+      "per_image_license_status": "unverified_not_provided_in_archive",
+      "primary_family": "sink",
+      "provenance_urls": [
+        "https://github.com/ultralytics/assets/releases/download/v0.0.0/coco128.zip",
+        "https://docs.ultralytics.com/datasets/detect/coco128",
+        "https://cocodataset.org/#home"
+      ],
+      "reference": "references/000000000208.jpg",
+      "reference_sha256": "5ef004c8572c1d3a5e7c92ed16edc47529892a5306c7f70216e332a6cd65ad2d",
+      "selection_rank": 7,
+      "selection_reason": "greedy rank 7: score=210; new_categories=sink,toothbrush; new_object_count_bucket=none; new_primary_family=yes",
+      "source_group": "coco128:train2017:000000000208",
+      "source_id": "000000000208",
+      "source_image_url": "https://cocodataset.org/#explore?id=208",
+      "source_reference": "painter/runs/scaled-curriculum-20260921/real-pool/raw/coco128/images/train2017/000000000208.jpg",
+      "source_reference_sha256": "5ef004c8572c1d3a5e7c92ed16edc47529892a5306c7f70216e332a6cd65ad2d",
+      "source_split": "dev",
+      "split": "dev",
+      "teacher_claim": false,
+      "unseen_pretraining_claim": false
+    },
+    {
+      "annotation_classes": [
+        "baseball bat",
+        "baseball glove",
+        "person"
+      ],
+      "annotations": [
+        {
+          "class_id": 34,
+          "class_name": "baseball bat",
+          "height": 0.124954,
+          "source_line": 1,
+          "source_text": "34 0.845453 0.619358 0.00625 0.124954",
+          "width": 0.00625,
+          "x_center": 0.845453,
+          "y_center": 0.619358
+        },
+        {
+          "class_id": 35,
+          "class_name": "baseball glove",
+          "height": 0.0306881,
+          "source_line": 2,
+          "source_text": "35 0.892836 0.870573 0.0139219 0.0306881",
+          "width": 0.0139219,
+          "x_center": 0.892836,
+          "y_center": 0.870573
+        },
+        {
+          "class_id": 35,
+          "class_name": "baseball glove",
+          "height": 0.0422477,
+          "source_line": 3,
+          "source_text": "35 0.125352 0.466812 0.0108906 0.0422477",
+          "width": 0.0108906,
+          "x_center": 0.125352,
+          "y_center": 0.466812
+        },
+        {
+          "class_id": 35,
+          "class_name": "baseball glove",
+          "height": 0.0216514,
+          "source_line": 4,
+          "source_text": "35 0.440953 0.125642 0.00853125 0.0216514",
+          "width": 0.00853125,
+          "x_center": 0.440953,
+          "y_center": 0.125642
+        },
+        {
+          "class_id": 0,
+          "class_name": "person",
+          "height": 0.126743,
+          "source_line": 5,
+          "source_text": "0 0.595023 0.178188 0.0269531 0.126743",
+          "width": 0.0269531,
+          "x_center": 0.595023,
+          "y_center": 0.178188
+        },
+        {
+          "class_id": 0,
+          "class_name": "person",
+          "height": 0.170459,
+          "source_line": 6,
+          "source_text": "0 0.444703 0.169633 0.0422187 0.170459",
+          "width": 0.0422187,
+          "x_center": 0.444703,
+          "y_center": 0.169633
+        },
+        {
+          "class_id": 0,
+          "class_name": "person",
+          "height": 0.142248,
+          "source_line": 7,
+          "source_text": "0 0.344438 0.174839 0.0346875 0.142248",
+          "width": 0.0346875,
+          "x_center": 0.344438,
+          "y_center": 0.174839
+        },
+        {
+          "class_id": 0,
+          "class_name": "person",
+          "height": 0.22055,
+          "source_line": 8,
+          "source_text": "0 0.13107 0.473211 0.0289531 0.22055",
+          "width": 0.0289531,
+          "x_center": 0.13107,
+          "y_center": 0.473211
+        },
+        {
+          "class_id": 0,
+          "class_name": "person",
+          "height": 0.250413,
+          "source_line": 9,
+          "source_text": "0 0.852109 0.750023 0.045375 0.250413",
+          "width": 0.045375,
+          "x_center": 0.852109,
+          "y_center": 0.750023
+        },
+        {
+          "class_id": 0,
+          "class_name": "person",
+          "height": 0.17445,
+          "source_line": 10,
+          "source_text": "0 0.907797 0.821261 0.0418125 0.17445",
+          "width": 0.0418125,
+          "x_center": 0.907797,
+          "y_center": 0.821261
+        },
+        {
+          "class_id": 0,
+          "class_name": "person",
+          "height": 0.213761,
+          "source_line": 11,
+          "source_text": "0 0.946813 0.81656 0.0424687 0.213761",
+          "width": 0.0424687,
+          "x_center": 0.946813,
+          "y_center": 0.81656
+        },
+        {
+          "class_id": 0,
+          "class_name": "person",
+          "height": 0.0443578,
+          "source_line": 12,
+          "source_text": "0 0.879648 0.132087 0.0217031 0.0443578",
+          "width": 0.0217031,
+          "x_center": 0.879648,
+          "y_center": 0.132087
+        },
+        {
+          "class_id": 0,
+          "class_name": "person",
+          "height": 0.12,
+          "source_line": 13,
+          "source_text": "0 0.859398 0.156514 0.0150781 0.12",
+          "width": 0.0150781,
+          "x_center": 0.859398,
+          "y_center": 0.156514
+        },
+        {
+          "class_id": 0,
+          "class_name": "person",
+          "height": 0.0465596,
+          "source_line": 14,
+          "source_text": "0 0.939578 0.0609404 0.014 0.0465596",
+          "width": 0.014,
+          "x_center": 0.939578,
+          "y_center": 0.0609404
+        },
+        {
+          "class_id": 0,
+          "class_name": "person",
+          "height": 0.125413,
+          "source_line": 15,
+          "source_text": "0 0.428398 0.0922018 0.0276406 0.125413",
+          "width": 0.0276406,
+          "x_center": 0.428398,
+          "y_center": 0.0922018
+        },
+        {
+          "class_id": 0,
+          "class_name": "person",
+          "height": 0.108899,
+          "source_line": 16,
+          "source_text": "0 0.897008 0.188716 0.0185469 0.108899",
+          "width": 0.0185469,
+          "x_center": 0.897008,
+          "y_center": 0.188716
+        },
+        {
+          "class_id": 0,
+          "class_name": "person",
+          "height": 0.109725,
+          "source_line": 17,
+          "source_text": "0 0.913047 0.202523 0.0105 0.109725",
+          "width": 0.0105,
+          "x_center": 0.913047,
+          "y_center": 0.202523
+        }
+      ],
+      "dataset": "COCO train2017 via Ultralytics COCO128",
+      "dataset_attribution": "Microsoft COCO Consortium; Ultralytics COCO128 packaging",
+      "dataset_license_documentation": "CC BY 4.0 attribution link shown by the Ultralytics COCO128 documentation",
+      "dataset_role": "reference_only",
+      "exposure_status": "fresh_import_exposure_unknown",
+      "family": "baseball bat",
+      "heldout_claim": false,
+      "id": "coco-capability-20260922-000000000357",
+      "member_families": [
+        "baseball bat",
+        "baseball glove",
+        "person"
+      ],
+      "mode": "fresh",
+      "object_count": 17,
+      "object_count_bucket": "ten_plus",
+      "original_annotation_classes": [
+        "baseball bat",
+        "baseball glove",
+        "person"
+      ],
+      "per_image_license": null,
+      "per_image_license_status": "unverified_not_provided_in_archive",
+      "primary_family": "baseball bat",
+      "provenance_urls": [
+        "https://github.com/ultralytics/assets/releases/download/v0.0.0/coco128.zip",
+        "https://docs.ultralytics.com/datasets/detect/coco128",
+        "https://cocodataset.org/#home"
+      ],
+      "reference": "references/000000000357.jpg",
+      "reference_sha256": "939b5473ea4787a01c2293a3e62979442eea5c9b3dcaab8803c07a5b6d47e087",
+      "selection_rank": 8,
+      "selection_reason": "greedy rank 8: score=210; new_categories=baseball bat,baseball glove; new_object_count_bucket=none; new_primary_family=yes",
+      "source_group": "coco128:train2017:000000000357",
+      "source_id": "000000000357",
+      "source_image_url": "https://cocodataset.org/#explore?id=357",
+      "source_reference": "painter/runs/scaled-curriculum-20260921/real-pool/raw/coco128/images/train2017/000000000357.jpg",
+      "source_reference_sha256": "939b5473ea4787a01c2293a3e62979442eea5c9b3dcaab8803c07a5b6d47e087",
+      "source_split": "dev",
+      "split": "dev",
+      "teacher_claim": false,
+      "unseen_pretraining_claim": false
+    },
+    {
+      "annotation_classes": [
+        "backpack",
+        "person",
+        "skis"
+      ],
+      "annotations": [
+        {
+          "class_id": 0,
+          "class_name": "person",
+          "height": 0.169333,
+          "source_line": 1,
+          "source_text": "0 0.83507 0.841042 0.0835469 0.169333",
+          "width": 0.0835469,
+          "x_center": 0.83507,
+          "y_center": 0.841042
+        },
+        {
+          "class_id": 30,
+          "class_name": "skis",
+          "height": 0.0522083,
+          "source_line": 2,
+          "source_text": "30 0.830586 0.927583 0.121453 0.0522083",
+          "width": 0.121453,
+          "x_center": 0.830586,
+          "y_center": 0.927583
+        },
+        {
+          "class_id": 24,
+          "class_name": "backpack",
+          "height": 0.0480208,
+          "source_line": 3,
+          "source_text": "24 0.822352 0.785698 0.0268594 0.0480208",
+          "width": 0.0268594,
+          "x_center": 0.822352,
+          "y_center": 0.785698
+        }
+      ],
+      "dataset": "COCO train2017 via Ultralytics COCO128",
+      "dataset_attribution": "Microsoft COCO Consortium; Ultralytics COCO128 packaging",
+      "dataset_license_documentation": "CC BY 4.0 attribution link shown by the Ultralytics COCO128 documentation",
+      "dataset_role": "reference_only",
+      "exposure_status": "fresh_import_exposure_unknown",
+      "family": "backpack",
+      "heldout_claim": false,
+      "id": "coco-capability-20260922-000000000382",
+      "member_families": [
+        "backpack",
+        "person",
+        "skis"
+      ],
+      "mode": "fresh",
+      "object_count": 3,
+      "object_count_bucket": "two_to_four",
+      "original_annotation_classes": [
+        "backpack",
+        "person",
+        "skis"
+      ],
+      "per_image_license": null,
+      "per_image_license_status": "unverified_not_provided_in_archive",
+      "primary_family": "backpack",
+      "provenance_urls": [
+        "https://github.com/ultralytics/assets/releases/download/v0.0.0/coco128.zip",
+        "https://docs.ultralytics.com/datasets/detect/coco128",
+        "https://cocodataset.org/#home"
+      ],
+      "reference": "references/000000000382.jpg",
+      "reference_sha256": "9455b8af106ef7a2a3b6c4c7ceeda5f4e81b5e364a2aef8e6cf68abc1396f8bd",
+      "selection_rank": 9,
+      "selection_reason": "greedy rank 9: score=210; new_categories=backpack,skis; new_object_count_bucket=none; new_primary_family=yes",
+      "source_group": "coco128:train2017:000000000382",
+      "source_id": "000000000382",
+      "source_image_url": "https://cocodataset.org/#explore?id=382",
+      "source_reference": "painter/runs/scaled-curriculum-20260921/real-pool/raw/coco128/images/train2017/000000000382.jpg",
+      "source_reference_sha256": "9455b8af106ef7a2a3b6c4c7ceeda5f4e81b5e364a2aef8e6cf68abc1396f8bd",
+      "source_split": "dev",
+      "split": "dev",
+      "teacher_claim": false,
+      "unseen_pretraining_claim": false
+    },
+    {
+      "annotation_classes": [
+        "airplane",
+        "handbag",
+        "person",
+        "tie"
+      ],
+      "annotations": [
+        {
+          "class_id": 4,
+          "class_name": "airplane",
+          "height": 0.662913,
+          "source_line": 1,
+          "source_text": "4 0.502547 0.340444 0.994906 0.662913",
+          "width": 0.994906,
+          "x_center": 0.502547,
+          "y_center": 0.340444
+        },
+        {
+          "class_id": 0,
+          "class_name": "person",
+          "height": 0.384463,
+          "source_line": 2,
+          "source_text": "0 0.401805 0.584236 0.107797 0.384463",
+          "width": 0.107797,
+          "x_center": 0.401805,
+          "y_center": 0.584236
+        },
+        {
+          "class_id": 0,
+          "class_name": "person",
+          "height": 0.341219,
+          "source_line": 3,
+          "source_text": "0 0.27082 0.604473 0.0755781 0.341219",
+          "width": 0.0755781,
+          "x_center": 0.27082,
+          "y_center": 0.604473
+        },
+        {
+          "class_id": 0,
+          "class_name": "person",
+          "height": 0.330331,
+          "source_line": 4,
+          "source_text": "0 0.738406 0.569669 0.062875 0.330331",
+          "width": 0.062875,
+          "x_center": 0.738406,
+          "y_center": 0.569669
+        },
+        {
+          "class_id": 0,
+          "class_name": "person",
+          "height": 0.276488,
+          "source_line": 5,
+          "source_text": "0 0.593484 0.575 0.0739687 0.276488",
+          "width": 0.0739687,
+          "x_center": 0.593484,
+          "y_center": 0.575
+        },
+        {
+          "class_id": 0,
+          "class_name": "person",
+          "height": 0.27407,
+          "source_line": 6,
+          "source_text": "0 0.527797 0.573667 0.0628125 0.27407",
+          "width": 0.0628125,
+          "x_center": 0.527797,
+          "y_center": 0.573667
+        },
+        {
+          "class_id": 0,
+          "class_name": "person",
+          "height": 0.294752,
+          "source_line": 7,
+          "source_text": "0 0.488664 0.57376 0.0522656 0.294752",
+          "width": 0.0522656,
+          "x_center": 0.488664,
+          "y_center": 0.57376
+        },
+        {
+          "class_id": 0,
+          "class_name": "person",
+          "height": 0.280558,
+          "source_line": 8,
+          "source_text": "0 0.324 0.578771 0.0689063 0.280558",
+          "width": 0.0689063,
+          "x_center": 0.324,
+          "y_center": 0.578771
+        },
+        {
+          "class_id": 0,
+          "class_name": "person",
+          "height": 0.195165,
+          "source_line": 9,
+          "source_text": "0 0.74418 0.366963 0.0672969 0.195165",
+          "width": 0.0672969,
+          "x_center": 0.74418,
+          "y_center": 0.366963
+        },
+        {
+          "class_id": 0,
+          "class_name": "person",
+          "height": 0.15781,
+          "source_line": 10,
+          "source_text": "0 0.470961 0.322727 0.105297 0.15781",
+          "width": 0.105297,
+          "x_center": 0.470961,
+          "y_center": 0.322727
+        },
+        {
+          "class_id": 0,
+          "class_name": "person",
+          "height": 0.280723,
+          "source_line": 11,
+          "source_text": "0 0.459164 0.583027 0.0480469 0.280723",
+          "width": 0.0480469,
+          "x_center": 0.459164,
+          "y_center": 0.583027
+        },
+        {
+          "class_id": 26,
+          "class_name": "handbag",
+          "height": 0.0583264,
+          "source_line": 12,
+          "source_text": "26 0.295695 0.602986 0.0277656 0.0583264",
+          "width": 0.0277656,
+          "x_center": 0.295695,
+          "y_center": 0.602986
+        },
+        {
+          "class_id": 26,
+          "class_name": "handbag",
+          "height": 0.0543182,
+          "source_line": 13,
+          "source_text": "26 0.311008 0.575919 0.0285156 0.0543182",
+          "width": 0.0285156,
+          "x_center": 0.311008,
+          "y_center": 0.575919
+        },
+        {
+          "class_id": 27,
+          "class_name": "tie",
+          "height": 0.0209504,
+          "source_line": 14,
+          "source_text": "27 0.730539 0.47436 0.00192187 0.0209504",
+          "width": 0.00192187,
+          "x_center": 0.730539,
+          "y_center": 0.47436
+        },
+        {
+          "class_id": 26,
+          "class_name": "handbag",
+          "height": 0.0619008,
+          "source_line": 15,
+          "source_text": "26 0.770984 0.573388 0.0315625 0.0619008",
+          "width": 0.0315625,
+          "x_center": 0.770984,
+          "y_center": 0.573388
+        },
+        {
+          "class_id": 0,
+          "class_name": "person",
+          "height": 0.0542562,
+          "source_line": 16,
+          "source_text": "0 0.704641 0.290393 0.0307812 0.0542562",
+          "width": 0.0307812,
+          "x_center": 0.704641,
+          "y_center": 0.290393
+        },
+        {
+          "class_id": 0,
+          "class_name": "person",
+          "height": 0.154711,
+          "source_line": 17,
+          "source_text": "0 0.451312 0.530269 0.0229062 0.154711",
+          "width": 0.0229062,
+          "x_center": 0.451312,
+          "y_center": 0.530269
+        }
+      ],
+      "dataset": "COCO train2017 via Ultralytics COCO128",
+      "dataset_attribution": "Microsoft COCO Consortium; Ultralytics COCO128 packaging",
+      "dataset_license_documentation": "CC BY 4.0 attribution link shown by the Ultralytics COCO128 documentation",
+      "dataset_role": "reference_only",
+      "exposure_status": "fresh_import_exposure_unknown",
+      "family": "airplane",
+      "heldout_claim": false,
+      "id": "coco-capability-20260922-000000000542",
+      "member_families": [
+        "airplane",
+        "handbag",
+        "person",
+        "tie"
+      ],
+      "mode": "fresh",
+      "object_count": 17,
+      "object_count_bucket": "ten_plus",
+      "original_annotation_classes": [
+        "airplane",
+        "handbag",
+        "person",
+        "tie"
+      ],
+      "per_image_license": null,
+      "per_image_license_status": "unverified_not_provided_in_archive",
+      "primary_family": "airplane",
+      "provenance_urls": [
+        "https://github.com/ultralytics/assets/releases/download/v0.0.0/coco128.zip",
+        "https://docs.ultralytics.com/datasets/detect/coco128",
+        "https://cocodataset.org/#home"
+      ],
+      "reference": "references/000000000542.jpg",
+      "reference_sha256": "ef93fd2248a41119a34a86d11478b87bd0c715ff3c2c65f3f5f54a3f31a3dedf",
+      "selection_rank": 10,
+      "selection_reason": "greedy rank 10: score=210; new_categories=airplane,tie; new_object_count_bucket=none; new_primary_family=yes",
+      "source_group": "coco128:train2017:000000000542",
+      "source_id": "000000000542",
+      "source_image_url": "https://cocodataset.org/#explore?id=542",
+      "source_reference": "painter/runs/scaled-curriculum-20260921/real-pool/raw/coco128/images/train2017/000000000542.jpg",
+      "source_reference_sha256": "ef93fd2248a41119a34a86d11478b87bd0c715ff3c2c65f3f5f54a3f31a3dedf",
+      "source_split": "dev",
+      "split": "dev",
+      "teacher_claim": false,
+      "unseen_pretraining_claim": false
+    },
+    {
+      "annotation_classes": [
+        "bicycle",
+        "bus",
+        "person"
+      ],
+      "annotations": [
+        {
+          "class_id": 1,
+          "class_name": "bicycle",
+          "height": 0.140093,
+          "source_line": 1,
+          "source_text": "1 0.200758 0.625491 0.0407344 0.140093",
+          "width": 0.0407344,
+          "x_center": 0.200758,
+          "y_center": 0.625491
+        },
+        {
+          "class_id": 1,
+          "class_name": "bicycle",
+          "height": 0.0509813,
+          "source_line": 2,
+          "source_text": "1 0.896867 0.644696 0.0273281 0.0509813",
+          "width": 0.0273281,
+          "x_center": 0.896867,
+          "y_center": 0.644696
+        },
+        {
+          "class_id": 5,
+          "class_name": "bus",
+          "height": 0.534813,
+          "source_line": 3,
+          "source_text": "5 0.548531 0.501121 0.652219 0.534813",
+          "width": 0.652219,
+          "x_center": 0.548531,
+          "y_center": 0.501121
+        },
+        {
+          "class_id": 0,
+          "class_name": "person",
+          "height": 0.0305607,
+          "source_line": 4,
+          "source_text": "0 0.91232 0.560888 0.0174844 0.0305607",
+          "width": 0.0174844,
+          "x_center": 0.91232,
+          "y_center": 0.560888
+        },
+        {
+          "class_id": 0,
+          "class_name": "person",
+          "height": 0.0803271,
+          "source_line": 5,
+          "source_text": "0 0.896828 0.603061 0.0272812 0.0803271",
+          "width": 0.0272812,
+          "x_center": 0.896828,
+          "y_center": 0.603061
+        },
+        {
+          "class_id": 0,
+          "class_name": "person",
+          "height": 0.0308879,
+          "source_line": 6,
+          "source_text": "0 0.940219 0.559556 0.0152187 0.0308879",
+          "width": 0.0152187,
+          "x_center": 0.940219,
+          "y_center": 0.559556
+        },
+        {
+          "class_id": 0,
+          "class_name": "person",
+          "height": 0.0533879,
+          "source_line": 7,
+          "source_text": "0 0.873758 0.567886 0.0109844 0.0533879",
+          "width": 0.0109844,
+          "x_center": 0.873758,
+          "y_center": 0.567886
+        },
+        {
+          "class_id": 0,
+          "class_name": "person",
+          "height": 0.0614953,
+          "source_line": 8,
+          "source_text": "0 0.728437 0.557897 0.007875 0.0614953",
+          "width": 0.007875,
+          "x_center": 0.728437,
+          "y_center": 0.557897
+        },
+        {
+          "class_id": 0,
+          "class_name": "person",
+          "height": 0.0337617,
+          "source_line": 9,
+          "source_text": "0 0.953398 0.55868 0.0111406 0.0337617",
+          "width": 0.0111406,
+          "x_center": 0.953398,
+          "y_center": 0.55868
+        },
+        {
+          "class_id": 0,
+          "class_name": "person",
+          "height": 0.0537383,
+          "source_line": 10,
+          "source_text": "0 0.0650078 0.511799 0.0459219 0.0537383",
+          "width": 0.0459219,
+          "x_center": 0.0650078,
+          "y_center": 0.511799
+        },
+        {
+          "class_id": 0,
+          "class_name": "person",
+          "height": 0.0536449,
+          "source_line": 11,
+          "source_text": "0 0.0219062 0.517243 0.031875 0.0536449",
+          "width": 0.031875,
+          "x_center": 0.0219062,
+          "y_center": 0.517243
+        },
+        {
+          "class_id": 0,
+          "class_name": "person",
+          "height": 0.0442523,
+          "source_line": 12,
+          "source_text": "0 0.0049375 0.538411 0.009875 0.0442523",
+          "width": 0.009875,
+          "x_center": 0.0049375,
+          "y_center": 0.538411
+        }
+      ],
+      "dataset": "COCO train2017 via Ultralytics COCO128",
+      "dataset_attribution": "Microsoft COCO Consortium; Ultralytics COCO128 packaging",
+      "dataset_license_documentation": "CC BY 4.0 attribution link shown by the Ultralytics COCO128 documentation",
+      "dataset_role": "reference_only",
+      "exposure_status": "fresh_import_exposure_unknown",
+      "family": "bicycle",
+      "heldout_claim": false,
+      "id": "coco-capability-20260922-000000000641",
+      "member_families": [
+        "bicycle",
+        "bus",
+        "person"
+      ],
+      "mode": "fresh",
+      "object_count": 12,
+      "object_count_bucket": "ten_plus",
+      "original_annotation_classes": [
+        "bicycle",
+        "bus",
+        "person"
+      ],
+      "per_image_license": null,
+      "per_image_license_status": "unverified_not_provided_in_archive",
+      "primary_family": "bicycle",
+      "provenance_urls": [
+        "https://github.com/ultralytics/assets/releases/download/v0.0.0/coco128.zip",
+        "https://docs.ultralytics.com/datasets/detect/coco128",
+        "https://cocodataset.org/#home"
+      ],
+      "reference": "references/000000000641.jpg",
+      "reference_sha256": "8eae4239a000d602acb4c58801a3c070e4bf3da608e57e7a3dcbd5ef719895cc",
+      "selection_rank": 11,
+      "selection_reason": "greedy rank 11: score=210; new_categories=bicycle,bus; new_object_count_bucket=none; new_primary_family=yes",
+      "source_group": "coco128:train2017:000000000641",
+      "source_id": "000000000641",
+      "source_image_url": "https://cocodataset.org/#explore?id=641",
+      "source_reference": "painter/runs/scaled-curriculum-20260921/real-pool/raw/coco128/images/train2017/000000000641.jpg",
+      "source_reference_sha256": "8eae4239a000d602acb4c58801a3c070e4bf3da608e57e7a3dcbd5ef719895cc",
+      "source_split": "dev",
+      "split": "dev",
+      "teacher_claim": false,
+      "unseen_pretraining_claim": false
+    },
+    {
+      "annotation_classes": [
+        "clock"
+      ],
+      "annotations": [
+        {
+          "class_id": 74,
+          "class_name": "clock",
+          "height": 0.385474,
+          "source_line": 1,
+          "source_text": "74 0.762851 0.196119 0.349886 0.385474",
+          "width": 0.349886,
+          "x_center": 0.762851,
+          "y_center": 0.196119
+        }
+      ],
+      "dataset": "COCO train2017 via Ultralytics COCO128",
+      "dataset_attribution": "Microsoft COCO Consortium; Ultralytics COCO128 packaging",
+      "dataset_license_documentation": "CC BY 4.0 attribution link shown by the Ultralytics COCO128 documentation",
+      "dataset_role": "reference_only",
+      "exposure_status": "fresh_import_exposure_unknown",
+      "family": "clock",
+      "heldout_claim": false,
+      "id": "coco-capability-20260922-000000000078",
+      "member_families": [
+        "clock"
+      ],
+      "mode": "fresh",
+      "object_count": 1,
+      "object_count_bucket": "one",
+      "original_annotation_classes": [
+        "clock"
+      ],
+      "per_image_license": null,
+      "per_image_license_status": "unverified_not_provided_in_archive",
+      "primary_family": "clock",
+      "provenance_urls": [
+        "https://github.com/ultralytics/assets/releases/download/v0.0.0/coco128.zip",
+        "https://docs.ultralytics.com/datasets/detect/coco128",
+        "https://cocodataset.org/#home"
+      ],
+      "reference": "references/000000000078.jpg",
+      "reference_sha256": "3139fdefaa9b4320c8a4eec2032c77306a0fd167dd88633bd73f66f952baf5a7",
+      "selection_rank": 12,
+      "selection_reason": "greedy rank 12: score=140; new_categories=clock; new_object_count_bucket=one; new_primary_family=yes",
+      "source_group": "coco128:train2017:000000000078",
+      "source_id": "000000000078",
+      "source_image_url": "https://cocodataset.org/#explore?id=78",
+      "source_reference": "painter/runs/scaled-curriculum-20260921/real-pool/raw/coco128/images/train2017/000000000078.jpg",
+      "source_reference_sha256": "3139fdefaa9b4320c8a4eec2032c77306a0fd167dd88633bd73f66f952baf5a7",
+      "source_split": "dev",
+      "split": "dev",
+      "teacher_claim": false,
+      "unseen_pretraining_claim": false
+    },
+    {
+      "annotation_classes": [
+        "potted plant",
+        "vase"
+      ],
+      "annotations": [
+        {
+          "class_id": 58,
+          "class_name": "potted plant",
+          "height": 0.75729,
+          "source_line": 1,
+          "source_text": "58 0.519219 0.451121 0.39825 0.75729",
+          "width": 0.39825,
+          "x_center": 0.519219,
+          "y_center": 0.451121
+        },
+        {
+          "class_id": 75,
+          "class_name": "vase",
+          "height": 0.456192,
+          "source_line": 2,
+          "source_text": "75 0.501188 0.592138 0.26 0.456192",
+          "width": 0.26,
+          "x_center": 0.501188,
+          "y_center": 0.592138
+        }
+      ],
+      "dataset": "COCO train2017 via Ultralytics COCO128",
+      "dataset_attribution": "Microsoft COCO Consortium; Ultralytics COCO128 packaging",
+      "dataset_license_documentation": "CC BY 4.0 attribution link shown by the Ultralytics COCO128 documentation",
+      "dataset_role": "reference_only",
+      "exposure_status": "fresh_import_exposure_unknown",
+      "family": "potted plant",
+      "heldout_claim": false,
+      "id": "coco-capability-20260922-000000000030",
+      "member_families": [
+        "potted plant",
+        "vase"
+      ],
+      "mode": "fresh",
+      "object_count": 2,
+      "object_count_bucket": "two_to_four",
+      "original_annotation_classes": [
+        "potted plant",
+        "vase"
+      ],
+      "per_image_license": null,
+      "per_image_license_status": "unverified_not_provided_in_archive",
+      "primary_family": "potted plant",
+      "provenance_urls": [
+        "https://github.com/ultralytics/assets/releases/download/v0.0.0/coco128.zip",
+        "https://docs.ultralytics.com/datasets/detect/coco128",
+        "https://cocodataset.org/#home"
+      ],
+      "reference": "references/000000000030.jpg",
+      "reference_sha256": "4ec415419155289eefffa7a620ed77bdeee94f477225e87ceaa00cb5f2515fe7",
+      "selection_rank": 13,
+      "selection_reason": "greedy rank 13: score=110; new_categories=vase; new_object_count_bucket=none; new_primary_family=yes",
+      "source_group": "coco128:train2017:000000000030",
+      "source_id": "000000000030",
+      "source_image_url": "https://cocodataset.org/#explore?id=30",
+      "source_reference": "painter/runs/scaled-curriculum-20260921/real-pool/raw/coco128/images/train2017/000000000030.jpg",
+      "source_reference_sha256": "4ec415419155289eefffa7a620ed77bdeee94f477225e87ceaa00cb5f2515fe7",
+      "source_split": "dev",
+      "split": "dev",
+      "teacher_claim": false,
+      "unseen_pretraining_claim": false
+    },
+    {
+      "annotation_classes": [
+        "horse",
+        "person",
+        "potted plant"
+      ],
+      "annotations": [
+        {
+          "class_id": 17,
+          "class_name": "horse",
+          "height": 0.36886,
+          "source_line": 1,
+          "source_text": "17 0.597835 0.63755 0.342283 0.36886",
+          "width": 0.342283,
+          "x_center": 0.597835,
+          "y_center": 0.63755
+        },
+        {
+          "class_id": 17,
+          "class_name": "horse",
+          "height": 0.3164,
+          "source_line": 2,
+          "source_text": "17 0.324291 0.64808 0.219711 0.3164",
+          "width": 0.219711,
+          "x_center": 0.324291,
+          "y_center": 0.64808
+        },
+        {
+          "class_id": 0,
+          "class_name": "person",
+          "height": 0.14608,
+          "source_line": 3,
+          "source_text": "0 0.620039 0.5939 0.172415 0.14608",
+          "width": 0.172415,
+          "x_center": 0.620039,
+          "y_center": 0.5939
+        },
+        {
+          "class_id": 0,
+          "class_name": "person",
+          "height": 0.12586,
+          "source_line": 4,
+          "source_text": "0 0.385525 0.58557 0.14937 0.12586",
+          "width": 0.14937,
+          "x_center": 0.385525,
+          "y_center": 0.58557
+        },
+        {
+          "class_id": 0,
+          "class_name": "person",
+          "height": 0.06714,
+          "source_line": 5,
+          "source_text": "0 0.328898 0.70199 0.0313386 0.06714",
+          "width": 0.0313386,
+          "x_center": 0.328898,
+          "y_center": 0.70199
+        },
+        {
+          "class_id": 58,
+          "class_name": "potted plant",
+          "height": 0.09446,
+          "source_line": 6,
+          "source_text": "58 0.622546 0.89961 0.185932 0.09446",
+          "width": 0.185932,
+          "x_center": 0.622546,
+          "y_center": 0.89961
+        },
+        {
+          "class_id": 0,
+          "class_name": "person",
+          "height": 0.05486,
+          "source_line": 7,
+          "source_text": "0 0.760577 0.69423 0.0285564 0.05486",
+          "width": 0.0285564,
+          "x_center": 0.760577,
+          "y_center": 0.69423
+        },
+        {
+          "class_id": 0,
+          "class_name": "person",
+          "height": 0.04682,
+          "source_line": 8,
+          "source_text": "0 0.510709 0.69215 0.0187927 0.04682",
+          "width": 0.0187927,
+          "x_center": 0.510709,
+          "y_center": 0.69215
+        },
+        {
+          "class_id": 0,
+          "class_name": "person",
+          "height": 0.01844,
+          "source_line": 9,
+          "source_text": "0 0.929554 0.67602 0.0388451 0.01844",
+          "width": 0.0388451,
+          "x_center": 0.929554,
+          "y_center": 0.67602
+        }
+      ],
+      "dataset": "COCO train2017 via Ultralytics COCO128",
+      "dataset_attribution": "Microsoft COCO Consortium; Ultralytics COCO128 packaging",
+      "dataset_license_documentation": "CC BY 4.0 attribution link shown by the Ultralytics COCO128 documentation",
+      "dataset_role": "reference_only",
+      "exposure_status": "fresh_import_exposure_unknown",
+      "family": "horse",
+      "heldout_claim": false,
+      "id": "coco-capability-20260922-000000000049",
+      "member_families": [
+        "horse",
+        "person",
+        "potted plant"
+      ],
+      "mode": "fresh",
+      "object_count": 9,
+      "object_count_bucket": "five_to_nine",
+      "original_annotation_classes": [
+        "horse",
+        "person",
+        "potted plant"
+      ],
+      "per_image_license": null,
+      "per_image_license_status": "unverified_not_provided_in_archive",
+      "primary_family": "horse",
+      "provenance_urls": [
+        "https://github.com/ultralytics/assets/releases/download/v0.0.0/coco128.zip",
+        "https://docs.ultralytics.com/datasets/detect/coco128",
+        "https://cocodataset.org/#home"
+      ],
+      "reference": "references/000000000049.jpg",
+      "reference_sha256": "bc1482d2cba6e4db671c8eedbc7c8d86e0a31c927587a24297647f530349fe7b",
+      "selection_rank": 14,
+      "selection_reason": "greedy rank 14: score=110; new_categories=horse; new_object_count_bucket=none; new_primary_family=yes",
+      "source_group": "coco128:train2017:000000000049",
+      "source_id": "000000000049",
+      "source_image_url": "https://cocodataset.org/#explore?id=49",
+      "source_reference": "painter/runs/scaled-curriculum-20260921/real-pool/raw/coco128/images/train2017/000000000049.jpg",
+      "source_reference_sha256": "bc1482d2cba6e4db671c8eedbc7c8d86e0a31c927587a24297647f530349fe7b",
+      "source_split": "dev",
+      "split": "dev",
+      "teacher_claim": false,
+      "unseen_pretraining_claim": false
+    },
+    {
+      "annotation_classes": [
+        "giraffe"
+      ],
+      "annotations": [
+        {
+          "class_id": 23,
+          "class_name": "giraffe",
+          "height": 0.779766,
+          "source_line": 1,
+          "source_text": "23 0.658478 0.592133 0.677002 0.779766",
+          "width": 0.677002,
+          "x_center": 0.658478,
+          "y_center": 0.592133
+        },
+        {
+          "class_id": 23,
+          "class_name": "giraffe",
+          "height": 0.887391,
+          "source_line": 2,
+          "source_text": "23 0.391581 0.556305 0.546862 0.887391",
+          "width": 0.546862,
+          "x_center": 0.391581,
+          "y_center": 0.556305
+        }
+      ],
+      "dataset": "COCO train2017 via Ultralytics COCO128",
+      "dataset_attribution": "Microsoft COCO Consortium; Ultralytics COCO128 packaging",
+      "dataset_license_documentation": "CC BY 4.0 attribution link shown by the Ultralytics COCO128 documentation",
+      "dataset_role": "reference_only",
+      "exposure_status": "fresh_import_exposure_unknown",
+      "family": "giraffe",
+      "heldout_claim": false,
+      "id": "coco-capability-20260922-000000000072",
+      "member_families": [
+        "giraffe"
+      ],
+      "mode": "fresh",
+      "object_count": 2,
+      "object_count_bucket": "two_to_four",
+      "original_annotation_classes": [
+        "giraffe"
+      ],
+      "per_image_license": null,
+      "per_image_license_status": "unverified_not_provided_in_archive",
+      "primary_family": "giraffe",
+      "provenance_urls": [
+        "https://github.com/ultralytics/assets/releases/download/v0.0.0/coco128.zip",
+        "https://docs.ultralytics.com/datasets/detect/coco128",
+        "https://cocodataset.org/#home"
+      ],
+      "reference": "references/000000000072.jpg",
+      "reference_sha256": "93d0d304967360bed3bfe2aafc701817e83f494c687e625fb8b765d2be54c9b2",
+      "selection_rank": 15,
+      "selection_reason": "greedy rank 15: score=110; new_categories=giraffe; new_object_count_bucket=none; new_primary_family=yes",
+      "source_group": "coco128:train2017:000000000072",
+      "source_id": "000000000072",
+      "source_image_url": "https://cocodataset.org/#explore?id=72",
+      "source_reference": "painter/runs/scaled-curriculum-20260921/real-pool/raw/coco128/images/train2017/000000000072.jpg",
+      "source_reference_sha256": "93d0d304967360bed3bfe2aafc701817e83f494c687e625fb8b765d2be54c9b2",
+      "source_split": "dev",
+      "split": "dev",
+      "teacher_claim": false,
+      "unseen_pretraining_claim": false
+    },
+    {
+      "annotation_classes": [
+        "person",
+        "skateboard"
+      ],
+      "annotations": [
+        {
+          "class_id": 0,
+          "class_name": "person",
+          "height": 0.317147,
+          "source_line": 1,
+          "source_text": "0 0.53553 0.308733 0.2069 0.317147",
+          "width": 0.2069,
+          "x_center": 0.53553,
+          "y_center": 0.308733
+        },
+        {
+          "class_id": 0,
+          "class_name": "person",
+          "height": 0.259413,
+          "source_line": 2,
+          "source_text": "0 0.73609 0.272987 0.18926 0.259413",
+          "width": 0.18926,
+          "x_center": 0.73609,
+          "y_center": 0.272987
+        },
+        {
+          "class_id": 36,
+          "class_name": "skateboard",
+          "height": 0.06464,
+          "source_line": 3,
+          "source_text": "36 0.13364 0.88656 0.10108 0.06464",
+          "width": 0.10108,
+          "x_center": 0.13364,
+          "y_center": 0.88656
+        },
+        {
+          "class_id": 36,
+          "class_name": "skateboard",
+          "height": 0.07608,
+          "source_line": 4,
+          "source_text": "36 0.50059 0.413213 0.05466 0.07608",
+          "width": 0.05466,
+          "x_center": 0.50059,
+          "y_center": 0.413213
+        },
+        {
+          "class_id": 0,
+          "class_name": "person",
+          "height": 0.441093,
+          "source_line": 5,
+          "source_text": "0 0.14666 0.667293 0.194 0.441093",
+          "width": 0.194,
+          "x_center": 0.14666,
+          "y_center": 0.667293
+        },
+        {
+          "class_id": 0,
+          "class_name": "person",
+          "height": 0.111253,
+          "source_line": 6,
+          "source_text": "0 0.59734 0.325733 0.0494 0.111253",
+          "width": 0.0494,
+          "x_center": 0.59734,
+          "y_center": 0.325733
+        },
+        {
+          "class_id": 36,
+          "class_name": "skateboard",
+          "height": 0.0401067,
+          "source_line": 7,
+          "source_text": "36 0.73492 0.39656 0.04812 0.0401067",
+          "width": 0.04812,
+          "x_center": 0.73492,
+          "y_center": 0.39656
+        },
+        {
+          "class_id": 0,
+          "class_name": "person",
+          "height": 0.220053,
+          "source_line": 8,
+          "source_text": "0 0.55563 0.265173 0.04586 0.220053",
+          "width": 0.04586,
+          "x_center": 0.55563,
+          "y_center": 0.265173
+        }
+      ],
+      "dataset": "COCO train2017 via Ultralytics COCO128",
+      "dataset_attribution": "Microsoft COCO Consortium; Ultralytics COCO128 packaging",
+      "dataset_license_documentation": "CC BY 4.0 attribution link shown by the Ultralytics COCO128 documentation",
+      "dataset_role": "reference_only",
+      "exposure_status": "fresh_import_exposure_unknown",
+      "family": "person",
+      "heldout_claim": false,
+      "id": "coco-capability-20260922-000000000077",
+      "member_families": [
+        "person",
+        "skateboard"
+      ],
+      "mode": "fresh",
+      "object_count": 8,
+      "object_count_bucket": "five_to_nine",
+      "original_annotation_classes": [
+        "person",
+        "skateboard"
+      ],
+      "per_image_license": null,
+      "per_image_license_status": "unverified_not_provided_in_archive",
+      "primary_family": "person",
+      "provenance_urls": [
+        "https://github.com/ultralytics/assets/releases/download/v0.0.0/coco128.zip",
+        "https://docs.ultralytics.com/datasets/detect/coco128",
+        "https://cocodataset.org/#home"
+      ],
+      "reference": "references/000000000077.jpg",
+      "reference_sha256": "e07c725d9941691ac87386f0f4edd44f62a232696288bf95fb5ddef9384347b1",
+      "selection_rank": 16,
+      "selection_reason": "greedy rank 16: score=110; new_categories=skateboard; new_object_count_bucket=none; new_primary_family=yes",
+      "source_group": "coco128:train2017:000000000077",
+      "source_id": "000000000077",
+      "source_image_url": "https://cocodataset.org/#explore?id=77",
+      "source_reference": "painter/runs/scaled-curriculum-20260921/real-pool/raw/coco128/images/train2017/000000000077.jpg",
+      "source_reference_sha256": "e07c725d9941691ac87386f0f4edd44f62a232696288bf95fb5ddef9384347b1",
+      "source_split": "dev",
+      "split": "dev",
+      "teacher_claim": false,
+      "unseen_pretraining_claim": false
+    },
+    {
+      "annotation_classes": [
+        "cake",
+        "chair",
+        "cup",
+        "dining table",
+        "knife",
+        "person"
+      ],
+      "annotations": [
+        {
+          "class_id": 56,
+          "class_name": "chair",
+          "height": 0.098875,
+          "source_line": 1,
+          "source_text": "56 0.409675 0.645094 0.376851 0.098875",
+          "width": 0.376851,
+          "x_center": 0.409675,
+          "y_center": 0.645094
+        },
+        {
+          "class_id": 56,
+          "class_name": "chair",
+          "height": 0.0967812,
+          "source_line": 2,
+          "source_text": "56 0.112825 0.950797 0.17262 0.0967812",
+          "width": 0.17262,
+          "x_center": 0.112825,
+          "y_center": 0.950797
+        },
+        {
+          "class_id": 0,
+          "class_name": "person",
+          "height": 0.711062,
+          "source_line": 3,
+          "source_text": "0 0.19274 0.404625 0.364663 0.711062",
+          "width": 0.364663,
+          "x_center": 0.19274,
+          "y_center": 0.404625
+        },
+        {
+          "class_id": 41,
+          "class_name": "cup",
+          "height": 0.0955156,
+          "source_line": 4,
+          "source_text": "41 0.230937 0.763773 0.124038 0.0955156",
+          "width": 0.124038,
+          "x_center": 0.230937,
+          "y_center": 0.763773
+        },
+        {
+          "class_id": 41,
+          "class_name": "cup",
+          "height": 0.0293125,
+          "source_line": 5,
+          "source_text": "41 0.860721 0.264437 0.0521154 0.0293125",
+          "width": 0.0521154,
+          "x_center": 0.860721,
+          "y_center": 0.264437
+        },
+        {
+          "class_id": 43,
+          "class_name": "knife",
+          "height": 0.136,
+          "source_line": 6,
+          "source_text": "43 0.666815 0.635563 0.113486 0.136",
+          "width": 0.113486,
+          "x_center": 0.666815,
+          "y_center": 0.635563
+        },
+        {
+          "class_id": 55,
+          "class_name": "cake",
+          "height": 0.233703,
+          "source_line": 7,
+          "source_text": "55 0.655144 0.779773 0.625769 0.233703",
+          "width": 0.625769,
+          "x_center": 0.655144,
+          "y_center": 0.779773
+        },
+        {
+          "class_id": 0,
+          "class_name": "person",
+          "height": 0.512891,
+          "source_line": 8,
+          "source_text": "0 0.910325 0.413461 0.179351 0.512891",
+          "width": 0.179351,
+          "x_center": 0.910325,
+          "y_center": 0.413461
+        },
+        {
+          "class_id": 60,
+          "class_name": "dining table",
+          "height": 0.386031,
+          "source_line": 9,
+          "source_text": "60 0.523293 0.806984 0.953413 0.386031",
+          "width": 0.953413,
+          "x_center": 0.523293,
+          "y_center": 0.806984
+        },
+        {
+          "class_id": 0,
+          "class_name": "person",
+          "height": 0.6045,
+          "source_line": 10,
+          "source_text": "0 0.591178 0.371906 0.470192 0.6045",
+          "width": 0.470192,
+          "x_center": 0.591178,
+          "y_center": 0.371906
+        },
+        {
+          "class_id": 41,
+          "class_name": "cup",
+          "height": 0.0418281,
+          "source_line": 11,
+          "source_text": "41 0.709892 0.169898 0.0613221 0.0418281",
+          "width": 0.0613221,
+          "x_center": 0.709892,
+          "y_center": 0.169898
+        },
+        {
+          "class_id": 41,
+          "class_name": "cup",
+          "height": 0.0344531,
+          "source_line": 12,
+          "source_text": "41 0.861106 0.123367 0.0563462 0.0344531",
+          "width": 0.0563462,
+          "x_center": 0.861106,
+          "y_center": 0.123367
+        },
+        {
+          "class_id": 41,
+          "class_name": "cup",
+          "height": 0.0390625,
+          "source_line": 13,
+          "source_text": "41 0.854519 0.172797 0.0579327 0.0390625",
+          "width": 0.0579327,
+          "x_center": 0.854519,
+          "y_center": 0.172797
+        },
+        {
+          "class_id": 41,
+          "class_name": "cup",
+          "height": 0.0364063,
+          "source_line": 14,
+          "source_text": "41 0.934447 0.169328 0.0424038 0.0364063",
+          "width": 0.0424038,
+          "x_center": 0.934447,
+          "y_center": 0.169328
+        },
+        {
+          "class_id": 41,
+          "class_name": "cup",
+          "height": 0.0338125,
+          "source_line": 15,
+          "source_text": "41 0.494615 0.236281 0.0482212 0.0338125",
+          "width": 0.0482212,
+          "x_center": 0.494615,
+          "y_center": 0.236281
+        },
+        {
+          "class_id": 41,
+          "class_name": "cup",
+          "height": 0.0387656,
+          "source_line": 16,
+          "source_text": "41 0.451791 0.233664 0.0566587 0.0387656",
+          "width": 0.0566587,
+          "x_center": 0.451791,
+          "y_center": 0.233664
+        },
+        {
+          "class_id": 41,
+          "class_name": "cup",
+          "height": 0.0400469,
+          "source_line": 17,
+          "source_text": "41 0.443882 0.187086 0.0471394 0.0400469",
+          "width": 0.0471394,
+          "x_center": 0.443882,
+          "y_center": 0.187086
+        },
+        {
+          "class_id": 41,
+          "class_name": "cup",
+          "height": 0.0347969,
+          "source_line": 18,
+          "source_text": "41 0.360457 0.233461 0.0450962 0.0347969",
+          "width": 0.0450962,
+          "x_center": 0.360457,
+          "y_center": 0.233461
+        }
+      ],
+      "dataset": "COCO train2017 via Ultralytics COCO128",
+      "dataset_attribution": "Microsoft COCO Consortium; Ultralytics COCO128 packaging",
+      "dataset_license_documentation": "CC BY 4.0 attribution link shown by the Ultralytics COCO128 documentation",
+      "dataset_role": "reference_only",
+      "exposure_status": "fresh_import_exposure_unknown",
+      "family": "cake",
+      "heldout_claim": false,
+      "id": "coco-capability-20260922-000000000113",
+      "member_families": [
+        "cake",
+        "chair",
+        "cup",
+        "dining table",
+        "knife",
+        "person"
+      ],
+      "mode": "fresh",
+      "object_count": 18,
+      "object_count_bucket": "ten_plus",
+      "original_annotation_classes": [
+        "cake",
+        "chair",
+        "cup",
+        "dining table",
+        "knife",
+        "person"
+      ],
+      "per_image_license": null,
+      "per_image_license_status": "unverified_not_provided_in_archive",
+      "primary_family": "cake",
+      "provenance_urls": [
+        "https://github.com/ultralytics/assets/releases/download/v0.0.0/coco128.zip",
+        "https://docs.ultralytics.com/datasets/detect/coco128",
+        "https://cocodataset.org/#home"
+      ],
+      "reference": "references/000000000113.jpg",
+      "reference_sha256": "51d5f657eacbc0f37f0d847f903abc90bb33479fa0459fdc64ebbeb5cac34d99",
+      "selection_rank": 17,
+      "selection_reason": "greedy rank 17: score=110; new_categories=chair; new_object_count_bucket=none; new_primary_family=yes",
+      "source_group": "coco128:train2017:000000000113",
+      "source_id": "000000000113",
+      "source_image_url": "https://cocodataset.org/#explore?id=113",
+      "source_reference": "painter/runs/scaled-curriculum-20260921/real-pool/raw/coco128/images/train2017/000000000113.jpg",
+      "source_reference_sha256": "51d5f657eacbc0f37f0d847f903abc90bb33479fa0459fdc64ebbeb5cac34d99",
+      "source_split": "dev",
+      "split": "dev",
+      "teacher_claim": false,
+      "unseen_pretraining_claim": false
+    },
+    {
+      "annotation_classes": [
+        "frisbee",
+        "person"
+      ],
+      "annotations": [
+        {
+          "class_id": 0,
+          "class_name": "person",
+          "height": 0.573368,
+          "source_line": 1,
+          "source_text": "0 0.273141 0.516372 0.322344 0.573368",
+          "width": 0.322344,
+          "x_center": 0.273141,
+          "y_center": 0.516372
+        },
+        {
+          "class_id": 29,
+          "class_name": "frisbee",
+          "height": 0.0265073,
+          "source_line": 2,
+          "source_text": "29 0.474578 0.441486 0.0675625 0.0265073",
+          "width": 0.0675625,
+          "x_center": 0.474578,
+          "y_center": 0.441486
+        }
+      ],
+      "dataset": "COCO train2017 via Ultralytics COCO128",
+      "dataset_attribution": "Microsoft COCO Consortium; Ultralytics COCO128 packaging",
+      "dataset_license_documentation": "CC BY 4.0 attribution link shown by the Ultralytics COCO128 documentation",
+      "dataset_role": "reference_only",
+      "exposure_status": "fresh_import_exposure_unknown",
+      "family": "frisbee",
+      "heldout_claim": false,
+      "id": "coco-capability-20260922-000000000322",
+      "member_families": [
+        "frisbee",
+        "person"
+      ],
+      "mode": "fresh",
+      "object_count": 2,
+      "object_count_bucket": "two_to_four",
+      "original_annotation_classes": [
+        "frisbee",
+        "person"
+      ],
+      "per_image_license": null,
+      "per_image_license_status": "unverified_not_provided_in_archive",
+      "primary_family": "frisbee",
+      "provenance_urls": [
+        "https://github.com/ultralytics/assets/releases/download/v0.0.0/coco128.zip",
+        "https://docs.ultralytics.com/datasets/detect/coco128",
+        "https://cocodataset.org/#home"
+      ],
+      "reference": "references/000000000322.jpg",
+      "reference_sha256": "4dddb450ab0a84a458c3da0cfa868a42b9b146de1cda3dd13c34b3599c7b80d3",
+      "selection_rank": 18,
+      "selection_reason": "greedy rank 18: score=110; new_categories=frisbee; new_object_count_bucket=none; new_primary_family=yes",
+      "source_group": "coco128:train2017:000000000322",
+      "source_id": "000000000322",
+      "source_image_url": "https://cocodataset.org/#explore?id=322",
+      "source_reference": "painter/runs/scaled-curriculum-20260921/real-pool/raw/coco128/images/train2017/000000000322.jpg",
+      "source_reference_sha256": "4dddb450ab0a84a458c3da0cfa868a42b9b146de1cda3dd13c34b3599c7b80d3",
+      "source_split": "dev",
+      "split": "dev",
+      "teacher_claim": false,
+      "unseen_pretraining_claim": false
+    },
+    {
+      "annotation_classes": [
+        "toilet"
+      ],
+      "annotations": [
+        {
+          "class_id": 61,
+          "class_name": "toilet",
+          "height": 0.837844,
+          "source_line": 1,
+          "source_text": "61 0.444448 0.558563 0.552563 0.837844",
+          "width": 0.552563,
+          "x_center": 0.444448,
+          "y_center": 0.558563
+        }
+      ],
+      "dataset": "COCO train2017 via Ultralytics COCO128",
+      "dataset_attribution": "Microsoft COCO Consortium; Ultralytics COCO128 packaging",
+      "dataset_license_documentation": "CC BY 4.0 attribution link shown by the Ultralytics COCO128 documentation",
+      "dataset_role": "reference_only",
+      "exposure_status": "fresh_import_exposure_unknown",
+      "family": "toilet",
+      "heldout_claim": false,
+      "id": "coco-capability-20260922-000000000636",
+      "member_families": [
+        "toilet"
+      ],
+      "mode": "fresh",
+      "object_count": 1,
+      "object_count_bucket": "one",
+      "original_annotation_classes": [
+        "toilet"
+      ],
+      "per_image_license": null,
+      "per_image_license_status": "unverified_not_provided_in_archive",
+      "primary_family": "toilet",
+      "provenance_urls": [
+        "https://github.com/ultralytics/assets/releases/download/v0.0.0/coco128.zip",
+        "https://docs.ultralytics.com/datasets/detect/coco128",
+        "https://cocodataset.org/#home"
+      ],
+      "reference": "references/000000000636.jpg",
+      "reference_sha256": "8e948d6888e7bf449e91883d3a2b0d61804308aada31fbf289add4da4dd978e8",
+      "selection_rank": 19,
+      "selection_reason": "greedy rank 19: score=110; new_categories=toilet; new_object_count_bucket=none; new_primary_family=yes",
+      "source_group": "coco128:train2017:000000000636",
+      "source_id": "000000000636",
+      "source_image_url": "https://cocodataset.org/#explore?id=636",
+      "source_reference": "painter/runs/scaled-curriculum-20260921/real-pool/raw/coco128/images/train2017/000000000636.jpg",
+      "source_reference_sha256": "8e948d6888e7bf449e91883d3a2b0d61804308aada31fbf289add4da4dd978e8",
+      "source_split": "dev",
+      "split": "dev",
+      "teacher_claim": false,
+      "unseen_pretraining_claim": false
+    },
+    {
+      "annotation_classes": [
+        "person",
+        "snowboard"
+      ],
+      "annotations": [
+        {
+          "class_id": 31,
+          "class_name": "snowboard",
+          "height": 0.847196,
+          "source_line": 1,
+          "source_text": "31 0.642445 0.497757 0.241953 0.847196",
+          "width": 0.241953,
+          "x_center": 0.642445,
+          "y_center": 0.497757
+        },
+        {
+          "class_id": 31,
+          "class_name": "snowboard",
+          "height": 0.845631,
+          "source_line": 2,
+          "source_text": "31 0.558789 0.463306 0.228891 0.845631",
+          "width": 0.228891,
+          "x_center": 0.558789,
+          "y_center": 0.463306
+        },
+        {
+          "class_id": 31,
+          "class_name": "snowboard",
+          "height": 0.687944,
+          "source_line": 3,
+          "source_text": "31 0.490047 0.457991 0.148594 0.687944",
+          "width": 0.148594,
+          "x_center": 0.490047,
+          "y_center": 0.457991
+        },
+        {
+          "class_id": 31,
+          "class_name": "snowboard",
+          "height": 0.684556,
+          "source_line": 4,
+          "source_text": "31 0.446477 0.466554 0.134797 0.684556",
+          "width": 0.134797,
+          "x_center": 0.446477,
+          "y_center": 0.466554
+        },
+        {
+          "class_id": 31,
+          "class_name": "snowboard",
+          "height": 0.670257,
+          "source_line": 5,
+          "source_text": "31 0.39518 0.444825 0.129297 0.670257",
+          "width": 0.129297,
+          "x_center": 0.39518,
+          "y_center": 0.444825
+        },
+        {
+          "class_id": 0,
+          "class_name": "person",
+          "height": 0.038715,
+          "source_line": 6,
+          "source_text": "0 0.971078 0.47597 0.0195 0.038715",
+          "width": 0.0195,
+          "x_center": 0.971078,
+          "y_center": 0.47597
+        },
+        {
+          "class_id": 0,
+          "class_name": "person",
+          "height": 0.0418692,
+          "source_line": 7,
+          "source_text": "0 0.924641 0.475257 0.0183437 0.0418692",
+          "width": 0.0183437,
+          "x_center": 0.924641,
+          "y_center": 0.475257
+        },
+        {
+          "class_id": 31,
+          "class_name": "snowboard",
+          "height": 0.689743,
+          "source_line": 8,
+          "source_text": "31 0.493016 0.492839 0.147281 0.689743",
+          "width": 0.147281,
+          "x_center": 0.493016,
+          "y_center": 0.492839
+        }
+      ],
+      "dataset": "COCO train2017 via Ultralytics COCO128",
+      "dataset_attribution": "Microsoft COCO Consortium; Ultralytics COCO128 packaging",
+      "dataset_license_documentation": "CC BY 4.0 attribution link shown by the Ultralytics COCO128 documentation",
+      "dataset_role": "reference_only",
+      "exposure_status": "fresh_import_exposure_unknown",
+      "family": "person",
+      "heldout_claim": false,
+      "id": "coco-capability-20260922-000000000201",
+      "member_families": [
+        "person",
+        "snowboard"
+      ],
+      "mode": "fresh",
+      "object_count": 8,
+      "object_count_bucket": "five_to_nine",
+      "original_annotation_classes": [
+        "person",
+        "snowboard"
+      ],
+      "per_image_license": null,
+      "per_image_license_status": "unverified_not_provided_in_archive",
+      "primary_family": "person",
+      "provenance_urls": [
+        "https://github.com/ultralytics/assets/releases/download/v0.0.0/coco128.zip",
+        "https://docs.ultralytics.com/datasets/detect/coco128",
+        "https://cocodataset.org/#home"
+      ],
+      "reference": "references/000000000201.jpg",
+      "reference_sha256": "4efc7ce561df432c2d3d9a60040f62b1b8389b36b401269bfc6802065dfcb9d8",
+      "selection_rank": 20,
+      "selection_reason": "greedy rank 20: score=100; new_categories=snowboard; new_object_count_bucket=none; new_primary_family=no",
+      "source_group": "coco128:train2017:000000000201",
+      "source_id": "000000000201",
+      "source_image_url": "https://cocodataset.org/#explore?id=201",
+      "source_reference": "painter/runs/scaled-curriculum-20260921/real-pool/raw/coco128/images/train2017/000000000201.jpg",
+      "source_reference_sha256": "4efc7ce561df432c2d3d9a60040f62b1b8389b36b401269bfc6802065dfcb9d8",
+      "source_split": "dev",
+      "split": "dev",
+      "teacher_claim": false,
+      "unseen_pretraining_claim": false
+    },
+    {
+      "annotation_classes": [
+        "car",
+        "traffic light"
+      ],
+      "annotations": [
+        {
+          "class_id": 9,
+          "class_name": "traffic light",
+          "height": 0.103163,
+          "source_line": 1,
+          "source_text": "9 0.37311 0.354111 0.13074 0.103163",
+          "width": 0.13074,
+          "x_center": 0.37311,
+          "y_center": 0.354111
+        },
+        {
+          "class_id": 9,
+          "class_name": "traffic light",
+          "height": 0.0674699,
+          "source_line": 2,
+          "source_text": "9 0.53852 0.334759 0.102 0.0674699",
+          "width": 0.102,
+          "x_center": 0.53852,
+          "y_center": 0.334759
+        },
+        {
+          "class_id": 9,
+          "class_name": "traffic light",
+          "height": 0.0123795,
+          "source_line": 3,
+          "source_text": "9 0.56142 0.890166 0.00892 0.0123795",
+          "width": 0.00892,
+          "x_center": 0.56142,
+          "y_center": 0.890166
+        },
+        {
+          "class_id": 2,
+          "class_name": "car",
+          "height": 0.113193,
+          "source_line": 4,
+          "source_text": "2 0.12372 0.930422 0.24744 0.113193",
+          "width": 0.24744,
+          "x_center": 0.12372,
+          "y_center": 0.930422
+        }
+      ],
+      "dataset": "COCO train2017 via Ultralytics COCO128",
+      "dataset_attribution": "Microsoft COCO Consortium; Ultralytics COCO128 packaging",
+      "dataset_license_documentation": "CC BY 4.0 attribution link shown by the Ultralytics COCO128 documentation",
+      "dataset_role": "reference_only",
+      "exposure_status": "fresh_import_exposure_unknown",
+      "family": "car",
+      "heldout_claim": false,
+      "id": "coco-capability-20260922-000000000359",
+      "member_families": [
+        "car",
+        "traffic light"
+      ],
+      "mode": "fresh",
+      "object_count": 4,
+      "object_count_bucket": "two_to_four",
+      "original_annotation_classes": [
+        "car",
+        "traffic light"
+      ],
+      "per_image_license": null,
+      "per_image_license_status": "unverified_not_provided_in_archive",
+      "primary_family": "car",
+      "provenance_urls": [
+        "https://github.com/ultralytics/assets/releases/download/v0.0.0/coco128.zip",
+        "https://docs.ultralytics.com/datasets/detect/coco128",
+        "https://cocodataset.org/#home"
+      ],
+      "reference": "references/000000000359.jpg",
+      "reference_sha256": "8da8a8320518a8adadbbd79615e066fd60b31c6025919665264ff9d0f746a5dd",
+      "selection_rank": 21,
+      "selection_reason": "greedy rank 21: score=100; new_categories=traffic light; new_object_count_bucket=none; new_primary_family=no",
+      "source_group": "coco128:train2017:000000000359",
+      "source_id": "000000000359",
+      "source_image_url": "https://cocodataset.org/#explore?id=359",
+      "source_reference": "painter/runs/scaled-curriculum-20260921/real-pool/raw/coco128/images/train2017/000000000359.jpg",
+      "source_reference_sha256": "8da8a8320518a8adadbbd79615e066fd60b31c6025919665264ff9d0f746a5dd",
+      "source_split": "dev",
+      "split": "dev",
+      "teacher_claim": false,
+      "unseen_pretraining_claim": false
+    },
+    {
+      "annotation_classes": [
+        "person",
+        "suitcase"
+      ],
+      "annotations": [
+        {
+          "class_id": 0,
+          "class_name": "person",
+          "height": 0.846516,
+          "source_line": 1,
+          "source_text": "0 0.497506 0.514227 0.340304 0.846516",
+          "width": 0.340304,
+          "x_center": 0.497506,
+          "y_center": 0.514227
+        },
+        {
+          "class_id": 0,
+          "class_name": "person",
+          "height": 0.541047,
+          "source_line": 2,
+          "source_text": "0 0.316557 0.668648 0.30178 0.541047",
+          "width": 0.30178,
+          "x_center": 0.316557,
+          "y_center": 0.668648
+        },
+        {
+          "class_id": 28,
+          "class_name": "suitcase",
+          "height": 0.346531,
+          "source_line": 3,
+          "source_text": "28 0.838735 0.765313 0.322529 0.346531",
+          "width": 0.322529,
+          "x_center": 0.838735,
+          "y_center": 0.765313
+        }
+      ],
+      "dataset": "COCO train2017 via Ultralytics COCO128",
+      "dataset_attribution": "Microsoft COCO Consortium; Ultralytics COCO128 packaging",
+      "dataset_license_documentation": "CC BY 4.0 attribution link shown by the Ultralytics COCO128 documentation",
+      "dataset_role": "reference_only",
+      "exposure_status": "fresh_import_exposure_unknown",
+      "family": "person",
+      "heldout_claim": false,
+      "id": "coco-capability-20260922-000000000572",
+      "member_families": [
+        "person",
+        "suitcase"
+      ],
+      "mode": "fresh",
+      "object_count": 3,
+      "object_count_bucket": "two_to_four",
+      "original_annotation_classes": [
+        "person",
+        "suitcase"
+      ],
+      "per_image_license": null,
+      "per_image_license_status": "unverified_not_provided_in_archive",
+      "primary_family": "person",
+      "provenance_urls": [
+        "https://github.com/ultralytics/assets/releases/download/v0.0.0/coco128.zip",
+        "https://docs.ultralytics.com/datasets/detect/coco128",
+        "https://cocodataset.org/#home"
+      ],
+      "reference": "references/000000000572.jpg",
+      "reference_sha256": "b779e782a66c196373580de6ede5c4faacabf05fb521eab8df4d11b71d8d2770",
+      "selection_rank": 22,
+      "selection_reason": "greedy rank 22: score=100; new_categories=suitcase; new_object_count_bucket=none; new_primary_family=no",
+      "source_group": "coco128:train2017:000000000572",
+      "source_id": "000000000572",
+      "source_image_url": "https://cocodataset.org/#explore?id=572",
+      "source_reference": "painter/runs/scaled-curriculum-20260921/real-pool/raw/coco128/images/train2017/000000000572.jpg",
+      "source_reference_sha256": "b779e782a66c196373580de6ede5c4faacabf05fb521eab8df4d11b71d8d2770",
+      "source_split": "dev",
+      "split": "dev",
+      "teacher_claim": false,
+      "unseen_pretraining_claim": false
+    },
+    {
+      "annotation_classes": [
+        "bowl",
+        "broccoli",
+        "carrot",
+        "spoon"
+      ],
+      "annotations": [
+        {
+          "class_id": 44,
+          "class_name": "spoon",
+          "height": 0.16216,
+          "source_line": 1,
+          "source_text": "44 0.272852 0.0844601 0.527703 0.16216",
+          "width": 0.527703,
+          "x_center": 0.272852,
+          "y_center": 0.0844601
+        },
+        {
+          "class_id": 50,
+          "class_name": "broccoli",
+          "height": 0.12108,
+          "source_line": 2,
+          "source_text": "50 0.536797 0.70669 0.0981563 0.12108",
+          "width": 0.0981563,
+          "x_center": 0.536797,
+          "y_center": 0.70669
+        },
+        {
+          "class_id": 50,
+          "class_name": "broccoli",
+          "height": 0.253474,
+          "source_line": 3,
+          "source_text": "50 0.463555 0.580915 0.303047 0.253474",
+          "width": 0.303047,
+          "x_center": 0.463555,
+          "y_center": 0.580915
+        },
+        {
+          "class_id": 51,
+          "class_name": "carrot",
+          "height": 0.192934,
+          "source_line": 4,
+          "source_text": "51 0.625687 0.844707 0.142531 0.192934",
+          "width": 0.142531,
+          "x_center": 0.625687,
+          "y_center": 0.844707
+        },
+        {
+          "class_id": 51,
+          "class_name": "carrot",
+          "height": 0.181901,
+          "source_line": 5,
+          "source_text": "51 0.762328 0.686068 0.127344 0.181901",
+          "width": 0.127344,
+          "x_center": 0.762328,
+          "y_center": 0.686068
+        },
+        {
+          "class_id": 51,
+          "class_name": "carrot",
+          "height": 0.183545,
+          "source_line": 6,
+          "source_text": "51 0.784656 0.536467 0.115906 0.183545",
+          "width": 0.115906,
+          "x_center": 0.784656,
+          "y_center": 0.536467
+        },
+        {
+          "class_id": 51,
+          "class_name": "carrot",
+          "height": 0.179319,
+          "source_line": 7,
+          "source_text": "51 0.852633 0.665904 0.104766 0.179319",
+          "width": 0.104766,
+          "x_center": 0.852633,
+          "y_center": 0.665904
+        },
+        {
+          "class_id": 51,
+          "class_name": "carrot",
+          "height": 0.0844601,
+          "source_line": 8,
+          "source_text": "51 0.392148 0.376291 0.0589219 0.0844601",
+          "width": 0.0589219,
+          "x_center": 0.392148,
+          "y_center": 0.376291
+        },
+        {
+          "class_id": 51,
+          "class_name": "carrot",
+          "height": 0.154742,
+          "source_line": 9,
+          "source_text": "51 0.421758 0.199108 0.115141 0.154742",
+          "width": 0.115141,
+          "x_center": 0.421758,
+          "y_center": 0.199108
+        },
+        {
+          "class_id": 45,
+          "class_name": "bowl",
+          "height": 0.94831,
+          "source_line": 10,
+          "source_text": "45 0.5 0.507864 1 0.94831",
+          "width": 1.0,
+          "x_center": 0.5,
+          "y_center": 0.507864
+        },
+        {
+          "class_id": 51,
+          "class_name": "carrot",
+          "height": 0.182817,
+          "source_line": 11,
+          "source_text": "51 0.374008 0.492535 0.134422 0.182817",
+          "width": 0.134422,
+          "x_center": 0.374008,
+          "y_center": 0.492535
+        },
+        {
+          "class_id": 51,
+          "class_name": "carrot",
+          "height": 0.162746,
+          "source_line": 12,
+          "source_text": "51 0.263648 0.537782 0.104266 0.162746",
+          "width": 0.104266,
+          "x_center": 0.263648,
+          "y_center": 0.537782
+        },
+        {
+          "class_id": 51,
+          "class_name": "carrot",
+          "height": 0.104296,
+          "source_line": 13,
+          "source_text": "51 0.638195 0.15473 0.0917344 0.104296",
+          "width": 0.0917344,
+          "x_center": 0.638195,
+          "y_center": 0.15473
+        },
+        {
+          "class_id": 51,
+          "class_name": "carrot",
+          "height": 0.128638,
+          "source_line": 14,
+          "source_text": "51 0.602 0.503779 0.086625 0.128638",
+          "width": 0.086625,
+          "x_center": 0.602,
+          "y_center": 0.503779
+        }
+      ],
+      "dataset": "COCO train2017 via Ultralytics COCO128",
+      "dataset_attribution": "Microsoft COCO Consortium; Ultralytics COCO128 packaging",
+      "dataset_license_documentation": "CC BY 4.0 attribution link shown by the Ultralytics COCO128 documentation",
+      "dataset_role": "reference_only",
+      "exposure_status": "fresh_import_exposure_unknown",
+      "family": "bowl",
+      "heldout_claim": false,
+      "id": "coco-capability-20260922-000000000584",
+      "member_families": [
+        "bowl",
+        "broccoli",
+        "carrot",
+        "spoon"
+      ],
+      "mode": "fresh",
+      "object_count": 14,
+      "object_count_bucket": "ten_plus",
+      "original_annotation_classes": [
+        "bowl",
+        "broccoli",
+        "carrot",
+        "spoon"
+      ],
+      "per_image_license": null,
+      "per_image_license_status": "unverified_not_provided_in_archive",
+      "primary_family": "bowl",
+      "provenance_urls": [
+        "https://github.com/ultralytics/assets/releases/download/v0.0.0/coco128.zip",
+        "https://docs.ultralytics.com/datasets/detect/coco128",
+        "https://cocodataset.org/#home"
+      ],
+      "reference": "references/000000000584.jpg",
+      "reference_sha256": "f1ae69b71470e4d4e88e342b69fa47187fe5c7a56882eac0e548107075f4716f",
+      "selection_rank": 23,
+      "selection_reason": "greedy rank 23: score=100; new_categories=carrot; new_object_count_bucket=none; new_primary_family=no",
+      "source_group": "coco128:train2017:000000000584",
+      "source_id": "000000000584",
+      "source_image_url": "https://cocodataset.org/#explore?id=584",
+      "source_reference": "painter/runs/scaled-curriculum-20260921/real-pool/raw/coco128/images/train2017/000000000584.jpg",
+      "source_reference_sha256": "f1ae69b71470e4d4e88e342b69fa47187fe5c7a56882eac0e548107075f4716f",
+      "source_split": "dev",
+      "split": "dev",
+      "teacher_claim": false,
+      "unseen_pretraining_claim": false
+    },
+    {
+      "annotation_classes": [
+        "cup",
+        "toothbrush"
+      ],
+      "annotations": [
+        {
+          "class_id": 79,
+          "class_name": "toothbrush",
+          "height": 0.185453,
+          "source_line": 1,
+          "source_text": "79 0.423227 0.342477 0.185839 0.185453",
+          "width": 0.185839,
+          "x_center": 0.423227,
+          "y_center": 0.342477
+        },
+        {
+          "class_id": 79,
+          "class_name": "toothbrush",
+          "height": 0.346859,
+          "source_line": 2,
+          "source_text": "79 0.538463 0.263258 0.185343 0.346859",
+          "width": 0.185343,
+          "x_center": 0.538463,
+          "y_center": 0.263258
+        },
+        {
+          "class_id": 79,
+          "class_name": "toothbrush",
+          "height": 0.285391,
+          "source_line": 3,
+          "source_text": "79 0.248203 0.270102 0.19721 0.285391",
+          "width": 0.19721,
+          "x_center": 0.248203,
+          "y_center": 0.270102
+        },
+        {
+          "class_id": 41,
+          "class_name": "cup",
+          "height": 0.823266,
+          "source_line": 4,
+          "source_text": "41 0.514492 0.532648 0.731111 0.823266",
+          "width": 0.731111,
+          "x_center": 0.514492,
+          "y_center": 0.532648
+        }
+      ],
+      "dataset": "COCO train2017 via Ultralytics COCO128",
+      "dataset_attribution": "Microsoft COCO Consortium; Ultralytics COCO128 packaging",
+      "dataset_license_documentation": "CC BY 4.0 attribution link shown by the Ultralytics COCO128 documentation",
+      "dataset_role": "reference_only",
+      "exposure_status": "fresh_import_exposure_unknown",
+      "family": "cup",
+      "heldout_claim": false,
+      "id": "coco-capability-20260922-000000000562",
+      "member_families": [
+        "cup",
+        "toothbrush"
+      ],
+      "mode": "fresh",
+      "object_count": 4,
+      "object_count_bucket": "two_to_four",
+      "original_annotation_classes": [
+        "cup",
+        "toothbrush"
+      ],
+      "per_image_license": null,
+      "per_image_license_status": "unverified_not_provided_in_archive",
+      "primary_family": "cup",
+      "provenance_urls": [
+        "https://github.com/ultralytics/assets/releases/download/v0.0.0/coco128.zip",
+        "https://docs.ultralytics.com/datasets/detect/coco128",
+        "https://cocodataset.org/#home"
+      ],
+      "reference": "references/000000000562.jpg",
+      "reference_sha256": "e31320272d768add7113d41a9c65407fd4868da1229f8658fc877e9b07c4c794",
+      "selection_rank": 24,
+      "selection_reason": "greedy rank 24: score=10; new_categories=none; new_object_count_bucket=none; new_primary_family=yes",
+      "source_group": "coco128:train2017:000000000562",
+      "source_id": "000000000562",
+      "source_image_url": "https://cocodataset.org/#explore?id=562",
+      "source_reference": "painter/runs/scaled-curriculum-20260921/real-pool/raw/coco128/images/train2017/000000000562.jpg",
+      "source_reference_sha256": "e31320272d768add7113d41a9c65407fd4868da1229f8658fc877e9b07c4c794",
+      "source_split": "dev",
+      "split": "dev",
+      "teacher_claim": false,
+      "unseen_pretraining_claim": false
+    },
+    {
+      "annotation_classes": [
+        "airplane"
+      ],
+      "annotations": [
+        {
+          "class_id": 4,
+          "class_name": "airplane",
+          "height": 0.748282,
+          "source_line": 1,
+          "source_text": "4 0.516492 0.469388 0.912516 0.748282",
+          "width": 0.912516,
+          "x_center": 0.516492,
+          "y_center": 0.469388
+        }
+      ],
+      "dataset": "COCO train2017 via Ultralytics COCO128",
+      "dataset_attribution": "Microsoft COCO Consortium; Ultralytics COCO128 packaging",
+      "dataset_license_documentation": "CC BY 4.0 attribution link shown by the Ultralytics COCO128 documentation",
+      "dataset_role": "reference_only",
+      "exposure_status": "fresh_import_exposure_unknown",
+      "family": "airplane",
+      "heldout_claim": false,
+      "id": "coco-capability-20260922-000000000081",
+      "member_families": [
+        "airplane"
+      ],
+      "mode": "fresh",
+      "object_count": 1,
+      "object_count_bucket": "one",
+      "original_annotation_classes": [
+        "airplane"
+      ],
+      "per_image_license": null,
+      "per_image_license_status": "unverified_not_provided_in_archive",
+      "primary_family": "airplane",
+      "provenance_urls": [
+        "https://github.com/ultralytics/assets/releases/download/v0.0.0/coco128.zip",
+        "https://docs.ultralytics.com/datasets/detect/coco128",
+        "https://cocodataset.org/#home"
+      ],
+      "reference": "references/000000000081.jpg",
+      "reference_sha256": "9f9dd4dcc774b81fcbb64531eb717859562ff162cf058e12f80c7b4630cbaa6b",
+      "selection_rank": 25,
+      "selection_reason": "greedy rank 25: score=0; new_categories=none; new_object_count_bucket=none; new_primary_family=no",
+      "source_group": "coco128:train2017:000000000081",
+      "source_id": "000000000081",
+      "source_image_url": "https://cocodataset.org/#explore?id=81",
+      "source_reference": "painter/runs/scaled-curriculum-20260921/real-pool/raw/coco128/images/train2017/000000000081.jpg",
+      "source_reference_sha256": "9f9dd4dcc774b81fcbb64531eb717859562ff162cf058e12f80c7b4630cbaa6b",
+      "source_split": "dev",
+      "split": "dev",
+      "teacher_claim": false,
+      "unseen_pretraining_claim": false
+    },
+    {
+      "annotation_classes": [
+        "person",
+        "sports ball",
+        "tennis racket"
+      ],
+      "annotations": [
+        {
+          "class_id": 32,
+          "class_name": "sports ball",
+          "height": 0.0299229,
+          "source_line": 1,
+          "source_text": "32 0.570594 0.514087 0.0190312 0.0299229",
+          "width": 0.0190312,
+          "x_center": 0.570594,
+          "y_center": 0.514087
+        },
+        {
+          "class_id": 0,
+          "class_name": "person",
+          "height": 0.649023,
+          "source_line": 2,
+          "source_text": "0 0.363117 0.497057 0.245766 0.649023",
+          "width": 0.245766,
+          "x_center": 0.363117,
+          "y_center": 0.497057
+        },
+        {
+          "class_id": 38,
+          "class_name": "tennis racket",
+          "height": 0.159614,
+          "source_line": 3,
+          "source_text": "38 0.527227 0.488419 0.126984 0.159614",
+          "width": 0.126984,
+          "x_center": 0.527227,
+          "y_center": 0.488419
+        }
+      ],
+      "dataset": "COCO train2017 via Ultralytics COCO128",
+      "dataset_attribution": "Microsoft COCO Consortium; Ultralytics COCO128 packaging",
+      "dataset_license_documentation": "CC BY 4.0 attribution link shown by the Ultralytics COCO128 documentation",
+      "dataset_role": "reference_only",
+      "exposure_status": "fresh_import_exposure_unknown",
+      "family": "person",
+      "heldout_claim": false,
+      "id": "coco-capability-20260922-000000000431",
+      "member_families": [
+        "person",
+        "sports ball",
+        "tennis racket"
+      ],
+      "mode": "fresh",
+      "object_count": 3,
+      "object_count_bucket": "two_to_four",
+      "original_annotation_classes": [
+        "person",
+        "sports ball",
+        "tennis racket"
+      ],
+      "per_image_license": null,
+      "per_image_license_status": "unverified_not_provided_in_archive",
+      "primary_family": "person",
+      "provenance_urls": [
+        "https://github.com/ultralytics/assets/releases/download/v0.0.0/coco128.zip",
+        "https://docs.ultralytics.com/datasets/detect/coco128",
+        "https://cocodataset.org/#home"
+      ],
+      "reference": "references/000000000431.jpg",
+      "reference_sha256": "1ecf0c6810ad0972f867b0f53f94c03d3398fc6958af4cac60dde350533f7b8c",
+      "selection_rank": 26,
+      "selection_reason": "greedy rank 26: score=0; new_categories=none; new_object_count_bucket=none; new_primary_family=no",
+      "source_group": "coco128:train2017:000000000431",
+      "source_id": "000000000431",
+      "source_image_url": "https://cocodataset.org/#explore?id=431",
+      "source_reference": "painter/runs/scaled-curriculum-20260921/real-pool/raw/coco128/images/train2017/000000000431.jpg",
+      "source_reference_sha256": "1ecf0c6810ad0972f867b0f53f94c03d3398fc6958af4cac60dde350533f7b8c",
+      "source_split": "dev",
+      "split": "dev",
+      "teacher_claim": false,
+      "unseen_pretraining_claim": false
+    },
+    {
+      "annotation_classes": [
+        "clock"
+      ],
+      "annotations": [
+        {
+          "class_id": 74,
+          "class_name": "clock",
+          "height": 0.0884792,
+          "source_line": 1,
+          "source_text": "74 0.520594 0.303323 0.0645625 0.0884792",
+          "width": 0.0645625,
+          "x_center": 0.520594,
+          "y_center": 0.303323
+        },
+        {
+          "class_id": 74,
+          "class_name": "clock",
+          "height": 0.0977292,
+          "source_line": 2,
+          "source_text": "74 0.635297 0.319094 0.032625 0.0977292",
+          "width": 0.032625,
+          "x_center": 0.635297,
+          "y_center": 0.319094
+        }
+      ],
+      "dataset": "COCO train2017 via Ultralytics COCO128",
+      "dataset_attribution": "Microsoft COCO Consortium; Ultralytics COCO128 packaging",
+      "dataset_license_documentation": "CC BY 4.0 attribution link shown by the Ultralytics COCO128 documentation",
+      "dataset_role": "reference_only",
+      "exposure_status": "fresh_import_exposure_unknown",
+      "family": "clock",
+      "heldout_claim": false,
+      "id": "coco-capability-20260922-000000000626",
+      "member_families": [
+        "clock"
+      ],
+      "mode": "fresh",
+      "object_count": 2,
+      "object_count_bucket": "two_to_four",
+      "original_annotation_classes": [
+        "clock"
+      ],
+      "per_image_license": null,
+      "per_image_license_status": "unverified_not_provided_in_archive",
+      "primary_family": "clock",
+      "provenance_urls": [
+        "https://github.com/ultralytics/assets/releases/download/v0.0.0/coco128.zip",
+        "https://docs.ultralytics.com/datasets/detect/coco128",
+        "https://cocodataset.org/#home"
+      ],
+      "reference": "references/000000000626.jpg",
+      "reference_sha256": "47b4a3b3fe24c6b1f77a9d89aa2e5d1a3b410b7ba611f54c252c2e13e975afc8",
+      "selection_rank": 27,
+      "selection_reason": "greedy rank 27: score=0; new_categories=none; new_object_count_bucket=none; new_primary_family=no",
+      "source_group": "coco128:train2017:000000000626",
+      "source_id": "000000000626",
+      "source_image_url": "https://cocodataset.org/#explore?id=626",
+      "source_reference": "painter/runs/scaled-curriculum-20260921/real-pool/raw/coco128/images/train2017/000000000626.jpg",
+      "source_reference_sha256": "47b4a3b3fe24c6b1f77a9d89aa2e5d1a3b410b7ba611f54c252c2e13e975afc8",
+      "source_split": "dev",
+      "split": "dev",
+      "teacher_claim": false,
+      "unseen_pretraining_claim": false
+    },
+    {
+      "annotation_classes": [
+        "person",
+        "skateboard"
+      ],
+      "annotations": [
+        {
+          "class_id": 0,
+          "class_name": "person",
+          "height": 0.328094,
+          "source_line": 1,
+          "source_text": "0 0.474906 0.577531 0.680351 0.328094",
+          "width": 0.680351,
+          "x_center": 0.474906,
+          "y_center": 0.577531
+        },
+        {
+          "class_id": 36,
+          "class_name": "skateboard",
+          "height": 0.0844844,
+          "source_line": 2,
+          "source_text": "36 0.551557 0.739773 0.3774 0.0844844",
+          "width": 0.3774,
+          "x_center": 0.551557,
+          "y_center": 0.739773
+        },
+        {
+          "class_id": 0,
+          "class_name": "person",
+          "height": 0.0480781,
+          "source_line": 3,
+          "source_text": "0 0.37534 0.0495391 0.0507728 0.0480781",
+          "width": 0.0507728,
+          "x_center": 0.37534,
+          "y_center": 0.0495391
+        },
+        {
+          "class_id": 0,
+          "class_name": "person",
+          "height": 0.179375,
+          "source_line": 4,
+          "source_text": "0 0.896546 0.0899062 0.206909 0.179375",
+          "width": 0.206909,
+          "x_center": 0.896546,
+          "y_center": 0.0899062
+        },
+        {
+          "class_id": 0,
+          "class_name": "person",
+          "height": 0.03775,
+          "source_line": 5,
+          "source_text": "0 0.438841 0.0455938 0.0492037 0.03775",
+          "width": 0.0492037,
+          "x_center": 0.438841,
+          "y_center": 0.0455938
+        },
+        {
+          "class_id": 0,
+          "class_name": "person",
+          "height": 0.0446562,
+          "source_line": 6,
+          "source_text": "0 0.212927 0.0824531 0.0598595 0.0446562",
+          "width": 0.0598595,
+          "x_center": 0.212927,
+          "y_center": 0.0824531
+        }
+      ],
+      "dataset": "COCO train2017 via Ultralytics COCO128",
+      "dataset_attribution": "Microsoft COCO Consortium; Ultralytics COCO128 packaging",
+      "dataset_license_documentation": "CC BY 4.0 attribution link shown by the Ultralytics COCO128 documentation",
+      "dataset_role": "reference_only",
+      "exposure_status": "fresh_import_exposure_unknown",
+      "family": "person",
+      "heldout_claim": false,
+      "id": "coco-capability-20260922-000000000634",
+      "member_families": [
+        "person",
+        "skateboard"
+      ],
+      "mode": "fresh",
+      "object_count": 6,
+      "object_count_bucket": "five_to_nine",
+      "original_annotation_classes": [
+        "person",
+        "skateboard"
+      ],
+      "per_image_license": null,
+      "per_image_license_status": "unverified_not_provided_in_archive",
+      "primary_family": "person",
+      "provenance_urls": [
+        "https://github.com/ultralytics/assets/releases/download/v0.0.0/coco128.zip",
+        "https://docs.ultralytics.com/datasets/detect/coco128",
+        "https://cocodataset.org/#home"
+      ],
+      "reference": "references/000000000634.jpg",
+      "reference_sha256": "d769636e9b9d22fa6fd4dcc2e683b2c95a5a9c247b3cc95df7367b1dba52f9bc",
+      "selection_rank": 28,
+      "selection_reason": "greedy rank 28: score=0; new_categories=none; new_object_count_bucket=none; new_primary_family=no",
+      "source_group": "coco128:train2017:000000000634",
+      "source_id": "000000000634",
+      "source_image_url": "https://cocodataset.org/#explore?id=634",
+      "source_reference": "painter/runs/scaled-curriculum-20260921/real-pool/raw/coco128/images/train2017/000000000634.jpg",
+      "source_reference_sha256": "d769636e9b9d22fa6fd4dcc2e683b2c95a5a9c247b3cc95df7367b1dba52f9bc",
+      "source_split": "dev",
+      "split": "dev",
+      "teacher_claim": false,
+      "unseen_pretraining_claim": false
+    }
+  ],
+  "comparison_protocol": {
+    "base": {
+      "adapter": null,
+      "base_model": "Qwen/Qwen3.8-27B",
+      "display_name": "unadapted base",
+      "label": "base",
+      "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+      "served_model": "base"
+    },
+    "context_tokens": 32768,
+    "judge_during_generation": false,
+    "max_tokens_per_turn": 8192,
+    "max_turns": 6,
+    "same_manifest": true,
+    "same_seed": 918200,
+    "samples_per_reference": 1,
+    "sft": {
+      "adapter_prefix": "contract-quality-20260918/step_24",
+      "adapter_repo": "CK0607/qwen3.8-27b-brush-painting",
+      "adapter_weights_sha256": "d10eeb3b7b53fc539aa9d5e71eb98bcfe1c59d6a4878c7a69c93b8b09b59bcfa",
+      "base_model": "Qwen/Qwen3.8-27B",
+      "display_name": "contract-quality-step24",
+      "label": "sft",
+      "revision": "b7103dd9923f19449ccf814f9b67bb2dcfed0909",
+      "served_model": "sft"
+    },
+    "temperature": 1.0,
+    "thinking": false,
+    "training": false
+  },
+  "evaluation_configs": {
+    "base": {
+      "model": "base",
+      "path": "base.toml",
+      "policy_label": "base"
+    },
+    "eval_root": "/root/painter",
+    "sft": {
+      "model": "sft",
+      "path": "sft.toml",
+      "policy_label": "sft"
+    }
+  },
+  "limitations": [
+    "COCO128 is a reference-only development subset; no held-out or unseen-pretraining claim is made.",
+    "Per-image license identity is unverified where the source archive provides no image-level license or creator record.",
+    "A preparation manifest contains no model outputs or quality judgment."
+  ],
+  "mode": "fresh",
+  "run_id": "coco-capability-20260922",
+  "schema": "painter.coco-capability-eval.v1",
+  "selection": {
+    "available_count": 28,
+    "covered_categories": [
+      "airplane",
+      "backpack",
+      "baseball bat",
+      "baseball glove",
+      "bed",
+      "bench",
+      "bicycle",
+      "book",
+      "bowl",
+      "broccoli",
+      "bus",
+      "cake",
+      "car",
+      "carrot",
+      "cat",
+      "chair",
+      "clock",
+      "couch",
+      "cup",
+      "dining table",
+      "frisbee",
+      "giraffe",
+      "handbag",
+      "horse",
+      "knife",
+      "microwave",
+      "orange",
+      "oven",
+      "person",
+      "potted plant",
+      "remote",
+      "sink",
+      "skateboard",
+      "skis",
+      "snowboard",
+      "spoon",
+      "sports ball",
+      "suitcase",
+      "teddy bear",
+      "tennis racket",
+      "tie",
+      "toilet",
+      "toothbrush",
+      "traffic light",
+      "umbrella",
+      "vase"
+    ],
+    "covered_object_count_buckets": [
+      "five_to_nine",
+      "one",
+      "ten_plus",
+      "two_to_four"
+    ],
+    "covered_primary_families": [
+      "airplane",
+      "backpack",
+      "baseball bat",
+      "bed",
+      "bench",
+      "bicycle",
+      "book",
+      "bowl",
+      "cake",
+      "car",
+      "cat",
+      "clock",
+      "cup",
+      "frisbee",
+      "giraffe",
+      "horse",
+      "person",
+      "potted plant",
+      "sink",
+      "toilet"
+    ],
+    "object_count_distribution": {
+      "five_to_nine": 7,
+      "one": 3,
+      "ten_plus": 7,
+      "two_to_four": 11
+    },
+    "rule": "greedy score = 100*new_category_count + 30*new_object_count_bucket + 10*new_primary_family; source_id ascending tie-break",
+    "seed": "coco-capability-20260922",
+    "selected_count": 28,
+    "source_split": "dev"
+  },
+  "source_pool": {
+    "archive_sha256": "61e5e3028863d8ffc3b81d6a514603954889f0edd5e4b44c4ce60b2da99aeb8e",
+    "archive_url": "https://github.com/ultralytics/assets/releases/download/v0.0.0/coco128.zip",
+    "available_dev_count": 28,
+    "dataset": "COCO128",
+    "dataset_attribution": "Microsoft COCO Consortium; Ultralytics COCO128 packaging",
+    "dataset_license_documentation": "CC BY 4.0 attribution link shown by the Ultralytics COCO128 documentation",
+    "docs_url": "https://docs.ultralytics.com/datasets/detect/coco128",
+    "manifest": "painter/runs/scaled-curriculum-20260921/real-pool/reference-manifest.json",
+    "manifest_sha256": "272c7666d918a6265639f8766c882060f0cadc6e181a02df3289d7376c09248a",
+    "per_image_license_status": "unverified_not_provided_in_archive",
+    "train_rows_excluded": 100
+  },
+  "status": "prepared_no_inference"
+}
