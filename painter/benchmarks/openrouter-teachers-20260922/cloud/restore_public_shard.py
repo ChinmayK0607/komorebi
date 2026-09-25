@@ -42,7 +42,7 @@ def main() -> int:
     marker = {"schema": "painter.public-shard-restore.v1", "source_run_id": args.source_run_id,
               "source_archive_sha256": receipt["bundle_sha256"], "source_dataset_commit": receipt["dataset_commit"],
               "restored_episode_files": restored}
-    (root / "restored-source.json").write_text(json.dumps(marker, indent=2, sort_keys=True) + "\n")
+    (root / "restored-public-shard.json").write_text(json.dumps(marker, indent=2, sort_keys=True) + "\n")
     print(json.dumps(marker, sort_keys=True))
     return 0
 
