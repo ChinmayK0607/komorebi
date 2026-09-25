@@ -25,6 +25,8 @@ BRUSH = ROOT / "painter/runs/contract-quality-20260918/source/brush-rl"
 SOURCES = {
     "setup_multiturn_node.sh": RUN / "setup_multiturn_node.sh",
     "launch_multiturn_sft.sh": RUN / "launch_multiturn_sft.sh",
+    "setup_multiturn_eval.sh": RUN / "setup_multiturn_eval.sh",
+    "launch_multiturn_eval.sh": RUN / "launch_multiturn_eval.sh",
     "train_multiturn.py": RUN / "train_multiturn.py",
     "build_multiturn_mix.py": RUN / "build_multiturn_mix.py",
     "bootstrap.sh": PHOTO / "bootstrap.sh",
@@ -36,6 +38,11 @@ SOURCES = {
     "gpu_telemetry.py": PHOTO / "gpu_telemetry.py",
     "summarize_telemetry.py": PHOTO / "summarize_telemetry.py",
     "download_initial_adapter.py": RL / "download_initial_adapter.py",
+    "painter/contract.py": ROOT / "painter/contract.py",
+    "painter/native_painting.py": ROOT / "painter/native_painting.py",
+    "painter/native_painting_eval.py": ROOT / "painter/native_painting_eval.py",
+    "painter/native_painting_renderer.py": ROOT / "painter/native_painting_renderer.py",
+    "painter/eval-prep/eval-manifest.json": PHOTO / "eval-prep/eval-manifest.json",
 }
 
 
@@ -49,6 +56,12 @@ def package(data_dir: Path, reviewed: Path, foundation: Path, foundation_validat
     for item in sorted(BRUSH.rglob("*")):
         if item.is_file() and "__pycache__" not in item.parts and item.suffix != ".pyc":
             files[f"source/brush-rl/{item.relative_to(BRUSH).as_posix()}"] = item
+    for item in sorted((ROOT / "painter/vendor").rglob("*")):
+        if item.is_file() and "__pycache__" not in item.parts and item.suffix != ".pyc":
+            files[f"painter/vendor/{item.relative_to(ROOT / 'painter/vendor').as_posix()}"] = item
+    for item in sorted((PHOTO / "eval-prep/references").iterdir()):
+        if item.is_file():
+            files[f"painter/eval-prep/references/{item.name}"] = item
     files["data-input/reviewed.jsonl"] = reviewed
     files["data-input/foundation.jsonl"] = foundation
     files["data-input/foundation-validation.jsonl"] = foundation_validation
