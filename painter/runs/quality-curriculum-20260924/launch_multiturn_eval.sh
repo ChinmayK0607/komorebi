@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Frozen 28-photo first-paint evaluation; run baseline on GPU 1 during training,
-# then the new adapter on the same GPU after its public final checkpoint exists.
+# Frozen 28-photo two-turn evaluation; compare first paints and their revisions
+# against the same baseline on GPU 1, then evaluate the public final adapter.
 set -Eeuo pipefail
 RUN="$(cd "${1:?usage: launch_multiturn_eval.sh RUN_DIRECTORY baseline|trained}" && pwd -P)"
 POLICY="${2:?choose baseline or trained}"
@@ -60,7 +60,7 @@ export LD_LIBRARY_PATH="$CUDA_HOME/lib:${LD_LIBRARY_PATH:-}"
 "$PY" "$RUN/painter/native_painting_eval.py" \
   --root "$RUN/painter" --manifest "$MANIFEST" --policy-label "multiturn-sft-$POLICY" \
   --model "$POLICY" --output-dir "$EVAL_ROOT/results" --config "$EVAL_ROOT/eval.toml" \
-  --expected-count 28 --max-tokens 8192 --max-turns 1 \
+  --expected-count 28 --max-tokens 8192 --max-turns 2 \
   --rollout-timeout 1800 --context-length 16384 > "$EVAL_ROOT/protocol.json"
 "$PY" - "$EVAL_ROOT/eval.toml" "$PORT" <<'PY'
 import pathlib,sys
@@ -117,7 +117,7 @@ receipt={'schema':'painter.multiturn-matched-eval.v1','status':'completed',
          'adapter_sha256':sha(adapter/'adapter_model.safetensors'),
          'config_sha256':sha(out/'eval.toml'),'started_unix':int(sys.argv[5]),
          'ended_unix':int(sys.argv[6]),'elapsed_seconds':int(sys.argv[6])-int(sys.argv[5]),
-         'case_count':28,'max_turns':1,'quality_scoring':'offline_pairwise',
+         'case_count':28,'max_turns':2,'quality_scoring':'offline_pairwise_per_turn_and_final',
          'invalid_canvases_preserved':True}
 (out/'completion.json').write_text(json.dumps(receipt,indent=2)+'\n')
 print(json.dumps(receipt))
