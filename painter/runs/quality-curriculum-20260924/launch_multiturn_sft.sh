@@ -20,7 +20,7 @@ export PRL_OUTPUT_DIR="$RUN/train-output" WANDB_MODE=disabled TOKENIZERS_PARALLE
 export MIXED_SFT_TRACE="$RUN/batch-shapes.jsonl"
 export OMP_NUM_THREADS="${OMP_NUM_THREADS:-8}"
 [[ -f "$HF_TOKEN_PATH" ]] || { echo 'protected HF upload credential missing' >&2; exit 2; }
-read -r HF_TOKEN < "$HF_TOKEN_PATH"
+HF_TOKEN="$(cat "$HF_TOKEN_PATH")"
 export HF_TOKEN
 [[ -n "$HF_TOKEN" ]] || { echo 'protected HF upload credential empty' >&2; exit 2; }
 

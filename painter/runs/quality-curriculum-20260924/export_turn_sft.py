@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
-"""Export reviewed teacher revisions as state-complete, assistant-only SFT rows.
+"""Export reviewed teacher revisions as visual-state, assistant-only SFT rows.
 
-The pinned Prime trainer supervises *all* assistant messages.  Therefore each
-approved turn is a separate system/user/assistant example: prior attempts and
-render feedback are user context, and only the chosen next sketch is a target.
+The pinned Prime trainer supervises *all* assistant messages. Therefore each
+approved turn is a separate system/user/assistant example: the previous
+rendered canvas and feedback are user context, and only the next complete
+program is an assistant target. Full prior programs can exceed the 16k-token
+limit, so the model learns to revise from pixels rather than copied source.
 """
 
 from __future__ import annotations
@@ -11,12 +13,20 @@ from __future__ import annotations
 import argparse
 import base64
 import hashlib
+import io
 import json
 import sys
 from pathlib import Path
 
+from PIL import Image
+
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from contract import NEXT_VERSION, SYSTEM, identity, paint_target, validate_teacher_program
+
+
+# Two-image correction rows otherwise exceed the pinned 16k processor limit.
+# Resize only the embedded training view; keep source images and their hashes intact.
+MAX_IMAGE_EDGE = 448
 
 
 def sha(data: bytes) -> str:
@@ -28,7 +38,12 @@ def image_part(path: Path) -> dict:
     mime = {".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg"}.get(suffix)
     if not mime:
         raise ValueError(f"unsupported image extension: {path}")
-    return {"type": "image_url", "image_url": {"url": f"data:{mime};base64," + base64.b64encode(path.read_bytes()).decode()}}
+    with Image.open(path) as source:
+        image = source.convert("RGB")
+        image.thumbnail((MAX_IMAGE_EDGE, MAX_IMAGE_EDGE), Image.Resampling.LANCZOS)
+        encoded = io.BytesIO()
+        image.save(encoded, format="PNG", optimize=False)
+    return {"type": "image_url", "image_url": {"url": "data:image/png;base64," + base64.b64encode(encoded.getvalue()).decode()}}
 
 
 def under(root: Path, relative: str) -> Path:
@@ -69,7 +84,6 @@ def make_rows(annotations: Path, references: Path) -> tuple[list[dict], list[dic
             raise ValueError(f"invalid approved turns: {reference_id}")
         previous_valid = None
         previous_history = []
-        last_failed_program = None
         found = set()
         for turn in sorted(episode["turns"], key=lambda item: item["turn"]):
             number = turn["turn"]
@@ -103,15 +117,13 @@ def make_rows(annotations: Path, references: Path) -> tuple[list[dict], list[dic
                 target = paint_target(plan, target_program)
                 content = [{"type": "text", "text": "REFERENCE"}, image_part(reference)]
                 if previous_valid is not None:
-                    old_program, old_canvas = previous_valid
+                    _, old_canvas = previous_valid
                     content.extend([
                         {"type": "text", "text": "CURRENT CANVAS"}, image_part(old_canvas),
-                        {"type": "text", "text": "Current complete program:\n" + old_program.read_text()},
+                        {"type": "text", "text": "Inspect the current rendered canvas and output a complete replacement program."},
                     ])
                 if previous_history:
                     content.append({"type": "text", "text": "Prior turn outcomes (context, not examples to imitate):\n" + "\n".join(previous_history[-6:])})
-                if last_failed_program is not None:
-                    content.append({"type": "text", "text": "Last failed sketch (repair context, never a target):\n" + last_failed_program})
                 feedback = str(receipt.get("request_render_feedback") or "").strip()
                 content.append({"type": "text", "text": (feedback + "\n" if feedback else "") + NEXT_VERSION})
                 ident = f"mimo__{reference_id}__turn_{number:02d}"
@@ -135,9 +147,6 @@ def make_rows(annotations: Path, references: Path) -> tuple[list[dict], list[dic
             previous_history.append(f"Turn {number}: {outcome}")
             if valid:
                 previous_valid = (program, canvas)
-                last_failed_program = None
-            elif receipt.get("program"):
-                last_failed_program = under(evidence, receipt["program"]).read_text()[:24000]
         if found != approved:
             raise ValueError(f"approved turn absent: {reference_id}: {sorted(approved - found)}")
         audit.append({"reference_id": reference_id, "selected_turns": sorted(approved), "all_turns": len(episode["turns"]),
@@ -159,6 +168,7 @@ def main() -> None:
     args.output.write_bytes(raw)
     report = {"schema": "painter.reviewed-turn-sft.v1", "rows": len(rows), "output_sha256": sha(raw),
               "annotations_sha256": sha(args.annotations.read_bytes()), "references_sha256": sha(args.references.read_bytes()),
+              "embedded_image_max_edge": MAX_IMAGE_EDGE,
               "admissions": audit, "loss_target": "last assistant only; previous turns are user context"}
     args.output.with_suffix(".audit.json").write_text(json.dumps(report, indent=2) + "\n")
     print(json.dumps({"rows": len(rows), "sha256": sha(raw), "audit": str(args.output.with_suffix('.audit.json'))}))

@@ -10,7 +10,7 @@ POLICY="${2:?choose baseline or trained}"
 }
 source "$RUN/env.sh"
 export PLAYWRIGHT_BROWSERS_PATH="$RUN/painter/browsers"
-export PYTHONPATH="$RUN${PYTHONPATH:+:$PYTHONPATH}"
+export PYTHONPATH="$RUN/painter:$RUN${PYTHONPATH:+:$PYTHONPATH}"
 export PAINTER_LOCAL_API_KEY=local PAINTER_RENDER_TIMEOUT_SECONDS=180
 export TOKENIZERS_PARALLELISM=false WANDB_MODE=disabled
 PY="$PRIME_ROOT/.venv/bin/python"
