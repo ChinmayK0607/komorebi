@@ -1,0 +1,86 @@
+{
+  "schema": "painter.astra-high-admissions.v1",
+  "reference_manifest_sha256": "206f9ff075b401bde13ad90e284ff00370c4a927e35497ee24ccacf07fa8ce6d",
+  "status": "provisional_parent_correction_screen_nonblind",
+  "selection_policy": "Six visibly improving correction rows. A later turn is never automatically preferred; six weak or marginal revisions are withheld.",
+  "selections": [
+    {
+      "wave": 5,
+      "shard": "refine-j",
+      "reference_id": "coco128-000000000326",
+      "decision": "sft",
+      "admission_tier": "provisional_correction_pilot",
+      "reason": "Visual comparison found a concrete correction in structure or modeling while preserving the reference scene; residual weaknesses remain explicit.",
+      "chosen_weaknesses": [
+        "The wine glass/near arm connection is clearer, but the hand and face remain stylized."
+      ],
+      "prior_feedback": "The previous arm and hand do not convincingly connect to the tilted glass. Rebuild the foreshortened near arm, pinching hand, tilted wine glass and low-key face while retaining the dark background.",
+      "visual_plan": "Repaint the person presenting a tilted wine glass with aligned arm, hand and glass, modeled shirt and restrained dim lighting."
+    },
+    {
+      "wave": 5,
+      "shard": "refine-l",
+      "reference_id": "coco128-000000000536",
+      "decision": "sft",
+      "admission_tier": "provisional_correction_pilot",
+      "reason": "Visual comparison found a concrete correction in structure or modeling while preserving the reference scene; residual weaknesses remain explicit.",
+      "chosen_weaknesses": [
+        "Three women are more distinct, but faces and dress folds remain simplified."
+      ],
+      "prior_feedback": "The three figures have mask-like faces and uncertain shoulder/hand connections. Rebuild distinct seated and standing poses, coherent arms and softer face and fabric modeling.",
+      "visual_plan": "Repaint the three women in dark dresses with individual poses, coherent hands and softer face and garment values."
+    },
+    {
+      "wave": 5,
+      "shard": "refine-m",
+      "reference_id": "coco128-000000000502",
+      "decision": "sft",
+      "admission_tier": "provisional_correction_pilot",
+      "reason": "Visual comparison found a concrete correction in structure or modeling while preserving the reference scene; residual weaknesses remain explicit.",
+      "chosen_weaknesses": [
+        "The black bear gains mass and texture, though the legs and muzzle remain simplified."
+      ],
+      "prior_feedback": "The bear is too narrow and angular against an empty gray field. Restore its broad rounded shoulder, dark chest volume, directional fur and the stony reed setting.",
+      "visual_plan": "Repaint the black bear with bulky form, directional fur, convincing muzzle and layered stones and reeds."
+    },
+    {
+      "wave": 5,
+      "shard": "refine-m",
+      "reference_id": "coco128-000000000623",
+      "decision": "sft",
+      "admission_tier": "provisional_correction_pilot",
+      "reason": "Visual comparison found a concrete correction in structure or modeling while preserving the reference scene; residual weaknesses remain explicit.",
+      "chosen_weaknesses": [
+        "Human face and plush fur have more form, but both are still illustrative."
+      ],
+      "prior_feedback": "The person has a flat mask-like face and the large plush bear is nearly textureless. Model the downcast face and hair, soften cream fur, and connect the padded arm and garment folds.",
+      "visual_plan": "Repaint the person leaning beside the large cream plush bear with modeled face, soft fur and coherent arm and clothing."
+    },
+    {
+      "wave": 5,
+      "shard": "refine-025",
+      "reference_id": "coco128-000000000025",
+      "decision": "sft",
+      "admission_tier": "provisional_correction_pilot",
+      "reason": "Visual comparison found a concrete correction in structure or modeling while preserving the reference scene; residual weaknesses remain explicit.",
+      "chosen_weaknesses": [
+        "Neck and legs improve, while the distant second giraffe remains schematic."
+      ],
+      "prior_feedback": "The primary giraffe has sparse patches, a stiff neck and disconnected leg structure. Add continuous reticulation, a natural browsing head and four slender grounded legs, preserving the distant giraffe.",
+      "visual_plan": "Repaint the tall browsing giraffe in the wooded habitat with continuous neck pattern and coherent body and leg anatomy."
+    },
+    {
+      "wave": 5,
+      "shard": "refine-328",
+      "reference_id": "coco128-000000000328",
+      "decision": "sft",
+      "admission_tier": "provisional_correction_pilot",
+      "reason": "Visual comparison found a concrete correction in structure or modeling while preserving the reference scene; residual weaknesses remain explicit.",
+      "chosen_weaknesses": [
+        "Grayscale and three seated poses improve, but faces and hands are still generic."
+      ],
+      "prior_feedback": "The prior has a green cast, angular seated anatomy and omits the right figure\u2019s raised hand near the cheek. Match the grayscale reference, smooth three seated poses and restore that gesture.",
+      "visual_plan": "Repaint the three uniformed people on a bench in grayscale with coherent seated anatomy and the right person\u2019s hand at the cheek."
+    }
+  ]
+}

@@ -1,0 +1,725 @@
+{
+  "schema": "painter.astra-high-admissions.v1",
+  "reference_manifest_sha256": "206f9ff075b401bde13ad90e284ff00370c4a927e35497ee24ccacf07fa8ce6d",
+  "status": "provisional_parent_screen_nonblind",
+  "selection_policy": "54 visually promising diverse first-paint candidates from 100 valid renders. Selected canvases remain flat and require matched student evaluation; no weak wave5 correction admitted merely for being later.",
+  "selections": [
+    {
+      "wave": 3,
+      "shard": "repair-new-b",
+      "reference_id": "coco128-000000000034",
+      "decision": "sft",
+      "admission_tier": "provisional_diversity_pilot",
+      "reason": "Parent screen found clear subject and reference structure with comparatively restrained artifacts across a diverse scene class; this is a supervised pilot candidate, not a proven quality winner.",
+      "chosen_weaknesses": [
+        "Grazing zebra is well composed; stripe placement is still stylized.",
+        "Overall treatment remains flatter and more graphic than the desired painterly finish."
+      ],
+      "visual_plan": "Paint a zebra grazing in the field from the reference with coherent large shapes, readable spatial relationships, natural color and a restrained painterly finish."
+    },
+    {
+      "wave": 1,
+      "shard": "hard-b",
+      "reference_id": "coco128-000000000064",
+      "decision": "sft",
+      "admission_tier": "provisional_diversity_pilot",
+      "reason": "Parent screen found clear subject and reference structure with comparatively restrained artifacts across a diverse scene class; this is a supervised pilot candidate, not a proven quality winner.",
+      "chosen_weaknesses": [
+        "Street clock is recognizable; background trees and road are too geometric.",
+        "Overall treatment remains flatter and more graphic than the desired painterly finish."
+      ],
+      "visual_plan": "Paint the street clock and receding road from the reference with coherent large shapes, readable spatial relationships, natural color and a restrained painterly finish.",
+      "prior_feedback": "Inspect the current canvas against the reference, then repaint the street clock and receding road as a complete program. Correct misplaced or oversimplified subject geometry, preserve important object relationships, and improve color and edge variation."
+    },
+    {
+      "wave": 2,
+      "shard": "new-a",
+      "reference_id": "coco128-000000000073",
+      "decision": "sft",
+      "admission_tier": "provisional_diversity_pilot",
+      "reason": "Parent screen found clear subject and reference structure with comparatively restrained artifacts across a diverse scene class; this is a supervised pilot candidate, not a proven quality winner.",
+      "chosen_weaknesses": [
+        "Vintage motorcycle mechanics are unusually clear; metal and tires need tonal modeling.",
+        "Overall treatment remains flatter and more graphic than the desired painterly finish."
+      ],
+      "visual_plan": "Paint the vintage motorcycle with legible mechanical form from the reference with coherent large shapes, readable spatial relationships, natural color and a restrained painterly finish."
+    },
+    {
+      "wave": 2,
+      "shard": "new-a",
+      "reference_id": "coco128-000000000092",
+      "decision": "sft",
+      "admission_tier": "provisional_diversity_pilot",
+      "reason": "Parent screen found clear subject and reference structure with comparatively restrained artifacts across a diverse scene class; this is a supervised pilot candidate, not a proven quality winner.",
+      "chosen_weaknesses": [
+        "Cake slice and plate read well; cake layers need less rigid mechanical striping.",
+        "Overall treatment remains flatter and more graphic than the desired painterly finish."
+      ],
+      "visual_plan": "Paint the cake slice and plate from the reference with coherent large shapes, readable spatial relationships, natural color and a restrained painterly finish."
+    },
+    {
+      "wave": 1,
+      "shard": "easy-a",
+      "reference_id": "coco128-000000000151",
+      "decision": "sft",
+      "admission_tier": "provisional_diversity_pilot",
+      "reason": "Parent screen found clear subject and reference structure with comparatively restrained artifacts across a diverse scene class; this is a supervised pilot candidate, not a proven quality winner.",
+      "chosen_weaknesses": [
+        "Forest road composition is coherent; foreground and distant foliage need more value separation.",
+        "Overall treatment remains flatter and more graphic than the desired painterly finish."
+      ],
+      "visual_plan": "Paint the forest road receding through trees from the reference with coherent large shapes, readable spatial relationships, natural color and a restrained painterly finish."
+    },
+    {
+      "wave": 1,
+      "shard": "hard-a",
+      "reference_id": "coco128-000000000164",
+      "decision": "sft",
+      "admission_tier": "provisional_diversity_pilot",
+      "reason": "Parent screen found clear subject and reference structure with comparatively restrained artifacts across a diverse scene class; this is a supervised pilot candidate, not a proven quality winner.",
+      "chosen_weaknesses": [
+        "Kitchen architecture and appliance placement are accurate; surfaces remain flat.",
+        "Overall treatment remains flatter and more graphic than the desired painterly finish."
+      ],
+      "visual_plan": "Paint the kitchen architecture and appliance layout from the reference with coherent large shapes, readable spatial relationships, natural color and a restrained painterly finish.",
+      "prior_feedback": "Inspect the current canvas against the reference, then repaint the kitchen architecture and appliance layout as a complete program. Correct misplaced or oversimplified subject geometry, preserve important object relationships, and improve color and edge variation."
+    },
+    {
+      "wave": 1,
+      "shard": "hard-a",
+      "reference_id": "coco128-000000000196",
+      "decision": "sft",
+      "admission_tier": "provisional_diversity_pilot",
+      "reason": "Parent screen found clear subject and reference structure with comparatively restrained artifacts across a diverse scene class; this is a supervised pilot candidate, not a proven quality winner.",
+      "chosen_weaknesses": [
+        "Many buffet dishes remain distinct and appetizing; serving textures are still schematic.",
+        "Overall treatment remains flatter and more graphic than the desired painterly finish."
+      ],
+      "visual_plan": "Paint the buffet spread with distinct dishes from the reference with coherent large shapes, readable spatial relationships, natural color and a restrained painterly finish."
+    },
+    {
+      "wave": 2,
+      "shard": "new-e",
+      "reference_id": "coco128-000000000247",
+      "decision": "sft",
+      "admission_tier": "provisional_diversity_pilot",
+      "reason": "Parent screen found clear subject and reference structure with comparatively restrained artifacts across a diverse scene class; this is a supervised pilot candidate, not a proven quality winner.",
+      "chosen_weaknesses": [
+        "Propeller aircraft is recognizable; propeller/wing perspective is simplified.",
+        "Overall treatment remains flatter and more graphic than the desired painterly finish."
+      ],
+      "visual_plan": "Paint the propeller aircraft and its wing geometry from the reference with coherent large shapes, readable spatial relationships, natural color and a restrained painterly finish."
+    },
+    {
+      "wave": 1,
+      "shard": "hard-b",
+      "reference_id": "coco128-000000000260",
+      "decision": "sft",
+      "admission_tier": "provisional_diversity_pilot",
+      "reason": "Parent screen found clear subject and reference structure with comparatively restrained artifacts across a diverse scene class; this is a supervised pilot candidate, not a proven quality winner.",
+      "chosen_weaknesses": [
+        "Station platform and figure are readable; scene lacks night lighting nuance.",
+        "Overall treatment remains flatter and more graphic than the desired painterly finish."
+      ],
+      "visual_plan": "Paint the night station platform and traveler from the reference with coherent large shapes, readable spatial relationships, natural color and a restrained painterly finish.",
+      "prior_feedback": "Inspect the current canvas against the reference, then repaint the night station platform and traveler as a complete program. Correct misplaced or oversimplified subject geometry, preserve important object relationships, and improve color and edge variation."
+    },
+    {
+      "wave": 3,
+      "shard": "repair-new-b",
+      "reference_id": "coco128-000000000263",
+      "decision": "sft",
+      "admission_tier": "provisional_diversity_pilot",
+      "reason": "Parent screen found clear subject and reference structure with comparatively restrained artifacts across a diverse scene class; this is a supervised pilot candidate, not a proven quality winner.",
+      "chosen_weaknesses": [
+        "Adult and calf elephants read; trunks and leg overlap need anatomy cleanup.",
+        "Overall treatment remains flatter and more graphic than the desired painterly finish."
+      ],
+      "visual_plan": "Paint the adult elephant and calf from the reference with coherent large shapes, readable spatial relationships, natural color and a restrained painterly finish."
+    },
+    {
+      "wave": 2,
+      "shard": "new-d",
+      "reference_id": "coco128-000000000283",
+      "decision": "sft",
+      "admission_tier": "provisional_diversity_pilot",
+      "reason": "Parent screen found clear subject and reference structure with comparatively restrained artifacts across a diverse scene class; this is a supervised pilot candidate, not a proven quality winner.",
+      "chosen_weaknesses": [
+        "Bottle, wine glass and reflection are strong; chair and glass surfaces are flat.",
+        "Overall treatment remains flatter and more graphic than the desired painterly finish."
+      ],
+      "visual_plan": "Paint the wine bottle, glass and their reflection from the reference with coherent large shapes, readable spatial relationships, natural color and a restrained painterly finish."
+    },
+    {
+      "wave": 2,
+      "shard": "new-d",
+      "reference_id": "coco128-000000000332",
+      "decision": "sft",
+      "admission_tier": "provisional_diversity_pilot",
+      "reason": "Parent screen found clear subject and reference structure with comparatively restrained artifacts across a diverse scene class; this is a supervised pilot candidate, not a proven quality winner.",
+      "chosen_weaknesses": [
+        "Food bowl reads with useful color variation; ingredients need more organic edges.",
+        "Overall treatment remains flatter and more graphic than the desired painterly finish."
+      ],
+      "visual_plan": "Paint the colorful food bowl from the reference with coherent large shapes, readable spatial relationships, natural color and a restrained painterly finish."
+    },
+    {
+      "wave": 2,
+      "shard": "new-e",
+      "reference_id": "coco128-000000000349",
+      "decision": "sft",
+      "admission_tier": "provisional_diversity_pilot",
+      "reason": "Parent screen found clear subject and reference structure with comparatively restrained artifacts across a diverse scene class; this is a supervised pilot candidate, not a proven quality winner.",
+      "chosen_weaknesses": [
+        "Locomotive and carriages read; scene needs depth and material variation.",
+        "Overall treatment remains flatter and more graphic than the desired painterly finish."
+      ],
+      "visual_plan": "Paint the locomotive and carriage line from the reference with coherent large shapes, readable spatial relationships, natural color and a restrained painterly finish."
+    },
+    {
+      "wave": 1,
+      "shard": "hard-a",
+      "reference_id": "coco128-000000000384",
+      "decision": "sft",
+      "admission_tier": "provisional_diversity_pilot",
+      "reason": "Parent screen found clear subject and reference structure with comparatively restrained artifacts across a diverse scene class; this is a supervised pilot candidate, not a proven quality winner.",
+      "chosen_weaknesses": [
+        "Room perspective and furniture are coherent; central light and glass need better texture.",
+        "Overall treatment remains flatter and more graphic than the desired painterly finish."
+      ],
+      "visual_plan": "Paint the room and furniture in perspective from the reference with coherent large shapes, readable spatial relationships, natural color and a restrained painterly finish.",
+      "prior_feedback": "Inspect the current canvas against the reference, then repaint the room and furniture in perspective as a complete program. Correct misplaced or oversimplified subject geometry, preserve important object relationships, and improve color and edge variation."
+    },
+    {
+      "wave": 2,
+      "shard": "new-d",
+      "reference_id": "coco128-000000000450",
+      "decision": "sft",
+      "admission_tier": "provisional_diversity_pilot",
+      "reason": "Parent screen found clear subject and reference structure with comparatively restrained artifacts across a diverse scene class; this is a supervised pilot candidate, not a proven quality winner.",
+      "chosen_weaknesses": [
+        "Pizza shape, tomato and basil are appealing; cheese detail and crust texture can improve.",
+        "Overall treatment remains flatter and more graphic than the desired painterly finish."
+      ],
+      "visual_plan": "Paint the pizza with tomato and basil from the reference with coherent large shapes, readable spatial relationships, natural color and a restrained painterly finish."
+    },
+    {
+      "wave": 2,
+      "shard": "new-a",
+      "reference_id": "coco128-000000000471",
+      "decision": "sft",
+      "admission_tier": "provisional_diversity_pilot",
+      "reason": "Parent screen found clear subject and reference structure with comparatively restrained artifacts across a diverse scene class; this is a supervised pilot candidate, not a proven quality winner.",
+      "chosen_weaknesses": [
+        "Bus silhouette, windows and cast shadow read well; glazing and rounded body need finish.",
+        "Overall treatment remains flatter and more graphic than the desired painterly finish."
+      ],
+      "visual_plan": "Paint the bus, windows and cast shadow from the reference with coherent large shapes, readable spatial relationships, natural color and a restrained painterly finish."
+    },
+    {
+      "wave": 2,
+      "shard": "new-c",
+      "reference_id": "coco128-000000000472",
+      "decision": "sft",
+      "admission_tier": "provisional_diversity_pilot",
+      "reason": "Parent screen found clear subject and reference structure with comparatively restrained artifacts across a diverse scene class; this is a supervised pilot candidate, not a proven quality winner.",
+      "chosen_weaknesses": [
+        "Plane and mangrove inlet read; water mass is large and plain.",
+        "Overall treatment remains flatter and more graphic than the desired painterly finish."
+      ],
+      "visual_plan": "Paint the aircraft over the inlet from the reference with coherent large shapes, readable spatial relationships, natural color and a restrained painterly finish."
+    },
+    {
+      "wave": 2,
+      "shard": "new-c",
+      "reference_id": "coco128-000000000491",
+      "decision": "sft",
+      "admission_tier": "provisional_diversity_pilot",
+      "reason": "Parent screen found clear subject and reference structure with comparatively restrained artifacts across a diverse scene class; this is a supervised pilot candidate, not a proven quality winner.",
+      "chosen_weaknesses": [
+        "White plush bear is expressive; background objects are oversimplified.",
+        "Overall treatment remains flatter and more graphic than the desired painterly finish."
+      ],
+      "visual_plan": "Paint the white plush bear from the reference with coherent large shapes, readable spatial relationships, natural color and a restrained painterly finish."
+    },
+    {
+      "wave": 2,
+      "shard": "new-c",
+      "reference_id": "coco128-000000000605",
+      "decision": "sft",
+      "admission_tier": "provisional_diversity_pilot",
+      "reason": "Parent screen found clear subject and reference structure with comparatively restrained artifacts across a diverse scene class; this is a supervised pilot candidate, not a proven quality winner.",
+      "chosen_weaknesses": [
+        "Coffee, saucer and pastries have appealing composition; wood and ceramic remain outlined.",
+        "Overall treatment remains flatter and more graphic than the desired painterly finish."
+      ],
+      "visual_plan": "Paint coffee, saucer and pastries from the reference with coherent large shapes, readable spatial relationships, natural color and a restrained painterly finish."
+    },
+    {
+      "wave": 2,
+      "shard": "new-c",
+      "reference_id": "coco128-000000000650",
+      "decision": "sft",
+      "admission_tier": "provisional_diversity_pilot",
+      "reason": "Parent screen found clear subject and reference structure with comparatively restrained artifacts across a diverse scene class; this is a supervised pilot candidate, not a proven quality winner.",
+      "chosen_weaknesses": [
+        "Cat-on-car pose is clear with pleasing contrast; fur is schematic.",
+        "Overall treatment remains flatter and more graphic than the desired painterly finish."
+      ],
+      "visual_plan": "Paint the cat resting on a car from the reference with coherent large shapes, readable spatial relationships, natural color and a restrained painterly finish."
+    },
+    {
+      "wave": 4,
+      "shard": "coverage-g",
+      "reference_id": "coco128-000000000036",
+      "decision": "sft",
+      "admission_tier": "provisional_diversity_pilot",
+      "reason": "Parent screen found clear subject and reference structure with comparatively restrained artifacts across a diverse scene class; this is a supervised pilot candidate, not a proven quality winner.",
+      "chosen_weaknesses": [
+        "Umbrella, pose and color read; face and dress are still stylized.",
+        "Overall treatment remains flatter and more graphic than the desired painterly finish."
+      ],
+      "visual_plan": "Paint the woman with the pink umbrella from the reference with coherent large shapes, readable spatial relationships, natural color and a restrained painterly finish."
+    },
+    {
+      "wave": 4,
+      "shard": "coverage-g",
+      "reference_id": "coco128-000000000071",
+      "decision": "sft",
+      "admission_tier": "provisional_diversity_pilot",
+      "reason": "Parent screen found clear subject and reference structure with comparatively restrained artifacts across a diverse scene class; this is a supervised pilot candidate, not a proven quality winner.",
+      "chosen_weaknesses": [
+        "Train, rail curve and skyline are coherent; carriage detail is sparse.",
+        "Overall treatment remains flatter and more graphic than the desired painterly finish."
+      ],
+      "visual_plan": "Paint the curving train and rail yard from the reference with coherent large shapes, readable spatial relationships, natural color and a restrained painterly finish."
+    },
+    {
+      "wave": 4,
+      "shard": "coverage-g",
+      "reference_id": "coco128-000000000074",
+      "decision": "sft",
+      "admission_tier": "provisional_diversity_pilot",
+      "reason": "Parent screen found clear subject and reference structure with comparatively restrained artifacts across a diverse scene class; this is a supervised pilot candidate, not a proven quality winner.",
+      "chosen_weaknesses": [
+        "Sleeping dog and bike establish a clear street scene; fur is mostly a light silhouette.",
+        "Overall treatment remains flatter and more graphic than the desired painterly finish."
+      ],
+      "visual_plan": "Paint the sleeping street dog near the bicycle from the reference with coherent large shapes, readable spatial relationships, natural color and a restrained painterly finish.",
+      "prior_feedback": "Inspect the current canvas against the reference, then repaint the sleeping street dog near the bicycle as a complete program. Correct misplaced or oversimplified subject geometry, preserve important object relationships, and improve color and edge variation."
+    },
+    {
+      "wave": 4,
+      "shard": "coverage-g",
+      "reference_id": "coco128-000000000250",
+      "decision": "sft",
+      "admission_tier": "provisional_diversity_pilot",
+      "reason": "Parent screen found clear subject and reference structure with comparatively restrained artifacts across a diverse scene class; this is a supervised pilot candidate, not a proven quality winner.",
+      "chosen_weaknesses": [
+        "Street signs and tower compose cleanly; lettering and buildings are stylized.",
+        "Overall treatment remains flatter and more graphic than the desired painterly finish."
+      ],
+      "visual_plan": "Paint the street signs and tall building from the reference with coherent large shapes, readable spatial relationships, natural color and a restrained painterly finish."
+    },
+    {
+      "wave": 4,
+      "shard": "coverage-h",
+      "reference_id": "coco128-000000000094",
+      "decision": "sft",
+      "admission_tier": "provisional_diversity_pilot",
+      "reason": "Parent screen found clear subject and reference structure with comparatively restrained artifacts across a diverse scene class; this is a supervised pilot candidate, not a proven quality winner.",
+      "chosen_weaknesses": [
+        "Road perspective and hillside city read; lettering and shop fronts are simplified.",
+        "Overall treatment remains flatter and more graphic than the desired painterly finish."
+      ],
+      "visual_plan": "Paint the hillside road and town from the reference with coherent large shapes, readable spatial relationships, natural color and a restrained painterly finish."
+    },
+    {
+      "wave": 4,
+      "shard": "coverage-h",
+      "reference_id": "coco128-000000000138",
+      "decision": "sft",
+      "admission_tier": "provisional_diversity_pilot",
+      "reason": "Parent screen found clear subject and reference structure with comparatively restrained artifacts across a diverse scene class; this is a supervised pilot candidate, not a proven quality winner.",
+      "chosen_weaknesses": [
+        "Kitchen collage preserves major layout and appliances; detail is diagrammatic.",
+        "Overall treatment remains flatter and more graphic than the desired painterly finish."
+      ],
+      "visual_plan": "Paint the kitchen collage and appliances from the reference with coherent large shapes, readable spatial relationships, natural color and a restrained painterly finish.",
+      "prior_feedback": "Inspect the current canvas against the reference, then repaint the kitchen collage and appliances as a complete program. Correct misplaced or oversimplified subject geometry, preserve important object relationships, and improve color and edge variation."
+    },
+    {
+      "wave": 4,
+      "shard": "coverage-h",
+      "reference_id": "coco128-000000000142",
+      "decision": "sft",
+      "admission_tier": "provisional_diversity_pilot",
+      "reason": "Parent screen found clear subject and reference structure with comparatively restrained artifacts across a diverse scene class; this is a supervised pilot candidate, not a proven quality winner.",
+      "chosen_weaknesses": [
+        "Banana toast and cartons remain identifiable; packaging typography is approximate.",
+        "Overall treatment remains flatter and more graphic than the desired painterly finish."
+      ],
+      "visual_plan": "Paint banana toast with cartons behind it from the reference with coherent large shapes, readable spatial relationships, natural color and a restrained painterly finish."
+    },
+    {
+      "wave": 4,
+      "shard": "coverage-h",
+      "reference_id": "coco128-000000000312",
+      "decision": "sft",
+      "admission_tier": "provisional_diversity_pilot",
+      "reason": "Parent screen found clear subject and reference structure with comparatively restrained artifacts across a diverse scene class; this is a supervised pilot candidate, not a proven quality winner.",
+      "chosen_weaknesses": [
+        "Elephant group reads with mother and calf; trunks and legs need refinement.",
+        "Overall treatment remains flatter and more graphic than the desired painterly finish."
+      ],
+      "visual_plan": "Paint the elephant herd with calf from the reference with coherent large shapes, readable spatial relationships, natural color and a restrained painterly finish."
+    },
+    {
+      "wave": 4,
+      "shard": "coverage-i",
+      "reference_id": "coco128-000000000144",
+      "decision": "sft",
+      "admission_tier": "provisional_diversity_pilot",
+      "reason": "Parent screen found clear subject and reference structure with comparatively restrained artifacts across a diverse scene class; this is a supervised pilot candidate, not a proven quality winner.",
+      "chosen_weaknesses": [
+        "Overlapping giraffes and habitat read; anatomy and spot pattern are stylized.",
+        "Overall treatment remains flatter and more graphic than the desired painterly finish."
+      ],
+      "visual_plan": "Paint overlapping giraffes at the enclosure from the reference with coherent large shapes, readable spatial relationships, natural color and a restrained painterly finish."
+    },
+    {
+      "wave": 4,
+      "shard": "coverage-i",
+      "reference_id": "coco128-000000000149",
+      "decision": "sft",
+      "admission_tier": "provisional_diversity_pilot",
+      "reason": "Parent screen found clear subject and reference structure with comparatively restrained artifacts across a diverse scene class; this is a supervised pilot candidate, not a proven quality winner.",
+      "chosen_weaknesses": [
+        "Open kite field and layered sky have calm composition; tiny people lack form.",
+        "Overall treatment remains flatter and more graphic than the desired painterly finish."
+      ],
+      "visual_plan": "Paint the open kite field and sky from the reference with coherent large shapes, readable spatial relationships, natural color and a restrained painterly finish.",
+      "prior_feedback": "Inspect the current canvas against the reference, then repaint the open kite field and sky as a complete program. Correct misplaced or oversimplified subject geometry, preserve important object relationships, and improve color and edge variation."
+    },
+    {
+      "wave": 4,
+      "shard": "coverage-i",
+      "reference_id": "coco128-000000000154",
+      "decision": "sft",
+      "admission_tier": "provisional_diversity_pilot",
+      "reason": "Parent screen found clear subject and reference structure with comparatively restrained artifacts across a diverse scene class; this is a supervised pilot candidate, not a proven quality winner.",
+      "chosen_weaknesses": [
+        "Three zebra scale and stripe direction are clear; grass is flat.",
+        "Overall treatment remains flatter and more graphic than the desired painterly finish."
+      ],
+      "visual_plan": "Paint three zebras at staggered depths from the reference with coherent large shapes, readable spatial relationships, natural color and a restrained painterly finish."
+    },
+    {
+      "wave": 4,
+      "shard": "coverage-i",
+      "reference_id": "coco128-000000000338",
+      "decision": "sft",
+      "admission_tier": "provisional_diversity_pilot",
+      "reason": "Parent screen found clear subject and reference structure with comparatively restrained artifacts across a diverse scene class; this is a supervised pilot candidate, not a proven quality winner.",
+      "chosen_weaknesses": [
+        "Long kitchen depth and figures are coherent; faces and surfaces are simplified.",
+        "Overall treatment remains flatter and more graphic than the desired painterly finish."
+      ],
+      "visual_plan": "Paint the long commercial kitchen from the reference with coherent large shapes, readable spatial relationships, natural color and a restrained painterly finish."
+    },
+    {
+      "wave": 4,
+      "shard": "coverage-i",
+      "reference_id": "coco128-000000000394",
+      "decision": "sft",
+      "admission_tier": "provisional_diversity_pilot",
+      "reason": "Parent screen found clear subject and reference structure with comparatively restrained artifacts across a diverse scene class; this is a supervised pilot candidate, not a proven quality winner.",
+      "chosen_weaknesses": [
+        "White dog and purple disc are immediately legible; paws and fur are schematic.",
+        "Overall treatment remains flatter and more graphic than the desired painterly finish."
+      ],
+      "visual_plan": "Paint the white dog carrying a purple disc from the reference with coherent large shapes, readable spatial relationships, natural color and a restrained painterly finish."
+    },
+    {
+      "wave": 4,
+      "shard": "coverage-j",
+      "reference_id": "coco128-000000000194",
+      "decision": "sft",
+      "admission_tier": "provisional_diversity_pilot",
+      "reason": "Parent screen found clear subject and reference structure with comparatively restrained artifacts across a diverse scene class; this is a supervised pilot candidate, not a proven quality winner.",
+      "chosen_weaknesses": [
+        "Pizza toppings and plate are attractive; food texture is graphic.",
+        "Overall treatment remains flatter and more graphic than the desired painterly finish."
+      ],
+      "visual_plan": "Paint the topped pizza on a plate from the reference with coherent large shapes, readable spatial relationships, natural color and a restrained painterly finish."
+    },
+    {
+      "wave": 4,
+      "shard": "coverage-j",
+      "reference_id": "coco128-000000000321",
+      "decision": "sft",
+      "admission_tier": "provisional_diversity_pilot",
+      "reason": "Parent screen found clear subject and reference structure with comparatively restrained artifacts across a diverse scene class; this is a supervised pilot candidate, not a proven quality winner.",
+      "chosen_weaknesses": [
+        "Two sandwiches and takeaway trays are distinct; fillings need more texture.",
+        "Overall treatment remains flatter and more graphic than the desired painterly finish."
+      ],
+      "visual_plan": "Paint two distinct takeaway sandwiches from the reference with coherent large shapes, readable spatial relationships, natural color and a restrained painterly finish.",
+      "prior_feedback": "Inspect the current canvas against the reference, then repaint two distinct takeaway sandwiches as a complete program. Correct misplaced or oversimplified subject geometry, preserve important object relationships, and improve color and edge variation."
+    },
+    {
+      "wave": 4,
+      "shard": "coverage-j",
+      "reference_id": "coco128-000000000397",
+      "decision": "sft",
+      "admission_tier": "provisional_diversity_pilot",
+      "reason": "Parent screen found clear subject and reference structure with comparatively restrained artifacts across a diverse scene class; this is a supervised pilot candidate, not a proven quality winner.",
+      "chosen_weaknesses": [
+        "Pizza has appetizing color and readable toppings; crust is too even.",
+        "Overall treatment remains flatter and more graphic than the desired painterly finish."
+      ],
+      "visual_plan": "Paint the large restaurant pizza from the reference with coherent large shapes, readable spatial relationships, natural color and a restrained painterly finish."
+    },
+    {
+      "wave": 4,
+      "shard": "coverage-j",
+      "reference_id": "coco128-000000000400",
+      "decision": "sft",
+      "admission_tier": "provisional_diversity_pilot",
+      "reason": "Parent screen found clear subject and reference structure with comparatively restrained artifacts across a diverse scene class; this is a supervised pilot candidate, not a proven quality winner.",
+      "chosen_weaknesses": [
+        "Pontoon boat and cabin are legible; wake and hull are flat.",
+        "Overall treatment remains flatter and more graphic than the desired painterly finish."
+      ],
+      "visual_plan": "Paint the pontoon boat and cabin from the reference with coherent large shapes, readable spatial relationships, natural color and a restrained painterly finish."
+    },
+    {
+      "wave": 4,
+      "shard": "coverage-j",
+      "reference_id": "coco128-000000000404",
+      "decision": "sft",
+      "admission_tier": "provisional_diversity_pilot",
+      "reason": "Parent screen found clear subject and reference structure with comparatively restrained artifacts across a diverse scene class; this is a supervised pilot candidate, not a proven quality winner.",
+      "chosen_weaknesses": [
+        "Moored boats and bay have pleasing light and shape; rigging is sparse.",
+        "Overall treatment remains flatter and more graphic than the desired painterly finish."
+      ],
+      "visual_plan": "Paint the moored boats on blue water from the reference with coherent large shapes, readable spatial relationships, natural color and a restrained painterly finish."
+    },
+    {
+      "wave": 4,
+      "shard": "coverage-k",
+      "reference_id": "coco128-000000000360",
+      "decision": "sft",
+      "admission_tier": "provisional_diversity_pilot",
+      "reason": "Parent screen found clear subject and reference structure with comparatively restrained artifacts across a diverse scene class; this is a supervised pilot candidate, not a proven quality winner.",
+      "chosen_weaknesses": [
+        "Snowboard jump is legible against pale slope; body gesture is simplified.",
+        "Overall treatment remains flatter and more graphic than the desired painterly finish."
+      ],
+      "visual_plan": "Paint the snowboarder mid-jump from the reference with coherent large shapes, readable spatial relationships, natural color and a restrained painterly finish.",
+      "prior_feedback": "Inspect the current canvas against the reference, then repaint the snowboarder mid-jump as a complete program. Correct misplaced or oversimplified subject geometry, preserve important object relationships, and improve color and edge variation."
+    },
+    {
+      "wave": 4,
+      "shard": "coverage-k",
+      "reference_id": "coco128-000000000387",
+      "decision": "sft",
+      "admission_tier": "provisional_diversity_pilot",
+      "reason": "Parent screen found clear subject and reference structure with comparatively restrained artifacts across a diverse scene class; this is a supervised pilot candidate, not a proven quality winner.",
+      "chosen_weaknesses": [
+        "Laptop and small screen preserve layout; reflective material is schematic.",
+        "Overall treatment remains flatter and more graphic than the desired painterly finish."
+      ],
+      "visual_plan": "Paint the laptop and its small display from the reference with coherent large shapes, readable spatial relationships, natural color and a restrained painterly finish.",
+      "prior_feedback": "Inspect the current canvas against the reference, then repaint the laptop and its small display as a complete program. Correct misplaced or oversimplified subject geometry, preserve important object relationships, and improve color and edge variation."
+    },
+    {
+      "wave": 4,
+      "shard": "coverage-k",
+      "reference_id": "coco128-000000000486",
+      "decision": "sft",
+      "admission_tier": "provisional_diversity_pilot",
+      "reason": "Parent screen found clear subject and reference structure with comparatively restrained artifacts across a diverse scene class; this is a supervised pilot candidate, not a proven quality winner.",
+      "chosen_weaknesses": [
+        "Commercial kitchen geometry and counter depth are coherent; texture is flat.",
+        "Overall treatment remains flatter and more graphic than the desired painterly finish."
+      ],
+      "visual_plan": "Paint the commercial kitchen counter from the reference with coherent large shapes, readable spatial relationships, natural color and a restrained painterly finish."
+    },
+    {
+      "wave": 4,
+      "shard": "coverage-k",
+      "reference_id": "coco128-000000000508",
+      "decision": "sft",
+      "admission_tier": "provisional_diversity_pilot",
+      "reason": "Parent screen found clear subject and reference structure with comparatively restrained artifacts across a diverse scene class; this is a supervised pilot candidate, not a proven quality winner.",
+      "chosen_weaknesses": [
+        "Snow mountain values and layered distance are pleasing; terrain edges are too clean.",
+        "Overall treatment remains flatter and more graphic than the desired painterly finish."
+      ],
+      "visual_plan": "Paint the layered snowy mountains from the reference with coherent large shapes, readable spatial relationships, natural color and a restrained painterly finish."
+    },
+    {
+      "wave": 4,
+      "shard": "coverage-k",
+      "reference_id": "coco128-000000000520",
+      "decision": "sft",
+      "admission_tier": "provisional_diversity_pilot",
+      "reason": "Parent screen found clear subject and reference structure with comparatively restrained artifacts across a diverse scene class; this is a supervised pilot candidate, not a proven quality winner.",
+      "chosen_weaknesses": [
+        "Birds, harbor and dramatic sky read; cloud texture is reduced to bands.",
+        "Overall treatment remains flatter and more graphic than the desired painterly finish."
+      ],
+      "visual_plan": "Paint birds over the harbor in dramatic light from the reference with coherent large shapes, readable spatial relationships, natural color and a restrained painterly finish."
+    },
+    {
+      "wave": 4,
+      "shard": "coverage-l",
+      "reference_id": "coco128-000000000438",
+      "decision": "sft",
+      "admission_tier": "provisional_diversity_pilot",
+      "reason": "Parent screen found clear subject and reference structure with comparatively restrained artifacts across a diverse scene class; this is a supervised pilot candidate, not a proven quality winner.",
+      "chosen_weaknesses": [
+        "Pastry assortment and box structure are clear; surfaces are mechanically smooth.",
+        "Overall treatment remains flatter and more graphic than the desired painterly finish."
+      ],
+      "visual_plan": "Paint the assorted pastries in a box from the reference with coherent large shapes, readable spatial relationships, natural color and a restrained painterly finish.",
+      "prior_feedback": "Inspect the current canvas against the reference, then repaint the assorted pastries in a box as a complete program. Correct misplaced or oversimplified subject geometry, preserve important object relationships, and improve color and edge variation."
+    },
+    {
+      "wave": 4,
+      "shard": "coverage-l",
+      "reference_id": "coco128-000000000532",
+      "decision": "sft",
+      "admission_tier": "provisional_diversity_pilot",
+      "reason": "Parent screen found clear subject and reference structure with comparatively restrained artifacts across a diverse scene class; this is a supervised pilot candidate, not a proven quality winner.",
+      "chosen_weaknesses": [
+        "Red school bus silhouette and front are strong; people are generic.",
+        "Overall treatment remains flatter and more graphic than the desired painterly finish."
+      ],
+      "visual_plan": "Paint the red school bus from the reference with coherent large shapes, readable spatial relationships, natural color and a restrained painterly finish."
+    },
+    {
+      "wave": 4,
+      "shard": "coverage-l",
+      "reference_id": "coco128-000000000544",
+      "decision": "sft",
+      "admission_tier": "provisional_diversity_pilot",
+      "reason": "Parent screen found clear subject and reference structure with comparatively restrained artifacts across a diverse scene class; this is a supervised pilot candidate, not a proven quality winner.",
+      "chosen_weaknesses": [
+        "Stadium and baseball action remain clear despite simplified crowd.",
+        "Overall treatment remains flatter and more graphic than the desired painterly finish."
+      ],
+      "visual_plan": "Paint the baseball action and crowded stadium from the reference with coherent large shapes, readable spatial relationships, natural color and a restrained painterly finish."
+    },
+    {
+      "wave": 4,
+      "shard": "coverage-m",
+      "reference_id": "coco128-000000000490",
+      "decision": "sft",
+      "admission_tier": "provisional_diversity_pilot",
+      "reason": "Parent screen found clear subject and reference structure with comparatively restrained artifacts across a diverse scene class; this is a supervised pilot candidate, not a proven quality winner.",
+      "chosen_weaknesses": [
+        "Dog, shadow and skateboard are identifiable; fur and skateboard depth are simple.",
+        "Overall treatment remains flatter and more graphic than the desired painterly finish."
+      ],
+      "visual_plan": "Paint the dog, its shadow and the skateboard from the reference with coherent large shapes, readable spatial relationships, natural color and a restrained painterly finish."
+    },
+    {
+      "wave": 4,
+      "shard": "coverage-m",
+      "reference_id": "coco128-000000000514",
+      "decision": "sft",
+      "admission_tier": "provisional_diversity_pilot",
+      "reason": "Parent screen found clear subject and reference structure with comparatively restrained artifacts across a diverse scene class; this is a supervised pilot candidate, not a proven quality winner.",
+      "chosen_weaknesses": [
+        "Room perspective and drapery are recognizable; material texture is limited.",
+        "Overall treatment remains flatter and more graphic than the desired painterly finish."
+      ],
+      "visual_plan": "Paint the softly lit room and drapery from the reference with coherent large shapes, readable spatial relationships, natural color and a restrained painterly finish."
+    },
+    {
+      "wave": 4,
+      "shard": "coverage-m",
+      "reference_id": "coco128-000000000569",
+      "decision": "sft",
+      "admission_tier": "provisional_diversity_pilot",
+      "reason": "Parent screen found clear subject and reference structure with comparatively restrained artifacts across a diverse scene class; this is a supervised pilot candidate, not a proven quality winner.",
+      "chosen_weaknesses": [
+        "Geometric flowerbeds and plaza perspective are clear; foliage is dotted.",
+        "Overall treatment remains flatter and more graphic than the desired painterly finish."
+      ],
+      "visual_plan": "Paint the colorful geometric flowerbeds from the reference with coherent large shapes, readable spatial relationships, natural color and a restrained painterly finish."
+    },
+    {
+      "wave": 4,
+      "shard": "coverage-m",
+      "reference_id": "coco128-000000000597",
+      "decision": "sft",
+      "admission_tier": "provisional_diversity_pilot",
+      "reason": "Parent screen found clear subject and reference structure with comparatively restrained artifacts across a diverse scene class; this is a supervised pilot candidate, not a proven quality winner.",
+      "chosen_weaknesses": [
+        "Elephant herd and savanna read; individual bodies blend together.",
+        "Overall treatment remains flatter and more graphic than the desired painterly finish."
+      ],
+      "visual_plan": "Paint the elephant herd on the savanna from the reference with coherent large shapes, readable spatial relationships, natural color and a restrained painterly finish."
+    },
+    {
+      "wave": 4,
+      "shard": "coverage-n",
+      "reference_id": "coco128-000000000531",
+      "decision": "sft",
+      "admission_tier": "provisional_diversity_pilot",
+      "reason": "Parent screen found clear subject and reference structure with comparatively restrained artifacts across a diverse scene class; this is a supervised pilot candidate, not a proven quality winner.",
+      "chosen_weaknesses": [
+        "Tennis court, players and long shadows preserve scene structure; figures are tiny.",
+        "Overall treatment remains flatter and more graphic than the desired painterly finish."
+      ],
+      "visual_plan": "Paint the tennis court with long shadows from the reference with coherent large shapes, readable spatial relationships, natural color and a restrained painterly finish.",
+      "prior_feedback": "Inspect the current canvas against the reference, then repaint the tennis court with long shadows as a complete program. Correct misplaced or oversimplified subject geometry, preserve important object relationships, and improve color and edge variation."
+    },
+    {
+      "wave": 4,
+      "shard": "coverage-n",
+      "reference_id": "coco128-000000000540",
+      "decision": "sft",
+      "admission_tier": "provisional_diversity_pilot",
+      "reason": "Parent screen found clear subject and reference structure with comparatively restrained artifacts across a diverse scene class; this is a supervised pilot candidate, not a proven quality winner.",
+      "chosen_weaknesses": [
+        "Airport road, aircraft and skyline are clear; road network is diagrammatic.",
+        "Overall treatment remains flatter and more graphic than the desired painterly finish."
+      ],
+      "visual_plan": "Paint the aircraft beside the airport roads from the reference with coherent large shapes, readable spatial relationships, natural color and a restrained painterly finish.",
+      "prior_feedback": "Inspect the current canvas against the reference, then repaint the aircraft beside the airport roads as a complete program. Correct misplaced or oversimplified subject geometry, preserve important object relationships, and improve color and edge variation."
+    },
+    {
+      "wave": 4,
+      "shard": "coverage-n",
+      "reference_id": "coco128-000000000590",
+      "decision": "sft",
+      "admission_tier": "provisional_diversity_pilot",
+      "reason": "Parent screen found clear subject and reference structure with comparatively restrained artifacts across a diverse scene class; this is a supervised pilot candidate, not a proven quality winner.",
+      "chosen_weaknesses": [
+        "Bathroom geometry and wall pattern are faithful; values are very pale.",
+        "Overall treatment remains flatter and more graphic than the desired painterly finish."
+      ],
+      "visual_plan": "Paint the bright patterned bathroom from the reference with coherent large shapes, readable spatial relationships, natural color and a restrained painterly finish.",
+      "prior_feedback": "Inspect the current canvas against the reference, then repaint the bright patterned bathroom as a complete program. Correct misplaced or oversimplified subject geometry, preserve important object relationships, and improve color and edge variation."
+    },
+    {
+      "wave": 4,
+      "shard": "coverage-n",
+      "reference_id": "coco128-000000000620",
+      "decision": "sft",
+      "admission_tier": "provisional_diversity_pilot",
+      "reason": "Parent screen found clear subject and reference structure with comparatively restrained artifacts across a diverse scene class; this is a supervised pilot candidate, not a proven quality winner.",
+      "chosen_weaknesses": [
+        "Pizza oven and open rack are legible; food has little texture.",
+        "Overall treatment remains flatter and more graphic than the desired painterly finish."
+      ],
+      "visual_plan": "Paint the pizza oven and open rack from the reference with coherent large shapes, readable spatial relationships, natural color and a restrained painterly finish.",
+      "prior_feedback": "Inspect the current canvas against the reference, then repaint the pizza oven and open rack as a complete program. Correct misplaced or oversimplified subject geometry, preserve important object relationships, and improve color and edge variation."
+    }
+  ]
+}

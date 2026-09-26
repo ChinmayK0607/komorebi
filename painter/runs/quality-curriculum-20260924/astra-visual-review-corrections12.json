@@ -1,0 +1,158 @@
+{
+  "schema": "painter.astra-high-parent-correction-review.v1",
+  "status": "provisional_nonblind_pairwise_parent_review",
+  "review_date": "2026-09-26",
+  "reference_manifest_sha256": "206f9ff075b401bde13ad90e284ff00370c4a927e35497ee24ccacf07fa8ce6d",
+  "scope": "12 wave5 revision candidates with actual hash-bound prior Astra canvases",
+  "counts": {
+    "rendered_valid": 12,
+    "improving_correction": 6,
+    "withhold": 6
+  },
+  "rows": [
+    {
+      "reference_id": "coco128-000000000143",
+      "wave": 5,
+      "shard": "refine-new-f",
+      "assessment": "withhold",
+      "chosen_weakness": "Birds are cleaner but still read as featureless oval bodies.",
+      "admitted_to_sft": false,
+      "prior_canvas_sha256": "02ddf494edfea8173e6ee3885e71f82edee197f0e734a9cb5a4f34641a2b0769",
+      "canvas_sha256": "83626f4f092d02a69f340d7b3a264adfd6824f7e7a5ab5a2151c8f261da70859",
+      "render_summary_sha256": "11fc96d1bf10e55477d2f2d95fb465aaa37c42d120843d57252ad0d684a208f9",
+      "review_basis": "Parent visually compared actual reference, hash-bound prior canvas and Linux revision render."
+    },
+    {
+      "reference_id": "coco128-000000000309",
+      "wave": 5,
+      "shard": "refine-new-f",
+      "assessment": "withhold",
+      "chosen_weakness": "Green is less harsh but toy/dog forms and spatial relations remain unclear.",
+      "admitted_to_sft": false,
+      "prior_canvas_sha256": "2ae0e06b77a0f55210d0a2b9d7e2e681bbf1fc9ff35c5c48ffe9568d591788af",
+      "canvas_sha256": "7bb1983b9245bba37005311b9906daad009b0ca126bfa08d5467209acd4a19d3",
+      "render_summary_sha256": "11fc96d1bf10e55477d2f2d95fb465aaa37c42d120843d57252ad0d684a208f9",
+      "review_basis": "Parent visually compared actual reference, hash-bound prior canvas and Linux revision render."
+    },
+    {
+      "reference_id": "coco128-000000000443",
+      "wave": 5,
+      "shard": "refine-hard-b",
+      "assessment": "withhold",
+      "chosen_weakness": "Cat silhouette and hands change only marginally; anatomy remains ambiguous.",
+      "admitted_to_sft": false,
+      "prior_canvas_sha256": "ac5f141cad437cccbf88e066d1da71322c1b118a75bb852f677787e20cbc1ff1",
+      "canvas_sha256": "098bf9ef58e6fa9d52777ae31de64911e38fea7c566c88cf400872c5313c8334",
+      "render_summary_sha256": "29eb02f32a70961f55033698454f19a82696b1fd626effc855eba05622366546",
+      "review_basis": "Parent visually compared actual reference, hash-bound prior canvas and Linux revision render."
+    },
+    {
+      "reference_id": "coco128-000000000042",
+      "wave": 5,
+      "shard": "refine-new-a",
+      "assessment": "withhold",
+      "chosen_weakness": "The new dog becomes a smooth oval and loses the earlier fur cues.",
+      "admitted_to_sft": false,
+      "prior_canvas_sha256": "ae957b1ef01d9e45a46046a1258b05c8d6aac42170777bb332c5138e7e35414e",
+      "canvas_sha256": "ef9398e7970fdedae254f84761288bf0ff59dc2647f998a4f2760a55bb0be9b7",
+      "render_summary_sha256": "0d09effa04d0ab65aeb1f3667a96975f4ee21bcbad1aa5d1ab9ba7ec5dc9e065",
+      "review_basis": "Parent visually compared actual reference, hash-bound prior canvas and Linux revision render."
+    },
+    {
+      "reference_id": "coco128-000000000315",
+      "wave": 5,
+      "shard": "refine-j",
+      "assessment": "withhold",
+      "chosen_weakness": "Lounger density improves slightly, but the beach figures remain stiff and unclear.",
+      "admitted_to_sft": false,
+      "prior_canvas_sha256": "3be518fe6858c00d040c6de56a6ac6ad446d618ff90b6db90d037967aeb6c041",
+      "canvas_sha256": "791d3aa000d0d7dd5f8c9b4e19014f2ed8610279971ce45a11d86b9260866d8c",
+      "render_summary_sha256": "fc723b00d294d64c18b67960d3586b4e2628e263d49f872fb14db9685bf1cdfc",
+      "review_basis": "Parent visually compared actual reference, hash-bound prior canvas and Linux revision render."
+    },
+    {
+      "reference_id": "coco128-000000000326",
+      "wave": 5,
+      "shard": "refine-j",
+      "assessment": "improving_correction",
+      "chosen_weakness": "The wine glass/near arm connection is clearer, but the hand and face remain stylized.",
+      "admitted_to_sft": true,
+      "prior_canvas_sha256": "5c8fef047aab22512f054949bdfb8a4dc893aaee4d8f92530270213abff2804e",
+      "canvas_sha256": "51a78193d7c9da14f910717305d566a7e4f864c3af0ba582b1012892409dd78c",
+      "render_summary_sha256": "fc723b00d294d64c18b67960d3586b4e2628e263d49f872fb14db9685bf1cdfc",
+      "review_basis": "Parent visually compared actual reference, hash-bound prior canvas and Linux revision render."
+    },
+    {
+      "reference_id": "coco128-000000000428",
+      "wave": 5,
+      "shard": "refine-l",
+      "assessment": "withhold",
+      "chosen_weakness": "Head position is corrected but eyes and open mouth still feel unsettling.",
+      "admitted_to_sft": false,
+      "prior_canvas_sha256": "9784669fdf13f0ee1d242eeb6b2a148d8852afd4912e05d2eb58d7f8b217d636",
+      "canvas_sha256": "725d8e1ca717bfd76ff52dacebc1701fd4562f802cebed3806a9a6238bbe50b0",
+      "render_summary_sha256": "211e97997d583e6ff0e0bfd864c514d7b99fbf7f8112448c4ec82edd56a99889",
+      "review_basis": "Parent visually compared actual reference, hash-bound prior canvas and Linux revision render."
+    },
+    {
+      "reference_id": "coco128-000000000536",
+      "wave": 5,
+      "shard": "refine-l",
+      "assessment": "improving_correction",
+      "chosen_weakness": "Three women are more distinct, but faces and dress folds remain simplified.",
+      "admitted_to_sft": true,
+      "prior_canvas_sha256": "df7e4d867a5812dec4e7d2ba5cd1a87724fee96d21060f68c084114b02c80260",
+      "canvas_sha256": "c540e0439bb21c50a918fb8fbf2734f300f814bb8049de06f0ef2b0c1c8d04e2",
+      "render_summary_sha256": "211e97997d583e6ff0e0bfd864c514d7b99fbf7f8112448c4ec82edd56a99889",
+      "review_basis": "Parent visually compared actual reference, hash-bound prior canvas and Linux revision render."
+    },
+    {
+      "reference_id": "coco128-000000000502",
+      "wave": 5,
+      "shard": "refine-m",
+      "assessment": "improving_correction",
+      "chosen_weakness": "The black bear gains mass and texture, though the legs and muzzle remain simplified.",
+      "admitted_to_sft": true,
+      "prior_canvas_sha256": "805635396ade73c840706b109532838d58d0104c65d73e944e3cd421bb7691c3",
+      "canvas_sha256": "1c98a136c44d8949d8798db93319858982cbd3b3892a6cc7ca222bb02df274ce",
+      "render_summary_sha256": "774b8dc9275a660a059ba466f465f8c64fcfa79d7c4fecec5f1f867d49fc4ff6",
+      "review_basis": "Parent visually compared actual reference, hash-bound prior canvas and Linux revision render."
+    },
+    {
+      "reference_id": "coco128-000000000623",
+      "wave": 5,
+      "shard": "refine-m",
+      "assessment": "improving_correction",
+      "chosen_weakness": "Human face and plush fur have more form, but both are still illustrative.",
+      "admitted_to_sft": true,
+      "prior_canvas_sha256": "e0d7e95837e11cde62ad692ddb217b38fc71fbac2e205ec4bf33462432c6f6e4",
+      "canvas_sha256": "27bf728bb9c92a54625a99fff9fb65d69610d6840bdcb63389ef6ccec7326c64",
+      "render_summary_sha256": "774b8dc9275a660a059ba466f465f8c64fcfa79d7c4fecec5f1f867d49fc4ff6",
+      "review_basis": "Parent visually compared actual reference, hash-bound prior canvas and Linux revision render."
+    },
+    {
+      "reference_id": "coco128-000000000025",
+      "wave": 5,
+      "shard": "refine-025",
+      "assessment": "improving_correction",
+      "chosen_weakness": "Neck and legs improve, while the distant second giraffe remains schematic.",
+      "admitted_to_sft": true,
+      "prior_canvas_sha256": "e25ad9b6fde68ea6ff72ef550af92e0304eea88b32c2877428116c92bf2c4124",
+      "canvas_sha256": "e56a839ed8d51e660e7e0dd9026f60bffc8671533cb5f9e804dee98b9fc0b981",
+      "render_summary_sha256": "45fd2abb7fc73b6eff2ce2539aceb105324bd6e754e820ac159df941b788177e",
+      "review_basis": "Parent visually compared actual reference, hash-bound prior canvas and Linux revision render."
+    },
+    {
+      "reference_id": "coco128-000000000328",
+      "wave": 5,
+      "shard": "refine-328",
+      "assessment": "improving_correction",
+      "chosen_weakness": "Grayscale and three seated poses improve, but faces and hands are still generic.",
+      "admitted_to_sft": true,
+      "prior_canvas_sha256": "d231e4fbc322580e3a647ad4a0b2c16997a6083b2d652091e169d93cc28b3eda",
+      "canvas_sha256": "e27789562abcfcc0ff865f36b839deea5cdb0a0b1651e7557bda27030e62a244",
+      "render_summary_sha256": "cd4a0a580f685268e0b02095b7c4e5a55052c8899e907cb8879fe0c5d471c6bd",
+      "review_basis": "Parent visually compared actual reference, hash-bound prior canvas and Linux revision render."
+    }
+  ]
+}
