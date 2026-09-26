@@ -46,7 +46,19 @@ def latest_valid(shard: str, ident: str) -> tuple[Path | None, Path | None, int 
     return canvas, program, turn["turn"]
 
 
-def package(shard: str, wave: int) -> dict:
+def prior_astra(wave: int, shard: str, ident: str) -> tuple[Path, Path, int]:
+    episode = COLLECTED / f"astra-high-wave{wave}-results" / shard / "episodes" / ident
+    status = json.loads((episode / "render-status.json").read_text())
+    if status.get("reference_id") != ident or status.get("valid") is not True:
+        raise ValueError(f"Astra prior is not renderer-valid: {ident}")
+    canvas, program = episode / "turn-01.png", episode / "turn-01.program.js"
+    if sha(canvas) != status["canvas_sha256"] or sha(program) != status["program_sha256"]:
+        raise ValueError(f"Astra prior program/canvas hash mismatch: {ident}")
+    return canvas, program, 1
+
+
+def package(shard: str, wave: int, prior_render_wave: int | None = None,
+            prior_render_shard: str | None = None) -> dict:
     source = COLLECTED / f"astra-high-wave{wave}" / shard
     wave5 = {row["id"]: row for row in json.loads((HERE / "reference-manifest-wave5.json").read_text())["references"]}
     prepared = {row["id"]: row for row in json.loads((HERE / "reference-manifest-astra-100.json").read_text())["references"]}
@@ -73,10 +85,19 @@ def package(shard: str, wave: int) -> dict:
         ref = COLLECTED / "astra-high-100/references" / f"{prepared[ident]['source_id']}.jpg"
         if sha(ref) != prepared[ident]["sha256"]:
             raise ValueError(f"reference hash mismatch: {ident}")
-        canvas, prior_program, prior_turn = latest_valid(wave5[ident]["shard"], ident) if ident in wave5 else (None, None, None)
+        if prior_render_wave is not None:
+            assert prior_render_shard is not None
+            canvas, prior_program, prior_turn = prior_astra(prior_render_wave, prior_render_shard, ident)
+            prior_source = f"astra-high-wave{prior_render_wave}-{prior_render_shard}"
+        elif ident in wave5:
+            canvas, prior_program, prior_turn = latest_valid(wave5[ident]["shard"], ident)
+            prior_source = f"mimo-wave5-{wave5[ident]['shard']}" if canvas else None
+        else:
+            canvas, prior_program, prior_turn, prior_source = None, None, None, None
         row = {"reference_id": ident, "reference_sha256": sha(ref),
                "reference": f"references/{ident}.jpg", "program_sha256": sha(program),
                "program": f"programs/{ident}.js", "prior_turn": prior_turn,
+               "prior_source": prior_source,
                "prior_canvas_sha256": sha(canvas) if canvas else None,
                "prior_canvas": f"prior/{ident}.png" if canvas else None,
                "prior_program_sha256": sha(prior_program) if prior_program else None,
@@ -117,10 +138,17 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("shard", help="safe group name, e.g. easy-a or new-a")
     parser.add_argument("--wave", type=int, default=1)
+    parser.add_argument("--prior-render-wave", type=int)
+    parser.add_argument("--prior-render-shard")
     args = parser.parse_args()
     if not re.fullmatch(r"[a-z][a-z0-9-]{0,31}", args.shard) or not 1 <= args.wave <= 99:
         parser.error("invalid wave or shard")
-    print(json.dumps(package(args.shard, args.wave), sort_keys=True))
+    if (args.prior_render_wave is None) != (args.prior_render_shard is None):
+        parser.error("prior render wave and shard must be supplied together")
+    if args.prior_render_wave is not None and (not 1 <= args.prior_render_wave < args.wave
+            or not re.fullmatch(r"[a-z][a-z0-9-]{0,31}", args.prior_render_shard)):
+        parser.error("invalid prior render identity")
+    print(json.dumps(package(args.shard, args.wave, args.prior_render_wave, args.prior_render_shard), sort_keys=True))
 
 
 if __name__ == "__main__":
