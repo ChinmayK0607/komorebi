@@ -1,0 +1,18 @@
+{
+  "counts": {
+    "brush_paint": 520,
+    "censored": 5,
+    "image_to_image": 310,
+    "no_brush_paint": 75,
+    "pairwise_review_then_correct_if_needed": 520,
+    "regenerate_from_prior": 67,
+    "text_to_image": 290,
+    "translation_rejected_redraw_from_original": 8
+  },
+  "manifest_sha256": "d828f108cf7133a1d1e498437488d390252c644331e0b25c8b38d5bdc53dc613",
+  "row_count": 600,
+  "schema": "painter.teacher600-repair-inventory-summary.v1",
+  "source_audit_sha256": "d12eff623986381b3d7560b8381dfccaa460c91b4410260f0ca915d0ef9858c2",
+  "training_admission": "none_from_this_inventory",
+  "translation_review_sha256": "1a62ad08fb286fc0b0b2422a9544c3000803df2f9a5d1ee37b5750a4cdba0c72"
+}
