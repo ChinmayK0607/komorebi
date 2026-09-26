@@ -1,0 +1,266 @@
+{
+  "schema": "painter.astra-high-parent-visual-review.v1",
+  "status": "provisional_nonblind_review",
+  "review_date": "2026-09-26",
+  "reference_manifest_sha256": "206f9ff075b401bde13ad90e284ff00370c4a927e35497ee24ccacf07fa8ce6d",
+  "scope": "36 distinct valid first paintings after helper-only repair; wave3 refinements excluded",
+  "rubric": "Composition/subject fidelity and beauty, with concrete weakness even for promising candidates. Promising does not mean SFT admission.",
+  "counts": {
+    "promising": 27,
+    "revise": 9
+  },
+  "rows": [
+    {
+      "reference_id": "coco128-000000000025",
+      "assessment": "revise",
+      "chosen_weakness": "Main giraffe reads, but the second animal and spot/form anatomy are weak.",
+      "admitted_to_sft": false,
+      "review_basis": "Parent inspected reference and actual Linux canvas, with prior where available."
+    },
+    {
+      "reference_id": "coco128-000000000034",
+      "assessment": "promising",
+      "chosen_weakness": "Grazing zebra is well composed; stripe placement is still stylized.",
+      "admitted_to_sft": false,
+      "review_basis": "Parent inspected reference and actual Linux canvas, with prior where available."
+    },
+    {
+      "reference_id": "coco128-000000000042",
+      "assessment": "revise",
+      "chosen_weakness": "Dog is only partly recognizable amid shoes; fur and anatomy need separation.",
+      "admitted_to_sft": false,
+      "review_basis": "Parent inspected reference and actual Linux canvas, with prior where available."
+    },
+    {
+      "reference_id": "coco128-000000000064",
+      "assessment": "promising",
+      "chosen_weakness": "Street clock is recognizable; background trees and road are too geometric.",
+      "admitted_to_sft": false,
+      "review_basis": "Parent inspected reference and actual Linux canvas, with prior where available."
+    },
+    {
+      "reference_id": "coco128-000000000073",
+      "assessment": "promising",
+      "chosen_weakness": "Vintage motorcycle mechanics are unusually clear; metal and tires need tonal modeling.",
+      "admitted_to_sft": false,
+      "review_basis": "Parent inspected reference and actual Linux canvas, with prior where available."
+    },
+    {
+      "reference_id": "coco128-000000000086",
+      "assessment": "promising",
+      "chosen_weakness": "Motorcycle and rider read, but faces and metal remain simplified and uniformly edged.",
+      "admitted_to_sft": false,
+      "review_basis": "Parent inspected reference and actual Linux canvas, with prior where available."
+    },
+    {
+      "reference_id": "coco128-000000000092",
+      "assessment": "promising",
+      "chosen_weakness": "Cake slice and plate read well; cake layers need less rigid mechanical striping.",
+      "admitted_to_sft": false,
+      "review_basis": "Parent inspected reference and actual Linux canvas, with prior where available."
+    },
+    {
+      "reference_id": "coco128-000000000109",
+      "assessment": "revise",
+      "chosen_weakness": "Riverside park is mostly a map-like design; people and shore lack form.",
+      "admitted_to_sft": false,
+      "review_basis": "Parent inspected reference and actual Linux canvas, with prior where available."
+    },
+    {
+      "reference_id": "coco128-000000000143",
+      "assessment": "revise",
+      "chosen_weakness": "Birds on branches read as ovals rather than recognizable birds; pose/anatomy need work.",
+      "admitted_to_sft": false,
+      "review_basis": "Parent inspected reference and actual Linux canvas, with prior where available."
+    },
+    {
+      "reference_id": "coco128-000000000151",
+      "assessment": "promising",
+      "chosen_weakness": "Forest road composition is coherent; foreground and distant foliage need more value separation.",
+      "admitted_to_sft": false,
+      "review_basis": "Parent inspected reference and actual Linux canvas, with prior where available."
+    },
+    {
+      "reference_id": "coco128-000000000164",
+      "assessment": "promising",
+      "chosen_weakness": "Kitchen architecture and appliance placement are accurate; surfaces remain flat.",
+      "admitted_to_sft": false,
+      "review_basis": "Parent inspected reference and actual Linux canvas, with prior where available."
+    },
+    {
+      "reference_id": "coco128-000000000196",
+      "assessment": "promising",
+      "chosen_weakness": "Many buffet dishes remain distinct and appetizing; serving textures are still schematic.",
+      "admitted_to_sft": false,
+      "review_basis": "Parent inspected reference and actual Linux canvas, with prior where available."
+    },
+    {
+      "reference_id": "coco128-000000000247",
+      "assessment": "promising",
+      "chosen_weakness": "Propeller aircraft is recognizable; propeller/wing perspective is simplified.",
+      "admitted_to_sft": false,
+      "review_basis": "Parent inspected reference and actual Linux canvas, with prior where available."
+    },
+    {
+      "reference_id": "coco128-000000000260",
+      "assessment": "promising",
+      "chosen_weakness": "Station platform and figure are readable; scene lacks night lighting nuance.",
+      "admitted_to_sft": false,
+      "review_basis": "Parent inspected reference and actual Linux canvas, with prior where available."
+    },
+    {
+      "reference_id": "coco128-000000000263",
+      "assessment": "promising",
+      "chosen_weakness": "Adult and calf elephants read; trunks and leg overlap need anatomy cleanup.",
+      "admitted_to_sft": false,
+      "review_basis": "Parent inspected reference and actual Linux canvas, with prior where available."
+    },
+    {
+      "reference_id": "coco128-000000000283",
+      "assessment": "promising",
+      "chosen_weakness": "Bottle, wine glass and reflection are strong; chair and glass surfaces are flat.",
+      "admitted_to_sft": false,
+      "review_basis": "Parent inspected reference and actual Linux canvas, with prior where available."
+    },
+    {
+      "reference_id": "coco128-000000000307",
+      "assessment": "revise",
+      "chosen_weakness": "Dog remains cartoon-like and too crisp against broad empty grass.",
+      "admitted_to_sft": false,
+      "review_basis": "Parent inspected reference and actual Linux canvas, with prior where available."
+    },
+    {
+      "reference_id": "coco128-000000000309",
+      "assessment": "revise",
+      "chosen_weakness": "Harsh saturated green and weak dog/teddy forms hurt visual quality.",
+      "admitted_to_sft": false,
+      "review_basis": "Parent inspected reference and actual Linux canvas, with prior where available."
+    },
+    {
+      "reference_id": "coco128-000000000328",
+      "assessment": "revise",
+      "chosen_weakness": "Three seated figures are placed correctly, but faces, hands and clothing anatomy are blocky.",
+      "admitted_to_sft": false,
+      "review_basis": "Parent inspected reference and actual Linux canvas, with prior where available."
+    },
+    {
+      "reference_id": "coco128-000000000332",
+      "assessment": "promising",
+      "chosen_weakness": "Food bowl reads with useful color variation; ingredients need more organic edges.",
+      "admitted_to_sft": false,
+      "review_basis": "Parent inspected reference and actual Linux canvas, with prior where available."
+    },
+    {
+      "reference_id": "coco128-000000000349",
+      "assessment": "promising",
+      "chosen_weakness": "Locomotive and carriages read; scene needs depth and material variation.",
+      "admitted_to_sft": false,
+      "review_basis": "Parent inspected reference and actual Linux canvas, with prior where available."
+    },
+    {
+      "reference_id": "coco128-000000000384",
+      "assessment": "promising",
+      "chosen_weakness": "Room perspective and furniture are coherent; central light and glass need better texture.",
+      "admitted_to_sft": false,
+      "review_basis": "Parent inspected reference and actual Linux canvas, with prior where available."
+    },
+    {
+      "reference_id": "coco128-000000000443",
+      "assessment": "revise",
+      "chosen_weakness": "Inverted cat anatomy and surrounding hands are not reliably readable.",
+      "admitted_to_sft": false,
+      "review_basis": "Parent inspected reference and actual Linux canvas, with prior where available."
+    },
+    {
+      "reference_id": "coco128-000000000450",
+      "assessment": "promising",
+      "chosen_weakness": "Pizza shape, tomato and basil are appealing; cheese detail and crust texture can improve.",
+      "admitted_to_sft": false,
+      "review_basis": "Parent inspected reference and actual Linux canvas, with prior where available."
+    },
+    {
+      "reference_id": "coco128-000000000459",
+      "assessment": "promising",
+      "chosen_weakness": "Mirror portrait and camera are well structured; skin modeling and hand need polish.",
+      "admitted_to_sft": false,
+      "review_basis": "Parent inspected reference and actual Linux canvas, with prior where available."
+    },
+    {
+      "reference_id": "coco128-000000000471",
+      "assessment": "promising",
+      "chosen_weakness": "Bus silhouette, windows and cast shadow read well; glazing and rounded body need finish.",
+      "admitted_to_sft": false,
+      "review_basis": "Parent inspected reference and actual Linux canvas, with prior where available."
+    },
+    {
+      "reference_id": "coco128-000000000472",
+      "assessment": "promising",
+      "chosen_weakness": "Plane and mangrove inlet read; water mass is large and plain.",
+      "admitted_to_sft": false,
+      "review_basis": "Parent inspected reference and actual Linux canvas, with prior where available."
+    },
+    {
+      "reference_id": "coco128-000000000491",
+      "assessment": "promising",
+      "chosen_weakness": "White plush bear is expressive; background objects are oversimplified.",
+      "admitted_to_sft": false,
+      "review_basis": "Parent inspected reference and actual Linux canvas, with prior where available."
+    },
+    {
+      "reference_id": "coco128-000000000510",
+      "assessment": "promising",
+      "chosen_weakness": "Seated person and bench are readable; face/hands and fountain need stronger form.",
+      "admitted_to_sft": false,
+      "review_basis": "Parent inspected reference and actual Linux canvas, with prior where available."
+    },
+    {
+      "reference_id": "coco128-000000000529",
+      "assessment": "promising",
+      "chosen_weakness": "Two riders and motorcycle silhouette are clear; hands and faces need anatomy.",
+      "admitted_to_sft": false,
+      "review_basis": "Parent inspected reference and actual Linux canvas, with prior where available."
+    },
+    {
+      "reference_id": "coco128-000000000560",
+      "assessment": "promising",
+      "chosen_weakness": "Bath, stone wall and cabinet read cleanly; tile material needs texture and softer edges.",
+      "admitted_to_sft": false,
+      "review_basis": "Parent inspected reference and actual Linux canvas, with prior where available."
+    },
+    {
+      "reference_id": "coco128-000000000575",
+      "assessment": "revise",
+      "chosen_weakness": "Kitten-shoe interaction is legible but kitten face and limbs need anatomy cleanup.",
+      "admitted_to_sft": false,
+      "review_basis": "Parent inspected reference and actual Linux canvas, with prior where available."
+    },
+    {
+      "reference_id": "coco128-000000000581",
+      "assessment": "promising",
+      "chosen_weakness": "Small dog and stuffed giraffe are playful and legible; faces remain cartoon-like.",
+      "admitted_to_sft": false,
+      "review_basis": "Parent inspected reference and actual Linux canvas, with prior where available."
+    },
+    {
+      "reference_id": "coco128-000000000605",
+      "assessment": "promising",
+      "chosen_weakness": "Coffee, saucer and pastries have appealing composition; wood and ceramic remain outlined.",
+      "admitted_to_sft": false,
+      "review_basis": "Parent inspected reference and actual Linux canvas, with prior where available."
+    },
+    {
+      "reference_id": "coco128-000000000629",
+      "assessment": "promising",
+      "chosen_weakness": "Blue door and motorcycle form a strong composition; motorcycle is underspecified.",
+      "admitted_to_sft": false,
+      "review_basis": "Parent inspected reference and actual Linux canvas, with prior where available."
+    },
+    {
+      "reference_id": "coco128-000000000650",
+      "assessment": "promising",
+      "chosen_weakness": "Cat-on-car pose is clear with pleasing contrast; fur is schematic.",
+      "admitted_to_sft": false,
+      "review_basis": "Parent inspected reference and actual Linux canvas, with prior where available."
+    }
+  ]
+}
