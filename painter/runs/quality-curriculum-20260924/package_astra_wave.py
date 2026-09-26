@@ -28,10 +28,19 @@ def sha(path: Path) -> str:
 
 
 def latest_valid(shard: str, ident: str) -> tuple[Path | None, Path | None, int | None]:
-    episodes = list((WAVE5 / shard / "repaired-n12/episodes").glob(f"*--{ident}--*/episode.json"))
-    if len(episodes) != 1:
-        raise ValueError(f"missing or repeated MiMo episode: {shard} {ident}")
-    episode_file = episodes[0]
+    # Three shards have repaired n12 archives. The easy-b archive only has an
+    # earlier n4 prefix, so most of its assigned references have no prior
+    # canvas at all. Prefer repaired evidence, then the original prefix.
+    episode_file = None
+    for dirname in ("repaired-n12/episodes", "repaired-n4/episodes", "episodes"):
+        episodes = list((WAVE5 / shard / dirname).glob(f"*--{ident}--*/episode.json"))
+        if len(episodes) > 1:
+            raise ValueError(f"repeated MiMo episode: {shard} {ident}")
+        if episodes:
+            episode_file = episodes[0]
+            break
+    if episode_file is None:
+        return None, None, None
     episode = json.loads(episode_file.read_text())
     valid = [turn for turn in episode["turns"] if (turn.get("render") or {}).get("valid") and turn.get("canvas")]
     if not valid:
