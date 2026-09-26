@@ -48,13 +48,19 @@ def request_bytes(url: str, timeout: int = 60) -> bytes:
     raise AssertionError("unreachable")
 
 
-def collect(output: Path, train_per_query: int = 5) -> dict:
+def collect(output: Path, train_per_query: int = 5, queries: tuple[str, ...] = QUERIES) -> dict:
+    existing = output / "reference-pool.json"
+    if existing.exists():
+        old = json.loads(existing.read_text())
+        if (old.get("search_queries") != list(queries)
+                or old.get("train_per_query", 5) != train_per_query):
+            raise ValueError("source-pool output already belongs to a different query selection")
     cache = output / "search-receipts"
     cache.mkdir(parents=True, exist_ok=True)
     seen_ids: set[str] = set()
     seen_titles: set[tuple[str, str]] = set()
     entries = []
-    for index, query in enumerate(QUERIES, 1):
+    for index, query in enumerate(queries, 1):
         params = urlencode({"q": query, "license": "cc0", "page_size": 20, "page": 1})
         url = API + "?" + params
         cache_file = cache / f"{index:02d}.json"
@@ -91,24 +97,27 @@ def collect(output: Path, train_per_query: int = 5) -> dict:
                 "local_reference": f"references/{item['id']}.jpg", "review_status": "unreviewed_source",
                 "search_receipt_sha256": sha(raw),
             })
-        print(f"query {index}/{len(QUERIES)} {query}: {len(accepted)} unique CC0 photos", flush=True)
+        print(f"query {index}/{len(queries)} {query}: {len(accepted)} unique CC0 photos", flush=True)
     manifest = {
         "schema": "painter.openverse-cc0-reference-pool.v1", "api": API,
-        "search_queries": list(QUERIES), "license_filter": "cc0",
+        "search_queries": list(queries), "license_filter": "cc0",
         "train_count": sum(row["split"] == "train" for row in entries),
         "heldout_count": sum(row["split"] == "heldout" for row in entries),
         "entries": entries,
     }
+    if queries != QUERIES or train_per_query != 5:
+        manifest["train_per_query"] = train_per_query
     (output / "reference-pool.json").write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n")
     return manifest
 
 
 def download(manifest: dict, output: Path, count: int) -> dict:
-    by_query: dict[str, list[dict]] = {query: [] for query in QUERIES}
+    queries = manifest["search_queries"]
+    by_query: dict[str, list[dict]] = {query: [] for query in queries}
     for row in manifest["entries"]:
         if row["split"] == "train":
             by_query[row["query"]].append(row)
-    interleaved = [row for offset in range(5) for query in QUERIES
+    interleaved = [row for offset in range(manifest.get("train_per_query", 5)) for query in queries
                    for row in by_query[query][offset:offset + 1]]
     rows = interleaved[:count]
     refs = output / "references"
@@ -135,10 +144,19 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, default=OUT)
     parser.add_argument("--download-count", type=int, default=0)
+    parser.add_argument("--queries-json", type=Path,
+                        help="JSON array of search queries for a separate source pool")
+    parser.add_argument("--train-per-query", type=int, default=5)
     args = parser.parse_args()
-    if not 0 <= args.download_count <= len(QUERIES) * 5:
+    queries = tuple(json.loads(args.queries_json.read_text())) if args.queries_json else QUERIES
+    if (not queries or len(set(queries)) != len(queries)
+            or any(not isinstance(query, str) or not query.strip() for query in queries)):
+        parser.error("queries must be a nonempty array of unique nonempty strings")
+    if not 1 <= args.train_per_query <= 10:
+        parser.error("train-per-query must be 1..10")
+    if not 0 <= args.download_count <= len(queries) * args.train_per_query:
         parser.error("download count exceeds the planned train pool")
-    manifest = collect(args.output)
+    manifest = collect(args.output, args.train_per_query, queries)
     if args.download_count > manifest["train_count"]:
         parser.error("download count exceeds actual train pool")
     if args.download_count:
