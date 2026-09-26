@@ -48,43 +48,64 @@ SOURCES = {
     "painter/eval-prep/eval-manifest.json": PHOTO / "eval-prep/eval-manifest.json",
 }
 
+FIRSTPAINT_SOURCES = {
+    "setup_astra_firstpaint_node.sh": RUN / "setup_astra_firstpaint_node.sh",
+    "launch_astra_firstpaint_sft.sh": RUN / "launch_astra_firstpaint_sft.sh",
+    "launch_astra_firstpaint_eval.sh": RUN / "launch_astra_firstpaint_eval.sh",
+    "run_astra_firstpaint_campaign.sh": RUN / "run_astra_firstpaint_campaign.sh",
+}
+
 
 def digest(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
 
 def package(data_dir: Path, reviewed: Path, foundation: Path, foundation_validation: Path,
-            output: Path, *, source_commit: str) -> dict:
+            output: Path, *, source_commit: str, firstpaint: bool = False) -> dict:
     files = dict(SOURCES)
+    if firstpaint:
+        files.update(FIRSTPAINT_SOURCES)
     for item in sorted(BRUSH.rglob("*")):
         if item.is_file() and "__pycache__" not in item.parts and item.suffix != ".pyc":
             files[f"source/brush-rl/{item.relative_to(BRUSH).as_posix()}"] = item
     for item in sorted((ROOT / "painter/vendor").rglob("*")):
         if item.is_file() and "__pycache__" not in item.parts and item.suffix != ".pyc":
             files[f"painter/vendor/{item.relative_to(ROOT / 'painter/vendor').as_posix()}"] = item
-    for item in sorted((PHOTO / "eval-prep/references").iterdir()):
+    references = PHOTO / "eval-prep/references"
+    if not references.is_dir():
+        references = ROOT.parents[1] / "painter/runs/photo-curriculum-sft-20260922/eval-prep/references"
+    for item in sorted(references.iterdir()):
         if item.is_file():
             files[f"painter/eval-prep/references/{item.name}"] = item
-    files["data-input/reviewed.jsonl"] = reviewed
-    files["data-input/foundation.jsonl"] = foundation
-    files["data-input/foundation-validation.jsonl"] = foundation_validation
-    files["expected-mix-manifest.json"] = data_dir / "mix-manifest.json"
+    if firstpaint:
+        files["data/train.jsonl"] = data_dir / "train.jsonl"
+        files["data/validation.jsonl"] = data_dir / "validation.jsonl"
+        files["data/mix-manifest.json"] = data_dir / "mix-manifest.json"
+    else:
+        files["data-input/reviewed.jsonl"] = reviewed
+        files["data-input/foundation.jsonl"] = foundation
+        files["data-input/foundation-validation.jsonl"] = foundation_validation
+        files["expected-mix-manifest.json"] = data_dir / "mix-manifest.json"
     if any(not source.is_file() or source.is_symlink() for source in files.values()):
         raise ValueError("missing or symlinked package source")
     mix = json.loads((data_dir / "mix-manifest.json").read_text())
     for split in ("train", "validation"):
         if digest((data_dir / f"{split}.jsonl").read_bytes()) != mix["output_sha256"][split]:
             raise ValueError(f"{split} differs from mix manifest")
-    for name, source in (("reviewed", reviewed), ("foundation", foundation),
-                         ("foundation_validation", foundation_validation)):
-        if digest(source.read_bytes()) != mix["input_sha256"][name]:
-            raise ValueError(f"{name} differs from mix manifest")
+    if firstpaint:
+        if mix.get("stage") != "first-paint" or mix.get("optimizer_steps") != 20:
+            raise ValueError("not the reviewed first-paint pilot")
+    else:
+        for name, source in (("reviewed", reviewed), ("foundation", foundation),
+                             ("foundation_validation", foundation_validation)):
+            if digest(source.read_bytes()) != mix["input_sha256"][name]:
+                raise ValueError(f"{name} differs from mix manifest")
     if not source_commit or len(source_commit) != 40:
         raise ValueError("record full reviewed source commit")
     head = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()
     if source_commit != head:
         raise ValueError("source commit differs from current repository HEAD")
-    manifest = {"schema": "painter.multiturn-node-package.v1", "source_commit": source_commit,
+    manifest = {"schema": "painter.astra-firstpaint-node-package.v1" if firstpaint else "painter.multiturn-node-package.v1", "source_commit": source_commit,
                 "model": "Qwen/Qwen3.8-27B", "initializer": "public photo SFT step-512",
                 "credential_policy": "no credentials in archive; protected HF token transferred separately",
                 "files": {name: {"sha256": digest(path.read_bytes()), "bytes": path.stat().st_size} for name, path in files.items()}}
@@ -120,9 +141,11 @@ def main() -> None:
     p.add_argument("--foundation-validation", type=Path, required=True)
     p.add_argument("--output", type=Path, required=True)
     p.add_argument("--source-commit", required=True)
+    p.add_argument("--firstpaint", action="store_true")
     args = p.parse_args()
     print(json.dumps(package(args.data_dir, args.reviewed, args.foundation,
-                             args.foundation_validation, args.output, source_commit=args.source_commit)))
+                             args.foundation_validation, args.output, source_commit=args.source_commit,
+                             firstpaint=args.firstpaint)))
 
 
 if __name__ == "__main__":
