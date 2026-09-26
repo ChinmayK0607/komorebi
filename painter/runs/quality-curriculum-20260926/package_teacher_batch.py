@@ -36,6 +36,23 @@ def read_file(source: Path, relative: str, expected_sha: str | None) -> bytes:
 
 
 def candidates(source: Path, manifest: dict) -> list[dict]:
+    if "entries" in manifest and manifest.get("new_distinct_source_count") == 0:
+        return [{"id": row["id"], "mode": "image_to_image",
+                 "category": "static-repair", "role": "unrendered_alternative_candidate",
+                 "program": row["new_program_path"], "program_sha": row["new_program_sha256"],
+                 "input": row["reference_path"], "input_sha": row["reference_sha256"],
+                 "prompt": row["prompt_path"], "prompt_sha": row["prompt_sha256"],
+                 "baseline_program": row["old_program_path"],
+                 "baseline_program_sha": row["old_program_sha256"],
+                 "baseline_batch": row["source_batch"],
+                 "notes": f"{row['correction']['audit_disposition']}: {row['correction']['correction']}",
+                 "source_url": row["source"].get("source_url"),
+                 "source_metadata": row["source"],
+                 "source_visual_type": row["source"].get("source_visual_type", "photograph"),
+                 "license": {"id": row["source"].get("license_id"),
+                             "name": row["source"].get("license_name", row["source"].get("license")),
+                             "url": row["source"].get("license_url")}}
+                for row in manifest["entries"]]
     if ("items" in manifest and manifest.get("distinct_new_prompts") == 0
             and "parent_audit_sha256" in manifest):
         return [{"id": row["id"], "mode": "text_to_image",
