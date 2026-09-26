@@ -18,7 +18,6 @@ import tarfile
 ROOT = Path(__file__).resolve().parents[3]
 HERE = Path(__file__).resolve().parent
 COLLECTED = ROOT / "painter/collected/quality-curriculum-20260924"
-AGENTS = COLLECTED / "astra-high-wave1"
 WAVE5 = COLLECTED / "mimo-wave5"
 sys.path.insert(0, str(ROOT / "painter"))
 from contract import validate_teacher_program  # noqa: E402
@@ -47,10 +46,9 @@ def latest_valid(shard: str, ident: str) -> tuple[Path | None, Path | None, int 
     return canvas, program, turn["turn"]
 
 
-def package(shard: str) -> dict:
-    source = AGENTS / shard
-    wave5 = {row["id"]: row for row in json.loads((HERE / "reference-manifest-wave5.json").read_text())["references"]
-             if row["shard"] == shard}
+def package(shard: str, wave: int) -> dict:
+    source = COLLECTED / f"astra-high-wave{wave}" / shard
+    wave5 = {row["id"]: row for row in json.loads((HERE / "reference-manifest-wave5.json").read_text())["references"]}
     prepared = {row["id"]: row for row in json.loads((HERE / "reference-manifest-astra-100.json").read_text())["references"]}
     programs = sorted(path for path in source.glob("*.js") if path.is_file())
     if not programs:
@@ -63,17 +61,19 @@ def package(shard: str) -> dict:
         if not match:
             raise ValueError(f"unexpected candidate program filename: {program.name}")
         ident = match.group(1)
-        if ident in seen or ident not in wave5 or ident not in prepared:
-            raise ValueError(f"repeated or wrong-shard reference: {ident}")
+        if ident in seen or ident not in prepared:
+            raise ValueError(f"repeated or non-training reference: {ident}")
+        if wave == 1 and (ident not in wave5 or wave5[ident]["shard"] != shard):
+            raise ValueError(f"wave-1 program is not from its assigned shard: {ident}")
         seen.add(ident)
         code = program.read_text()
         validate_teacher_program(code)
         if len(code) > 250_000 or "loadImage(" in code or "fetch(" in code:
             raise ValueError(f"large or externally sourced program: {ident}")
-        ref = COLLECTED / "astra-high-100/references" / f"{wave5[ident]['source_id']}.jpg"
+        ref = COLLECTED / "astra-high-100/references" / f"{prepared[ident]['source_id']}.jpg"
         if sha(ref) != prepared[ident]["sha256"]:
             raise ValueError(f"reference hash mismatch: {ident}")
-        canvas, prior_program, prior_turn = latest_valid(shard, ident)
+        canvas, prior_program, prior_turn = latest_valid(wave5[ident]["shard"], ident) if ident in wave5 else (None, None, None)
         row = {"reference_id": ident, "reference_sha256": sha(ref),
                "reference": f"references/{ident}.jpg", "program_sha256": sha(program),
                "program": f"programs/{ident}.js", "prior_turn": prior_turn,
@@ -89,7 +89,7 @@ def package(shard: str) -> dict:
     notes = source / "manifest.json"
     if notes.is_file():
         files.append((notes, "agent-notes.json"))
-    manifest = {"schema": "painter.astra-high-wave1-source.v1", "shard": shard,
+    manifest = {"schema": "painter.astra-high-source.v1", "wave": wave, "shard": shard,
                 "teacher_model": "gpt-6-astra", "teacher_reasoning_effort": "high",
                 "count": len(rows), "source_reference_manifest_sha256": sha(HERE / "reference-manifest-astra-100.json"),
                 "agent_notes_sha256": sha(notes) if notes.is_file() else None,
@@ -106,7 +106,7 @@ def package(shard: str) -> dict:
             info = tarfile.TarInfo(arcname)
             info.size, info.mtime, info.mode = len(raw), 0, 0o644
             archive.addfile(info, io.BytesIO(raw))
-    receipt = {"schema": "painter.astra-high-wave1-source-receipt.v1", "shard": shard,
+    receipt = {"schema": "painter.astra-high-source-receipt.v1", "wave": wave, "shard": shard,
                "bundle": str(output), "bundle_sha256": sha(output), "bundle_bytes": output.stat().st_size,
                "count": len(rows), "reference_ids": sorted(seen)}
     (source / "source-receipt.json").write_text(json.dumps(receipt, indent=2, sort_keys=True) + "\n")
@@ -115,9 +115,12 @@ def package(shard: str) -> dict:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("shard", choices=("easy-a", "hard-a", "hard-b"))
+    parser.add_argument("shard", help="safe group name, e.g. easy-a or new-a")
+    parser.add_argument("--wave", type=int, default=1)
     args = parser.parse_args()
-    print(json.dumps(package(args.shard), sort_keys=True))
+    if not re.fullmatch(r"[a-z][a-z0-9-]{0,31}", args.shard) or not 1 <= args.wave <= 99:
+        parser.error("invalid wave or shard")
+    print(json.dumps(package(args.shard, args.wave), sort_keys=True))
 
 
 if __name__ == "__main__":

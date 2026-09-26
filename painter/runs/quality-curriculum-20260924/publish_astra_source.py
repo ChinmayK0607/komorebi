@@ -15,7 +15,7 @@ from huggingface_hub import HfApi
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[2]
-COLLECTED = ROOT / "painter/collected/quality-curriculum-20260924/astra-high-wave1"
+COLLECTED = ROOT / "painter/collected/quality-curriculum-20260924"
 DATASET = "CK0607/komorebi-painter-teachers"
 
 
@@ -28,14 +28,16 @@ def public_bytes(commit: str, path: str) -> bytes:
         return source.read()
 
 
-def publish(shard: str) -> dict:
-    source = COLLECTED / shard
+def publish(shard: str, wave: int) -> dict:
+    source = COLLECTED / f"astra-high-wave{wave}" / shard
     local = json.loads((source / "source-receipt.json").read_text())
+    if local.get("shard") != shard or local.get("wave", 1) != wave:
+        raise ValueError("source receipt wave/shard mismatch")
     archive = Path(local["bundle"])
     raw = archive.read_bytes()
     if sha(raw) != local["bundle_sha256"]:
         raise ValueError("local source bundle hash mismatch")
-    remote_path = f"curricula/astra-high-wave1/{shard}/source.b64.txt"
+    remote_path = f"curricula/astra-high-wave{wave}/{shard}/source.b64.txt"
     encoded = base64.b64encode(raw) + b"\n"
     api = HfApi()
     commit = api.upload_file(path_or_fileobj=io.BytesIO(encoded), path_in_repo=remote_path,
@@ -44,13 +46,13 @@ def publish(shard: str) -> dict:
     public_raw = base64.b64decode(public_bytes(commit.oid, remote_path).strip(), validate=True)
     if sha(public_raw) != local["bundle_sha256"]:
         raise ValueError("anonymous source download failed hash verification")
-    receipt = {"schema": "painter.astra-high-wave1-public-source.v1", "shard": shard,
+    receipt = {"schema": "painter.astra-high-public-source.v1", "wave": wave, "shard": shard,
                "dataset_repo": DATASET, "dataset_commit": commit.oid,
                "bundle_sha256": local["bundle_sha256"], "bundle_bytes": local["bundle_bytes"],
                "bundle_path": remote_path, "count": local["count"],
                "reference_ids": local["reference_ids"], "public_hash_verified": True}
     receipt_raw = (json.dumps(receipt, indent=2, sort_keys=True) + "\n").encode()
-    receipt_path = f"curricula/astra-high-wave1/{shard}/source-receipt.json"
+    receipt_path = f"curricula/astra-high-wave{wave}/{shard}/source-receipt.json"
     receipt_commit = api.upload_file(path_or_fileobj=io.BytesIO(receipt_raw), path_in_repo=receipt_path,
                                      repo_id=DATASET, repo_type="dataset",
                                      commit_message=f"Record verified Astra painter source {shard}")
@@ -62,9 +64,13 @@ def publish(shard: str) -> dict:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("shard", choices=("easy-a", "hard-a", "hard-b"))
+    parser.add_argument("shard", help="safe group name, e.g. easy-a or new-a")
+    parser.add_argument("--wave", type=int, default=1)
     args = parser.parse_args()
-    print(json.dumps(publish(args.shard), sort_keys=True))
+    import re
+    if not re.fullmatch(r"[a-z][a-z0-9-]{0,31}", args.shard) or not 1 <= args.wave <= 99:
+        parser.error("invalid wave or shard")
+    print(json.dumps(publish(args.shard, args.wave), sort_keys=True))
 
 
 if __name__ == "__main__":

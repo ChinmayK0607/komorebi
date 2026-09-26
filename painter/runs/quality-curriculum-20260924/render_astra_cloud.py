@@ -25,7 +25,7 @@ sys.path.insert(0, str(ROOT / "painter/benchmarks/openrouter-teachers-20260922")
 from run import render_program  # noqa: E402
 
 DATASET = "CK0607/komorebi-painter-teachers"
-OUT = ROOT / "painter/collected/quality-curriculum-20260924/astra-high-wave1-cloud"
+OUT = ROOT / "painter/collected/quality-curriculum-20260924"
 
 
 def sha(raw: bytes) -> str:
@@ -37,15 +37,16 @@ def public_bytes(commit: str, path: str) -> bytes:
         return source.read()
 
 
-def stage(shard: str) -> tuple[Path, dict, dict]:
-    receipt_path = f"curricula/astra-high-wave1/{shard}/source-receipt.json"
+def stage(shard: str, wave: int) -> tuple[Path, dict, dict]:
+    receipt_path = f"curricula/astra-high-wave{wave}/{shard}/source-receipt.json"
     receipt = json.loads(public_bytes("main", receipt_path))
-    if receipt.get("shard") != shard or receipt.get("public_hash_verified") is not True:
+    if (receipt.get("shard") != shard or receipt.get("wave", 1) != wave
+            or receipt.get("public_hash_verified") is not True):
         raise ValueError("source receipt is not verified for this shard")
     raw = base64.b64decode(public_bytes(receipt["dataset_commit"], receipt["bundle_path"]).strip(), validate=True)
     if sha(raw) != receipt["bundle_sha256"] or len(raw) != receipt["bundle_bytes"]:
         raise ValueError("source archive hash or byte count mismatch")
-    output = OUT / shard
+    output = OUT / f"astra-high-wave{wave}-cloud" / shard
     if output.exists() and list(output.glob("episodes/*/render-status.json")):
         raise ValueError("prior render evidence exists; use a fresh run directory")
     output.mkdir(parents=True, exist_ok=True)
@@ -63,7 +64,8 @@ def stage(shard: str) -> tuple[Path, dict, dict]:
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_bytes(bundle.extractfile(member).read())
     manifest = json.loads((output / "manifest.json").read_text())
-    if manifest.get("shard") != shard or manifest.get("count") != receipt["count"]:
+    if (manifest.get("shard") != shard or manifest.get("wave", 1) != wave
+            or manifest.get("count") != receipt["count"]):
         raise ValueError("source manifest disagrees with public receipt")
     notes = output / "agent-notes.json"
     if (sha(notes.read_bytes()) if notes.is_file() else None) != manifest.get("agent_notes_sha256"):
@@ -81,14 +83,14 @@ def stage(shard: str) -> tuple[Path, dict, dict]:
     return output, manifest, receipt
 
 
-def render(shard: str, timeout: int) -> dict:
+def render(shard: str, wave: int, timeout: int) -> dict:
     runtime = ROOT / ".painter-cloud-runtime"
     python = runtime / "renderer-env/bin/python"
     browser = runtime / "browsers"
     renderer = ROOT / "painter/vendor/integrations/watercolour/renderer.py"
     if sys.platform != "linux" or not python.is_file() or not browser.is_dir():
         raise RuntimeError("Codex Cloud Linux renderer setup is required")
-    output, manifest, receipt = stage(shard)
+    output, manifest, receipt = stage(shard, wave)
     statuses = []
     for index, row in enumerate(manifest["rows"], 1):
         ident = row["reference_id"]
@@ -113,7 +115,7 @@ def render(shard: str, timeout: int) -> dict:
         (episode / "render-status.json").write_text(json.dumps(status, indent=2, sort_keys=True) + "\n")
         statuses.append(status)
         print(json.dumps({"progress": f"{index}/{manifest['count']}", **status}, sort_keys=True), flush=True)
-    summary = {"schema": "painter.astra-high-wave1-render.v1", "shard": shard,
+    summary = {"schema": "painter.astra-high-render.v1", "wave": wave, "shard": shard,
                "source_commit": subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip(),
                "source_bundle_sha256": receipt["bundle_sha256"], "source_dataset_commit": receipt["dataset_commit"],
                "renderer_sha256": sha(renderer.read_bytes()), "timeout_seconds": timeout,
@@ -128,13 +130,17 @@ def render(shard: str, timeout: int) -> dict:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("shard", choices=("easy-a", "hard-a", "hard-b"))
+    parser.add_argument("shard", help="safe group name, e.g. easy-a or new-a")
+    parser.add_argument("--wave", type=int, default=1)
     parser.add_argument("--timeout", type=int, default=600)
     args = parser.parse_args()
+    import re
+    if not re.fullmatch(r"[a-z][a-z0-9-]{0,31}", args.shard) or not 1 <= args.wave <= 99:
+        parser.error("invalid wave or shard")
     if not 1 <= args.timeout <= 900:
         parser.error("timeout must be 1..900 seconds")
-    summary = render(args.shard, args.timeout)
-    print(json.dumps({"shard": args.shard, "valid": summary["valid"], "total": summary["count"]}), flush=True)
+    summary = render(args.shard, args.wave, args.timeout)
+    print(json.dumps({"wave": args.wave, "shard": args.shard, "valid": summary["valid"], "total": summary["count"]}), flush=True)
     return 0 if summary["valid"] == summary["count"] else 1
 
 
