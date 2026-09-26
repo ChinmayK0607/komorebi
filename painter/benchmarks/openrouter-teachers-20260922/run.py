@@ -292,6 +292,19 @@ def load_inputs(root: Path, *, model_ids: Sequence[str] | None = None, fetch_unk
         if actual != declared:
             raise BenchmarkError(f"reference hash mismatch for {ref_id}: expected {declared}, found {actual}")
         image_mime(image)
+        if "task_text" in item and (not isinstance(item["task_text"], str) or len(item["task_text"]) > 4000):
+            raise BenchmarkError(f"reference {ref_id}.task_text must be text of at most 4000 characters")
+        prior_value = item.get("prior_canvas")
+        if prior_value is not None:
+            if not isinstance(prior_value, str) or not prior_value or Path(prior_value).is_absolute():
+                raise BenchmarkError(f"reference {ref_id}.prior_canvas must be a relative image path")
+            prior_unresolved = root / prior_value
+            prior = prior_unresolved.resolve()
+            if root not in prior.parents or prior_unresolved.is_symlink() or not prior.is_file():
+                raise BenchmarkError(f"reference {ref_id}.prior_canvas is missing or escapes benchmark directory")
+            image_mime(prior)
+            if sha_file(prior) != _validate_hash(item.get("prior_canvas_sha256"), f"reference {ref_id}.prior_canvas_sha256"):
+                raise BenchmarkError(f"reference {ref_id}.prior_canvas SHA-256 mismatch")
         parsed.append(Reference(ref_id, image, declared, dict(item)))
     if "screen" in tracks:
         screen_ids = config.get("screen_reference_ids")
@@ -516,7 +529,7 @@ def request_binding(
 ) -> dict[str, Any]:
     """The immutable fields that decide whether a completed API turn is reusable."""
 
-    return {
+    binding = {
         "schema": SCHEMA,
         "provider": PROVIDER,
         "transport": "ai-sdk-generateText-jsonl",
@@ -546,6 +559,12 @@ def request_binding(
         "history_sha256": history_sha256,
         "render_feedback": render_feedback or "",
     }
+    if reference.metadata.get("prior_canvas") is not None or reference.metadata.get("task_text") is not None:
+        binding["reference_conditioning"] = {
+            "prior_canvas_sha256": reference.metadata.get("prior_canvas_sha256"),
+            "task_text_sha256": sha_bytes(str(reference.metadata.get("task_text") or "").encode("utf-8")),
+        }
+    return binding
 
 
 def fingerprint(binding: Mapping[str, Any]) -> str:
@@ -602,6 +621,14 @@ def build_user_message(
     )
     if render_feedback:
         text += "\nRenderer feedback from the submitted program:\n" + render_feedback
+    task_text = reference.metadata.get("task_text")
+    if task_text:
+        text += "\nSCENE BRIEF AND CORRECTION GOAL:\n" + str(task_text)
+    prior_value = reference.metadata.get("prior_canvas")
+    prior = inputs.root / prior_value if isinstance(prior_value, str) else None
+    if prior is not None:
+        text += ("\nImage order: REFERENCE photograph, FIRST PAINT baseline"
+                 + (", CURRENT CANVAS revision." if current_canvas is not None else ". Improve the FIRST PAINT while matching the REFERENCE."))
     if track == "speed":
         text += "\nSpeed track: prioritize a usable first valid painting within the turn budget and keep the plan concise."
     elif track == "screen":
@@ -610,9 +637,13 @@ def build_user_message(
         {"type": "text", "text": text},
         {"type": "image_url", "image_url": {"url": image_data_uri(reference.image)}},
     ]
+    if prior is not None and previous_response is None:
+        user_parts.append({"type": "image_url", "image_url": {"url": image_data_uri(prior)}})
     if current_canvas is not None:
         user_parts.append({"type": "image_url", "image_url": {"url": image_data_uri(current_canvas)}})
     safe_parts: list[dict[str, Any]] = [{"type": "text", "text": text}, sanitized_image_part(reference.image, root=inputs.root)]
+    if prior is not None and previous_response is None:
+        safe_parts.append(sanitized_image_part(prior, root=inputs.root))
     if current_canvas is not None:
         safe_parts.append(sanitized_image_part(current_canvas, root=inputs.root))
     return {"role": "user", "content": user_parts}, {"role": "user", "content": safe_parts}

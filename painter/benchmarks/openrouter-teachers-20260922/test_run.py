@@ -36,6 +36,34 @@ def _fixture(root: Path) -> run.BenchmarkInputs:
 
 
 class RunTests(unittest.TestCase):
+    def test_optional_photo_prior_is_hash_pinned_and_visible_on_first_turn(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            _fixture(root)
+            prior = root / "prior.png"
+            prior.write_bytes(b"first-paint-png")
+            refs = json.loads((root / "refs.json").read_text())
+            refs["references"][0].update(prior_canvas="prior.png",
+                                         prior_canvas_sha256=run.sha_file(prior),
+                                         task_text="Improve the glass jar silhouette.")
+            (root / "refs.json").write_text(json.dumps(refs))
+            inputs = run.load_inputs(root)
+            reference = inputs.references[0]
+            initial, safe = run.build_user_message(
+                inputs=inputs, reference=reference, current_canvas=None,
+                previous_response=None, render_feedback=None)
+            self.assertIn("glass jar silhouette", initial["content"][0]["text"])
+            self.assertEqual(len(initial["content"]), 3)
+            self.assertEqual(len(safe["content"]), 3)
+            revised, _ = run.build_user_message(
+                inputs=inputs, reference=reference, current_canvas=prior,
+                previous_response="prior answer", render_feedback=None)
+            self.assertEqual(len(revised["content"]), 3)  # text, photo, current; no repeated baseline
+            refs["references"][0]["prior_canvas_sha256"] = "0" * 64
+            (root / "refs.json").write_text(json.dumps(refs))
+            with self.assertRaises(run.BenchmarkError):
+                run.load_inputs(root)
+
     def test_zero_retries_is_valid_and_negative_retries_are_rejected(self):
         with tempfile.TemporaryDirectory() as temp:
             inputs = _fixture(Path(temp))
