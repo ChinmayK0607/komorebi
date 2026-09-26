@@ -1,0 +1,40 @@
+{
+  "count": 4,
+  "created": "2026-09-27",
+  "output_batch": "sol-runtime-repair-v3",
+  "rows": [
+    {
+      "fix": "curveVertex_to_vertex",
+      "id": "03-breakfast-kitchen",
+      "input_sha256": "b4c4f761ccfedf204d26d674a1a1bbb6110b486a394661d85f0eb99886f78f16",
+      "observed_error": "curveVertex is not defined",
+      "program_sha256": "e29724e4f5a116aca6c804680fe17441c59022fd750dc6ebdc144d90d746b435",
+      "run_id": "teacher600-sol-text-seed-20260927"
+    },
+    {
+      "fix": "curveVertex_to_vertex",
+      "id": "05-night-market",
+      "input_sha256": "745e3e3acf94ad58421a56df1c0af74b4dee1423a65ea1c7c158d34b19b35848",
+      "observed_error": "curveVertex is not defined",
+      "program_sha256": "32e3785d6546d399cf347c9cc5ed47f80c3ffb748e9569c8c56627053c932b87",
+      "run_id": "teacher600-sol-text-seed-20260927"
+    },
+    {
+      "fix": "curveVertex_to_vertex",
+      "id": "07-library-cat",
+      "input_sha256": "603f107c51692f06faa427612f267b65c5ecc996e5b61d7ca010138dbb8fd289",
+      "observed_error": "curveVertex is not defined",
+      "program_sha256": "79534f112eff1ef28daee7590bd5718fdfa9d5e2915fb598029a701923671347",
+      "run_id": "teacher600-sol-text-seed-20260927"
+    },
+    {
+      "fix": "curveVertex_to_vertex",
+      "id": "08-desert-gas-station",
+      "input_sha256": "e39e6bd662e7c5d789168f2cff4e3e362d8da0e013d89d09cdf46e6740ccf7ee",
+      "observed_error": "curveVertex is not defined",
+      "program_sha256": "c47a68e69fef4380b4b205d441ffea59e1e1f71a08b9a1d3fdf9cd19808e0b07",
+      "run_id": "teacher600-sol-text-seed-20260927"
+    }
+  ],
+  "schema": "painter.teacher600-runtime-repair-selection.v1"
+}

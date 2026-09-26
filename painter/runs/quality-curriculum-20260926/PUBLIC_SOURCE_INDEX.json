@@ -1,7 +1,7 @@
 {
   "candidate_audit": {
-    "alternatives": 74,
-    "batches": 56,
+    "alternatives": 78,
+    "batches": 57,
     "distinct": {
       "image_to_image": 310,
       "text_to_image": 290
@@ -404,6 +404,15 @@
       "url": "https://huggingface.co/datasets/CK0607/komorebi-painter-teachers/tree/d6a752256f985efea9ac622d27bf560a37305e5e/curricula/teacher500/sol-runtime-repair-v2"
     },
     {
+      "archive_sha256": "e928e2b9701646220a2d91d34777eb033d80023282116648495e88cba057b915",
+      "batch": "sol-runtime-repair-v3",
+      "count": 4,
+      "dataset_commit": "b02173f1a8fb44da00c0a4519e70176a4442ed8e",
+      "receipt_sha256": "83834fe6a79b5044a873104ebdc1d645f8f81519c237bd22e396928dd9bbe5ae",
+      "source_commit": "ae3b37db1389a93fec5dfd629b5fc8ffb6a233a3",
+      "url": "https://huggingface.co/datasets/CK0607/komorebi-painter-teachers/tree/b02173f1a8fb44da00c0a4519e70176a4442ed8e/curricula/teacher500/sol-runtime-repair-v3"
+    },
+    {
       "archive_sha256": "afa3db414c41327d37b0522b8fb00b432ae1b2a73ede548bb2c5a6d21cb75fe2",
       "batch": "sol-simple-cc0-select-v1",
       "count": 16,
@@ -512,7 +521,7 @@
       "url": "https://huggingface.co/datasets/CK0607/komorebi-painter-teachers/tree/aab6df173ef1bfef208ec477c1b02e8e92588dfe/curricula/teacher500/sol-val2017-wave8"
     }
   ],
-  "published_bundle_count": 54,
-  "published_members": 684,
+  "published_bundle_count": 55,
+  "published_members": 688,
   "schema": "painter.teacher-source-public-index.v1"
 }
