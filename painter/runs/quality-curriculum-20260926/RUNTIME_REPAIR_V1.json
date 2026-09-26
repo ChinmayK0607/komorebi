@@ -1,0 +1,63 @@
+{
+  "count": 7,
+  "created": "2026-09-27",
+  "rows": [
+    {
+      "fix": "curveVertex_to_vertex",
+      "id": "07-violin-still-life",
+      "input_sha256": "92d9038c25f82a507625aced1f02c048f0362f65bc6cda1c74c725a2ed1b21f2",
+      "observed_error": "curveVertex is not defined",
+      "program_sha256": "5a2c13800863ddb625c31744f1ba8ccd0d9e61cc2bb1ee85164bd19777e8cafb",
+      "run_id": "teacher600-sol-text-wave2-20260927"
+    },
+    {
+      "fix": "curveVertex_to_vertex",
+      "id": "08-polar-bear-aurora",
+      "input_sha256": "07de470c7595c3f8a5af63392c8b05a757185834a407aadf8d16b9bfbd0e552e",
+      "observed_error": "curveVertex is not defined",
+      "program_sha256": "d0c080cae24d7fed1690ba7aa5077ad200f8eb47f37b2b0d6f04c29852aa96f5",
+      "run_id": "teacher600-sol-text-wave2-20260927"
+    },
+    {
+      "fix": "curveVertex_to_vertex",
+      "id": "20-child-kite-dunes",
+      "input_sha256": "f721d709a674ae6caa8b4a0f4947154f6bf2c3a7f84c73367dd3939fd7dc9499",
+      "observed_error": "curveVertex is not defined",
+      "program_sha256": "1d78db9280fda21bd93a6c42caa5c59029f1aa0e063cbf4e31b20d521f8bd5fe",
+      "run_id": "teacher600-sol-text-wave2-20260927"
+    },
+    {
+      "fix": "curveVertex_to_vertex",
+      "id": "10-tea-pickers",
+      "input_sha256": "12ab30d9a5d7af2736b122ecbaf5b764e64fb2c615fa4b9268e89adda3e43de6",
+      "observed_error": "curveVertex is not defined",
+      "program_sha256": "3c503cbcd478f93408893c3576e78f81fec2350a7222589f6436f27a99b984c7",
+      "run_id": "teacher600-sol-text-wave4-20260927"
+    },
+    {
+      "fix": "curveVertex_to_vertex",
+      "id": "12-climbing-gym",
+      "input_sha256": "e57df7862e7091f9a9697449b7e0f34285adf03f5bfd57d9d19a7dfe5f777927",
+      "observed_error": "curveVertex is not defined",
+      "program_sha256": "b4e94a0d125c4d091fda9e818883334d5251c6bc499bc6688dbc7866bcf5fb0f",
+      "run_id": "teacher600-sol-text-wave4-20260927"
+    },
+    {
+      "fix": "curveVertex_to_vertex",
+      "id": "17-robotics-lab",
+      "input_sha256": "9c9e60cf2cc0dfb8a7a70bc85b8279235bda3a80aa598085c1149ca6c44e8b22",
+      "observed_error": "curveVertex is not defined",
+      "program_sha256": "e9b2273eacb525c11c9161c13a0f7435ef3226118d96f8215b1d81060ac047b1",
+      "run_id": "teacher600-sol-text-wave4-20260927"
+    },
+    {
+      "fix": "rename_box_helper",
+      "id": "21-container-terminal",
+      "input_sha256": "e703cc1084dadfdf43d1a784bf70efc947ec37244e274e2de50298c7e9135a3c",
+      "observed_error": "Cannot redefine property: box",
+      "program_sha256": "77abbce5b70227838b160da479922edd5aa847ec9ae870eccc8a765dd7a6ddc8",
+      "run_id": "teacher600-sol-text-wave4-20260927"
+    }
+  ],
+  "schema": "painter.teacher600-runtime-repair-selection.v1"
+}

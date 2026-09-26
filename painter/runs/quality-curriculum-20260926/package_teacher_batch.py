@@ -136,9 +136,10 @@ def candidates(source: Path, manifest: dict) -> list[dict]:
                 for row in manifest["items"]]
     if "items" in manifest:  # gpt-5.6-sol high text batch
         return [{"id": row["id"], "mode": "text_to_image", "category": row["category"],
+                 "role": row.get("role", "first_paint_candidate"),
                  "program": row["program_file"], "program_sha": row["program_sha256"],
                  "input": row["prompt_file"], "input_sha": row["prompt_sha256"],
-                 "notes": row.get("intended_composition", ""),
+                 "notes": row.get("repair_note", row.get("intended_composition", "")),
                  "difficulty": row.get("difficulty")} for row in manifest["items"]]
     if "samples" in manifest:  # gpt-6-astra high text batch
         return [{"id": row["id"], "mode": "text_to_image", "category": row["category"],
