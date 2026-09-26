@@ -29,6 +29,7 @@ def audit() -> dict:
     errors = []
     image_hashes: dict[str, list[str]] = defaultdict(list)
     text_hashes: dict[str, list[str]] = defaultdict(list)
+    image_source_urls: dict[str, list[str]] = defaultdict(list)
     for batch in sorted(POOL.iterdir()):
         receipt_path = batch / "source-receipt.json"
         archive_path = batch / "source.tar.gz"
@@ -69,6 +70,8 @@ def audit() -> dict:
                 distinct[row["mode"]] += 1
                 teachers[row["model"]] += 1
                 if row["mode"] == "image_to_image":
+                    if row.get("source_url"):
+                        image_source_urls[row["source_url"]].append(key)
                     source_row = author_rows.get(row["id"], {})
                     source_path = source_row.get("reference_path", source_row.get("reference_file", ""))
                     if "quality-curriculum-20260924/" in source_path:
@@ -84,11 +87,15 @@ def audit() -> dict:
         for digest, items in hashes.items():
             if len(items) > 1:
                 errors.append(f"duplicate {kind} input hash {digest}: {items}")
+    for url, items in image_source_urls.items():
+        if len(items) > 1:
+            errors.append(f"duplicate image source URL {url}: {items}")
     return {"schema": "painter.teacher-candidate-audit.v1",
             "batches": batches, "distinct": dict(distinct),
             "distinct_total": sum(distinct.values()), "alternatives": alternatives,
             "teachers": dict(teachers), "labelled_difficulty": dict(difficulties),
             "unique_image_hashes": len(image_hashes), "unique_text_hashes": len(text_hashes),
+            "unique_image_source_urls": len(image_source_urls),
             "prior_campaign_reference_reuse": prior_campaign_reference_reuse,
             "missing_image_license": missing_image_license,
             "new_input_coverage_total": sum(distinct.values()) - len(prior_campaign_reference_reuse),

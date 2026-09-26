@@ -3,9 +3,12 @@
 from __future__ import annotations
 
 import importlib.util
+from contextlib import redirect_stdout
+import io
 import json
 from pathlib import Path
 import tempfile
+import threading
 import unittest
 from unittest.mock import patch
 
@@ -90,6 +93,20 @@ class BatchPipelineTest(unittest.TestCase):
         PUBLISHER.validate_publication_metadata(COLLECTED / "astra-openverse-wave1/source.tar.gz")
         with self.assertRaisesRegex(ValueError, "image source/rights metadata incomplete for 12 rows"):
             PUBLISHER.validate_publication_metadata(COLLECTED / "astra-reference-seed/source.tar.gz")
+
+    def test_parallel_render_keeps_manifest_order(self) -> None:
+        barrier = threading.Barrier(2)
+        rows = [{"id": name} for name in ("first", "second", "third")]
+
+        def fake_render(_output, row, _renderer, _python, _browser, _timeout):
+            if row["id"] in {"first", "second"}:
+                barrier.wait(timeout=2)
+            return {"id": row["id"], "valid": True}
+
+        with patch.object(RENDERER, "render_one", side_effect=fake_render), redirect_stdout(io.StringIO()):
+            statuses = RENDERER.render_rows(Path("/tmp"), rows, Path("renderer"), Path("python"),
+                                             Path("browser"), 30, workers=2)
+        self.assertEqual([status["id"] for status in statuses], ["first", "second", "third"])
 
 
 if __name__ == "__main__":

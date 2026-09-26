@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import hashlib
 import io
 import json
@@ -12,6 +13,7 @@ import re
 import subprocess
 import sys
 import tarfile
+import time
 from urllib.request import urlopen
 
 
@@ -83,7 +85,52 @@ def stage(batch: str, output: Path) -> tuple[dict, dict]:
     return manifest, receipt
 
 
-def render(batch: str, run_id: str, timeout: int) -> dict:
+def render_one(output: Path, row: dict, renderer: Path, python: Path,
+               browser: Path, timeout: int) -> dict:
+    episode = output / "episodes" / row["id"]
+    episode.mkdir(parents=True)
+    program = output / row["program"]
+    canvas = episode / "canvas.png"
+    try:
+        result = render_program(root=output, source=program, output=canvas,
+                                renderer=renderer, renderer_python=python,
+                                browser_path=browser, timeout=timeout,
+                                run_as_user="painter", local=False)
+    except Exception as exc:
+        result = {"valid": False, "error_code": f"renderer_exception_{type(exc).__name__}",
+                  "elapsed_seconds": None}
+    status = {"id": row["id"], "mode": row["mode"],
+              "program_sha256": row["program_sha256"],
+              "input_sha256": row["input_sha256"],
+              "canvas_sha256": sha(canvas.read_bytes()) if canvas.is_file() else None,
+              "valid": result.get("valid") is True, "error_code": result.get("error_code"),
+              "elapsed_seconds": result.get("elapsed_seconds"),
+              "visual_review_status": "pending"}
+    (episode / "program.js").write_bytes(program.read_bytes())
+    suffix = ".txt" if row["mode"] == "text_to_image" else ".jpg"
+    (episode / f"input{suffix}").write_bytes((output / row["input"]).read_bytes())
+    if row.get("prompt"):
+        (episode / "prompt.txt").write_bytes((output / row["prompt"]).read_bytes())
+    (episode / "render-status.json").write_text(json.dumps(status, indent=2, sort_keys=True) + "\n")
+    return status
+
+
+def render_rows(output: Path, rows: list[dict], renderer: Path, python: Path,
+                browser: Path, timeout: int, workers: int) -> list[dict]:
+    completed: dict[str, dict] = {}
+    with ThreadPoolExecutor(max_workers=workers) as executor:
+        futures = {
+            executor.submit(render_one, output, row, renderer, python, browser, timeout): row["id"]
+            for row in rows
+        }
+        for future in as_completed(futures):
+            status = future.result()
+            completed[status["id"]] = status
+            print(json.dumps({"progress": f"{len(completed)}/{len(rows)}", **status}, sort_keys=True), flush=True)
+    return [completed[row["id"]] for row in rows]
+
+
+def render(batch: str, run_id: str, timeout: int, workers: int = 2) -> dict:
     runtime = ROOT / ".painter-cloud-runtime"
     python = runtime / "renderer-env/bin/python"
     browser = runtime / "browsers"
@@ -92,40 +139,14 @@ def render(batch: str, run_id: str, timeout: int) -> dict:
         raise RuntimeError("Codex Cloud Linux renderer setup is required")
     output = OUT / run_id
     manifest, receipt = stage(batch, output)
-    statuses = []
-    for index, row in enumerate(manifest["rows"], 1):
-        episode = output / "episodes" / row["id"]
-        episode.mkdir(parents=True)
-        program = output / row["program"]
-        canvas = episode / "canvas.png"
-        try:
-            result = render_program(root=output, source=program, output=canvas,
-                                    renderer=renderer, renderer_python=python,
-                                    browser_path=browser, timeout=timeout,
-                                    run_as_user="painter", local=False)
-        except Exception as exc:
-            result = {"valid": False, "error_code": f"renderer_exception_{type(exc).__name__}",
-                      "elapsed_seconds": None}
-        status = {"id": row["id"], "mode": row["mode"],
-                  "program_sha256": row["program_sha256"],
-                  "input_sha256": row["input_sha256"],
-                  "canvas_sha256": sha(canvas.read_bytes()) if canvas.is_file() else None,
-                  "valid": result.get("valid") is True, "error_code": result.get("error_code"),
-                  "elapsed_seconds": result.get("elapsed_seconds"),
-                  "visual_review_status": "pending"}
-        (episode / "program.js").write_bytes(program.read_bytes())
-        suffix = ".txt" if row["mode"] == "text_to_image" else ".jpg"
-        (episode / f"input{suffix}").write_bytes((output / row["input"]).read_bytes())
-        if row.get("prompt"):
-            (episode / "prompt.txt").write_bytes((output / row["prompt"]).read_bytes())
-        (episode / "render-status.json").write_text(json.dumps(status, indent=2, sort_keys=True) + "\n")
-        statuses.append(status)
-        print(json.dumps({"progress": f"{index}/{manifest['count']}", **status}, sort_keys=True), flush=True)
+    started = time.monotonic()
+    statuses = render_rows(output, manifest["rows"], renderer, python, browser, timeout, workers)
     summary = {"schema": "painter.teacher500-render.v1", "batch": batch, "run_id": run_id,
                "source_commit": subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip(),
                "source_dataset_commit": receipt["dataset_commit"],
                "source_bundle_sha256": receipt["archive_sha256"],
                "renderer_sha256": sha(renderer.read_bytes()), "timeout_seconds": timeout,
+               "workers": workers, "wall_seconds": round(time.monotonic() - started, 3),
                "teacher_model": manifest["teacher_model"],
                "teacher_reasoning_effort": manifest["teacher_reasoning_effort"],
                "count": len(statuses), "valid": sum(row["valid"] for row in statuses),
@@ -139,12 +160,13 @@ def main() -> None:
     parser.add_argument("batch")
     parser.add_argument("run_id")
     parser.add_argument("--timeout", type=int, default=600)
+    parser.add_argument("--workers", type=int, default=2)
     args = parser.parse_args()
     if (not re.fullmatch(r"[a-z][a-z0-9-]{1,63}", args.batch)
             or not re.fullmatch(r"[a-z][a-z0-9-]{1,63}", args.run_id)
-            or not 1 <= args.timeout <= 900):
-        parser.error("invalid batch, run ID or timeout")
-    summary = render(args.batch, args.run_id, args.timeout)
+            or not 1 <= args.timeout <= 900 or not 1 <= args.workers <= 8):
+        parser.error("invalid batch, run ID, timeout or worker count")
+    summary = render(args.batch, args.run_id, args.timeout, args.workers)
     print(json.dumps({"batch": args.batch, "valid": summary["valid"], "count": summary["count"]}))
 
 
