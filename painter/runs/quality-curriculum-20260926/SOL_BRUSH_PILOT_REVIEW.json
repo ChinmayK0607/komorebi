@@ -1,0 +1,23 @@
+{
+  "schema": "painter.sol-brush-parent-visual-review.v1",
+  "review_date": "2026-09-27",
+  "pilot_plan_sha256": "fee10e9bb8fd87f0f5640f546bef2a6a2496845a476b5c34c2be0c929b22cd52",
+  "public_render_archive_sha256": "7ca008fe313e6391fbb2a25e0d381a2f1270f532c1f867bd65c9041746cd38e4",
+  "public_dataset_revision": "957b165b3947c995d9de7faea0b6325c62d0c5bf",
+  "method": "Parent full-size visual comparison of each exact original and deterministic p5.brush conversion, with the same prompt, seed and renderer. This is a qualitative paired review of eight preselected native-only text scenes, not an estimate of all 600 programs.",
+  "valid_original": 8,
+  "valid_translation": 8,
+  "translation_wins": 0,
+  "decision": "Reject deterministic helper replacement as a training-data improvement. Do not scale it to 55 candidates. Retain originals as correction states; generate complete render-inspect-revise paintings and admit only visually reviewed improvements.",
+  "rows": [
+    {"audit_id": "t600-325", "preferred": "original", "reason": "The converted tortoise loses shell contrast and the irregular dark pen strokes compete with the animal."},
+    {"audit_id": "t600-349", "preferred": "original", "reason": "The converted jet, ground crew and vehicles lose definition; wash artifacts produce jagged edges without added depth."},
+    {"audit_id": "t600-583", "preferred": "original", "reason": "The converted rowboat hull becomes transparent and merges into water; the original boat silhouette reads clearly."},
+    {"audit_id": "t600-326", "preferred": "original", "reason": "The frog becomes a translucent green silhouette, weakening anatomy, eye contrast and the leaf separation."},
+    {"audit_id": "t600-375", "preferred": "original", "reason": "Jar, shelf and scale silhouettes are washed out while stray diagonal marks remain prominent."},
+    {"audit_id": "t600-387", "preferred": "original", "reason": "The flock retains some individual marks but loses figure-ground contrast and the shepherd becomes even harder to identify."},
+    {"audit_id": "t600-492", "preferred": "original", "reason": "The stacker and containers lose solid load-bearing geometry; translucent shapes make the lifting action less legible."},
+    {"audit_id": "t600-594", "preferred": "original", "reason": "The fox loses its strong orange silhouette, leg definition and warm/cool separation against the snow."}
+  ],
+  "training_admission": "zero translated targets"
+}
