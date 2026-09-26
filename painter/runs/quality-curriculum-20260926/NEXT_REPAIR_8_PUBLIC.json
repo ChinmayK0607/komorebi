@@ -1,0 +1,12 @@
+{
+  "anonymous_hash_verified": true,
+  "archive_bytes": 1458410,
+  "archive_sha256": "0e1cfcd4b18e53c6851f41177a34c13f330aa38e35cefa675a7d37410f2af337",
+  "count": 8,
+  "dataset": "CK0607/komorebi-painter-teachers",
+  "dataset_commit": "59e7f3aa31ca80a72f8d5a9849218bed3ac2afaf",
+  "path": "curricula/teacher600/next-repair-eight-v1/source.tar.gz",
+  "plan_sha256": "59e96d2c41e5f0390bf4a854a058ca421fd3acf849488c3d86f3f3e8f0385b77",
+  "schema": "painter.teacher600-repair-public-source.v1",
+  "status": "unreviewed_correction_states_not_sft_targets"
+}
