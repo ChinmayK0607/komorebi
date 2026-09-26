@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import hashlib
+from html import escape
 import json
 from pathlib import Path
 import shutil
@@ -117,6 +118,36 @@ def run(plan: Path, run_id: str, timeout: int, workers: int) -> dict:
               "rows": [outcomes[row["audit_id"]] for row in source["rows"]],
               "training_admission": "none_without_pairwise_visual_review"}
     (output / "run-summary.json").write_text(json.dumps(result, indent=2, sort_keys=True) + "\n")
+    cards = []
+    for row in result["rows"]:
+        ident = escape(row["audit_id"])
+        episode = output / "episodes" / row["audit_id"]
+        prompt = escape((episode / "input.txt").read_text())
+        figures = []
+        for label in ("original", "translated"):
+            render = row["renders"][label]
+            if render["valid"]:
+                body = f'<img src="episodes/{ident}/{label}.png" alt="{label} painting">'
+            else:
+                body = f'<div class="missing">{escape(str(render["error_code"] or "No canvas"))}</div>'
+            figures.append(f'<figure>{body}<figcaption>{label}: {"valid" if render["valid"] else "invalid"} · {render["seconds"]}s</figcaption></figure>')
+        cards.append(f'<article><h2>{ident} · {escape(row["category"])}</h2><pre>{prompt}</pre>'
+                     f'<div class="pair">{"".join(figures)}</div>'
+                     f'<p>Original reproduced: {row["original_reproduction_matches"]}. '
+                     f'<a href="episodes/{ident}/original.js">Original code</a> · '
+                     f'<a href="episodes/{ident}/translated.js">Translated code</a></p></article>')
+    html = ('<!doctype html><html lang="en"><meta charset="utf-8"><title>Sol brush translation pilot</title>'
+            '<style>body{font:16px system-ui;background:#171a1d;color:#eee;margin:24px}'
+            'article{background:#292f33;padding:18px;margin:20px 0;border-radius:12px}'
+            '.pair{display:grid;grid-template-columns:1fr 1fr;gap:14px}'
+            'figure{margin:0}img,.missing{width:100%;max-height:600px;object-fit:contain;background:#eee}'
+            '.missing{height:400px;display:grid;place-items:center;color:#333}'
+            'pre{white-space:pre-wrap;background:#1d2225;padding:12px}a{color:#a8dcef}'
+            '@media(max-width:800px){.pair{grid-template-columns:1fr}}</style>'
+            '<h1>Sol native → p5.brush · matched render pilot</h1>'
+            '<p>Same prompt, seed and renderer. These are unreviewed conversion candidates, not SFT admissions.</p>'
+            + ''.join(cards) + '</html>')
+    (output / "gallery.html").write_text(html)
     return {"run_id": run_id, "elapsed_seconds": result["elapsed_seconds"],
             "original_valid": sum(x["renders"]["original"]["valid"] for x in result["rows"]),
             "translated_valid": sum(x["renders"]["translated"]["valid"] for x in result["rows"])}
