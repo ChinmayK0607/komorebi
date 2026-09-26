@@ -36,6 +36,18 @@ def read_file(source: Path, relative: str, expected_sha: str | None) -> bytes:
 
 
 def candidates(source: Path, manifest: dict) -> list[dict]:
+    if ("items" in manifest and manifest.get("distinct_new_prompts") == 0
+            and "parent_audit_sha256" in manifest):
+        return [{"id": row["id"], "mode": "text_to_image",
+                 "category": "static-repair", "role": "unrendered_alternative_candidate",
+                 "difficulty": row.get("difficulty"),
+                 "program": row["program_file"], "program_sha": row["program_sha256"],
+                 "input": row["prompt_file"], "input_sha": row["prompt_sha256"],
+                 "baseline_program": row["original_program_evidence_file"],
+                 "baseline_program_sha": row["original_program_sha256"],
+                 "baseline_batch": row["source_audit_key"].split("/", 1)[0],
+                 "notes": "; ".join(row["structural_and_aesthetic_corrections"])}
+                for row in manifest["items"]]
     if "items" in manifest and manifest.get("modality") == "image-to-painting-static-repair":
         return [{"id": row["id"], "mode": "image_to_image",
                  "category": "static-repair", "role": "unrendered_alternative_candidate",
