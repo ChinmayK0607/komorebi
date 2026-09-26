@@ -1,7 +1,7 @@
 {
   "candidate_audit": {
-    "alternatives": 78,
-    "batches": 57,
+    "alternatives": 86,
+    "batches": 59,
     "distinct": {
       "image_to_image": 310,
       "text_to_image": 290
@@ -323,6 +323,15 @@
       "url": "https://huggingface.co/datasets/CK0607/komorebi-painter-teachers/tree/90eb3c5af48505f3a49006b25909ce20bae28878/curricula/teacher500/astra-text-wave8"
     },
     {
+      "archive_sha256": "ce14805bf90fa2e4b35ea0208e9192a6e852f35913038c55b2207483320fb7b3",
+      "batch": "astra-timeout-repair-v1",
+      "count": 7,
+      "dataset_commit": "f0824dba95e64f9f50a79e8abaeca8466933cd69",
+      "receipt_sha256": "e2024f98fb32aaa401595b7c70086d54d044653226d922ccaf94c9288bff1944",
+      "source_commit": "a744393ac4f410918859b41effe7510dcc2eebe0",
+      "url": "https://huggingface.co/datasets/CK0607/komorebi-painter-teachers/tree/f0824dba95e64f9f50a79e8abaeca8466933cd69/curricula/teacher500/astra-timeout-repair-v1"
+    },
+    {
       "archive_sha256": "0f50b669953d1935477f48ce0da8b8b0f9345b5ab16855e9196498ebfcee039d",
       "batch": "astra-val2017-wave1",
       "count": 12,
@@ -485,6 +494,15 @@
       "url": "https://huggingface.co/datasets/CK0607/komorebi-painter-teachers/tree/a701630505dd3e34e6c0e904d037bb3787ca29fa/curricula/teacher500/sol-text-wave4"
     },
     {
+      "archive_sha256": "4f3b4d9fd0e6d773344b212eaca3152b05ba747e0e9acc71a02be176aee1a4f6",
+      "batch": "sol-timeout-repair-v1",
+      "count": 1,
+      "dataset_commit": "71e4e2827d018d7e7c72f1490179e90a5ef2a083",
+      "receipt_sha256": "2f6d722fe4963e95c698986f1871d74d23084c3b0d84a29308127182f3055db9",
+      "source_commit": "a744393ac4f410918859b41effe7510dcc2eebe0",
+      "url": "https://huggingface.co/datasets/CK0607/komorebi-painter-teachers/tree/71e4e2827d018d7e7c72f1490179e90a5ef2a083/curricula/teacher500/sol-timeout-repair-v1"
+    },
+    {
       "archive_sha256": "1ad44bcd95830246734bb8e4369be6fb7c06a5f678711452301c2671e2cd8a49",
       "batch": "sol-val2017-wave5",
       "count": 24,
@@ -521,7 +539,7 @@
       "url": "https://huggingface.co/datasets/CK0607/komorebi-painter-teachers/tree/aab6df173ef1bfef208ec477c1b02e8e92588dfe/curricula/teacher500/sol-val2017-wave8"
     }
   ],
-  "published_bundle_count": 55,
-  "published_members": 688,
+  "published_bundle_count": 57,
+  "published_members": 696,
   "schema": "painter.teacher-source-public-index.v1"
 }
