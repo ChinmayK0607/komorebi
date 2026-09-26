@@ -24,9 +24,11 @@ def sha(raw: bytes) -> str:
     return hashlib.sha256(raw).hexdigest()
 
 
-def collect(run_id: str) -> dict:
+def collect(run_id: str, selected_tiers: tuple[str, ...] = ("flash", "pro")) -> dict:
     if not re.fullmatch(r"teacher600-repair-[a-z0-9-]{1,50}", run_id):
         raise ValueError("unexpected repair wave ID")
+    if not selected_tiers or len(set(selected_tiers)) != len(selected_tiers) or set(selected_tiers) - set(MODELS):
+        raise ValueError("unexpected tier selection")
     result_root = BASE / run_id
     result_root.mkdir(parents=True, exist_ok=True)
     archive = source_archive(result_root / "source.tar.gz")
@@ -38,6 +40,8 @@ def collect(run_id: str) -> dict:
     records = []
     cards = []
     for tier, model in MODELS.items():
+        if tier not in selected_tiers:
+            continue
         root = result_root / tier
         root.mkdir(parents=True, exist_ok=True)
         result_archive = root / "bundle.tar.gz"
@@ -117,7 +121,8 @@ def collect(run_id: str) -> dict:
                          f'<div class="grid">{"".join(figures)}</div><p>{escape(errors)}</p></article>')
         if seen != wanted:
             raise ValueError(f"tier selection mismatch: {tier}")
-    review = result_root / "review.html"
+    suffix = "" if len(selected_tiers) == len(MODELS) else "-" + "-".join(selected_tiers)
+    review = result_root / f"review{suffix}.html"
     review.write_text('<!doctype html><html lang="en"><meta charset="utf-8"><title>Teacher 600 repair wave</title>'
                       '<style>body{font:16px system-ui;background:#16191b;color:#eee;margin:24px}'
                       'article{padding:20px;background:#282c2f;border-radius:12px;margin:22px 0}'
@@ -129,7 +134,7 @@ def collect(run_id: str) -> dict:
                "source_archive_sha256": PUBLIC["archive_sha256"],
                "source_manifest_sha256": sha((staged / "manifest.json").read_bytes()),
                "visual_review": "pending", "rows": sorted(records, key=lambda r: r["audit_id"])}
-    (result_root / "collection-summary.json").write_text(json.dumps(summary, indent=2, sort_keys=True) + "\n")
+    (result_root / f"collection-summary{suffix}.json").write_text(json.dumps(summary, indent=2, sort_keys=True) + "\n")
     return {"review": str(review), "episodes": len(records),
             "valid_turns": sum(t["valid"] for r in records for t in r["turns"]),
             "invalid_turns": sum(not t["valid"] for r in records for t in r["turns"])}
@@ -138,5 +143,7 @@ def collect(run_id: str) -> dict:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("run_id", nargs="?", default="teacher600-repair-eight-v2-20260927")
+    parser.add_argument("--tier", action="append", choices=sorted(MODELS),
+                        help="Collect an already-published tier before the other tier finishes")
     args = parser.parse_args()
-    print(json.dumps(collect(args.run_id), sort_keys=True))
+    print(json.dumps(collect(args.run_id, tuple(args.tier) if args.tier else ("flash", "pro")), sort_keys=True))

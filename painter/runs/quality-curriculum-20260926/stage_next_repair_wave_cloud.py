@@ -126,6 +126,8 @@ def stage(run_id: str, tier: str, archive: Path | None = None) -> Path:
               "plan consume the response without a program. Prefer a 200-350-line sketch over an enormous one. "
               "Use reliable native opaque shapes for the image's primary forms. Limit p5.brush to optional sparse "
               "accents, and wrap its pass in try/catch so a brush-library error cannot erase a good base painting. "
+              "Use the exact canvas setup createCanvas(600, 600, WEBGL); brush.instance(this); brush.load(); "
+              "A 2D createCanvas(600, 600) is not the contract and will be canonicalized if unambiguous. "
               "Check the named structural weakness before adding decorative marks.\n")
     (output / "prompt.txt").write_text(prompt)
     config = {"benchmark": f"teacher600-repair-eight-{tier}-20260927", "models": [model],
@@ -134,6 +136,7 @@ def stage(run_id: str, tier: str, archive: Path | None = None) -> Path:
                                      "reasoning_effort": "highest_supported"}},
               "reasoning_overrides": {model: "low"},
               "temperature": 0.7, "concurrency": 2, "render_concurrency": 2,
+              "canonicalize_webgl_setup": True,
               "renderer_timeout": 300, "samples_per_image": 1,
               "catalog": "model-catalog.json", "transport_script": "gateway_transport.ts",
               "references": "refs.json", "prompt": "prompt.txt", "request_timeout_seconds": 900,

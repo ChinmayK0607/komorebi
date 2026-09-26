@@ -228,6 +228,20 @@ class RunTests(unittest.TestCase):
         self.assertFalse(run.is_finished_text("The explanation mentions FINISHED but does not finish."))
         self.assertFalse(run.is_finished_text("```js\n// FINISHED\n```"))
 
+    def test_opt_in_webgl_setup_repair_is_narrow_and_hash_recorded(self):
+        old = "function setup() { createCanvas(600, 600); brush.load(); }\nfunction draw() { translate(-300,-300); brush.line(1,2,3,4); }\n"
+        new, record = run.canonicalize_webgl_setup(old)
+        self.assertIn("createCanvas(600, 600, WEBGL);", new)
+        self.assertIn("brush.instance(this);", new)
+        self.assertEqual(record["original_sha256"], run.sha_bytes(old.encode()))
+        self.assertEqual(record["rendered_sha256"], run.sha_bytes(new.encode()))
+        self.assertTrue(record["added_brush_instance"])
+        self.assertEqual(run.canonicalize_webgl_setup(new), (new, None))
+        for ambiguous in ("createCanvas(600, 600);", "createCanvas(600, 600, WEBGL); translate(-300,-300);",
+                          "createCanvas(500, 500); translate(-300,-300);",
+                          "createCanvas(600,600); createCanvas(600,600); translate(-300,-300);"):
+            self.assertEqual(run.canonicalize_webgl_setup(ambiguous), (ambiguous, None))
+
     def test_curve_failure_feedback_names_the_repair(self):
         failure = {"valid": False, "errors": ["Cannot read properties of undefined (reading 'map')"]}
         feedback = run.invalid_render_feedback(failure, "beginShape(); bezierVertex(1,2,3,4,5,6); endShape(CLOSE);")

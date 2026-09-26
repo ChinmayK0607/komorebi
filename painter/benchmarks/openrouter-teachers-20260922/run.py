@@ -167,6 +167,29 @@ def parse_program(reply: str) -> tuple[str | None, str]:
     return code, plan
 
 
+def canonicalize_webgl_setup(program: str) -> tuple[str, dict[str, Any] | None]:
+    """Repair only an unambiguous 600px 2D canvas intended as WEBGL.
+
+    The teacher's raw response remains in the turn record. This opt-in
+    normalization keeps the rendered code and its hash explicit so downstream
+    SFT never silently trains on code different from the executed program.
+    """
+
+    canvas = re.compile(r"\bcreateCanvas\s*\(\s*600\s*,\s*600\s*\)")
+    if len(canvas.findall(program)) != 1 or not re.search(r"\btranslate\s*\(\s*-300\s*,\s*-300\s*\)", program):
+        return program, None
+    original_sha256 = sha_bytes(program.encode("utf-8"))
+    repaired = canvas.sub("createCanvas(600, 600, WEBGL)", program, count=1)
+    add_instance = bool(re.search(r"\bbrush\s*\.", repaired)) and not re.search(r"\bbrush\s*\.\s*instance\s*\(", repaired)
+    if add_instance:
+        repaired = repaired.replace("createCanvas(600, 600, WEBGL)",
+                                    "createCanvas(600, 600, WEBGL);\n  brush.instance(this)", 1)
+    return repaired, {"kind": "canonicalize_600px_webgl_setup",
+                      "original_sha256": original_sha256,
+                      "rendered_sha256": sha_bytes(repaired.encode("utf-8")),
+                      "added_brush_instance": add_instance}
+
+
 def extract_content(message: Any) -> str:
     """Extract assistant text while tolerating AI SDK content parts."""
 
@@ -1637,6 +1660,10 @@ class EpisodeRunner:
             turn_record["plan"] = plan
             turn_record["program_found"] = program is not None
             if program is not None:
+                if self.inputs.config.get("canonicalize_webgl_setup", False):
+                    program, transform = canonicalize_webgl_setup(program)
+                    if transform:
+                        turn_record["program_transform"] = transform
                 program_path = self._program_path(turn)
                 atomic_bytes(program_path, program.encode("utf-8"))
                 turn_record["program"] = _relative(program_path, self.inputs.root)
@@ -1707,6 +1734,8 @@ class EpisodeRunner:
                     state["final_valid_canvas"] = _relative(canvas_path, self.inputs.root)
                     last_turn_invalid = False
                     feedback = "The submitted program rendered successfully. Inspect the CURRENT CANVAS and continue revising or finish after observing it."
+                    if turn_record.get("program_transform"):
+                        feedback += " The renderer normalized your 600x600 setup to WEBGL; keep createCanvas(600, 600, WEBGL) in future sketches."
                     fill_warning = native_polygon_fill_feedback(program)
                     if fill_warning:
                         feedback += " " + fill_warning
