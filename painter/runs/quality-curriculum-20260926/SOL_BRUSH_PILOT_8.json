@@ -1,0 +1,131 @@
+{
+  "schema": "painter.sol-native-brush-pilot.v1",
+  "hypothesis": "Replacing exact native helper templates with p5.brush painting calls improves medium/aesthetics without losing content.",
+  "matched_baseline": "Each exact original Sol program, same input, seed and renderer.",
+  "selection": "Eight diverse native-only text scenes, preselected before translation render.",
+  "training_admission": "none_without_pairwise_visual_review",
+  "rows": [
+    {
+      "audit_id": "t600-325",
+      "id": "13-greenhouse-tortoise",
+      "source_batch": "sol-text-wave2",
+      "mode": "text_to_image",
+      "category": "animal_greenhouse_low_view",
+      "input_sha256": "e9d7368e07b2fac079d330c6b00ccfc4b64b8e4815aba344e9c42e5bbd066102",
+      "source_program_sha256": "48dd1bbf3acc7368cd6a068b8ccc06d33e9a74e3fa95891b65fdf5bdee9595d2",
+      "original_canvas_sha256": "ee4053f909b739443a02f15c87ef3eefce0630af8ea9eca634366cf2f0ad53d0",
+      "status": "candidate",
+      "candidate_program_sha256": "a19d540813e0d6a81c595e4cc4094f6cef5c0bb9d0f1d9f18fd25612e22673e0"
+    },
+    {
+      "audit_id": "t600-349",
+      "id": "02-airport-apron",
+      "source_batch": "sol-text-wave3",
+      "mode": "text_to_image",
+      "category": "aviation_people_dawn",
+      "input_sha256": "485b0de5929d5bbbb1f3d225af9cb92ef4dbafc155ce77226bbd4fb69e056441",
+      "source_program_sha256": "d95ad5f47c9181729179274239a47ce703f952264a6e9a8ee9ad4d0ca659be9f",
+      "original_canvas_sha256": "87ad2140f7d5537807c34558d1f9b72eacf956122505cee3a11c224d8dc8c01c",
+      "status": "candidate",
+      "candidate_program_sha256": "e91a5d6a0f8fabf5c1ebd8358414feedcb1e47898a2590c62c8ebb1c3d2e3bb1"
+    },
+    {
+      "audit_id": "t600-583",
+      "id": "06-rowboat-reeds",
+      "source_batch": "sol-text-seed",
+      "mode": "text_to_image",
+      "category": "waterscape_boat_dawn",
+      "input_sha256": "0352b86d7c22a846db52ad0f1013baada7e302456c7a946a8774dcb3d4c9df61",
+      "source_program_sha256": "1a5ff112ad05c2e493e6091d3836bb2bb56361bfb0ccb83ff7771be293bbe882",
+      "original_canvas_sha256": "c94d463df944a329ae77066c6f7f6ed7aab7607f1fd392e1b09e651d0d3e6b16",
+      "status": "candidate",
+      "candidate_program_sha256": "9aad9928e685f6f4b9d9bb62e2d3b83ba0a1a1f5d244123eeb6130c782a4a8f7"
+    },
+    {
+      "audit_id": "t600-326",
+      "id": "16-rain-frog",
+      "source_batch": "sol-text-wave3",
+      "mode": "text_to_image",
+      "category": "animal_macro_weather",
+      "input_sha256": "feeaf02fc01775ac74188dce5bddddd0ede8b1e00e0381b12ffd0573f65ffc85",
+      "source_program_sha256": "990709a1a3f67acd5697d7cf317ce802985449cfd5655d709eaccfd914c78e00",
+      "original_canvas_sha256": "eacb27b4155f093be9851250ea90959a7d60a7fece164deb8e2c1f954ddbd4c6",
+      "status": "candidate",
+      "candidate_program_sha256": "f1e37eb9a92925370e02e93034c0e19131929d1d8cae42ffc42b3a7f3acbd0c1"
+    },
+    {
+      "audit_id": "t600-375",
+      "id": "13-pantry-jars",
+      "source_batch": "sol-text-wave3",
+      "mode": "text_to_image",
+      "category": "domestic_still_life_repetition",
+      "input_sha256": "9292efceb546b48839136230b5b430f5580780820222245431aa7c3107147592",
+      "source_program_sha256": "9e5cdc66a8f0948ac8a54ac414e39b4a7fdf69551b021b72c94ff91e9bb8db68",
+      "original_canvas_sha256": "1b508ea2f31e03111fe1b74818ef03a37de3a3487e93258b0659fcf4308041eb",
+      "status": "candidate",
+      "candidate_program_sha256": "0f6184b57ffc70318bdb9510b75a38afe48739a205c443a1f5bbe9d0e56aa809"
+    },
+    {
+      "audit_id": "t600-387",
+      "id": "10-shepherd-flock",
+      "source_batch": "sol-text-wave3",
+      "mode": "text_to_image",
+      "category": "farm_animals_landscape",
+      "input_sha256": "202182de29835cb41de1cef973bb9dcc184810689616baed0cc7e370cc146067",
+      "source_program_sha256": "76cc17109ef2a12f1738f5552fc33f25b9809fea4c592c99d6320dea539d475a",
+      "original_canvas_sha256": "e653fe90bc98937a1c4926c947828d0bd8381d89b82cf2eb3d3d620cbe849620",
+      "status": "candidate",
+      "candidate_program_sha256": "682d21eee68f2b920c7f44d8e58d7305663227eaa8081a031973d18df0e1613f"
+    },
+    {
+      "audit_id": "t600-492",
+      "id": "21-container-terminal",
+      "source_batch": "sol-runtime-repair-v1",
+      "mode": "text_to_image",
+      "category": "port_logistics_machine",
+      "input_sha256": "e703cc1084dadfdf43d1a784bf70efc947ec37244e274e2de50298c7e9135a3c",
+      "source_program_sha256": "beb41720a826b35d8fa639dc50957d26e2db857389e0b77310364aeae170bfae",
+      "original_canvas_sha256": "cb83deae48281cea2fc443c761390172b44fb194d5535760fd3ea4ed5d5cf218",
+      "status": "candidate",
+      "candidate_program_sha256": "3b978413def6389c14ec06a9f0ec78b1e35ade6db4029775ec4592f3c27eb735"
+    },
+    {
+      "audit_id": "t600-594",
+      "id": "04-fox-in-snow",
+      "source_batch": "sol-text-seed",
+      "mode": "text_to_image",
+      "category": "wildlife_winter_landscape",
+      "input_sha256": "8425f50cc400902b2fad6b43a8d542abae84cd287edaea02d74348e46c46310a",
+      "source_program_sha256": "67aa96ba3de82ea59608f7110e7b866af41cf760e091f645865596509364d7d8",
+      "original_canvas_sha256": "1c9a5857265cea8b02cb05ca1b0d75d6aa96a5edcc8570d30d186a827d27f3d2",
+      "status": "candidate",
+      "candidate_program_sha256": "bbbb84a9c437a033bb71255fa499761db8845a28e5a9cc2ad38fb54b64999b55"
+    }
+  ],
+  "source_receipts": {
+    "sol-runtime-repair-v1": {
+      "dataset_commit": "7228cf303cf262fc732f3d94839911e8b9b5cae2",
+      "archive_sha256": "66e71b9c2beb3377d703d5a070c444e511a8d69a832432ec3e9c4e52da55ba76",
+      "archive_bytes": 7807,
+      "path": "curricula/teacher500/sol-runtime-repair-v1/source.tar.gz"
+    },
+    "sol-text-seed": {
+      "dataset_commit": "d95f228e9938c5a38cdbd52fee000988a433bcee",
+      "archive_sha256": "c4065da93363332d7e2aaf9cafd4758ed23a50e5bf40e7580b56107db175bda8",
+      "archive_bytes": 20324,
+      "path": "curricula/teacher500/sol-text-seed/source.tar.gz"
+    },
+    "sol-text-wave2": {
+      "dataset_commit": "952c4682dc3cadb358227b3cd037e2a386be43fe",
+      "archive_sha256": "bd570fcd2c51559eb196249d21ff044392ca27184e912b46ee6a78718ff47d57",
+      "archive_bytes": 23990,
+      "path": "curricula/teacher500/sol-text-wave2/source.tar.gz"
+    },
+    "sol-text-wave3": {
+      "dataset_commit": "f70383a74330672986dcdf784ee65f7359bceae3",
+      "archive_sha256": "445b9da9bed4e4e0438fe6156a3230cc2300f0b6161013356ba4a03b7801e9c1",
+      "archive_bytes": 21041,
+      "path": "curricula/teacher500/sol-text-wave3/source.tar.gz"
+    }
+  }
+}
