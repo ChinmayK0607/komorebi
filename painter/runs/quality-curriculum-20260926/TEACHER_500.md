@@ -37,7 +37,7 @@ The user explicitly approved public upload of these teacher bundles. The source-
 
 ## 600 raw-candidate render expansion, 2026-09-27
 
-Eight new Astra-high text prompts and programs extend the authored inventory to **600 distinct first-paint candidates**, split 290 text and 310 photo. Their source archive is publicly uploaded and anonymously SHA-256 verified; the [public index](PUBLIC_SOURCE_INDEX.json) now contains 52 public bundles and 674 total candidate members, including alternatives and correction programs. This is raw authoring, not 600 rendered images or 600 visually admitted demonstrations.
+Eight new Astra-high text prompts and programs extend the authored inventory to **600 distinct first-paint candidates**, split 290 text and 310 photo. Their source archive is publicly uploaded and anonymously SHA-256 verified. Seven subsequent Sol runtime repairs are separate alternatives on existing prompts. The [public index](PUBLIC_SOURCE_INDEX.json) now contains 53 public full-source bundles and 681 total candidate members, including 71 alternatives and 25 correction programs. This is raw authoring, not 600 rendered images or 600 visually admitted demonstrations.
 
 The [finite render plan](RENDER_600.md) launches six Codex Cloud CPU jobs for all 498 public first paints not yet rendered, plus one job for the eight new text cases. Earlier runs cover the other 82 public first paints. The 12 photo programs in `astra-reference-seed` remain outside that public-source path because their per-image rights metadata is incomplete; the programs and images are retained locally. Results and visual admissions will be recorded after hash-verified collection. No scheduled watcher or GPU rental is part of this step.
 
