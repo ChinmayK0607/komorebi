@@ -120,12 +120,19 @@ def stage(run_id: str, tier: str, archive: Path | None = None) -> Path:
               "For photo scenes, image one is the true source photo and image two is the existing first paint. "
               "For text scenes, the attached image is the existing first paint and the exact scene brief is in "
               "the user message. Make a complete new sketch. On subsequent turns inspect your actual new canvas "
-              "and revise its largest mismatch. Preserve recognizable structure; do not merely trace the prior.\n")
+              "and revise its largest mismatch. Preserve recognizable structure; do not merely trace the prior. "
+              "On TURN ONE, spend no more than two short sentences on planning, then give a complete runnable "
+              "javascript code block. Put the complete code before any optional discussion; never let an internal "
+              "plan consume the response without a program. Prefer a 200-350-line sketch over an enormous one. "
+              "Use reliable native opaque shapes for the image's primary forms. Limit p5.brush to optional sparse "
+              "accents, and wrap its pass in try/catch so a brush-library error cannot erase a good base painting. "
+              "Check the named structural weakness before adding decorative marks.\n")
     (output / "prompt.txt").write_text(prompt)
     config = {"benchmark": f"teacher600-repair-eight-{tier}-20260927", "models": [model],
-              "tracks": {"quality": {"max_turns": 4, "max_tokens": 16384,
+              "tracks": {"quality": {"max_turns": 4, "max_tokens": 32768,
                                      "episode_timeout_seconds": 2400,
                                      "reasoning_effort": "highest_supported"}},
+              "reasoning_overrides": {model: "low"},
               "temperature": 0.7, "concurrency": 2, "render_concurrency": 2,
               "renderer_timeout": 300, "samples_per_image": 1,
               "catalog": "model-catalog.json", "transport_script": "gateway_transport.ts",

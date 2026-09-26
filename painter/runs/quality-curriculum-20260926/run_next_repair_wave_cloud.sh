@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Ready-to-launch finite mixed correction wave. Do not call until the pilot is reviewed.
+# Finite mixed correction wave; pilot reviewed in SOL_REDO_PILOT_REVIEW.json.
 set -Eeuo pipefail
 ROOT="$(git rev-parse --show-toplevel)"
 RUN="$ROOT/painter/runs/quality-curriculum-20260926"

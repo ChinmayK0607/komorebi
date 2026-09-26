@@ -1,0 +1,46 @@
+{
+  "schema": "painter.teacher600-redo-visual-review.v1",
+  "reviewer": "parent-agent-direct-visual-inspection",
+  "method": "Full 600x600 first paint and every valid revision compared against the original scene brief; no automatic score used for admission.",
+  "run_id": "sol-redo-pilot-20260927",
+  "matched_baseline": "Exact hash-pinned first paint for each scene",
+  "rows": [
+    {
+      "audit_id": "t600-326",
+      "scene": "Bright green tree frog on wet leaf in tropical rain",
+      "model": "xiaomi/mimo-v2.6-flash",
+      "first_paint_sha256": "eacb27b4155f093be9851250ea90959a7d60a7fece164deb8e2c1f954ddbd4c6",
+      "valid_revision_turns": [2, 3, 4],
+      "best_revision_turn": 4,
+      "preferred": "uncertain",
+      "positive_target": false,
+      "observations": "Turn 4 gives the frog more leg and toe structure, a stronger side silhouette and a darker forest. The original is cleaner. The revision's bright circular eyes, angular background, linear rain and bead-like droplets still feel mechanical and compete with the subject. Turn 2 is especially cluttered with droplets; turn 3 is cleaner but the leaf cuts through the frog silhouette.",
+      "next_correction": "Keep the improved leg/toe pose, soften the forest and rain, reduce repeated circular droplets, separate frog from the leaf with a clearer contour."
+    },
+    {
+      "audit_id": "t600-492",
+      "scene": "Reach stacker lifting red container at a busy port at dusk",
+      "model": "xiaomi/mimo-v2.6-pro",
+      "first_paint_sha256": "cb83deae48281cea2fc443c761390172b44fb194d5535760fd3ea4ed5d5cf218",
+      "valid_revision_turns": [4],
+      "best_revision_turn": 4,
+      "preferred": "revision",
+      "positive_target": false,
+      "observations": "Turn 4 adds convincing container depth, workers, distant cranes, dusk light and texture, and is a more engaging painting than the flat original. The reach stacker has almost no visible rubber tires, so a required defining feature is missing. Turns 2 and 3 failed at runtime. Turn 4 wraps brush accents in try/catch and can succeed by skipping them; validity alone does not establish brush contribution.",
+      "next_correction": "Restore large dark rubber tires and ground contact while keeping the container perspective, port atmosphere and machine silhouette."
+    }
+  ],
+  "pipeline_findings": {
+    "flash_turns": 4,
+    "flash_valid_turns": 3,
+    "flash_total_tokens": 66502,
+    "pro_turns": 4,
+    "pro_valid_turns": 1,
+    "pro_total_tokens": 79627,
+    "first_turn_failure": "Both models hit the 16,384 maximum output token setting and stopped with finish_reason=length before providing a complete sketch.",
+    "pro_runtime_failure": "Pro turns 2 and 3 raised TypeError: Cannot read properties of undefined (reading '0') in the brush pass. The final turn caught errors to preserve a native painted canvas.",
+    "cost": "Gateway usage did not return complete monetary cost; token totals are exact but dollar spend is not measured.",
+    "gpu": "No GPU used; Codex Cloud CPU renderer. Cloud CPU busy fraction and dollar cost not instrumented."
+  },
+  "decision": "Do not scale the old 16,384-token four-turn configuration. Strengthen first-turn completeness and avoid fragile brush fills; verify a small mixed text/photo wave before bulk repair. No pilot revision is an SFT target yet."
+}
