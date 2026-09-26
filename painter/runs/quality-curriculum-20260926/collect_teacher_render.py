@@ -63,6 +63,14 @@ def collect(run_id: str) -> tuple[Path, dict]:
     for row in summary["statuses"]:
         episode = target / "episodes" / row["id"]
         suffix = ".txt" if row["mode"] == "text_to_image" else ".jpg"
+        if summary.get("reference_reused_from_public_prior") and suffix == ".jpg" and not (episode / "input.jpg").is_file():
+            # The remote result omits rights-incomplete reused photo bytes.
+            # Reconstruct the local review input from the existing ignored
+            # source archive, then verify the exact per-row image hash below.
+            source_archive = OUT.parent / "astra-reference-seed" / "source.tar.gz"
+            with tarfile.open(source_archive, "r:gz") as source_tar:
+                photo = source_tar.extractfile(f"inputs/{row['id']}.jpg").read()
+            (episode / "input.jpg").write_bytes(photo)
         if sha(episode / f"input{suffix}") != row["input_sha256"]:
             raise ValueError(f"render input mismatch: {row['id']}")
         if sha(episode / "program.js") != row["program_sha256"]:

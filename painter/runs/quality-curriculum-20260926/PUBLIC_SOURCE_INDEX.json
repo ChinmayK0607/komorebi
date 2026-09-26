@@ -1,13 +1,13 @@
 {
   "candidate_audit": {
     "alternatives": 64,
-    "batches": 53,
+    "batches": 54,
     "distinct": {
       "image_to_image": 310,
-      "text_to_image": 282
+      "text_to_image": 290
     },
-    "distinct_total": 592,
-    "new_input_coverage_total": 580,
+    "distinct_total": 600,
+    "new_input_coverage_total": 588,
     "render_conditioned_corrections": 25
   },
   "candidate_status": "unrendered_unreviewed_not_sft_admitted",
@@ -240,6 +240,15 @@
       "receipt_sha256": "e5c887516fbd83f6851a95cf6c597292c6829cd427f7669e49a5561a1791870e",
       "source_commit": "bb5dc0ef05985a9fed88fe52259d3a69d8ee0d88",
       "url": "https://huggingface.co/datasets/CK0607/komorebi-painter-teachers/tree/56d15da7d1d3c2acfefb41b6b04d056a3779fa2d/curricula/teacher500/astra-text-curated-v1"
+    },
+    {
+      "archive_sha256": "caaa093bc11eae390e04750f36632531f2e06692f8888a438a154f42270cd91b",
+      "batch": "astra-text-eight-v1",
+      "count": 8,
+      "dataset_commit": "5d970aeeabb6ab407ede50c321467c2cd1da5ad6",
+      "receipt_sha256": "fe23e73fb24b70efcfd67ac05c6437aad80fc56f2e2c2cd287b7009bfe63ed4f",
+      "source_commit": "9bd821ff933ac3c0792bd6bb10bd9adce08f4d55",
+      "url": "https://huggingface.co/datasets/CK0607/komorebi-painter-teachers/tree/5d970aeeabb6ab407ede50c321467c2cd1da5ad6/curricula/teacher500/astra-text-eight-v1"
     },
     {
       "archive_sha256": "bf773add6ea1c15e9b7e1688a2a2a1ce71e5e83340442a128a01b3fe30c62b0b",
@@ -485,7 +494,7 @@
       "url": "https://huggingface.co/datasets/CK0607/komorebi-painter-teachers/tree/aab6df173ef1bfef208ec477c1b02e8e92588dfe/curricula/teacher500/sol-val2017-wave8"
     }
   ],
-  "published_bundle_count": 51,
-  "published_members": 666,
+  "published_bundle_count": 52,
+  "published_members": 674,
   "schema": "painter.teacher-source-public-index.v1"
 }
