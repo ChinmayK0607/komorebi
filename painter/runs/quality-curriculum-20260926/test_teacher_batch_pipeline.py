@@ -21,7 +21,7 @@ SPEC.loader.exec_module(RENDERER)
 class BatchPipelineTest(unittest.TestCase):
     def test_text_and_reference_bundles_stage_with_verified_hashes(self) -> None:
         for batch in ("sol-text-seed", "astra-val2017-wave1", "astra-openverse-wave1",
-                      "sol-val2017-wave5", "astra-openverse-wave5"):
+                      "sol-val2017-wave5", "astra-openverse-wave5", "astra-text-wave6"):
             with self.subTest(batch=batch), tempfile.TemporaryDirectory() as temporary:
                 source = COLLECTED / batch
                 receipt = json.loads((source / "source-receipt.json").read_text())
@@ -46,6 +46,9 @@ class BatchPipelineTest(unittest.TestCase):
                 if batch == "astra-openverse-wave5":
                     self.assertTrue(all(row["prompt"] and row["prompt_sha256"]
                                         and row["source_metadata"]["provider"] for row in manifest["rows"]))
+                if batch == "astra-text-wave6":
+                    self.assertEqual({row["difficulty"] for row in manifest["rows"]},
+                                     {"simple", "intermediate"})
 
     def test_archive_hash_mismatch_blocks_staging(self) -> None:
         batch = "sol-text-seed"

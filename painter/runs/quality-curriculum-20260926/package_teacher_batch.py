@@ -43,6 +43,7 @@ def candidates(source: Path, manifest: dict) -> list[dict]:
                  "input": row["reference_file"], "input_sha": row["reference_sha256"],
                  "prompt": row["prompt_file"], "prompt_sha": row["prompt_sha256"],
                  "notes": row.get("intended_composition", ""),
+                 "difficulty": row.get("difficulty"),
                  "source_url": row["source"].get("source_url"),
                  "source_metadata": row["source"],
                  "source_visual_type": row.get("source_visual_type", "photograph"),
@@ -54,18 +55,22 @@ def candidates(source: Path, manifest: dict) -> list[dict]:
         return [{"id": row["id"], "mode": "text_to_image", "category": row["category"],
                  "program": row["program_file"], "program_sha": row["program_sha256"],
                  "input": row["prompt_file"], "input_sha": row["prompt_sha256"],
-                 "notes": row.get("intended_composition", "")} for row in manifest["items"]]
+                 "notes": row.get("intended_composition", ""),
+                 "difficulty": row.get("difficulty")} for row in manifest["items"]]
     if "samples" in manifest:  # gpt-6-astra high text batch
         return [{"id": row["id"], "mode": "text_to_image", "category": row["category"],
                  "program": row["program_path"], "program_sha": row["sha256"]["program.js"],
                  "input": row["prompt_path"], "input_sha": row["sha256"]["prompt.txt"],
-                 "notes": row.get("intended_composition", "")} for row in manifest["samples"]]
+                 "notes": row.get("intended_composition", ""),
+                 "difficulty": row.get("difficulty")} for row in manifest["samples"]]
     if "entries" in manifest:  # gpt-6-astra high photo batch
         return [{"id": row["id"], "mode": "image_to_image", "category": row.get("observed_category", row["category"]),
                  "program": row["program_path"], "program_sha": row["program_sha256"],
                  "input": row["reference_path"], "input_sha": row["reference_sha256"],
                  "prompt": row.get("prompt_path"), "prompt_sha": row.get("prompt_sha256"),
                  "notes": row.get("plan", ""),
+                 "difficulty": row.get("difficulty"),
+                 "turn_count": row.get("turn_count", 1),
                  "source_url": row.get("source_url"),
                  "source_metadata": {key: row.get(key) for key in (
                      "source_id", "source_url", "flickr_url", "thumbnail_url",
@@ -132,6 +137,8 @@ def package(source: Path) -> dict:
             prompt_sha = digest(prompt_raw)
             members[prompt_path] = prompt_raw
         normalized.append({"id": ident, "mode": row["mode"], "category": row["category"],
+                           "difficulty": row.get("difficulty"),
+                           "turn_count": row.get("turn_count", 1),
                            "notes": row["notes"], "program": program_path,
                            "program_sha256": digest(program), "input": input_path,
                            "input_sha256": digest(input_raw), "prompt": prompt_path,
