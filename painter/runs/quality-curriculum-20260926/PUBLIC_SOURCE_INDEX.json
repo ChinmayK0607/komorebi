@@ -1,14 +1,14 @@
 {
   "candidate_audit": {
     "alternatives": 64,
-    "batches": 49,
+    "batches": 52,
     "distinct": {
       "image_to_image": 310,
       "text_to_image": 282
     },
     "distinct_total": 592,
     "new_input_coverage_total": 580,
-    "render_conditioned_corrections": 20
+    "render_conditioned_corrections": 24
   },
   "candidate_status": "unrendered_unreviewed_not_sft_admitted",
   "excluded": [
@@ -25,6 +25,15 @@
   ],
   "excluded_bundle_count": 2,
   "published": [
+    {
+      "archive_sha256": "b496a5f14910205a25b63abbe5cefcc87f31308d2ee6ac0d5c936a21a899184e",
+      "batch": "astra-bird-turn3-v1",
+      "count": 1,
+      "dataset_commit": "456c499dfd1b96066d33ddf9ef1a2235c448e8f0",
+      "receipt_sha256": "3971f17718c1419411f6ebcaeb3a1914fdd2b2664405289d4bfb30cb237cc38c",
+      "source_commit": "adfc18d4ff5d43ec28f84bdc442d97caab18c599",
+      "url": "https://huggingface.co/datasets/CK0607/komorebi-painter-teachers/tree/456c499dfd1b96066d33ddf9ef1a2235c448e8f0/curricula/teacher500/astra-bird-turn3-v1"
+    },
     {
       "archive_sha256": "bd22534a68d3845994ca27c4623786d3b2bfc4c013384f5ca21c90ce678f018c",
       "batch": "astra-coco-objects-render-conditioned-v1",
@@ -125,6 +134,15 @@
       "url": "https://huggingface.co/datasets/CK0607/komorebi-painter-teachers/tree/1d425a07fd577587461b1eb2542faa8ac3017728/curricula/teacher500/astra-photo-static-repair-v2"
     },
     {
+      "archive_sha256": "759070e7983b04f02d82cabc16bf4820e67f910648a2e1265a1efafba29664b9",
+      "batch": "astra-potter-turn3-v1",
+      "count": 1,
+      "dataset_commit": "a3a32bceaaadf45f7de9729f545dd8cca20fb45d",
+      "receipt_sha256": "fb169d36dacc95826773f5fdbf6e1038600533360625a050ed19302b851a74ee",
+      "source_commit": "adfc18d4ff5d43ec28f84bdc442d97caab18c599",
+      "url": "https://huggingface.co/datasets/CK0607/komorebi-painter-teachers/tree/a3a32bceaaadf45f7de9729f545dd8cca20fb45d/curricula/teacher500/astra-potter-turn3-v1"
+    },
+    {
       "archive_sha256": "23839247f033f180d891c1de0a236d9575ea0cbcf42d91fa0b206590c2897acb",
       "batch": "astra-render-conditioned-correction-v1",
       "count": 4,
@@ -195,6 +213,15 @@
       "receipt_sha256": "48eb69f92cb3c46d886a44d911334770ec5878de98de7d5ba75d09e4355e34f8",
       "source_commit": "582f197eeea302b71208bd333f9dd4964e260b37",
       "url": "https://huggingface.co/datasets/CK0607/komorebi-painter-teachers/tree/cb28c91b4188978575ef2e1384ec71674d426bac/curricula/teacher500/astra-sol-text-static-repair-v2"
+    },
+    {
+      "archive_sha256": "37a16736935037cb9697beef581e99230dc47797ff7ca715f1dd8d39ceedfe71",
+      "batch": "astra-soup-bears-turn3-v1",
+      "count": 2,
+      "dataset_commit": "a9327937aeec4ee9d78f0ab1d91a1c5a63c83439",
+      "receipt_sha256": "c16a6baf133a8af5246b95733a026accaed1506b21a05761426891040c9aa9e9",
+      "source_commit": "adfc18d4ff5d43ec28f84bdc442d97caab18c599",
+      "url": "https://huggingface.co/datasets/CK0607/komorebi-painter-teachers/tree/a9327937aeec4ee9d78f0ab1d91a1c5a63c83439/curricula/teacher500/astra-soup-bears-turn3-v1"
     },
     {
       "archive_sha256": "5fa73041b5c481d0717c584cc39b7c6e86991682457d335fd389933c815bc278",
@@ -449,7 +476,7 @@
       "url": "https://huggingface.co/datasets/CK0607/komorebi-painter-teachers/tree/aab6df173ef1bfef208ec477c1b02e8e92588dfe/curricula/teacher500/sol-val2017-wave8"
     }
   ],
-  "published_bundle_count": 47,
-  "published_members": 661,
+  "published_bundle_count": 50,
+  "published_members": 665,
   "schema": "painter.teacher-source-public-index.v1"
 }

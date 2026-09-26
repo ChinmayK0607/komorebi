@@ -1,6 +1,7 @@
 {
-  "count": 3,
-  "decision_record": "DIVERSE_TURN2_REVIEW.md",
+  "additional_independent_visual_audit": "painter/collected/quality-curriculum-20260926/luna-four-corrections-audit.json",
+  "count": 5,
+  "decision_record": "DIVERSE_TURN2_REVIEW.md and TARGETED_CORRECTION_REVIEW.md",
   "independent_visual_audit": "painter/collected/quality-curriculum-20260926/luna-six-corrections-audit.json",
   "items": [
     {
@@ -43,6 +44,34 @@
       "relative_improvement": true,
       "run_id": "teacher500-astra-coco-scenes-turn2-20260926",
       "tier": "provisional_simple_stage",
+      "training_exported": false
+    },
+    {
+      "canvas_sha256": "26a3af5f7b4318b79f5cbb6abd7c178bacfc600658c1c249568659f4e15938f8",
+      "high_quality_exemplar": true,
+      "id": "coco-val2017-000000566758",
+      "input_sha256": "c2548168a658da18c7f19980f8ca53d2564b6378e33d010f3697b808b09e96e3",
+      "matched_baseline": "exact prior canvas on same reference or prompt",
+      "prior_canvas_sha256": "941ccd26a6c7e051cea18dc5f47d928011f5a2a4ca6f0a68d067ed93754cdccb",
+      "prior_run_id": "teacher500-astra-coco-curated-20260926",
+      "program_sha256": "406f0a405d899edfc6f97d1184a01dec18854bb6db3d8aca423187eb529693eb",
+      "relative_improvement": true,
+      "run_id": "teacher500-astra-bus-runtimefix-20260926",
+      "tier": "provisional_curated_positive",
+      "training_exported": false
+    },
+    {
+      "canvas_sha256": "21450b9b6819767e60303ad63b0e5f5904d3ab704cfa0edec21b17d4ff5c0608",
+      "high_quality_exemplar": true,
+      "id": "caramel-custard",
+      "input_sha256": "74fe8f86036fea825a2662203d52f544f0ea086d665d760737e67c41d14f7638",
+      "matched_baseline": "exact prior canvas on same reference or prompt",
+      "prior_canvas_sha256": "5ae114bc5a122adb08dbab1da495f75860e3db52e04ffac41af122401f7ee067",
+      "prior_run_id": "teacher500-astra-text-curated-20260926",
+      "program_sha256": "26a3718c6e02a1633cdb56ecb23164ed1970084de5080609580b0a9124989a41",
+      "relative_improvement": true,
+      "run_id": "teacher500-astra-custard-turn2-20260926",
+      "tier": "provisional_curated_positive",
       "training_exported": false
     }
   ],
