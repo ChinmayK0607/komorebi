@@ -16,6 +16,7 @@ FILES = (
     "campaign-baseline.log", "campaign-trained.log", "training.exit",
     "sft.toml", "sft.setup.json", "final-data-ready.json",
     "processor-audit.json", "gpu-telemetry.csv", "gpu-telemetry-summary.json",
+    "eval/gpu-telemetry.csv", "eval/gpu-telemetry-summary.json",
     "data/mix-manifest.json", "train.log",
     "train-output/astra-firstpaint-sft-20260926-v1/artifacts/initial-adapter-audit.json",
     "eval/baseline/completion.json", "eval/baseline/eval.toml",
