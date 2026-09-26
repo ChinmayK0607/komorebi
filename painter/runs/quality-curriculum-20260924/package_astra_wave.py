@@ -86,9 +86,13 @@ def package(shard: str) -> dict:
         files.extend(((ref, row["reference"]), (program, row["program"])))
         if canvas:
             files.extend(((canvas, row["prior_canvas"]), (prior_program, row["prior_program"])))
+    notes = source / "manifest.json"
+    if notes.is_file():
+        files.append((notes, "agent-notes.json"))
     manifest = {"schema": "painter.astra-high-wave1-source.v1", "shard": shard,
                 "teacher_model": "gpt-6-astra", "teacher_reasoning_effort": "high",
                 "count": len(rows), "source_reference_manifest_sha256": sha(HERE / "reference-manifest-astra-100.json"),
+                "agent_notes_sha256": sha(notes) if notes.is_file() else None,
                 "status": "unrendered_unreviewed", "rows": rows}
     output = source / "source-bundle.tar.gz"
     payload = json.dumps(manifest, indent=2, sort_keys=True).encode() + b"\n"

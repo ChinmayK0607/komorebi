@@ -55,9 +55,9 @@ def stage(shard: str) -> tuple[Path, dict, dict]:
             raise ValueError("too many source archive members")
         for member in members:
             parts = Path(member.name).parts
-            if (not member.isfile() or member.size > 1_000_000 or len(parts) != 2 and member.name != "manifest.json"
+            if (not member.isfile() or member.size > 1_000_000 or len(parts) != 2 and member.name not in {"manifest.json", "agent-notes.json"}
                     or any(part in {".", ".."} for part in parts)
-                    or (member.name != "manifest.json" and parts[0] not in {"references", "programs", "prior"})):
+                    or (member.name not in {"manifest.json", "agent-notes.json"} and parts[0] not in {"references", "programs", "prior"})):
                 raise ValueError(f"unexpected source archive member: {member.name}")
             target = output / member.name
             target.parent.mkdir(parents=True, exist_ok=True)
@@ -65,6 +65,9 @@ def stage(shard: str) -> tuple[Path, dict, dict]:
     manifest = json.loads((output / "manifest.json").read_text())
     if manifest.get("shard") != shard or manifest.get("count") != receipt["count"]:
         raise ValueError("source manifest disagrees with public receipt")
+    notes = output / "agent-notes.json"
+    if (sha(notes.read_bytes()) if notes.is_file() else None) != manifest.get("agent_notes_sha256"):
+        raise ValueError("agent analysis notes hash mismatch")
     for row in manifest["rows"]:
         for field, digest in (("reference", "reference_sha256"), ("program", "program_sha256"),
                               ("prior_canvas", "prior_canvas_sha256"), ("prior_program", "prior_program_sha256")):
