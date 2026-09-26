@@ -36,6 +36,20 @@ def read_file(source: Path, relative: str, expected_sha: str | None) -> bytes:
 
 
 def candidates(source: Path, manifest: dict) -> list[dict]:
+    if "items" in manifest and manifest.get("modality") == "image-to-painting":
+        return [{"id": row["id"], "mode": "image_to_image",
+                 "category": row["corrected_category"],
+                 "program": row["program_file"], "program_sha": row["program_sha256"],
+                 "input": row["reference_file"], "input_sha": row["reference_sha256"],
+                 "prompt": row["prompt_file"], "prompt_sha": row["prompt_sha256"],
+                 "notes": row.get("intended_composition", ""),
+                 "source_url": row["source"].get("source_url"),
+                 "source_metadata": row["source"],
+                 "source_visual_type": row.get("source_visual_type", "photograph"),
+                 "license": {"id": row["source"].get("license_id"),
+                             "name": row["source"].get("license_name"),
+                             "url": row["source"].get("license_url")}}
+                for row in manifest["items"]]
     if "items" in manifest:  # gpt-5.6-sol high text batch
         return [{"id": row["id"], "mode": "text_to_image", "category": row["category"],
                  "program": row["program_file"], "program_sha": row["program_sha256"],
@@ -50,8 +64,15 @@ def candidates(source: Path, manifest: dict) -> list[dict]:
         return [{"id": row["id"], "mode": "image_to_image", "category": row.get("observed_category", row["category"]),
                  "program": row["program_path"], "program_sha": row["program_sha256"],
                  "input": row["reference_path"], "input_sha": row["reference_sha256"],
+                 "prompt": row.get("prompt_path"), "prompt_sha": row.get("prompt_sha256"),
                  "notes": row.get("plan", ""),
                  "source_url": row.get("source_url"),
+                 "source_metadata": {key: row.get(key) for key in (
+                     "source_id", "source_url", "flickr_url", "thumbnail_url",
+                     "provider", "query", "title", "creator", "creator_url",
+                     "attribution", "license_id", "license_name", "license",
+                     "license_url", "license_version", "tags", "captions", "width", "height")
+                     if row.get(key) is not None},
                  "source_visual_type": row.get("source_visual_type", "photograph"),
                  "license": {"id": row.get("license_id"),
                              "name": row.get("license_name", row.get("license")),
@@ -102,10 +123,21 @@ def package(source: Path) -> dict:
         program_path = f"programs/{ident}.js"
         members[input_path] = input_raw
         members[program_path] = program
+        prompt_path = None
+        prompt_sha = None
+        if row.get("prompt"):
+            prompt_raw = read_file(source, row["prompt"], row["prompt_sha"])
+            prompt_raw.decode("utf-8")
+            prompt_path = f"prompts/{ident}.txt"
+            prompt_sha = digest(prompt_raw)
+            members[prompt_path] = prompt_raw
         normalized.append({"id": ident, "mode": row["mode"], "category": row["category"],
                            "notes": row["notes"], "program": program_path,
                            "program_sha256": digest(program), "input": input_path,
-                           "input_sha256": digest(input_raw), "source_url": row.get("source_url"),
+                           "input_sha256": digest(input_raw), "prompt": prompt_path,
+                           "prompt_sha256": prompt_sha,
+                           "source_url": row.get("source_url"),
+                           "source_metadata": row.get("source_metadata"),
                            "source_visual_type": row.get("source_visual_type"),
                            "license": row.get("license"), "creator": row.get("creator"),
                            "attribution": row.get("attribution"),

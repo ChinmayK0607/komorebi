@@ -20,7 +20,8 @@ SPEC.loader.exec_module(RENDERER)
 
 class BatchPipelineTest(unittest.TestCase):
     def test_text_and_reference_bundles_stage_with_verified_hashes(self) -> None:
-        for batch in ("sol-text-seed", "astra-val2017-wave1", "astra-openverse-wave1"):
+        for batch in ("sol-text-seed", "astra-val2017-wave1", "astra-openverse-wave1",
+                      "sol-val2017-wave5", "astra-openverse-wave5"):
             with self.subTest(batch=batch), tempfile.TemporaryDirectory() as temporary:
                 source = COLLECTED / batch
                 receipt = json.loads((source / "source-receipt.json").read_text())
@@ -39,6 +40,12 @@ class BatchPipelineTest(unittest.TestCase):
                 self.assertEqual(staged_receipt["archive_sha256"], receipt["archive_sha256"])
                 self.assertEqual({row["mode"] for row in manifest["rows"]},
                                  {"text_to_image"} if "text" in batch else {"image_to_image"})
+                if batch == "sol-val2017-wave5":
+                    self.assertTrue(all(row["prompt"] and row["prompt_sha256"]
+                                        and row["source_metadata"]["source_id"] for row in manifest["rows"]))
+                if batch == "astra-openverse-wave5":
+                    self.assertTrue(all(row["prompt"] and row["prompt_sha256"]
+                                        and row["source_metadata"]["provider"] for row in manifest["rows"]))
 
     def test_archive_hash_mismatch_blocks_staging(self) -> None:
         batch = "sol-text-seed"

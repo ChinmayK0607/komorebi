@@ -52,7 +52,7 @@ def stage(batch: str, output: Path) -> tuple[dict, dict]:
             parts = Path(member.name).parts
             if (not member.isfile() or member.size > 5_000_000
                     or (member.name != "manifest.json" and
-                        (len(parts) != 2 or parts[0] not in {"programs", "inputs"}))
+                        (len(parts) != 2 or parts[0] not in {"programs", "inputs", "prompts"}))
                     or any(part in {".", ".."} for part in parts)):
                 raise ValueError(f"unexpected teacher source member: {member.name}")
             target = output / member.name
@@ -75,6 +75,10 @@ def stage(batch: str, output: Path) -> tuple[dict, dict]:
                 raise ValueError("unexpected teacher file path")
             if sha((output / member).read_bytes()) != row[field]:
                 raise ValueError(f"teacher source member hash mismatch: {row['id']} {name}")
+        if row.get("prompt"):
+            expected = f"prompts/{row['id']}.txt"
+            if row["prompt"] != expected or sha((output / expected).read_bytes()) != row["prompt_sha256"]:
+                raise ValueError(f"teacher prompt path/hash mismatch: {row['id']}")
     (output / "source-public.json").write_text(json.dumps(receipt, indent=2, sort_keys=True) + "\n")
     return manifest, receipt
 
@@ -112,6 +116,8 @@ def render(batch: str, run_id: str, timeout: int) -> dict:
         (episode / "program.js").write_bytes(program.read_bytes())
         suffix = ".txt" if row["mode"] == "text_to_image" else ".jpg"
         (episode / f"input{suffix}").write_bytes((output / row["input"]).read_bytes())
+        if row.get("prompt"):
+            (episode / "prompt.txt").write_bytes((output / row["prompt"]).read_bytes())
         (episode / "render-status.json").write_text(json.dumps(status, indent=2, sort_keys=True) + "\n")
         statuses.append(status)
         print(json.dumps({"progress": f"{index}/{manifest['count']}", **status}, sort_keys=True), flush=True)
