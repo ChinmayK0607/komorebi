@@ -109,6 +109,12 @@ def candidates(source: Path, manifest: dict) -> list[dict]:
                  "input": row["prompt_path"], "input_sha": row["sha256"]["prompt.txt"],
                  "notes": row.get("intended_composition", ""),
                  "difficulty": row.get("difficulty")} for row in manifest["samples"]]
+    if manifest.get("task_type") == "text_to_image" and "entries" in manifest:
+        return [{"id": row["id"], "mode": "text_to_image", "category": row["category"],
+                 "program": row["program_path"], "program_sha": row["program_sha256"],
+                 "input": row["prompt_path"], "input_sha": row["prompt_sha256"],
+                 "notes": row.get("intended_composition", ""),
+                 "difficulty": row.get("difficulty")} for row in manifest["entries"]]
     if "entries" in manifest:  # gpt-6-astra high photo batch
         return [{"id": row["id"], "mode": "image_to_image", "category": row.get("observed_category", row["category"]),
                  "program": row["program_path"], "program_sha": row["program_sha256"],

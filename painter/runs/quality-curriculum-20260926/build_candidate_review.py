@@ -99,15 +99,16 @@ article{{background:white;border:1px solid #d4cec0;border-radius:9px;overflow:hi
 <div>{len(cards)} distinct inputs · {kinds['text']} text · {kinds['image']} image</div>
 <div class="controls"><select id="kind"><option value="">All inputs</option><option>text</option><option>image</option></select>
 <select id="model"><option value="">Both teachers</option><option>gpt-5.6-sol</option><option>gpt-6-astra</option></select>
+<select id="batch"><option value="">All batches</option>{''.join(f'<option>{html.escape(batch)}</option>' for batch in sorted({card['batch'] for card in cards}))}</select>
 <input id="search" placeholder="Search subject, category, batch"><span id="shown"></span></div></header>
 <main>{''.join(blocks)}</main>
 <script>
 const cards=[...document.querySelectorAll('article')];
 function filter(){{const k=document.querySelector('#kind').value,m=document.querySelector('#model').value,
-q=document.querySelector('#search').value.toLowerCase();let n=0;for(const c of cards){{
-const ok=(!k||c.dataset.kind===k)&&(!m||c.dataset.model===m)&&c.textContent.toLowerCase().includes(q);
+b=document.querySelector('#batch').value,q=document.querySelector('#search').value.toLowerCase();let n=0;for(const c of cards){{
+const ok=(!k||c.dataset.kind===k)&&(!m||c.dataset.model===m)&&(!b||c.dataset.batch===b)&&c.textContent.toLowerCase().includes(q);
 c.hidden=!ok;if(ok)n++;}}document.querySelector('#shown').textContent=n+' shown';}}
-for(const id of ['kind','model','search'])document.getElementById(id).addEventListener('input',filter);filter();
+for(const id of ['kind','model','batch','search'])document.getElementById(id).addEventListener('input',filter);filter();
 </script></html>'''
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(page)

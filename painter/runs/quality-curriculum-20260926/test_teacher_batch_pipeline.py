@@ -26,6 +26,7 @@ class BatchPipelineTest(unittest.TestCase):
     def test_text_and_reference_bundles_stage_with_verified_hashes(self) -> None:
         for batch in ("sol-text-seed", "astra-val2017-wave1", "astra-openverse-wave1",
                       "sol-val2017-wave5", "astra-openverse-wave5", "astra-text-wave6",
+                      "sol-text-curated-v1",
                       "sol-photo-static-repair-v1", "astra-sol-text-static-repair-v1",
                       "astra-photo-static-repair-v1"):
             with self.subTest(batch=batch), tempfile.TemporaryDirectory() as temporary:
