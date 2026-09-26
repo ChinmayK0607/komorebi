@@ -38,7 +38,8 @@ class BatchPipelineTest(unittest.TestCase):
                       "sol-text-curated-v1",
                       "sol-photo-static-repair-v1", "astra-sol-text-static-repair-v1",
                       "astra-photo-static-repair-v1", "astra-sol-text-static-repair-v2",
-                      "sol-astra-photo-static-repair-v1", "astra-simple-cc0-static-repair-v1"):
+                      "sol-astra-photo-static-repair-v1", "astra-simple-cc0-static-repair-v1",
+                      "astra-render-conditioned-correction-v1", "sol-render-conditioned-correction-v1"):
             with self.subTest(batch=batch), tempfile.TemporaryDirectory() as temporary:
                 source = COLLECTED / batch
                 receipt = json.loads((source / "source-receipt.json").read_text())
@@ -85,6 +86,13 @@ class BatchPipelineTest(unittest.TestCase):
                              "astra-simple-cc0-static-repair-v1"}:
                     self.assertTrue(all(row["role"] == "unrendered_alternative_candidate"
                                         and row["baseline_program_sha256"] for row in manifest["rows"]))
+                if "render-conditioned" in batch:
+                    self.assertTrue(all(row["role"] == "render_conditioned_correction_candidate"
+                                        and row["turn_count"] == 2
+                                        and row["prior_run_id"] == "teacher500-simple-cc0-pilot-20260926"
+                                        and (Path(temporary) / "stage" / row["prior_canvas"]).is_file()
+                                        and (Path(temporary) / "stage" / row["baseline_program"]).is_file()
+                                        for row in manifest["rows"]))
 
     def test_archive_hash_mismatch_blocks_staging(self) -> None:
         batch = "sol-text-seed"

@@ -56,6 +56,7 @@ def build() -> dict:
               "candidate_status": "unrendered_unreviewed_not_sft_admitted",
               "candidate_audit": {key: candidate_audit[key] for key in
                                   ("distinct", "distinct_total", "alternatives",
+                                   "render_conditioned_corrections",
                                    "new_input_coverage_total", "batches")},
               "published_bundle_count": len(published),
               "published_members": sum(row["count"] for row in published),

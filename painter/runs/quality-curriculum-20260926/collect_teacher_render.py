@@ -67,6 +67,10 @@ def collect(run_id: str) -> tuple[Path, dict]:
             raise ValueError(f"render input mismatch: {row['id']}")
         if sha(episode / "program.js") != row["program_sha256"]:
             raise ValueError(f"render program mismatch: {row['id']}")
+        if row.get("role") == "render_conditioned_correction_candidate":
+            if (sha(episode / "prior-canvas.png") != row.get("prior_canvas_sha256")
+                    or sha(episode / "prior-program.js") != row.get("baseline_program_sha256")):
+                raise ValueError(f"render prior evidence mismatch: {row['id']}")
         canvas = episode / "canvas.png"
         if (sha(canvas) if canvas.is_file() else None) != row["canvas_sha256"]:
             raise ValueError(f"render canvas mismatch: {row['id']}")
@@ -90,19 +94,21 @@ def gallery(target: Path, summary: dict) -> Path:
             canvas = f'<figure><img src="episodes/{escape(ident)}/canvas.png" alt="rendered canvas"><figcaption>Candidate canvas</figcaption></figure>'
         else:
             canvas = '<figure><div class="missing">No canvas</div></figure>'
+        prior = (f'<figure><img src="episodes/{escape(ident)}/prior-canvas.png" alt="prior canvas">'
+                 '<figcaption>Prior canvas inspected by teacher</figcaption></figure>') if row.get("prior_canvas_sha256") else ""
         cards.append(f'<article><h2>{escape(ident)} · {"renderer-valid" if row["valid"] else escape(str(row.get("error_code") or "invalid"))}</h2>'
-                     f'<div class="frames">{source}{canvas}</div><p><a href="episodes/{escape(ident)}/program.js">program</a> · '
+                     f'<div class="frames">{source}{prior}{canvas}</div><p><a href="episodes/{escape(ident)}/program.js">program</a> · '
                      f'<a href="episodes/{escape(ident)}/render-status.json">render status</a></p></article>')
     html = f'''<!doctype html><html lang="en"><meta charset="utf-8"><title>Teacher render review</title>
 <style>body{{font:16px/1.4 system-ui;background:#181b1d;color:#eee;margin:24px}}p{{color:#bcc5c7}}
 article{{background:#282d31;padding:16px;margin:18px 0;border-radius:10px}}h2{{font-size:1.1rem}}
-.frames{{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}}figure{{margin:0}}
+.frames{{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px}}figure{{margin:0}}
 img,pre,.missing{{box-sizing:border-box;width:100%;height:420px;object-fit:contain;background:#f4f1ea;color:#222}}
 pre{{white-space:pre-wrap;overflow:auto;padding:20px}}.missing{{display:grid;place-items:center}}
 figcaption{{color:#bbc6c8;padding:4px}}a{{color:#a5d4df}}
 @media(max-width:800px){{.frames{{grid-template-columns:1fr}}}}</style>
 <h1>Teacher render review · {escape(summary['batch'])}</h1>
-<p>{summary['valid']}/{summary['count']} renderer-valid. Renderer validity is not aesthetic quality approval. Inspect each reference and canvas before admitting a demonstration or asking for a correction turn.</p>
+<p>{summary['valid']}/{summary['count']} renderer-valid. Renderer validity is not aesthetic quality approval. For corrections, compare the reference, prior canvas and new canvas before admitting a demonstration.</p>
 {''.join(cards)}</html>'''
     path = target / "review.html"
     path.write_text(html)

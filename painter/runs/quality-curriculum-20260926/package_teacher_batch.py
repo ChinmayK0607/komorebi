@@ -36,6 +36,23 @@ def read_file(source: Path, relative: str, expected_sha: str | None) -> bytes:
 
 
 def candidates(source: Path, manifest: dict) -> list[dict]:
+    if manifest.get("modality") == "image-to-painting-render-conditioned-correction":
+        return [{"id": row["id"], "mode": "image_to_image",
+                 "category": row["category"], "role": "render_conditioned_correction_candidate",
+                 "turn_count": 2, "program": row["new_program_path"],
+                 "program_sha": row["new_program_sha256"],
+                 "input": row["reference_path"], "input_sha": row["reference_sha256"],
+                 "prompt": row["prompt_path"], "prompt_sha": row["prompt_sha256"],
+                 "baseline_program": row["prior_program_path"],
+                 "baseline_program_sha": row["prior_program_sha256"],
+                 "prior_canvas": row["prior_canvas_path"],
+                 "prior_canvas_sha": row["prior_canvas_sha256"],
+                 "baseline_batch": row["source_batch"],
+                 "prior_run_id": row["prior_run_id"],
+                 "notes": row["rationale"], "source_url": row["source_url"],
+                 "source_metadata": row["source_metadata"],
+                 "source_visual_type": "photograph", "license": row["license"]}
+                for row in manifest["items"]]
     if "entries" in manifest and manifest.get("new_distinct_source_count") == 0:
         return [{"id": row["id"], "mode": "image_to_image",
                  "category": "static-repair", "role": "unrendered_alternative_candidate",
@@ -176,6 +193,12 @@ def package(source: Path) -> dict:
             baseline = read_file(source, row["baseline_program"], row["baseline_program_sha"])
             validate_teacher_program(baseline.decode("utf-8"))
             subprocess.run([javascript, "--check", "-"], input=baseline, check=True, capture_output=True)
+            if row.get("prior_canvas"):
+                prior_canvas = read_file(source, row["prior_canvas"], row["prior_canvas_sha"])
+                if not prior_canvas.startswith(b"\x89PNG\r\n\x1a\n"):
+                    raise ValueError(f"not a PNG prior canvas: {ident}")
+                members[f"priors/{ident}.png"] = prior_canvas
+                members[f"baselines/{ident}.js"] = baseline
         input_raw = read_file(source, row["input"], row["input_sha"])
         if row["mode"] == "text_to_image":
             input_raw.decode("utf-8")
@@ -201,6 +224,10 @@ def package(source: Path) -> dict:
                            "role": row.get("role", "first_paint_candidate"),
                            "baseline_batch": row.get("baseline_batch"),
                            "baseline_program_sha256": row.get("baseline_program_sha"),
+                           "baseline_program": f"baselines/{ident}.js" if row.get("prior_canvas") else None,
+                           "prior_canvas": f"priors/{ident}.png" if row.get("prior_canvas") else None,
+                           "prior_canvas_sha256": row.get("prior_canvas_sha"),
+                           "prior_run_id": row.get("prior_run_id"),
                            "notes": row["notes"], "program": program_path,
                            "program_sha256": digest(program), "input": input_path,
                            "input_sha256": digest(input_raw), "prompt": prompt_path,

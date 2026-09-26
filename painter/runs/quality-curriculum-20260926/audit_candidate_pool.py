@@ -23,6 +23,7 @@ def audit() -> dict:
     teachers = Counter()
     difficulties = Counter()
     alternatives = 0
+    render_conditioned_corrections = 0
     batches = 0
     prior_campaign_reference_reuse = []
     missing_image_license = []
@@ -67,6 +68,16 @@ def audit() -> dict:
                     if not row.get("baseline_batch") or not row.get("baseline_program_sha256"):
                         errors.append(f"{key}: alternative lacks baseline link")
                     continue
+                if row["role"] == "render_conditioned_correction_candidate":
+                    render_conditioned_corrections += 1
+                    if not row.get("baseline_batch") or not row.get("prior_run_id"):
+                        errors.append(f"{key}: correction lacks first-turn link")
+                    for member_field, digest_field in (("prior_canvas", "prior_canvas_sha256"),
+                                                       ("baseline_program", "baseline_program_sha256")):
+                        member = row.get(member_field)
+                        if not member or sha(archive.extractfile(member).read()) != row.get(digest_field):
+                            errors.append(f"{key}: correction prior evidence mismatch: {member_field}")
+                    continue
                 distinct[row["mode"]] += 1
                 teachers[row["model"]] += 1
                 if row["mode"] == "image_to_image":
@@ -93,6 +104,7 @@ def audit() -> dict:
     return {"schema": "painter.teacher-candidate-audit.v1",
             "batches": batches, "distinct": dict(distinct),
             "distinct_total": sum(distinct.values()), "alternatives": alternatives,
+            "render_conditioned_corrections": render_conditioned_corrections,
             "teachers": dict(teachers), "labelled_difficulty": dict(difficulties),
             "unique_image_hashes": len(image_hashes), "unique_text_hashes": len(text_hashes),
             "unique_image_source_urls": len(image_source_urls),
