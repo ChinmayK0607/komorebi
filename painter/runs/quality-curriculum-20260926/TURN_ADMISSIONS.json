@@ -1,0 +1,43 @@
+{
+  "schema": "painter.reviewed-turn-admissions.v1",
+  "review_date": "2026-09-26",
+  "scope": "one stylized shell correction selected from six rendered second turns and two rendered third turns",
+  "training_export_status": "not_exported_or_trained",
+  "admitted_target_count": 1,
+  "examples": [
+    {
+      "id": "openverse-a698f10d-291e-4474-9dab-7511a0ae5280",
+      "mode": "image_to_image",
+      "style_tag": "stylized_interpretation",
+      "teacher_model": "gpt-6-astra",
+      "teacher_reasoning_effort": "high",
+      "target_turn": 3,
+      "reference_sha256": "caad8170f97e3eea92f856c9bf571f740999a3dece5811d04c619236b85cfef3",
+      "reference_source_url": "https://www.rawpixel.com/image/5916766/image-public-domain-beach-free",
+      "reference_license": "CC0 1.0",
+      "prompt_sha256": "bec7c622169a03f47c8516da5a74439b4367dcf5da2c2d3838116bb4760fad9b",
+      "conditioning_state": {
+        "turn_2_run": "teacher500-astra-turn2-20260926",
+        "turn_2_program_sha256": "7fd5d886fe175b15ea2e28a553b4257bc1df1c872937b40b90bddb3e1938729c",
+        "turn_2_canvas_sha256": "ab8c1991eb84595d9453f3b2d45b9f47666f57e98af18243630f5c9c4d673ef8"
+      },
+      "target": {
+        "turn_3_run": "teacher500-astra-shell-turn3-20260926",
+        "full_program_sha256": "47d78ac21177ad55685f364ae9c45560fdf2f8270ddc00ab096fe797e05a0eb9",
+        "rendered_canvas_sha256": "c1a2b317387d8717c5a1ae915c64c0c523025fe05cf79088511e764a25b856dc",
+        "renderer_valid": true
+      },
+      "visual_review": {
+        "parent": "clear relative quality and fidelity improvement; acceptable stylized shell painting",
+        "independent_luna_low": "clear improvement and reasonable stylized-painting SFT positive; not photorealistic",
+        "remaining_weaknesses": [
+          "simplified geometry and regular bands",
+          "photographic shell texture and irregular layered structure only approximate"
+        ]
+      },
+      "public_dataset": "CK0607/komorebi-painter-teachers",
+      "public_source_revision": "f72c85f3db2f2914cc41f55855100d529db7ea2e",
+      "sft_admission": "provisional_positive"
+    }
+  ]
+}

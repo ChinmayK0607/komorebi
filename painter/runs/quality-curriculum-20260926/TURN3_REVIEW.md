@@ -1,0 +1,25 @@
+# Third-turn actual-canvas review, 2026-09-26
+
+**Hypothesis and matched baseline.** A second inspection of the actual rendered canvas can fix the remaining visible structure and beauty defects in the two best second-turn cases. Each reference, original prompt and renderer stayed fixed. The exact second-turn program and canvas are the conditioning state and matched baseline for the complete third-turn replacement. The [second-turn review](TURN2_REVIEW.md) explains why the shell and watering can continued while the four weaker trajectories stopped.
+
+Both third-turn programs were written only after the teacher displayed the exact reference and second-turn canvas and read the full second-turn program. Their source archives preserve those prior files by SHA-256. The finite Linux CPU renders completed and were anonymously downloaded and hash-verified. The parent and an independent `gpt-5.6-luna` low reviewer displayed all three images before the following decisions. These are nonblind agent reviews, not human labels or a model-training result.
+
+| Scene | Result relative to turn 2 | Remaining weakness | Admission |
+| --- | --- | --- | --- |
+| Shell `openverse-a698f10d-291e-4474-9dab-7511a0ae5280` | Clearly better silhouette, coherent nested spiral, layered amber/ivory bands, controlled highlights and soft shadow | Stylized geometry and regular bands; photographic shell texture and irregular layering remain approximate | **Provisional positive multi-turn SFT target, tagged `stylized_interpretation`** |
+| Watering can `openverse-db1a60b0-83db-4115-939f-4e97606a04aa` | Modestly cleaner grounded body, clearer rim and preserved spout | Horizontal grid-like marks, wire-like handle, angular nozzle and weak metallic lighting | Withhold from high-quality tier; retain only as a diagnostic/possible low-tier example |
+
+The shell is one **visually admitted candidate target**, pending final export and a student-training comparison. This does not make the source photo itself a painting and does not establish photorealistic fidelity. The watering can is not admitted at the campaign's high-quality bar. The outcome shows the inspect → revise loop can make one example materially better; it does not justify bulk admission of the 592 unreviewed first paints.
+
+## Immutable evidence, failures and resources
+
+| Run | Source bundle SHA-256 | Public data revision | Run summary SHA-256 | Code commit | Result | CPU render wall time |
+| --- | --- | --- | --- | --- | --- | ---: |
+| `teacher500-astra-shell-turn3-20260926` | `04739496a3244fb78d340b2b10fea5b3dc3a271e572a0b9db8914fd548e1f794` | `f72c85f3db2f2914cc41f55855100d529db7ea2e` | `31b1a71bb0a4244584d84293bc6a08bd717686757cc3b9fdc5b996ca8c9d590d` | `8ea70c7c78c85767b98facaf9ee53cbd87af7436` | 1/1 renderer-valid | 5.813 s |
+| `teacher500-sol-can-turn3-20260926` | `e7cfbc38116758968e9ee28394b09b88896f4d46c157673898e0fd873583bab2` | `52c9bf4381fb8af00d63b293521e15228c6a69c7` | `46d6f8596c092f743997737a200228120c04574c59526c9c73d5e8b9d04bec02` | `8ea70c7c78c85767b98facaf9ee53cbd87af7436` | 1/1 renderer-valid | 51.456 s |
+
+Both runs used renderer SHA-256 `ad440b1aa8612e293b52fa5e68c2252926722852155eb8cd145d369a862a8a63`, one CPU worker and 600-second per-program timeout. The shell's reference, observed turn-two canvas, new program and turn-three canvas hashes are respectively `caad8170f97e3eea92f856c9bf571f740999a3dece5811d04c619236b85cfef3`, `ab8c1991eb84595d9453f3b2d45b9f47666f57e98af18243630f5c9c4d673ef8`, `47d78ac21177ad55685f364ae9c45560fdf2f8270ddc00ab096fe797e05a0eb9`, and `c1a2b317387d8717c5a1ae915c64c0c523025fe05cf79088511e764a25b856dc`. The can's corresponding hashes are `f885cb2b59537ebf06698add18c4f116e2af579c100ffd913c865ad8b17cdb31`, `784955184480abbef63421ff3dd0b89e10e0e389573e6663307fbb840d33debf`, `a69d2b8bbf346f6aef16fdf8c6750124eeb5c0ede14f1caa5cf3e19d97511939`, and `6175f1279c42af6117f8d5170ab9d8adf2938746fdd7d822429f022c61dc2551`.
+
+[Shell reference/turn-two/turn-three comparison](../../collected/quality-curriculum-20260926/rendered-cloud/teacher500-astra-shell-turn3-20260926/review.html) · [watering-can comparison](../../collected/quality-curriculum-20260926/rendered-cloud/teacher500-sol-can-turn3-20260926/review.html). Public hash-verified receipts and raw evidence are under `runs/<run-id>/` in [the teacher dataset](https://huggingface.co/datasets/CK0607/komorebi-painter-teachers/tree/main/runs). No render timed out or was censored. No GPU was rented. Codex Cloud CPU utilization and provider charge were not instrumented; render wall times exclude Cloud startup and are not utilization measures.
+
+**Next decision.** Preserve the shell trajectory as an explicit stylized positive with all previous states, and withhold the can from high-tier training. Sample more diverse simple subjects through the same visible feedback loop before another GPU run; evaluate the resulting student against the frozen initializer under a matched protocol. Do not count a third-turn success on one shell as evidence of broad generalization.
