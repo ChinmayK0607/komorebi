@@ -1,0 +1,50 @@
+{
+  "count": 3,
+  "decision_record": "DIVERSE_TURN2_REVIEW.md",
+  "independent_visual_audit": "painter/collected/quality-curriculum-20260926/luna-six-corrections-audit.json",
+  "items": [
+    {
+      "canvas_sha256": "1e8485d52a5631dd5fb32820c0217d8b10d02a6113e20752d4a2423d35752d67",
+      "high_quality_exemplar": false,
+      "id": "coco-val2017-000000056545",
+      "input_sha256": "852f95c0f7d5d72ec994fcead05a2a5501e7459966a360d92c26a5827584c744",
+      "matched_baseline": "exact prior canvas on same reference",
+      "prior_canvas_sha256": "57e7c71e025fc33f505383056e492c06579d1d963685c85d746202c043ea633c",
+      "prior_run_id": "teacher500-astra-coco-curated-20260926",
+      "program_sha256": "53e61a89a4ea7de40ee0a5dd676acd344e8cf97e11a0c606a1fce9873abf3a91",
+      "relative_improvement": true,
+      "run_id": "teacher500-astra-coco-objects-turn2-20260926",
+      "tier": "provisional_simple_stage",
+      "training_exported": false
+    },
+    {
+      "canvas_sha256": "dbfb68fdccb5a4fd233cc00c92bbebe2ed55728703d93c91c91aa5b5ae1d6012",
+      "high_quality_exemplar": false,
+      "id": "coco-val2017-000000350388",
+      "input_sha256": "ee7973cada25a734fafed6e6938823c5e7dee82e76ad2d3749350d193ea8179f",
+      "matched_baseline": "exact prior canvas on same reference",
+      "prior_canvas_sha256": "c9487436b36edd29607aa135b708e8442520ce0aecdb9925290b279f5a726446",
+      "prior_run_id": "teacher500-astra-coco-curated-20260926",
+      "program_sha256": "c4784956e3b935c56d1b676797b54da13249bba60dcedcf95f65f941d66406ea",
+      "relative_improvement": true,
+      "run_id": "teacher500-astra-coco-objects-turn2-20260926",
+      "tier": "provisional_simple_stage",
+      "training_exported": false
+    },
+    {
+      "canvas_sha256": "3b55b1443d032ceb416c5f48f8d9d6327f50eeb6ea04da951724b60beb64c5ee",
+      "high_quality_exemplar": false,
+      "id": "coco-val2017-000000073118",
+      "input_sha256": "b99729b8c45705912e2dbf30cdbc201dd599ff75d00b7ef54078b546195dff31",
+      "matched_baseline": "exact prior canvas on same reference",
+      "prior_canvas_sha256": "305f094befc27e8f294c16744938365d6c85dab0b16d344731d232534dcfc746",
+      "prior_run_id": "teacher500-astra-coco-curated-20260926",
+      "program_sha256": "20b959f15a1ba308a4664c366b6c33d034e5d0142a32d3a6fa6c6ec0ebf903b5",
+      "relative_improvement": true,
+      "run_id": "teacher500-astra-coco-scenes-turn2-20260926",
+      "tier": "provisional_simple_stage",
+      "training_exported": false
+    }
+  ],
+  "schema": "painter.simple-stage-candidates.v1"
+}

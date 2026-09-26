@@ -62,7 +62,7 @@ def validate_teacher_program(program):
     p5_globals = ("smooth", "ellipse", "rect", "line", "fill", "stroke", "random", "noise",
                   "createCanvas", "background", "noStroke", "noFill", "translate", "rotate",
                   "scale", "image", "text", "color", "push", "pop", "beginShape", "endShape",
-                  "vertex", "circle", "pixelDensity", "frameRate")
+                  "vertex", "circle", "box", "pixelDensity", "frameRate")
     collision = re.search(r"\b(?:function\s+|(?:const|let|var)\s+)(" + "|".join(p5_globals) +
                           r")\s*(?:\(|=)", program)
     if collision:

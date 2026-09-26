@@ -18,6 +18,11 @@ class TeacherProgramContractTest(unittest.TestCase):
         source = "function smoothPoly(p) { return p; }\nfunction draw() { translate(-300,-300); noLoop(); }"
         validate_teacher_program(source)
 
+    def test_p5_webgl_box_helper_collision_is_rejected(self):
+        source = "function box(x,y) { return x+y; }\nfunction draw() { translate(-300,-300); noLoop(); }"
+        with self.assertRaisesRegex(ValueError, "redefines p5 global: box"):
+            validate_teacher_program(source)
+
 
 if __name__ == "__main__":
     unittest.main()
