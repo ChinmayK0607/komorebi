@@ -1,0 +1,52 @@
+{
+  "t600-326": {
+    "canvas_sha256": "eacb27b4155f093be9851250ea90959a7d60a7fece164deb8e2c1f954ddbd4c6",
+    "decision": "correction_seed",
+    "reason": "The frog and leaf read immediately, but the body is a flat oval with limited anatomy and the rain/droplet marks are mechanical."
+  },
+  "t600-392": {
+    "canvas_sha256": "258bc07d98d9f24d06e18e28f5bd69b4fd2a10287738e2e8978fe8c98e5a1ebe",
+    "decision": "reject_direct_sft",
+    "reason": "The vegetables read as isolated geometric blocks on a tray; the image is sparse and not appetizing enough for the beauty target."
+  },
+  "t600-422": {
+    "canvas_sha256": "0fa959c3e6d020333a0cb2179728b7a2140a3a7c77eae996d971dc74dbdb66df",
+    "decision": "correction_seed",
+    "reason": "The lamp silhouette and warm shade are coherent, but the base and tabletop are underdeveloped and the image lacks convincing light falloff."
+  },
+  "t600-440": {
+    "canvas_sha256": "2129b34018da0fdf42c507a3a1b22da35b17073f245137678db15096764601b2",
+    "decision": "correction_seed",
+    "reason": "The ladybird has a legible shell and spot pattern, but the anatomy is pale and diffuse with extremely little depth or environmental detail."
+  },
+  "t600-464": {
+    "canvas_sha256": "062efc6dc6a8c780b89e63e3188e32a9795849d08fd61711a291cfe5fd9c7048",
+    "decision": "correction_seed",
+    "reason": "The spice bowls and stall layout are legible with pleasant warm color, while vendor anatomy and scale geometry remain schematic."
+  },
+  "t600-482": {
+    "canvas_sha256": "52adfb321506febae7eb813b64d04efb1f7fdd65494011075e05c3468477554f",
+    "decision": "reject_direct_sft",
+    "reason": "The canopy and stall are readable, but the cook is a faceless geometric figure and the intended two customer silhouettes barely appear."
+  },
+  "t600-506": {
+    "canvas_sha256": "11914311b88bcb004249527c0e80524671e82fc44057024a151361bed21eee07",
+    "decision": "reject_direct_sft",
+    "reason": "The caravan becomes a repetitive row of stick-like figures; camel bodies and riders are not reliably distinguishable."
+  },
+  "t600-554": {
+    "canvas_sha256": "178c599d3fd88a379e499a5c358f2e01ec96b84efd66c220ed9077251632c6ff",
+    "decision": "correction_seed",
+    "reason": "A yellow cabin above blue mountains makes a pleasant composition, but the hanging support and cabin perspective are crude."
+  },
+  "t600-566": {
+    "canvas_sha256": "1c724a980e3a7eb269cae6eb6af153605f879fab5a96108423c4a1c5061bcbd0",
+    "decision": "correction_seed",
+    "reason": "The water tanks and skyline are attractive at a glance, but structure and lighting are hazy, with fine line artifacts."
+  },
+  "t600-578": {
+    "canvas_sha256": "e2b07dc13ac890df46125af1bfba81fe5241aa3ab4eba09ab8ceb5b1bbccb7bc",
+    "decision": "correction_seed",
+    "reason": "The red funicular and receding rails read well, but windows, cables and surrounding architecture are simplified and sketchy."
+  }
+}
