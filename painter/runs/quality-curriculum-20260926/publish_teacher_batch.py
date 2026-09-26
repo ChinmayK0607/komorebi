@@ -7,6 +7,7 @@ import argparse
 import hashlib
 import json
 from pathlib import Path
+import tarfile
 from urllib.request import urlopen
 
 from huggingface_hub import HfApi
@@ -31,6 +32,21 @@ def sha_public(url: str) -> str:
     return h.hexdigest()
 
 
+def validate_publication_metadata(archive: Path) -> None:
+    """Keep image bundles with missing source/rights metadata off the public path."""
+    with tarfile.open(archive, "r:gz") as file:
+        manifest = json.load(file.extractfile("manifest.json"))
+    incomplete = []
+    for row in manifest["rows"]:
+        if row["mode"] != "image_to_image":
+            continue
+        rights = row.get("license") or {}
+        if not row.get("source_url") or not rights.get("name") or not rights.get("url"):
+            incomplete.append(row["id"])
+    if incomplete:
+        raise ValueError(f"image source/rights metadata incomplete for {len(incomplete)} rows: {incomplete}")
+
+
 def publish(source: Path) -> dict:
     receipt = json.loads((source / "source-receipt.json").read_text())
     if receipt.get("schema") != "painter.teacher500-source-receipt.v1" or receipt.get("batch") != source.name:
@@ -38,6 +54,7 @@ def publish(source: Path) -> dict:
     archive = source / "source.tar.gz"
     if sha_file(archive) != receipt["archive_sha256"] or archive.stat().st_size != receipt["archive_bytes"]:
         raise ValueError("source archive hash/size mismatch")
+    validate_publication_metadata(archive)
     api = HfApi()
     info = api.repo_info(DATASET, repo_type="dataset")
     if info.private:

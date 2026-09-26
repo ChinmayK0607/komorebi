@@ -16,6 +16,10 @@ SPEC = importlib.util.spec_from_file_location("render_teacher_batch_cloud", HERE
 assert SPEC and SPEC.loader
 RENDERER = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(RENDERER)
+PUBLISH_SPEC = importlib.util.spec_from_file_location("publish_teacher_batch", HERE / "publish_teacher_batch.py")
+assert PUBLISH_SPEC and PUBLISH_SPEC.loader
+PUBLISHER = importlib.util.module_from_spec(PUBLISH_SPEC)
+PUBLISH_SPEC.loader.exec_module(PUBLISHER)
 
 
 class BatchPipelineTest(unittest.TestCase):
@@ -80,6 +84,11 @@ class BatchPipelineTest(unittest.TestCase):
                 json.dumps(public).encode() if p.endswith("source-public.json") else b"bad")):
                 with self.assertRaisesRegex(ValueError, "hash/size mismatch"):
                     RENDERER.stage(batch, Path(temporary) / "stage")
+
+    def test_publication_requires_image_source_and_license_metadata(self) -> None:
+        PUBLISHER.validate_publication_metadata(COLLECTED / "astra-openverse-wave1/source.tar.gz")
+        with self.assertRaisesRegex(ValueError, "image source/rights metadata incomplete for 12 rows"):
+            PUBLISHER.validate_publication_metadata(COLLECTED / "astra-reference-seed/source.tar.gz")
 
 
 if __name__ == "__main__":

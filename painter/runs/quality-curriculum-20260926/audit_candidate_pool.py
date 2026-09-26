@@ -24,6 +24,8 @@ def audit() -> dict:
     difficulties = Counter()
     alternatives = 0
     batches = 0
+    prior_campaign_reference_reuse = []
+    missing_image_license = []
     errors = []
     image_hashes: dict[str, list[str]] = defaultdict(list)
     text_hashes: dict[str, list[str]] = defaultdict(list)
@@ -40,6 +42,13 @@ def audit() -> dict:
             continue
         with tarfile.open(archive_path, "r:gz") as archive:
             manifest = json.loads(archive.extractfile("manifest.json").read())
+            author_raw = (batch / "manifest.json").read_bytes()
+            if sha(author_raw) != manifest["author_manifest_sha256"]:
+                errors.append(f"{batch.name}: author manifest changed after packaging")
+            author = json.loads(author_raw)
+            author_rows = {
+                row["id"]: row for row in author.get("items", author.get("samples", author.get("entries", [])))
+            }
             if (manifest["batch"] != batch.name or manifest["count"] != receipt["count"]
                     or sha((json.dumps(manifest, indent=2, sort_keys=True) + "\n").encode())
                     != receipt["source_manifest_sha256"]):
@@ -59,6 +68,14 @@ def audit() -> dict:
                     continue
                 distinct[row["mode"]] += 1
                 teachers[row["model"]] += 1
+                if row["mode"] == "image_to_image":
+                    source_row = author_rows.get(row["id"], {})
+                    source_path = source_row.get("reference_path", source_row.get("reference_file", ""))
+                    if "quality-curriculum-20260924/" in source_path:
+                        prior_campaign_reference_reuse.append(key)
+                    license_info = row.get("license") or {}
+                    if not license_info.get("id") and not license_info.get("name"):
+                        missing_image_license.append(key)
                 if row.get("difficulty"):
                     difficulties[f"{row['mode']}:{row['difficulty']}"] += 1
                 hashes = image_hashes if row["mode"] == "image_to_image" else text_hashes
@@ -72,6 +89,9 @@ def audit() -> dict:
             "distinct_total": sum(distinct.values()), "alternatives": alternatives,
             "teachers": dict(teachers), "labelled_difficulty": dict(difficulties),
             "unique_image_hashes": len(image_hashes), "unique_text_hashes": len(text_hashes),
+            "prior_campaign_reference_reuse": prior_campaign_reference_reuse,
+            "missing_image_license": missing_image_license,
+            "new_input_coverage_total": sum(distinct.values()) - len(prior_campaign_reference_reuse),
             "errors": errors, "status": "candidate_only_no_render_or_visual_admission"}
 
 
