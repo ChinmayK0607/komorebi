@@ -1,0 +1,39 @@
+{
+  "batch_size": 4,
+  "checkpoint_steps": [
+    10,
+    20
+  ],
+  "initial_paint": 39,
+  "input_sha256": {
+    "foundation": "09c4da752dc9ba6f10de3434e0b4abcd9116ee8d1c5d98f4a6cba118b32b7a61",
+    "foundation_validation": "d8ba4b23601dc90d7f8c72ecf297dd4ccf2a5458f6c68594545f30230d131f5a",
+    "reviewed": "0348b556a9f02e956c6f8d582f9b731be4b01ec1f45754c2f13cfcbde25657ca"
+  },
+  "multi_turn_revision": 0,
+  "optimizer_steps": 20,
+  "order": "One exposure per selected reviewed scene; initial paintings before revisions, seeded within each phase; four-row batches contain two reviewed and two distinct retention rows except the first-paint final batch (one reviewed, three retention).",
+  "output_sha256": {
+    "train": "97c9d551f0705630c4e3031056b3d2fa57a8481caca701449570589f41d53a6d",
+    "validation": "7f8773c2ce8fca1317e037099a522c2b0572d90af414961a7ec1e23c903efe39"
+  },
+  "reference_manifest_sha256": "206f9ff075b401bde13ad90e284ff00370c4a927e35497ee24ccacf07fa8ce6d",
+  "retention_exposures": 41,
+  "retention_family_counts": {
+    "box": 7,
+    "cup": 7,
+    "cylinder": 7,
+    "flower": 7,
+    "ribbons": 7,
+    "sphere": 6
+  },
+  "reviewed_exposures": 39,
+  "reviewed_rows": 39,
+  "reviewed_scenes": 39,
+  "schema": "painter.astra-pilot-sft-mix.v1",
+  "seed": 20260926,
+  "source_reviewed_rows": 60,
+  "stage": "first-paint",
+  "validation_limit": "Procedural validation is not a visual-quality result; compare against the frozen 28-photo development set.",
+  "validation_rows": 36
+}
