@@ -29,6 +29,8 @@ def build() -> dict:
         if not receipt_path.is_file():
             continue
         receipt = json.loads(receipt_path.read_text())
+        if receipt.get("schema") == "painter.teacher600-program-overlay-source.v1":
+            continue
         public_path = batch / "source-public.json"
         if not public_path.is_file():
             try:

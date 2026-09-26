@@ -1,0 +1,32 @@
+{
+  "count": 3,
+  "created": "2026-09-27",
+  "output_batch": "sol-runtime-repair-v2",
+  "rows": [
+    {
+      "fix": "curveVertex_to_vertex",
+      "id": "05-veterinary-exam",
+      "input_sha256": "3d36940dc60f9dc3875f0ebe34edf9b893eb4441c14c181efc46ce15284556e3",
+      "observed_error": "curveVertex is not defined",
+      "program_sha256": "e11d17ae063bcd7372e3432be5ff3a022df8022d6461e5f25e8248df32ca63f1",
+      "run_id": "teacher600-sol-text-wave3-20260927"
+    },
+    {
+      "fix": "curveVertex_to_vertex",
+      "id": "12-camera-map",
+      "input_sha256": "ad18f3be3c6b5d0cc1aea7ac36f8fc53077342261eaf3e27fd0e5fbbabf4045c",
+      "observed_error": "curveVertex is not defined",
+      "program_sha256": "dbeabe5470b6b402839f22132cee2f945031afe6eefaedb4f3848fa3a02837bd",
+      "run_id": "teacher600-sol-text-wave3-20260927"
+    },
+    {
+      "fix": "curveVertex_to_vertex",
+      "id": "19-solar-rooftop",
+      "input_sha256": "c08248eea10ee81e42ec18ace4d16fddfe679cf05d451f1367ed60b1265f0b93",
+      "observed_error": "curveVertex is not defined",
+      "program_sha256": "26e543ca8ac46d6d6e6664e8e482f5bc4c22d75018343b24e5586f5918241c93",
+      "run_id": "teacher600-sol-text-wave3-20260927"
+    }
+  ],
+  "schema": "painter.teacher600-runtime-repair-selection.v1"
+}

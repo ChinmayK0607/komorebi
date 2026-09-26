@@ -36,8 +36,12 @@ def audit() -> dict:
         archive_path = batch / "source.tar.gz"
         if not receipt_path.exists():
             continue
-        batches += 1
         receipt = json.loads(receipt_path.read_text())
+        # Program-only overlays have a separate schema and are audited by their
+        # own hash-bound photo-pointer workflow; they are not full source bundles.
+        if receipt.get("schema") == "painter.teacher600-program-overlay-source.v1":
+            continue
+        batches += 1
         raw = archive_path.read_bytes()
         if sha(raw) != receipt["archive_sha256"] or len(raw) != receipt["archive_bytes"]:
             errors.append(f"{batch.name}: source archive hash/size mismatch")
@@ -65,7 +69,10 @@ def audit() -> dict:
                     errors.append(f"{key}: prompt hash mismatch")
                 if row["role"] == "unrendered_alternative_candidate":
                     alternatives += 1
-                    if not row.get("baseline_batch") or not row.get("baseline_program_sha256"):
+                    linked_to_source = bool(row.get("baseline_batch") and row.get("baseline_program_sha256"))
+                    author_row = author_rows.get(row["id"], {})
+                    linked_to_failed_render = bool(author_row.get("source_run_id") and author_row.get("original_program_sha256") and author_row.get("observed_error"))
+                    if not (linked_to_source or linked_to_failed_render):
                         errors.append(f"{key}: alternative lacks baseline link")
                     continue
                 if row["role"] == "render_conditioned_correction_candidate":
