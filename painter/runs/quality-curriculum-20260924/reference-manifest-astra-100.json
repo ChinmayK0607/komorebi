@@ -1,0 +1,1792 @@
+{
+  "already_in_wave5": 48,
+  "count": 100,
+  "excluded_evaluation_manifest_sha256": "9943878cc43d48f1cf9ff60e5af633089bf2bd8d45141216531363cad8f1c878",
+  "existing_wave5_manifest_sha256": "7f0d5d83361305a2758a12112bf9a037a7c9b88f03eb8a35340d7ec5c6b4975f",
+  "official_archive_sha256": "61e5e3028863d8ffc3b81d6a514603954889f0edd5e4b44c4ce60b2da99aeb8e",
+  "official_archive_url": "https://github.com/ultralytics/assets/releases/download/v0.0.0/coco128.zip",
+  "references": [
+    {
+      "bytes": 89652,
+      "class_ids": [
+        23
+      ],
+      "difficulty_proxy": "few_annotations",
+      "height": 426,
+      "id": "coco128-000000000025",
+      "object_count": 2,
+      "path": "references/000000000025.jpg",
+      "sha256": "9f016b98f31e4fe826910e56ee39fa0c2889f48d38cc5f4f6b6421c8c5fc7214",
+      "source_id": "000000000025",
+      "split": "train",
+      "wave5_candidate": false,
+      "width": 640
+    },
+    {
+      "bytes": 105097,
+      "class_ids": [
+        22
+      ],
+      "difficulty_proxy": "few_annotations",
+      "height": 425,
+      "id": "coco128-000000000034",
+      "object_count": 1,
+      "path": "references/000000000034.jpg",
+      "sha256": "0e67e637241ac2fbf132aa2b6cc9775b474b520e1c9a99dbef377063a5a48b85",
+      "source_id": "000000000034",
+      "split": "train",
+      "wave5_candidate": false,
+      "width": 640
+    },
+    {
+      "bytes": 66757,
+      "class_ids": [
+        0,
+        25
+      ],
+      "difficulty_proxy": "few_annotations",
+      "height": 640,
+      "id": "coco128-000000000036",
+      "object_count": 2,
+      "path": "references/000000000036.jpg",
+      "sha256": "2bb515b26d250fcdf16effa3a7280babe32ae9b6f7608563e53cd01f5cd66ad4",
+      "source_id": "000000000036",
+      "split": "train",
+      "wave5_candidate": true,
+      "width": 481
+    },
+    {
+      "bytes": 56556,
+      "class_ids": [
+        16
+      ],
+      "difficulty_proxy": "few_annotations",
+      "height": 478,
+      "id": "coco128-000000000042",
+      "object_count": 1,
+      "path": "references/000000000042.jpg",
+      "sha256": "9008ddd846fc6002ec47ea6067cb92cf70f294773cc15765b6a14ffb392f52fa",
+      "source_id": "000000000042",
+      "split": "train",
+      "wave5_candidate": false,
+      "width": 640
+    },
+    {
+      "bytes": 135566,
+      "class_ids": [
+        0,
+        20
+      ],
+      "difficulty_proxy": "many_annotations",
+      "height": 488,
+      "id": "coco128-000000000061",
+      "object_count": 5,
+      "path": "references/000000000061.jpg",
+      "sha256": "a1a9ac88e4c5cfbdd1cd425a6d262b1e78bf32676a9c17a2861ca6a23a731955",
+      "source_id": "000000000061",
+      "split": "train",
+      "wave5_candidate": true,
+      "width": 640
+    },
+    {
+      "bytes": 59706,
+      "class_ids": [
+        2,
+        7,
+        11,
+        74
+      ],
+      "difficulty_proxy": "many_annotations",
+      "height": 640,
+      "id": "coco128-000000000064",
+      "object_count": 4,
+      "path": "references/000000000064.jpg",
+      "sha256": "406f84619f5197d416f60566d41ad4d58f1d10b0a182652bbda266eedbc3f1ab",
+      "source_id": "000000000064",
+      "split": "train",
+      "wave5_candidate": true,
+      "width": 480
+    },
+    {
+      "bytes": 57039,
+      "class_ids": [
+        2,
+        6,
+        7
+      ],
+      "difficulty_proxy": "many_annotations",
+      "height": 426,
+      "id": "coco128-000000000071",
+      "object_count": 16,
+      "path": "references/000000000071.jpg",
+      "sha256": "5393bf6575c435daa599c1272d9e61e99c099994ae4d3755311684663fed0917",
+      "source_id": "000000000071",
+      "split": "train",
+      "wave5_candidate": true,
+      "width": 640
+    },
+    {
+      "bytes": 124117,
+      "class_ids": [
+        3
+      ],
+      "difficulty_proxy": "few_annotations",
+      "height": 640,
+      "id": "coco128-000000000073",
+      "object_count": 2,
+      "path": "references/000000000073.jpg",
+      "sha256": "4a17dd87b487b4b6432d3aa60f6026a5349c8708834a3cae141ff16e0539a32c",
+      "source_id": "000000000073",
+      "split": "train",
+      "wave5_candidate": false,
+      "width": 565
+    },
+    {
+      "bytes": 47165,
+      "class_ids": [
+        0,
+        1,
+        16
+      ],
+      "difficulty_proxy": "many_annotations",
+      "height": 426,
+      "id": "coco128-000000000074",
+      "object_count": 8,
+      "path": "references/000000000074.jpg",
+      "sha256": "99d864809a7355862032b54283bd4808971da5a2b976b20467203e6c192e755d",
+      "source_id": "000000000074",
+      "split": "train",
+      "wave5_candidate": true,
+      "width": 640
+    },
+    {
+      "bytes": 87717,
+      "class_ids": [
+        0,
+        3,
+        26
+      ],
+      "difficulty_proxy": "few_annotations",
+      "height": 640,
+      "id": "coco128-000000000086",
+      "object_count": 3,
+      "path": "references/000000000086.jpg",
+      "sha256": "f58a99916783cdf4a7619286dc46adedd4ea1143bcc2cd773c6504aa5280915a",
+      "source_id": "000000000086",
+      "split": "train",
+      "wave5_candidate": true,
+      "width": 512
+    },
+    {
+      "bytes": 29143,
+      "class_ids": [
+        42,
+        55
+      ],
+      "difficulty_proxy": "few_annotations",
+      "height": 427,
+      "id": "coco128-000000000092",
+      "object_count": 2,
+      "path": "references/000000000092.jpg",
+      "sha256": "886950d096ad454f0bbb9a63167c795bd49eb9d4c0cb24a72888b3429d11900a",
+      "source_id": "000000000092",
+      "split": "train",
+      "wave5_candidate": false,
+      "width": 640
+    },
+    {
+      "bytes": 66547,
+      "class_ids": [
+        2,
+        7
+      ],
+      "difficulty_proxy": "few_annotations",
+      "height": 427,
+      "id": "coco128-000000000094",
+      "object_count": 2,
+      "path": "references/000000000094.jpg",
+      "sha256": "143779e4a70bb6b6e10232aa02c2ce99a9a1246d763da344b424aba4ca71cd9f",
+      "source_id": "000000000094",
+      "split": "train",
+      "wave5_candidate": true,
+      "width": 640
+    },
+    {
+      "bytes": 62103,
+      "class_ids": [
+        0,
+        13,
+        16
+      ],
+      "difficulty_proxy": "many_annotations",
+      "height": 416,
+      "id": "coco128-000000000109",
+      "object_count": 8,
+      "path": "references/000000000109.jpg",
+      "sha256": "69edeeca53763fb2a4ee51739e4f9a4f053584b4f3ca4ff9911c49fa52ed2762",
+      "source_id": "000000000109",
+      "split": "train",
+      "wave5_candidate": false,
+      "width": 640
+    },
+    {
+      "bytes": 56509,
+      "class_ids": [
+        0,
+        41,
+        42,
+        43,
+        53,
+        56,
+        60
+      ],
+      "difficulty_proxy": "many_annotations",
+      "height": 480,
+      "id": "coco128-000000000110",
+      "object_count": 24,
+      "path": "references/000000000110.jpg",
+      "sha256": "39d967c7856965853e90b9283db4a6895a034eb17fe0c84581d17af4a59edcf2",
+      "source_id": "000000000110",
+      "split": "train",
+      "wave5_candidate": true,
+      "width": 640
+    },
+    {
+      "bytes": 31511,
+      "class_ids": [
+        0,
+        23
+      ],
+      "difficulty_proxy": "many_annotations",
+      "height": 374,
+      "id": "coco128-000000000136",
+      "object_count": 4,
+      "path": "references/000000000136.jpg",
+      "sha256": "e20c569a1e6174fd845a434a3fe3d50fb4f8a0e275fb348cc2c9b42a11600ccc",
+      "source_id": "000000000136",
+      "split": "train",
+      "wave5_candidate": false,
+      "width": 500
+    },
+    {
+      "bytes": 73743,
+      "class_ids": [
+        45,
+        58,
+        69,
+        71,
+        72,
+        74,
+        75
+      ],
+      "difficulty_proxy": "many_annotations",
+      "height": 573,
+      "id": "coco128-000000000138",
+      "object_count": 7,
+      "path": "references/000000000138.jpg",
+      "sha256": "0255bce78addf8d82e9f5d434ad2a98fccd5542cbb041980ce7ad00054a3227e",
+      "source_id": "000000000138",
+      "split": "train",
+      "wave5_candidate": true,
+      "width": 640
+    },
+    {
+      "bytes": 43512,
+      "class_ids": [
+        39,
+        46,
+        48,
+        60
+      ],
+      "difficulty_proxy": "many_annotations",
+      "height": 640,
+      "id": "coco128-000000000142",
+      "object_count": 4,
+      "path": "references/000000000142.jpg",
+      "sha256": "3c852dc71abcf6cf06ed58202d1b2c850bb783553f05c63cd6ca511936b431aa",
+      "source_id": "000000000142",
+      "split": "train",
+      "wave5_candidate": true,
+      "width": 480
+    },
+    {
+      "bytes": 30392,
+      "class_ids": [
+        14
+      ],
+      "difficulty_proxy": "many_annotations",
+      "height": 500,
+      "id": "coco128-000000000143",
+      "object_count": 8,
+      "path": "references/000000000143.jpg",
+      "sha256": "03d4d20019d5abdf6f9314a166f8f8cf582f1d0d2167beef7ec2400d0f1b629e",
+      "source_id": "000000000143",
+      "split": "train",
+      "wave5_candidate": false,
+      "width": 600
+    },
+    {
+      "bytes": 117593,
+      "class_ids": [
+        23
+      ],
+      "difficulty_proxy": "few_annotations",
+      "height": 480,
+      "id": "coco128-000000000144",
+      "object_count": 3,
+      "path": "references/000000000144.jpg",
+      "sha256": "6740b5472043073062f46b253399a6bc2fe68ca77d429f652ad956c03d51b0fa",
+      "source_id": "000000000144",
+      "split": "train",
+      "wave5_candidate": true,
+      "width": 640
+    },
+    {
+      "bytes": 29226,
+      "class_ids": [
+        0,
+        2,
+        33
+      ],
+      "difficulty_proxy": "many_annotations",
+      "height": 428,
+      "id": "coco128-000000000149",
+      "object_count": 22,
+      "path": "references/000000000149.jpg",
+      "sha256": "73a20e38429ba6c78f62a90df787360c4a9ae3d331b002b509a8ee15179788a4",
+      "source_id": "000000000149",
+      "split": "train",
+      "wave5_candidate": true,
+      "width": 640
+    },
+    {
+      "bytes": 107259,
+      "class_ids": [
+        0,
+        6,
+        11
+      ],
+      "difficulty_proxy": "few_annotations",
+      "height": 640,
+      "id": "coco128-000000000151",
+      "object_count": 3,
+      "path": "references/000000000151.jpg",
+      "sha256": "b92d7d249e574fbd4ad8ba2fbc2c1879ca281b779f1276ac3daa0304b80039e4",
+      "source_id": "000000000151",
+      "split": "train",
+      "wave5_candidate": true,
+      "width": 480
+    },
+    {
+      "bytes": 63228,
+      "class_ids": [
+        22
+      ],
+      "difficulty_proxy": "few_annotations",
+      "height": 640,
+      "id": "coco128-000000000154",
+      "object_count": 3,
+      "path": "references/000000000154.jpg",
+      "sha256": "2938c94a9b07cacf10a8343c35949b065ae868190a11020f458f50450bd13552",
+      "source_id": "000000000154",
+      "split": "train",
+      "wave5_candidate": true,
+      "width": 427
+    },
+    {
+      "bytes": 40901,
+      "class_ids": [
+        39,
+        40,
+        41,
+        45,
+        56,
+        60,
+        68,
+        69,
+        72
+      ],
+      "difficulty_proxy": "many_annotations",
+      "height": 480,
+      "id": "coco128-000000000164",
+      "object_count": 40,
+      "path": "references/000000000164.jpg",
+      "sha256": "186a1427f32ce7e5cf17052f66d5ee7cd57d7f83762001891e16195a6bda586d",
+      "source_id": "000000000164",
+      "split": "train",
+      "wave5_candidate": true,
+      "width": 640
+    },
+    {
+      "bytes": 64301,
+      "class_ids": [
+        0,
+        27,
+        76
+      ],
+      "difficulty_proxy": "many_annotations",
+      "height": 536,
+      "id": "coco128-000000000165",
+      "object_count": 4,
+      "path": "references/000000000165.jpg",
+      "sha256": "2d3d9e0b4b165c0f783b97cd963097b13effa1af851c9576617fb7c910d63cd8",
+      "source_id": "000000000165",
+      "split": "train",
+      "wave5_candidate": true,
+      "width": 640
+    },
+    {
+      "bytes": 62642,
+      "class_ids": [
+        0,
+        34
+      ],
+      "difficulty_proxy": "many_annotations",
+      "height": 480,
+      "id": "coco128-000000000192",
+      "object_count": 5,
+      "path": "references/000000000192.jpg",
+      "sha256": "93a9d9132aefccbb1f1bfb51198b5b427d1cf4a977ef259c9d0507ee5b0df732",
+      "source_id": "000000000192",
+      "split": "train",
+      "wave5_candidate": false,
+      "width": 640
+    },
+    {
+      "bytes": 52676,
+      "class_ids": [
+        43,
+        53
+      ],
+      "difficulty_proxy": "few_annotations",
+      "height": 480,
+      "id": "coco128-000000000194",
+      "object_count": 2,
+      "path": "references/000000000194.jpg",
+      "sha256": "0713bcf193a25769b047e4dde7820e7fa857bab06f9140a4a64c78d94ed9b4a1",
+      "source_id": "000000000194",
+      "split": "train",
+      "wave5_candidate": true,
+      "width": 640
+    },
+    {
+      "bytes": 70172,
+      "class_ids": [
+        42,
+        44,
+        45,
+        50,
+        51,
+        60
+      ],
+      "difficulty_proxy": "many_annotations",
+      "height": 480,
+      "id": "coco128-000000000196",
+      "object_count": 42,
+      "path": "references/000000000196.jpg",
+      "sha256": "1e1d801e63ed90d34ee666845ebcc17b56edef1f864d048ff588ce7073bc94a2",
+      "source_id": "000000000196",
+      "split": "train",
+      "wave5_candidate": true,
+      "width": 640
+    },
+    {
+      "bytes": 48024,
+      "class_ids": [
+        0,
+        26,
+        39,
+        41,
+        57,
+        58,
+        65
+      ],
+      "difficulty_proxy": "many_annotations",
+      "height": 640,
+      "id": "coco128-000000000241",
+      "object_count": 14,
+      "path": "references/000000000241.jpg",
+      "sha256": "14007b87745069ed85c6412dffc8ad11a22de98d5f5c9ae896523e12622961c5",
+      "source_id": "000000000241",
+      "split": "train",
+      "wave5_candidate": false,
+      "width": 480
+    },
+    {
+      "bytes": 48428,
+      "class_ids": [
+        2,
+        4
+      ],
+      "difficulty_proxy": "many_annotations",
+      "height": 424,
+      "id": "coco128-000000000247",
+      "object_count": 8,
+      "path": "references/000000000247.jpg",
+      "sha256": "a57c40ee95f73bb493e573bbbd593d037fdf176a02f1d3f6a3f437c8f78f805a",
+      "source_id": "000000000247",
+      "split": "train",
+      "wave5_candidate": false,
+      "width": 640
+    },
+    {
+      "bytes": 49998,
+      "class_ids": [],
+      "difficulty_proxy": "few_annotations",
+      "height": 480,
+      "id": "coco128-000000000250",
+      "object_count": 0,
+      "path": "references/000000000250.jpg",
+      "sha256": "a4e4243da053d3a958a1f52fd8fe9cc264d39e07077266a7089b281597050a29",
+      "source_id": "000000000250",
+      "split": "train",
+      "wave5_candidate": false,
+      "width": 640
+    },
+    {
+      "bytes": 60297,
+      "class_ids": [
+        0,
+        7,
+        9,
+        24,
+        26
+      ],
+      "difficulty_proxy": "many_annotations",
+      "height": 480,
+      "id": "coco128-000000000257",
+      "object_count": 33,
+      "path": "references/000000000257.jpg",
+      "sha256": "ae711135026cbd548fa1e04edc0ee96bce57162587e0238e7f76b4dc46cf4208",
+      "source_id": "000000000257",
+      "split": "train",
+      "wave5_candidate": false,
+      "width": 640
+    },
+    {
+      "bytes": 26982,
+      "class_ids": [
+        0,
+        2,
+        5,
+        28
+      ],
+      "difficulty_proxy": "many_annotations",
+      "height": 333,
+      "id": "coco128-000000000260",
+      "object_count": 7,
+      "path": "references/000000000260.jpg",
+      "sha256": "f70992bbd14794773e27801c4cf4ba34ca4f453eb2efded62c2a558c40e3885b",
+      "source_id": "000000000260",
+      "split": "train",
+      "wave5_candidate": true,
+      "width": 500
+    },
+    {
+      "bytes": 55292,
+      "class_ids": [
+        20
+      ],
+      "difficulty_proxy": "few_annotations",
+      "height": 640,
+      "id": "coco128-000000000263",
+      "object_count": 2,
+      "path": "references/000000000263.jpg",
+      "sha256": "4abc27b830dedd072dab619c6b7f2467886f601e41b0cc8c2de888f57cf90d7b",
+      "source_id": "000000000263",
+      "split": "train",
+      "wave5_candidate": false,
+      "width": 591
+    },
+    {
+      "bytes": 35093,
+      "class_ids": [
+        39,
+        40,
+        56,
+        60
+      ],
+      "difficulty_proxy": "many_annotations",
+      "height": 640,
+      "id": "coco128-000000000283",
+      "object_count": 5,
+      "path": "references/000000000283.jpg",
+      "sha256": "a668b293598b0097c9b38c136e54b8b43241df22d1c183f6f204a87eaf1f0724",
+      "source_id": "000000000283",
+      "split": "train",
+      "wave5_candidate": false,
+      "width": 428
+    },
+    {
+      "bytes": 33028,
+      "class_ids": [
+        0,
+        42,
+        43,
+        44,
+        68,
+        74
+      ],
+      "difficulty_proxy": "many_annotations",
+      "height": 427,
+      "id": "coco128-000000000294",
+      "object_count": 20,
+      "path": "references/000000000294.jpg",
+      "sha256": "66bff049c25ed6498e69a51ac65b88d5fc800233fed0f89ee07ab178f7db766d",
+      "source_id": "000000000294",
+      "split": "train",
+      "wave5_candidate": false,
+      "width": 640
+    },
+    {
+      "bytes": 96160,
+      "class_ids": [
+        2,
+        16,
+        29
+      ],
+      "difficulty_proxy": "few_annotations",
+      "height": 480,
+      "id": "coco128-000000000307",
+      "object_count": 3,
+      "path": "references/000000000307.jpg",
+      "sha256": "c839076b4fa14020f97c8a5909c84a1e85c912ca262a91c8c4648ebe27caf61f",
+      "source_id": "000000000307",
+      "split": "train",
+      "wave5_candidate": true,
+      "width": 640
+    },
+    {
+      "bytes": 60331,
+      "class_ids": [
+        0,
+        25,
+        40,
+        74
+      ],
+      "difficulty_proxy": "many_annotations",
+      "height": 426,
+      "id": "coco128-000000000308",
+      "object_count": 13,
+      "path": "references/000000000308.jpg",
+      "sha256": "07c410e96a812351bf385add8645b8dc2ed064902ff2ef01072be6351b428393",
+      "source_id": "000000000308",
+      "split": "train",
+      "wave5_candidate": false,
+      "width": 640
+    },
+    {
+      "bytes": 114443,
+      "class_ids": [
+        16,
+        77
+      ],
+      "difficulty_proxy": "many_annotations",
+      "height": 600,
+      "id": "coco128-000000000309",
+      "object_count": 4,
+      "path": "references/000000000309.jpg",
+      "sha256": "40087a8191fc80eba012c1ba4735402b4890aa0669a84ea0d3dac043ca543247",
+      "source_id": "000000000309",
+      "split": "train",
+      "wave5_candidate": false,
+      "width": 600
+    },
+    {
+      "bytes": 91689,
+      "class_ids": [
+        20
+      ],
+      "difficulty_proxy": "many_annotations",
+      "height": 427,
+      "id": "coco128-000000000312",
+      "object_count": 6,
+      "path": "references/000000000312.jpg",
+      "sha256": "cd2fac2dfdc17fb1af0d12228e344d2e828fbe28a7c1e32396a95cb0b129d096",
+      "source_id": "000000000312",
+      "split": "train",
+      "wave5_candidate": false,
+      "width": 640
+    },
+    {
+      "bytes": 54518,
+      "class_ids": [
+        0,
+        25,
+        26,
+        56
+      ],
+      "difficulty_proxy": "many_annotations",
+      "height": 427,
+      "id": "coco128-000000000315",
+      "object_count": 38,
+      "path": "references/000000000315.jpg",
+      "sha256": "5804350236bc0d52715f9354498d52f8d260b0e3d8f965526cd85ca6a18b7caa",
+      "source_id": "000000000315",
+      "split": "train",
+      "wave5_candidate": true,
+      "width": 640
+    },
+    {
+      "bytes": 45914,
+      "class_ids": [
+        48,
+        52
+      ],
+      "difficulty_proxy": "few_annotations",
+      "height": 480,
+      "id": "coco128-000000000321",
+      "object_count": 3,
+      "path": "references/000000000321.jpg",
+      "sha256": "60f0acad099ad5cf55f44968cea66e125e0beb7eb20a1d78888ee9db34e28cd8",
+      "source_id": "000000000321",
+      "split": "train",
+      "wave5_candidate": true,
+      "width": 640
+    },
+    {
+      "bytes": 22412,
+      "class_ids": [
+        0,
+        40
+      ],
+      "difficulty_proxy": "few_annotations",
+      "height": 427,
+      "id": "coco128-000000000326",
+      "object_count": 2,
+      "path": "references/000000000326.jpg",
+      "sha256": "d8c9b6803795082707fcd62f2d1d38826709836504e330db3e7b4713c3316d59",
+      "source_id": "000000000326",
+      "split": "train",
+      "wave5_candidate": true,
+      "width": 640
+    },
+    {
+      "bytes": 66986,
+      "class_ids": [
+        0,
+        2,
+        13,
+        24,
+        27,
+        67,
+        73
+      ],
+      "difficulty_proxy": "many_annotations",
+      "height": 491,
+      "id": "coco128-000000000328",
+      "object_count": 11,
+      "path": "references/000000000328.jpg",
+      "sha256": "8ba0ed80d34589221b1243e0764471d91716b3a267827cb37ecfc3cfae52cc90",
+      "source_id": "000000000328",
+      "split": "train",
+      "wave5_candidate": true,
+      "width": 640
+    },
+    {
+      "bytes": 48907,
+      "class_ids": [
+        41,
+        42,
+        45,
+        51
+      ],
+      "difficulty_proxy": "many_annotations",
+      "height": 480,
+      "id": "coco128-000000000332",
+      "object_count": 7,
+      "path": "references/000000000332.jpg",
+      "sha256": "8d4946138c446940ed080738744214cd75948a98fd3a1933d0031bd14144f541",
+      "source_id": "000000000332",
+      "split": "train",
+      "wave5_candidate": false,
+      "width": 640
+    },
+    {
+      "bytes": 36236,
+      "class_ids": [
+        0,
+        26,
+        69,
+        72,
+        74
+      ],
+      "difficulty_proxy": "many_annotations",
+      "height": 327,
+      "id": "coco128-000000000338",
+      "object_count": 6,
+      "path": "references/000000000338.jpg",
+      "sha256": "fdf5b5b2f8227082a5542fbc33b5f8740b040d345653c33bec6158d835542d6b",
+      "source_id": "000000000338",
+      "split": "train",
+      "wave5_candidate": false,
+      "width": 640
+    },
+    {
+      "bytes": 33736,
+      "class_ids": [
+        6,
+        58
+      ],
+      "difficulty_proxy": "many_annotations",
+      "height": 480,
+      "id": "coco128-000000000349",
+      "object_count": 4,
+      "path": "references/000000000349.jpg",
+      "sha256": "8ad9716416dc27aeff76bb09d936949f67627cb30948288b61c117df34501049",
+      "source_id": "000000000349",
+      "split": "train",
+      "wave5_candidate": false,
+      "width": 640
+    },
+    {
+      "bytes": 35980,
+      "class_ids": [
+        0,
+        31
+      ],
+      "difficulty_proxy": "few_annotations",
+      "height": 375,
+      "id": "coco128-000000000360",
+      "object_count": 3,
+      "path": "references/000000000360.jpg",
+      "sha256": "1a5d039418eacc09510efabcd466dc05701f0dac9ae0040b05a1b30b796ef96e",
+      "source_id": "000000000360",
+      "split": "train",
+      "wave5_candidate": true,
+      "width": 500
+    },
+    {
+      "bytes": 116152,
+      "class_ids": [
+        0,
+        32
+      ],
+      "difficulty_proxy": "many_annotations",
+      "height": 640,
+      "id": "coco128-000000000368",
+      "object_count": 13,
+      "path": "references/000000000368.jpg",
+      "sha256": "a10be0a1beb5a34b50af22cc657dbf186a944db7ce8924e570295f35bd954036",
+      "source_id": "000000000368",
+      "split": "train",
+      "wave5_candidate": false,
+      "width": 480
+    },
+    {
+      "bytes": 36164,
+      "class_ids": [
+        0,
+        50
+      ],
+      "difficulty_proxy": "few_annotations",
+      "height": 640,
+      "id": "coco128-000000000370",
+      "object_count": 2,
+      "path": "references/000000000370.jpg",
+      "sha256": "0d3719ec6f6f54229f498f7b01b113a864cd1eeccac196086741d98e23ae2455",
+      "source_id": "000000000370",
+      "split": "train",
+      "wave5_candidate": true,
+      "width": 480
+    },
+    {
+      "bytes": 27793,
+      "class_ids": [
+        57,
+        63,
+        64,
+        65,
+        73,
+        74
+      ],
+      "difficulty_proxy": "many_annotations",
+      "height": 640,
+      "id": "coco128-000000000384",
+      "object_count": 11,
+      "path": "references/000000000384.jpg",
+      "sha256": "dfbae064fadcaa79bd319410903bc92052349472115e2d515e0ecf3c944d1048",
+      "source_id": "000000000384",
+      "split": "train",
+      "wave5_candidate": true,
+      "width": 446
+    },
+    {
+      "bytes": 53134,
+      "class_ids": [
+        63,
+        67
+      ],
+      "difficulty_proxy": "few_annotations",
+      "height": 480,
+      "id": "coco128-000000000387",
+      "object_count": 3,
+      "path": "references/000000000387.jpg",
+      "sha256": "079af237aafcdddfe5a528ef5e40f38ca449fce9ad5a49fbdaaeef068fac7c76",
+      "source_id": "000000000387",
+      "split": "train",
+      "wave5_candidate": true,
+      "width": 640
+    },
+    {
+      "bytes": 51895,
+      "class_ids": [
+        0,
+        24,
+        27
+      ],
+      "difficulty_proxy": "many_annotations",
+      "height": 480,
+      "id": "coco128-000000000389",
+      "object_count": 14,
+      "path": "references/000000000389.jpg",
+      "sha256": "f6d313afba47fe0747d1d78cd342f420eb305de8faadb5cb164de428522b40d6",
+      "source_id": "000000000389",
+      "split": "train",
+      "wave5_candidate": false,
+      "width": 640
+    },
+    {
+      "bytes": 68453,
+      "class_ids": [
+        16,
+        29
+      ],
+      "difficulty_proxy": "few_annotations",
+      "height": 611,
+      "id": "coco128-000000000394",
+      "object_count": 2,
+      "path": "references/000000000394.jpg",
+      "sha256": "2cf78c1cfa98714d2ed8a643f931c39511bbb6085fddf157b27ed709089e0343",
+      "source_id": "000000000394",
+      "split": "train",
+      "wave5_candidate": false,
+      "width": 640
+    },
+    {
+      "bytes": 55487,
+      "class_ids": [
+        0,
+        67
+      ],
+      "difficulty_proxy": "many_annotations",
+      "height": 580,
+      "id": "coco128-000000000395",
+      "object_count": 13,
+      "path": "references/000000000395.jpg",
+      "sha256": "8d823d141724cc8656ccd48b49d6e44556ca399fbbd8458cc488f0d9816809a4",
+      "source_id": "000000000395",
+      "split": "train",
+      "wave5_candidate": false,
+      "width": 640
+    },
+    {
+      "bytes": 56346,
+      "class_ids": [
+        0,
+        41,
+        42,
+        53,
+        56,
+        60
+      ],
+      "difficulty_proxy": "many_annotations",
+      "height": 480,
+      "id": "coco128-000000000397",
+      "object_count": 7,
+      "path": "references/000000000397.jpg",
+      "sha256": "5011e5e9eac564d30fa652281a7fd1d7693545077971741a241f400611e4c33e",
+      "source_id": "000000000397",
+      "split": "train",
+      "wave5_candidate": false,
+      "width": 640
+    },
+    {
+      "bytes": 63846,
+      "class_ids": [
+        8,
+        16
+      ],
+      "difficulty_proxy": "few_annotations",
+      "height": 640,
+      "id": "coco128-000000000400",
+      "object_count": 2,
+      "path": "references/000000000400.jpg",
+      "sha256": "7b78338d4c7a30f7c38eb3bf11a7623a195e10926359adfd7281d6ce99e42dcb",
+      "source_id": "000000000400",
+      "split": "train",
+      "wave5_candidate": false,
+      "width": 638
+    },
+    {
+      "bytes": 41249,
+      "class_ids": [
+        8
+      ],
+      "difficulty_proxy": "many_annotations",
+      "height": 640,
+      "id": "coco128-000000000404",
+      "object_count": 5,
+      "path": "references/000000000404.jpg",
+      "sha256": "c46b3242d195c8c81b6776f4bfa385ef886ff1e7cb814e2c29e03303b85403b2",
+      "source_id": "000000000404",
+      "split": "train",
+      "wave5_candidate": false,
+      "width": 426
+    },
+    {
+      "bytes": 28284,
+      "class_ids": [
+        0,
+        38
+      ],
+      "difficulty_proxy": "few_annotations",
+      "height": 640,
+      "id": "coco128-000000000415",
+      "object_count": 2,
+      "path": "references/000000000415.jpg",
+      "sha256": "cc75d90eac7419395e81ddd7e33c81dbec387892e086b40cbf12dc3fe09f8bb1",
+      "source_id": "000000000415",
+      "split": "train",
+      "wave5_candidate": true,
+      "width": 359
+    },
+    {
+      "bytes": 22969,
+      "class_ids": [
+        0,
+        27,
+        55
+      ],
+      "difficulty_proxy": "few_annotations",
+      "height": 360,
+      "id": "coco128-000000000428",
+      "object_count": 3,
+      "path": "references/000000000428.jpg",
+      "sha256": "49e87dbacfb3911d83fde336b7c01b79cc7bc77a021a601f2eb8d861f170a466",
+      "source_id": "000000000428",
+      "split": "train",
+      "wave5_candidate": true,
+      "width": 640
+    },
+    {
+      "bytes": 32998,
+      "class_ids": [
+        0,
+        54
+      ],
+      "difficulty_proxy": "few_annotations",
+      "height": 640,
+      "id": "coco128-000000000436",
+      "object_count": 2,
+      "path": "references/000000000436.jpg",
+      "sha256": "84b778ac377b3fb394edee6f6c3e688c600a3ac440247b64942b1e6e116ff9a3",
+      "source_id": "000000000436",
+      "split": "train",
+      "wave5_candidate": true,
+      "width": 427
+    },
+    {
+      "bytes": 58374,
+      "class_ids": [
+        54
+      ],
+      "difficulty_proxy": "many_annotations",
+      "height": 480,
+      "id": "coco128-000000000438",
+      "object_count": 13,
+      "path": "references/000000000438.jpg",
+      "sha256": "ee66d39f65c8ce3421fda1ca85b1942f6dff29813c97b6fb4ea4ed015c3a822a",
+      "source_id": "000000000438",
+      "split": "train",
+      "wave5_candidate": true,
+      "width": 640
+    },
+    {
+      "bytes": 37330,
+      "class_ids": [
+        0,
+        15,
+        57,
+        65
+      ],
+      "difficulty_proxy": "many_annotations",
+      "height": 480,
+      "id": "coco128-000000000443",
+      "object_count": 6,
+      "path": "references/000000000443.jpg",
+      "sha256": "f6483d57885c348a27dcdc272e4bd5296c75596d7c64fe638b24dbb503209902",
+      "source_id": "000000000443",
+      "split": "train",
+      "wave5_candidate": true,
+      "width": 640
+    },
+    {
+      "bytes": 36624,
+      "class_ids": [
+        0,
+        57,
+        58,
+        65,
+        73
+      ],
+      "difficulty_proxy": "many_annotations",
+      "height": 640,
+      "id": "coco128-000000000446",
+      "object_count": 13,
+      "path": "references/000000000446.jpg",
+      "sha256": "41f3d2ce74148a9628d29ac8ddb5eeed3a07394a55b72e75df5d418d5887ef50",
+      "source_id": "000000000446",
+      "split": "train",
+      "wave5_candidate": false,
+      "width": 480
+    },
+    {
+      "bytes": 49942,
+      "class_ids": [
+        40,
+        41,
+        53,
+        60
+      ],
+      "difficulty_proxy": "many_annotations",
+      "height": 480,
+      "id": "coco128-000000000450",
+      "object_count": 4,
+      "path": "references/000000000450.jpg",
+      "sha256": "3b1fe58cb414f373c61990a5fed4f1a6418a02b2e8a3ed3ecef613f4e7198068",
+      "source_id": "000000000450",
+      "split": "train",
+      "wave5_candidate": false,
+      "width": 640
+    },
+    {
+      "bytes": 36307,
+      "class_ids": [
+        0,
+        27
+      ],
+      "difficulty_proxy": "few_annotations",
+      "height": 640,
+      "id": "coco128-000000000459",
+      "object_count": 2,
+      "path": "references/000000000459.jpg",
+      "sha256": "9dac859e6bc3eaf091e94593a005735f9c3c3e71c1c40a708b4c24da99b2e06c",
+      "source_id": "000000000459",
+      "split": "train",
+      "wave5_candidate": false,
+      "width": 516
+    },
+    {
+      "bytes": 33837,
+      "class_ids": [
+        0,
+        5
+      ],
+      "difficulty_proxy": "few_annotations",
+      "height": 427,
+      "id": "coco128-000000000471",
+      "object_count": 2,
+      "path": "references/000000000471.jpg",
+      "sha256": "8f473ca6e651f74a74efea3673445230f6bb7d6ae92f76bf3c1e523853ec3995",
+      "source_id": "000000000471",
+      "split": "train",
+      "wave5_candidate": false,
+      "width": 640
+    },
+    {
+      "bytes": 9286,
+      "class_ids": [
+        4
+      ],
+      "difficulty_proxy": "few_annotations",
+      "height": 226,
+      "id": "coco128-000000000472",
+      "object_count": 1,
+      "path": "references/000000000472.jpg",
+      "sha256": "e86077ae0fa75248880ca12cdc9ef09bb68fa68083313ce280fd77082c780769",
+      "source_id": "000000000472",
+      "split": "train",
+      "wave5_candidate": false,
+      "width": 640
+    },
+    {
+      "bytes": 37728,
+      "class_ids": [
+        0,
+        35
+      ],
+      "difficulty_proxy": "few_annotations",
+      "height": 500,
+      "id": "coco128-000000000474",
+      "object_count": 2,
+      "path": "references/000000000474.jpg",
+      "sha256": "e5a6b72ea2fda1cd1ea969018036e6da16fa491f9a2ac974a7361b539b00a155",
+      "source_id": "000000000474",
+      "split": "train",
+      "wave5_candidate": true,
+      "width": 333
+    },
+    {
+      "bytes": 57241,
+      "class_ids": [
+        39,
+        43,
+        45,
+        69,
+        72
+      ],
+      "difficulty_proxy": "many_annotations",
+      "height": 427,
+      "id": "coco128-000000000486",
+      "object_count": 8,
+      "path": "references/000000000486.jpg",
+      "sha256": "cb30e9ff9b1182fc9aa328f601f0ca640236eea29ec695b57edc11a572dfbfed",
+      "source_id": "000000000486",
+      "split": "train",
+      "wave5_candidate": false,
+      "width": 640
+    },
+    {
+      "bytes": 48780,
+      "class_ids": [
+        0,
+        32,
+        34,
+        35
+      ],
+      "difficulty_proxy": "many_annotations",
+      "height": 406,
+      "id": "coco128-000000000488",
+      "object_count": 10,
+      "path": "references/000000000488.jpg",
+      "sha256": "9e1c9d4c88d38e6a2cd2f775bea82c137c14dc3b13f8430bcdadcb89ab0b7022",
+      "source_id": "000000000488",
+      "split": "train",
+      "wave5_candidate": true,
+      "width": 640
+    },
+    {
+      "bytes": 26278,
+      "class_ids": [
+        16,
+        36
+      ],
+      "difficulty_proxy": "few_annotations",
+      "height": 495,
+      "id": "coco128-000000000490",
+      "object_count": 2,
+      "path": "references/000000000490.jpg",
+      "sha256": "1274c3c4010d45ddd84faf1c56f7c997c0c2533e4f25c6ccea25e8233e5684e5",
+      "source_id": "000000000490",
+      "split": "train",
+      "wave5_candidate": true,
+      "width": 500
+    },
+    {
+      "bytes": 27309,
+      "class_ids": [
+        77
+      ],
+      "difficulty_proxy": "many_annotations",
+      "height": 313,
+      "id": "coco128-000000000491",
+      "object_count": 4,
+      "path": "references/000000000491.jpg",
+      "sha256": "9d5732e879b066bfe8a38e3fcad64836fa1a5ac9f507625082c4b14fe449f993",
+      "source_id": "000000000491",
+      "split": "train",
+      "wave5_candidate": false,
+      "width": 500
+    },
+    {
+      "bytes": 82455,
+      "class_ids": [
+        21
+      ],
+      "difficulty_proxy": "few_annotations",
+      "height": 427,
+      "id": "coco128-000000000502",
+      "object_count": 1,
+      "path": "references/000000000502.jpg",
+      "sha256": "f7ce0feeb7699cd56886c64ac4ea923c76be97b34ee3a2ea0909c45e08411ec0",
+      "source_id": "000000000502",
+      "split": "train",
+      "wave5_candidate": true,
+      "width": 640
+    },
+    {
+      "bytes": 36527,
+      "class_ids": [],
+      "difficulty_proxy": "few_annotations",
+      "height": 480,
+      "id": "coco128-000000000508",
+      "object_count": 0,
+      "path": "references/000000000508.jpg",
+      "sha256": "0fc73f660a10ed91c52f76a2b34b5fa252bf70ff84f7b2a35374726388528ca2",
+      "source_id": "000000000508",
+      "split": "train",
+      "wave5_candidate": false,
+      "width": 640
+    },
+    {
+      "bytes": 76888,
+      "class_ids": [
+        0,
+        9,
+        13
+      ],
+      "difficulty_proxy": "few_annotations",
+      "height": 480,
+      "id": "coco128-000000000510",
+      "object_count": 3,
+      "path": "references/000000000510.jpg",
+      "sha256": "c2fcc1d44e81016f4c53e7e610c44dc28a2ca1bc5e73f73623129d261bff15e2",
+      "source_id": "000000000510",
+      "split": "train",
+      "wave5_candidate": true,
+      "width": 640
+    },
+    {
+      "bytes": 30781,
+      "class_ids": [
+        59
+      ],
+      "difficulty_proxy": "few_annotations",
+      "height": 640,
+      "id": "coco128-000000000514",
+      "object_count": 1,
+      "path": "references/000000000514.jpg",
+      "sha256": "073520d67d44551b4e0bc24d4eb3a6bb68bf00481a8b15d9f34479e787d2cba9",
+      "source_id": "000000000514",
+      "split": "train",
+      "wave5_candidate": true,
+      "width": 360
+    },
+    {
+      "bytes": 50302,
+      "class_ids": [
+        0,
+        14
+      ],
+      "difficulty_proxy": "many_annotations",
+      "height": 480,
+      "id": "coco128-000000000520",
+      "object_count": 11,
+      "path": "references/000000000520.jpg",
+      "sha256": "2b971302ba56e1049294f9e0b198f37316148c8257b8d7344002aed624c45844",
+      "source_id": "000000000520",
+      "split": "train",
+      "wave5_candidate": false,
+      "width": 640
+    },
+    {
+      "bytes": 61674,
+      "class_ids": [
+        0,
+        3
+      ],
+      "difficulty_proxy": "few_annotations",
+      "height": 640,
+      "id": "coco128-000000000529",
+      "object_count": 3,
+      "path": "references/000000000529.jpg",
+      "sha256": "5d9958bdec3062b05090258293a19af01d231de69b943d1ff0bb4a7b943e6db3",
+      "source_id": "000000000529",
+      "split": "train",
+      "wave5_candidate": false,
+      "width": 427
+    },
+    {
+      "bytes": 33369,
+      "class_ids": [
+        0,
+        1,
+        32,
+        38
+      ],
+      "difficulty_proxy": "many_annotations",
+      "height": 480,
+      "id": "coco128-000000000531",
+      "object_count": 15,
+      "path": "references/000000000531.jpg",
+      "sha256": "111bb407e512f23fcc14bbc51ad4b312b0797332aab86ecd9373808286ed30b1",
+      "source_id": "000000000531",
+      "split": "train",
+      "wave5_candidate": true,
+      "width": 640
+    },
+    {
+      "bytes": 68045,
+      "class_ids": [
+        0,
+        5,
+        26
+      ],
+      "difficulty_proxy": "many_annotations",
+      "height": 480,
+      "id": "coco128-000000000532",
+      "object_count": 8,
+      "path": "references/000000000532.jpg",
+      "sha256": "60745e50cb857e4683d3622ac6c1e7ade63bd73ee458eb76a70455badaee2869",
+      "source_id": "000000000532",
+      "split": "train",
+      "wave5_candidate": false,
+      "width": 640
+    },
+    {
+      "bytes": 19624,
+      "class_ids": [
+        0,
+        26,
+        56,
+        67
+      ],
+      "difficulty_proxy": "many_annotations",
+      "height": 336,
+      "id": "coco128-000000000536",
+      "object_count": 11,
+      "path": "references/000000000536.jpg",
+      "sha256": "745e538b3979ffa93f63bb294163e173d9a99413bce6cf3289215b541c9f1eb1",
+      "source_id": "000000000536",
+      "split": "train",
+      "wave5_candidate": false,
+      "width": 448
+    },
+    {
+      "bytes": 73559,
+      "class_ids": [
+        2,
+        4,
+        5,
+        7,
+        9
+      ],
+      "difficulty_proxy": "many_annotations",
+      "height": 425,
+      "id": "coco128-000000000540",
+      "object_count": 20,
+      "path": "references/000000000540.jpg",
+      "sha256": "32099f009fcb436bad1bd59b5d48b3e5620fa667a83db5a09879e158dd346103",
+      "source_id": "000000000540",
+      "split": "train",
+      "wave5_candidate": true,
+      "width": 640
+    },
+    {
+      "bytes": 92299,
+      "class_ids": [
+        0,
+        32,
+        34,
+        35
+      ],
+      "difficulty_proxy": "many_annotations",
+      "height": 427,
+      "id": "coco128-000000000544",
+      "object_count": 16,
+      "path": "references/000000000544.jpg",
+      "sha256": "f599082d9c87db6029fc3d6e468074d1294dc98a8755152ca7324811aa1d10cd",
+      "source_id": "000000000544",
+      "split": "train",
+      "wave5_candidate": false,
+      "width": 640
+    },
+    {
+      "bytes": 42878,
+      "class_ids": [
+        58,
+        61,
+        67,
+        71
+      ],
+      "difficulty_proxy": "many_annotations",
+      "height": 312,
+      "id": "coco128-000000000560",
+      "object_count": 5,
+      "path": "references/000000000560.jpg",
+      "sha256": "96801af258ded041845af111c4535dcb12a512cf22f6fd9854e5723920532d60",
+      "source_id": "000000000560",
+      "split": "train",
+      "wave5_candidate": true,
+      "width": 460
+    },
+    {
+      "bytes": 46726,
+      "class_ids": [
+        0,
+        38,
+        56
+      ],
+      "difficulty_proxy": "many_annotations",
+      "height": 640,
+      "id": "coco128-000000000564",
+      "object_count": 16,
+      "path": "references/000000000564.jpg",
+      "sha256": "1f67bf49851ff43dba866f0cd6cc1b6f1d35ee75255a6092483550548584f477",
+      "source_id": "000000000564",
+      "split": "train",
+      "wave5_candidate": false,
+      "width": 520
+    },
+    {
+      "bytes": 55042,
+      "class_ids": [
+        0,
+        33
+      ],
+      "difficulty_proxy": "many_annotations",
+      "height": 480,
+      "id": "coco128-000000000569",
+      "object_count": 5,
+      "path": "references/000000000569.jpg",
+      "sha256": "07655c58e2286ec5e8b74eee71a03841ccf732cbc502d6c380d894a14041ad5f",
+      "source_id": "000000000569",
+      "split": "train",
+      "wave5_candidate": false,
+      "width": 640
+    },
+    {
+      "bytes": 163333,
+      "class_ids": [
+        15
+      ],
+      "difficulty_proxy": "few_annotations",
+      "height": 513,
+      "id": "coco128-000000000575",
+      "object_count": 1,
+      "path": "references/000000000575.jpg",
+      "sha256": "839789fe6192bbd5776761d675aa76017b67810b556f3e25e2f3a31acffd86f3",
+      "source_id": "000000000575",
+      "split": "train",
+      "wave5_candidate": false,
+      "width": 640
+    },
+    {
+      "bytes": 45065,
+      "class_ids": [
+        16
+      ],
+      "difficulty_proxy": "few_annotations",
+      "height": 500,
+      "id": "coco128-000000000581",
+      "object_count": 1,
+      "path": "references/000000000581.jpg",
+      "sha256": "60ad7a794ae3032c302c4e1d5111099921ce7e8df23df4401f60bdc74dc83bf1",
+      "source_id": "000000000581",
+      "split": "train",
+      "wave5_candidate": false,
+      "width": 473
+    },
+    {
+      "bytes": 36369,
+      "class_ids": [
+        0,
+        29
+      ],
+      "difficulty_proxy": "few_annotations",
+      "height": 480,
+      "id": "coco128-000000000589",
+      "object_count": 2,
+      "path": "references/000000000589.jpg",
+      "sha256": "b028805b2fb2c666ef72d4a7a01677bcf0ed56fb4d14cadc8646acdf379999c7",
+      "source_id": "000000000589",
+      "split": "train",
+      "wave5_candidate": false,
+      "width": 640
+    },
+    {
+      "bytes": 41324,
+      "class_ids": [
+        45,
+        71
+      ],
+      "difficulty_proxy": "few_annotations",
+      "height": 500,
+      "id": "coco128-000000000590",
+      "object_count": 2,
+      "path": "references/000000000590.jpg",
+      "sha256": "dd687875b5ff4fd0a91dcc910690da36858271562ea908ff61661b4cec9b4cee",
+      "source_id": "000000000590",
+      "split": "train",
+      "wave5_candidate": true,
+      "width": 409
+    },
+    {
+      "bytes": 91739,
+      "class_ids": [
+        62
+      ],
+      "difficulty_proxy": "few_annotations",
+      "height": 480,
+      "id": "coco128-000000000595",
+      "object_count": 1,
+      "path": "references/000000000595.jpg",
+      "sha256": "8152ff314326c47105e065ec16ef28e1baa9dd640f40475fe385b612d5e65cf1",
+      "source_id": "000000000595",
+      "split": "train",
+      "wave5_candidate": true,
+      "width": 640
+    },
+    {
+      "bytes": 31374,
+      "class_ids": [
+        20
+      ],
+      "difficulty_proxy": "many_annotations",
+      "height": 248,
+      "id": "coco128-000000000597",
+      "object_count": 7,
+      "path": "references/000000000597.jpg",
+      "sha256": "f611f233ff6657baa61f32f573a213ef1b1af031e892f8b4e287c21a856497e7",
+      "source_id": "000000000597",
+      "split": "train",
+      "wave5_candidate": false,
+      "width": 640
+    },
+    {
+      "bytes": 85596,
+      "class_ids": [
+        41,
+        44,
+        60
+      ],
+      "difficulty_proxy": "many_annotations",
+      "height": 480,
+      "id": "coco128-000000000605",
+      "object_count": 4,
+      "path": "references/000000000605.jpg",
+      "sha256": "9135dd0723240d2d4f64ce2173901a0f23a222dea98b72e1259c28f28fa2aab6",
+      "source_id": "000000000605",
+      "split": "train",
+      "wave5_candidate": false,
+      "width": 640
+    },
+    {
+      "bytes": 78481,
+      "class_ids": [
+        59,
+        77
+      ],
+      "difficulty_proxy": "many_annotations",
+      "height": 480,
+      "id": "coco128-000000000612",
+      "object_count": 11,
+      "path": "references/000000000612.jpg",
+      "sha256": "9ee977eaa2947ffa1508dfc8b6e3c179a9945ee3a55529f91ede04689f00e667",
+      "source_id": "000000000612",
+      "split": "train",
+      "wave5_candidate": true,
+      "width": 640
+    },
+    {
+      "bytes": 51808,
+      "class_ids": [
+        53,
+        72
+      ],
+      "difficulty_proxy": "few_annotations",
+      "height": 640,
+      "id": "coco128-000000000620",
+      "object_count": 2,
+      "path": "references/000000000620.jpg",
+      "sha256": "4c7d0e5b1ac23a287f95640c4aaab93a0e120c384558e3fff70b96f6f1eb80ce",
+      "source_id": "000000000620",
+      "split": "train",
+      "wave5_candidate": true,
+      "width": 480
+    },
+    {
+      "bytes": 30476,
+      "class_ids": [
+        0,
+        13,
+        56,
+        77
+      ],
+      "difficulty_proxy": "many_annotations",
+      "height": 500,
+      "id": "coco128-000000000623",
+      "object_count": 4,
+      "path": "references/000000000623.jpg",
+      "sha256": "c11d16bc49acabc2a52b990174110753dbe3a9a71eb7aa37af8f5fc4c616fb20",
+      "source_id": "000000000623",
+      "split": "train",
+      "wave5_candidate": false,
+      "width": 375
+    },
+    {
+      "bytes": 75952,
+      "class_ids": [
+        0,
+        29
+      ],
+      "difficulty_proxy": "many_annotations",
+      "height": 446,
+      "id": "coco128-000000000625",
+      "object_count": 4,
+      "path": "references/000000000625.jpg",
+      "sha256": "0938276afa762c367dac4968bc9a3d4abf9d83db1f4bea67262bff976568e24c",
+      "source_id": "000000000625",
+      "split": "train",
+      "wave5_candidate": true,
+      "width": 640
+    },
+    {
+      "bytes": 77526,
+      "class_ids": [
+        3
+      ],
+      "difficulty_proxy": "few_annotations",
+      "height": 427,
+      "id": "coco128-000000000629",
+      "object_count": 1,
+      "path": "references/000000000629.jpg",
+      "sha256": "be76e3e5bed8c8a9a0d8081844bfca7ce013093e746b66aad13922373644ad32",
+      "source_id": "000000000629",
+      "split": "train",
+      "wave5_candidate": false,
+      "width": 640
+    },
+    {
+      "bytes": 31400,
+      "class_ids": [
+        39,
+        45,
+        62,
+        64,
+        73,
+        77
+      ],
+      "difficulty_proxy": "many_annotations",
+      "height": 375,
+      "id": "coco128-000000000643",
+      "object_count": 20,
+      "path": "references/000000000643.jpg",
+      "sha256": "53d61e69ccf08b42a1cefa414c69a1c03d72aba2852e1fde35c4da3df8753b3f",
+      "source_id": "000000000643",
+      "split": "train",
+      "wave5_candidate": true,
+      "width": 500
+    },
+    {
+      "bytes": 33865,
+      "class_ids": [
+        2,
+        15
+      ],
+      "difficulty_proxy": "few_annotations",
+      "height": 427,
+      "id": "coco128-000000000650",
+      "object_count": 2,
+      "path": "references/000000000650.jpg",
+      "sha256": "9bb45795336c1d05189fe51a77e04270cd1da8929d62060926798f3dd2d25204",
+      "source_id": "000000000650",
+      "split": "train",
+      "wave5_candidate": false,
+      "width": 640
+    }
+  ],
+  "schema": "painter.astra-high-100-references.v1",
+  "status": "references_staged_teacher_output_unreviewed"
+}
