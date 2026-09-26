@@ -150,7 +150,8 @@ def render_rows(output: Path, rows: list[dict], renderer: Path, python: Path,
     return [completed[row["id"]] for row in rows]
 
 
-def render(batch: str, run_id: str, timeout: int, workers: int = 2) -> dict:
+def render(batch: str, run_id: str, timeout: int, workers: int = 2,
+           expected_archive_sha256: str | None = None) -> dict:
     runtime = ROOT / ".painter-cloud-runtime"
     python = runtime / "renderer-env/bin/python"
     browser = runtime / "browsers"
@@ -159,6 +160,8 @@ def render(batch: str, run_id: str, timeout: int, workers: int = 2) -> dict:
         raise RuntimeError("Codex Cloud Linux renderer setup is required")
     output = OUT / run_id
     manifest, receipt = stage(batch, output)
+    if expected_archive_sha256 is not None and receipt["archive_sha256"] != expected_archive_sha256:
+        raise ValueError("public teacher source differs from pinned render plan")
     started = time.monotonic()
     statuses = render_rows(output, manifest["rows"], renderer, python, browser, timeout, workers)
     summary = {"schema": "painter.teacher500-render.v1", "batch": batch, "run_id": run_id,
@@ -181,12 +184,16 @@ def main() -> None:
     parser.add_argument("run_id")
     parser.add_argument("--timeout", type=int, default=600)
     parser.add_argument("--workers", type=int, default=2)
+    parser.add_argument("--expected-archive-sha256")
     args = parser.parse_args()
     if (not re.fullmatch(r"[a-z][a-z0-9-]{1,63}", args.batch)
             or not re.fullmatch(r"[a-z][a-z0-9-]{1,63}", args.run_id)
             or not 1 <= args.timeout <= 900 or not 1 <= args.workers <= 8):
         parser.error("invalid batch, run ID, timeout or worker count")
-    summary = render(args.batch, args.run_id, args.timeout, args.workers)
+    if args.expected_archive_sha256 and not re.fullmatch(r"[0-9a-f]{64}", args.expected_archive_sha256):
+        parser.error("invalid expected source SHA-256")
+    summary = render(args.batch, args.run_id, args.timeout, args.workers,
+                     args.expected_archive_sha256)
     print(json.dumps({"batch": args.batch, "valid": summary["valid"], "count": summary["count"]}))
 
 

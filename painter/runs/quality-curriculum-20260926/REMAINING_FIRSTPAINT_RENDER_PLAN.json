@@ -1,0 +1,200 @@
+{
+  "additional_eight": "awaiting distinct source authoring, separate finite render",
+  "created": "2026-09-27",
+  "excluded_first_paints": {
+    "batch": "astra-reference-seed",
+    "count": 12,
+    "reason": "source/rights metadata incomplete; not publicly transferred"
+  },
+  "groups": {
+    "group-1": [
+      {
+        "batch": "astra-mixedref-wave2",
+        "count": 24,
+        "run_id": "teacher600-astra-mixedref-wave2-20260927",
+        "source_archive_sha256": "599d424589975fa09c3f7af7b6bb0c180c50a25061ddd87dbca2b0b0e9aa1b0e",
+        "source_dataset_commit": "c7349c2c89322045861a64ecf67a636c669cf0b2"
+      },
+      {
+        "batch": "astra-text-wave6",
+        "count": 24,
+        "run_id": "teacher600-astra-text-wave6-20260927",
+        "source_archive_sha256": "d3a452c068ff0bf1f21b38d097a9df198a74318986194f8f833af409e2bce025",
+        "source_dataset_commit": "16eb5e106636576847d71c20a715edc1cd21d99e"
+      },
+      {
+        "batch": "sol-val2017-wave6",
+        "count": 24,
+        "run_id": "teacher600-sol-val2017-wave6-20260927",
+        "source_archive_sha256": "83561ef79ffbaededf5482d1348f9ebc6722dcdb5dfb88f691ef04c32aa22282",
+        "source_dataset_commit": "5aa3e61d67b6c3b8c9e5d2209e8386f34a6fe896"
+      },
+      {
+        "batch": "astra-val2017-wave1",
+        "count": 12,
+        "run_id": "teacher600-astra-val2017-wave1-20260927",
+        "source_archive_sha256": "0f50b669953d1935477f48ce0da8b8b0f9345b5ab16855e9196498ebfcee039d",
+        "source_dataset_commit": "113d3b7538f22bc8bb622ee2b49b58907aa63e1b"
+      }
+    ],
+    "group-2": [
+      {
+        "batch": "astra-mixedref-wave7",
+        "count": 24,
+        "run_id": "teacher600-astra-mixedref-wave7-20260927",
+        "source_archive_sha256": "815748df0439415f4d37d61ffb497146d54c535605b512ed4c588edbf629a34f",
+        "source_dataset_commit": "a8a4705ff28e881ddaee0174f5624ba4bac20407"
+      },
+      {
+        "batch": "astra-text-wave7",
+        "count": 24,
+        "run_id": "teacher600-astra-text-wave7-20260927",
+        "source_archive_sha256": "d002d30af4ae1ba94582934b6bef2c9e7d181e52500c9eb1a2856ebf8ea1e133",
+        "source_dataset_commit": "8c3172a03b8dd612d46d04f87850023744f1b754"
+      },
+      {
+        "batch": "sol-val2017-wave7",
+        "count": 24,
+        "run_id": "teacher600-sol-val2017-wave7-20260927",
+        "source_archive_sha256": "19a2ff9b96b176776f87ac10499d38bf5d859eb9cdd891ed37629579ddef3064",
+        "source_dataset_commit": "393701063a0a1a7d79c90c4f61bac7841d4afdfe"
+      },
+      {
+        "batch": "sol-text-seed",
+        "count": 12,
+        "run_id": "teacher600-sol-text-seed-20260927",
+        "source_archive_sha256": "c4065da93363332d7e2aaf9cafd4758ed23a50e5bf40e7580b56107db175bda8",
+        "source_dataset_commit": "d95f228e9938c5a38cdbd52fee000988a433bcee"
+      }
+    ],
+    "group-3": [
+      {
+        "batch": "astra-openverse-wave5",
+        "count": 24,
+        "run_id": "teacher600-astra-openverse-wave5-20260927",
+        "source_archive_sha256": "c9233cae126a4f592acefebd61af0ce82558100209865ea53d7af66aa799807e",
+        "source_dataset_commit": "6ae7fc4fe23f9bb556e39cab57ee4bf05765e1c4"
+      },
+      {
+        "batch": "astra-text-wave8",
+        "count": 24,
+        "run_id": "teacher600-astra-text-wave8-20260927",
+        "source_archive_sha256": "4e309929dc0900bc089bfe7f87e796a2f282ed58b56010ebfa23f2fea853845b",
+        "source_dataset_commit": "90eb3c5af48505f3a49006b25909ce20bae28878"
+      },
+      {
+        "batch": "sol-val2017-wave8",
+        "count": 24,
+        "run_id": "teacher600-sol-val2017-wave8-20260927",
+        "source_archive_sha256": "bf06d7b037f8ca6a855d02c1706a7ac4a38cfa84bbeca796cf2c969dfd96b2db",
+        "source_dataset_commit": "aab6df173ef1bfef208ec477c1b02e8e92588dfe"
+      },
+      {
+        "batch": "sol-curated-coco-v1",
+        "count": 10,
+        "run_id": "teacher600-sol-curated-coco-20260927",
+        "source_archive_sha256": "334e2c292b8f9963e7a8876131c679fee5b507bec85e40d45310e10ba2e6e9a1",
+        "source_dataset_commit": "8b2ae8f352e9372b3592f2c2ab73ffe69a95750c"
+      }
+    ],
+    "group-4": [
+      {
+        "batch": "astra-openverse-wave6",
+        "count": 24,
+        "run_id": "teacher600-astra-openverse-wave6-20260927",
+        "source_archive_sha256": "19b934ea0cdc915271d65e693ecb06948aaaacfb70bb9458a28797916e2151f2",
+        "source_dataset_commit": "ee4535f7d57956135b3bc9597f53a874ef092bc8"
+      },
+      {
+        "batch": "astra-val2017-wave8",
+        "count": 24,
+        "run_id": "teacher600-astra-val2017-wave8-20260927",
+        "source_archive_sha256": "e4efa7abd11b3ebb1e3b22a7738cd3c66d162721ec4218313f9dabaac9d6f4cf",
+        "source_dataset_commit": "18a2d10bd4b068ad7107cf4a9b7915a8ccbc3da1"
+      },
+      {
+        "batch": "astra-text-wave2",
+        "count": 20,
+        "run_id": "teacher600-astra-text-wave2-20260927",
+        "source_archive_sha256": "1529a8e048ea20a726aa96842920abd53b863e3be1ad37a0f6406d093698dd03",
+        "source_dataset_commit": "bc4110513020afd2c23089dd62006c5a1e513f54"
+      },
+      {
+        "batch": "sol-text-wave3",
+        "count": 20,
+        "run_id": "teacher600-sol-text-wave3-20260927",
+        "source_archive_sha256": "445b9da9bed4e4e0438fe6156a3230cc2300f0b6161013356ba4a03b7801e9c1",
+        "source_dataset_commit": "f70383a74330672986dcdf784ee65f7359bceae3"
+      }
+    ],
+    "group-5": [
+      {
+        "batch": "astra-text-wave4",
+        "count": 24,
+        "run_id": "teacher600-astra-text-wave4-20260927",
+        "source_archive_sha256": "05fad0342cab3a2a392983d921c57c5cb3b28037cdadca398ca18727bb2f1776",
+        "source_dataset_commit": "62dfef3c21dfead72052443749ed8d3a9419ee99"
+      },
+      {
+        "batch": "sol-text-wave4",
+        "count": 24,
+        "run_id": "teacher600-sol-text-wave4-20260927",
+        "source_archive_sha256": "8920da8286260c250002924c8cfceaffdbc39b5970bf64071841278fcf2da785",
+        "source_dataset_commit": "a701630505dd3e34e6c0e904d037bb3787ca29fa"
+      },
+      {
+        "batch": "astra-text-wave3",
+        "count": 20,
+        "run_id": "teacher600-astra-text-wave3-20260927",
+        "source_archive_sha256": "0534a4fa15cd70b06385116647952cb8fa19f5f2cdd3ae983fcf452576fcc5bf",
+        "source_dataset_commit": "0caa9153da7d05f0d1e72a848bf4caba0a8c7994"
+      },
+      {
+        "batch": "astra-openverse-wave1",
+        "count": 12,
+        "run_id": "teacher600-astra-openverse-wave1-20260927",
+        "source_archive_sha256": "979cd1586761c43f36504150bf10c5f68cd87810febd63807739702b6dea758b",
+        "source_dataset_commit": "579119f911cd5c872b7670bdf3c28d8bb782611d"
+      }
+    ],
+    "group-6": [
+      {
+        "batch": "astra-text-wave5",
+        "count": 24,
+        "run_id": "teacher600-astra-text-wave5-20260927",
+        "source_archive_sha256": "c8de121fcaf686d0ece9a58bbf08371146fd4a4b70cba19a4dd13bebcb3681e8",
+        "source_dataset_commit": "c8628e38c787b8be976cd73aac2dae9b48809579"
+      },
+      {
+        "batch": "sol-val2017-wave5",
+        "count": 24,
+        "run_id": "teacher600-sol-val2017-wave5-20260927",
+        "source_archive_sha256": "1ad44bcd95830246734bb8e4369be6fb7c06a5f678711452301c2671e2cd8a49",
+        "source_dataset_commit": "a09aaadd95054ca2f924d3f7f93f401523ce4c33"
+      },
+      {
+        "batch": "sol-text-wave2",
+        "count": 20,
+        "run_id": "teacher600-sol-text-wave2-20260927",
+        "source_archive_sha256": "bd570fcd2c51559eb196249d21ff044392ca27184e912b46ee6a78718ff47d57",
+        "source_dataset_commit": "952c4682dc3cadb358227b3cd037e2a386be43fe"
+      },
+      {
+        "batch": "astra-text-seed",
+        "count": 12,
+        "run_id": "teacher600-astra-text-seed-20260927",
+        "source_archive_sha256": "bf773add6ea1c15e9b7e1688a2a2a1ce71e5e83340442a128a01b3fe30c62b0b",
+        "source_dataset_commit": "ff1cae8a247c79979b93ddc5b753c1140b1489e6"
+      }
+    ]
+  },
+  "hypothesis": "Renderer validity and visual screening can identify usable candidates among previously authored first paints.",
+  "matched_baseline": "Already rendered 82 published first-paint inputs; no quality comparison or student improvement inferred.",
+  "planned_new_render_count": 498,
+  "previously_rendered_evidence_status": "locally collected hash-verified run summaries",
+  "previously_rendered_published_first_paints": 82,
+  "schema": "painter.teacher600-first-paint-render-plan.v1",
+  "source_index": "PUBLIC_SOURCE_INDEX.json",
+  "source_index_sha256": "1147618e740471c0c8027552f77f7e0891e8d638b0ffec701e11a99f4dbafea8",
+  "visual_review_status": "pending"
+}
