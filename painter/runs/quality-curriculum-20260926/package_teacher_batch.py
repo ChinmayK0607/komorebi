@@ -36,6 +36,23 @@ def read_file(source: Path, relative: str, expected_sha: str | None) -> bytes:
 
 
 def candidates(source: Path, manifest: dict) -> list[dict]:
+    if manifest.get("modality") == "render-conditioned-correction":
+        return [{"id": row["id"], "mode": row["mode"],
+                 "category": row["category"], "role": "render_conditioned_correction_candidate",
+                 "turn_count": row.get("turn_count", 2),
+                 "program": row["new_program_path"], "program_sha": row["new_program_sha256"],
+                 "input": row["input_path"], "input_sha": row["input_sha256"],
+                 "prompt": row.get("prompt_path"), "prompt_sha": row.get("prompt_sha256"),
+                 "baseline_program": row["prior_program_path"],
+                 "baseline_program_sha": row["prior_program_sha256"],
+                 "prior_canvas": row["prior_canvas_path"],
+                 "prior_canvas_sha": row["prior_canvas_sha256"],
+                 "baseline_batch": row["source_batch"], "prior_run_id": row["prior_run_id"],
+                 "notes": row["rationale"], "source_url": row.get("source_url"),
+                 "source_metadata": row.get("source_metadata"),
+                 "source_visual_type": row.get("source_visual_type"),
+                 "license": row.get("license")}
+                for row in manifest["items"]]
     if manifest.get("modality") == "image-to-painting-render-conditioned-correction":
         return [{"id": row["id"], "mode": "image_to_image",
                  "category": row["category"], "role": "render_conditioned_correction_candidate",

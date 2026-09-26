@@ -40,7 +40,9 @@ class BatchPipelineTest(unittest.TestCase):
                       "astra-photo-static-repair-v1", "astra-sol-text-static-repair-v2",
                       "sol-astra-photo-static-repair-v1", "astra-simple-cc0-static-repair-v1",
                       "astra-render-conditioned-correction-v1", "sol-render-conditioned-correction-v1",
-                      "astra-shell-render-conditioned-turn3-v1", "sol-can-render-conditioned-turn3-v1"):
+                      "astra-shell-render-conditioned-turn3-v1", "sol-can-render-conditioned-turn3-v1",
+                      "astra-coco-objects-render-conditioned-v1",
+                      "astra-coco-scenes-render-conditioned-v1", "sol-text-render-conditioned-v1"):
             with self.subTest(batch=batch), tempfile.TemporaryDirectory() as temporary:
                 source = COLLECTED / batch
                 receipt = json.loads((source / "source-receipt.json").read_text())
@@ -88,12 +90,16 @@ class BatchPipelineTest(unittest.TestCase):
                     self.assertTrue(all(row["role"] == "unrendered_alternative_candidate"
                                         and row["baseline_program_sha256"] for row in manifest["rows"]))
                 if "render-conditioned" in batch:
+                    expected_prior_run = (
+                        "teacher500-astra-coco-curated-20260926" if "coco" in batch else
+                        "teacher500-sol-text-curated-20260926" if batch == "sol-text-render-conditioned-v1" else
+                        "teacher500-simple-cc0-pilot-20260926" if "turn3" not in batch else
+                        "teacher500-astra-turn2-20260926" if batch.startswith("astra") else
+                        "teacher500-sol-turn2-20260926"
+                    )
                     self.assertTrue(all(row["role"] == "render_conditioned_correction_candidate"
                                         and row["turn_count"] == (3 if "turn3" in batch else 2)
-                                        and row["prior_run_id"] == (
-                                            "teacher500-simple-cc0-pilot-20260926" if "turn3" not in batch else
-                                            ("teacher500-astra-turn2-20260926" if batch.startswith("astra") else
-                                             "teacher500-sol-turn2-20260926"))
+                                        and row["prior_run_id"] == expected_prior_run
                                         and (Path(temporary) / "stage" / row["prior_canvas"]).is_file()
                                         and (Path(temporary) / "stage" / row["baseline_program"]).is_file()
                                         for row in manifest["rows"]))
