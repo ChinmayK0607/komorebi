@@ -49,6 +49,8 @@ class RunTests(unittest.TestCase):
             (root / "refs.json").write_text(json.dumps(refs))
             inputs = run.load_inputs(root)
             reference = inputs.references[0]
+            report = run.dry_run_report(inputs, track="quality", limit=1)
+            self.assertEqual(report["reference_bytes_selected"], len(b"fixture-jpeg") + len(b"first-paint-png"))
             initial, safe = run.build_user_message(
                 inputs=inputs, reference=reference, current_canvas=None,
                 previous_response=None, render_feedback=None)

@@ -1844,8 +1844,18 @@ def dry_run_report(inputs: BenchmarkInputs, *, track: str = "all", limit: int | 
         }
         for name in (["quality", "speed"] if track == "all" else [track])
     }
-    image_bytes = sum(ref.image.stat().st_size for _, _, ref, _ in selected)
-    max_context = max((len(inputs.prompt) + len(image_data_uri(ref.image)) for _, _, ref, _ in selected), default=len(inputs.prompt))
+    def first_turn_bytes(ref: Reference) -> int:
+        prior = ref.metadata.get("prior_canvas")
+        return ref.image.stat().st_size + ((inputs.root / prior).stat().st_size if isinstance(prior, str) else 0)
+
+    def first_turn_chars(ref: Reference) -> int:
+        prior = ref.metadata.get("prior_canvas")
+        return (len(inputs.prompt) + len(str(ref.metadata.get("task_text") or ""))
+                + len(image_data_uri(ref.image))
+                + (len(image_data_uri(inputs.root / prior)) if isinstance(prior, str) else 0))
+
+    image_bytes = sum(first_turn_bytes(ref) for _, _, ref, _ in selected)
+    max_context = max((first_turn_chars(ref) for _, _, ref, _ in selected), default=len(inputs.prompt))
     return {
         "schema": SCHEMA,
         "provider": PROVIDER,
