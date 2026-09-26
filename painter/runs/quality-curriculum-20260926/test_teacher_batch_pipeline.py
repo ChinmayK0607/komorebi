@@ -31,7 +31,8 @@ class BatchPipelineTest(unittest.TestCase):
                       "sol-val2017-wave5", "astra-openverse-wave5", "astra-text-wave6",
                       "sol-text-curated-v1",
                       "sol-photo-static-repair-v1", "astra-sol-text-static-repair-v1",
-                      "astra-photo-static-repair-v1"):
+                      "astra-photo-static-repair-v1", "astra-sol-text-static-repair-v2",
+                      "sol-astra-photo-static-repair-v1"):
             with self.subTest(batch=batch), tempfile.TemporaryDirectory() as temporary:
                 source = COLLECTED / batch
                 receipt = json.loads((source / "source-receipt.json").read_text())
@@ -73,6 +74,9 @@ class BatchPipelineTest(unittest.TestCase):
                     self.assertEqual(manifest["count"], 3)
                     self.assertTrue(all(row["role"] == "unrendered_alternative_candidate"
                                         and row["baseline_batch"].startswith("astra-")
+                                        and row["baseline_program_sha256"] for row in manifest["rows"]))
+                if batch in {"astra-sol-text-static-repair-v2", "sol-astra-photo-static-repair-v1"}:
+                    self.assertTrue(all(row["role"] == "unrendered_alternative_candidate"
                                         and row["baseline_program_sha256"] for row in manifest["rows"]))
 
     def test_archive_hash_mismatch_blocks_staging(self) -> None:
