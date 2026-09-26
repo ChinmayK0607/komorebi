@@ -36,6 +36,23 @@ def read_file(source: Path, relative: str, expected_sha: str | None) -> bytes:
 
 
 def candidates(source: Path, manifest: dict) -> list[dict]:
+    if "items" in manifest and manifest.get("modality") == "image-to-painting-static-repair":
+        return [{"id": row["id"], "mode": "image_to_image",
+                 "category": "static-repair", "role": "unrendered_alternative_candidate",
+                 "program": row["new_program_file"], "program_sha": row["new_program_sha256"],
+                 "input": row["reference_file"], "input_sha": row["reference_sha256"],
+                 "prompt": row["new_prompt_file"], "prompt_sha": row["new_prompt_sha256"],
+                 "baseline_program": row["old_program_file"],
+                 "baseline_program_sha": row["old_program_sha256"],
+                 "baseline_batch": row["source_batch"],
+                 "notes": row["structural_correction"],
+                 "source_url": row["source"].get("source_url"),
+                 "source_metadata": row["source"],
+                 "source_visual_type": "photograph",
+                 "license": {"id": row["source"].get("license_id"),
+                             "name": row["source"].get("license_name"),
+                             "url": row["source"].get("license_url")}}
+                for row in manifest["items"]]
     if "items" in manifest and manifest.get("modality") == "image-to-painting":
         return [{"id": row["id"], "mode": "image_to_image",
                  "category": row["corrected_category"],
@@ -117,6 +134,10 @@ def package(source: Path) -> dict:
         if javascript is None:
             raise RuntimeError("a Node or Bun JavaScript syntax checker is required")
         subprocess.run([javascript, "--check", "-"], input=program, check=True, capture_output=True)
+        if row.get("baseline_program"):
+            baseline = read_file(source, row["baseline_program"], row["baseline_program_sha"])
+            validate_teacher_program(baseline.decode("utf-8"))
+            subprocess.run([javascript, "--check", "-"], input=baseline, check=True, capture_output=True)
         input_raw = read_file(source, row["input"], row["input_sha"])
         if row["mode"] == "text_to_image":
             input_raw.decode("utf-8")
@@ -139,6 +160,9 @@ def package(source: Path) -> dict:
         normalized.append({"id": ident, "mode": row["mode"], "category": row["category"],
                            "difficulty": row.get("difficulty"),
                            "turn_count": row.get("turn_count", 1),
+                           "role": row.get("role", "first_paint_candidate"),
+                           "baseline_batch": row.get("baseline_batch"),
+                           "baseline_program_sha256": row.get("baseline_program_sha"),
                            "notes": row["notes"], "program": program_path,
                            "program_sha256": digest(program), "input": input_path,
                            "input_sha256": digest(input_raw), "prompt": prompt_path,
