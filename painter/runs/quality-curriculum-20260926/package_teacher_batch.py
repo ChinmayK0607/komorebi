@@ -46,7 +46,7 @@ def candidates(source: Path, manifest: dict) -> list[dict]:
                  "baseline_program": row.get("old_program_path", row.get("baseline_program_path")),
                  "baseline_program_sha": row.get("old_program_sha256", row.get("baseline_program_sha256")),
                  "baseline_batch": row["source_batch"],
-                 "notes": f"{row['correction']['audit_disposition']}: "
+                 "notes": f"{row['correction'].get('audit_disposition', row['correction'].get('baseline_static_risk', 'static repair'))}: "
                           f"{row['correction'].get('correction', row['correction'].get('concrete_structural_correction', ''))}",
                  "source_url": row["source"].get("source_url"),
                  "source_metadata": row["source"],
