@@ -1,0 +1,246 @@
+{
+  "distinct_references": 100,
+  "groups": [
+    {
+      "count": 4,
+      "group": "easy-a",
+      "reference_ids": [
+        "coco128-000000000086",
+        "coco128-000000000307",
+        "coco128-000000000151",
+        "coco128-000000000510"
+      ],
+      "wave": 1,
+      "wave5_with_prior": 4
+    },
+    {
+      "count": 4,
+      "group": "hard-a",
+      "reference_ids": [
+        "coco128-000000000164",
+        "coco128-000000000328",
+        "coco128-000000000384",
+        "coco128-000000000196"
+      ],
+      "wave": 1,
+      "wave5_with_prior": 4
+    },
+    {
+      "count": 4,
+      "group": "hard-b",
+      "reference_ids": [
+        "coco128-000000000260",
+        "coco128-000000000560",
+        "coco128-000000000064",
+        "coco128-000000000443"
+      ],
+      "wave": 1,
+      "wave5_with_prior": 4
+    },
+    {
+      "count": 4,
+      "group": "new-a",
+      "reference_ids": [
+        "coco128-000000000042",
+        "coco128-000000000073",
+        "coco128-000000000092",
+        "coco128-000000000471"
+      ],
+      "wave": 2,
+      "wave5_with_prior": 0
+    },
+    {
+      "count": 4,
+      "group": "new-b",
+      "reference_ids": [
+        "coco128-000000000025",
+        "coco128-000000000034",
+        "coco128-000000000263",
+        "coco128-000000000575"
+      ],
+      "wave": 2,
+      "wave5_with_prior": 0
+    },
+    {
+      "count": 4,
+      "group": "new-c",
+      "reference_ids": [
+        "coco128-000000000491",
+        "coco128-000000000605",
+        "coco128-000000000650",
+        "coco128-000000000472"
+      ],
+      "wave": 2,
+      "wave5_with_prior": 0
+    },
+    {
+      "count": 4,
+      "group": "new-d",
+      "reference_ids": [
+        "coco128-000000000283",
+        "coco128-000000000332",
+        "coco128-000000000450",
+        "coco128-000000000529"
+      ],
+      "wave": 2,
+      "wave5_with_prior": 0
+    },
+    {
+      "count": 4,
+      "group": "new-e",
+      "reference_ids": [
+        "coco128-000000000247",
+        "coco128-000000000349",
+        "coco128-000000000581",
+        "coco128-000000000629"
+      ],
+      "wave": 2,
+      "wave5_with_prior": 0
+    },
+    {
+      "count": 4,
+      "group": "new-f",
+      "reference_ids": [
+        "coco128-000000000109",
+        "coco128-000000000143",
+        "coco128-000000000309",
+        "coco128-000000000459"
+      ],
+      "wave": 2,
+      "wave5_with_prior": 0
+    },
+    {
+      "count": 8,
+      "group": "coverage-g",
+      "reference_ids": [
+        "coco128-000000000036",
+        "coco128-000000000061",
+        "coco128-000000000071",
+        "coco128-000000000074",
+        "coco128-000000000136",
+        "coco128-000000000192",
+        "coco128-000000000241",
+        "coco128-000000000250"
+      ],
+      "wave": 4,
+      "wave5_with_prior": 4
+    },
+    {
+      "count": 8,
+      "group": "coverage-h",
+      "reference_ids": [
+        "coco128-000000000094",
+        "coco128-000000000110",
+        "coco128-000000000138",
+        "coco128-000000000142",
+        "coco128-000000000257",
+        "coco128-000000000294",
+        "coco128-000000000308",
+        "coco128-000000000312"
+      ],
+      "wave": 4,
+      "wave5_with_prior": 4
+    },
+    {
+      "count": 8,
+      "group": "coverage-i",
+      "reference_ids": [
+        "coco128-000000000144",
+        "coco128-000000000149",
+        "coco128-000000000154",
+        "coco128-000000000165",
+        "coco128-000000000338",
+        "coco128-000000000368",
+        "coco128-000000000389",
+        "coco128-000000000394"
+      ],
+      "wave": 4,
+      "wave5_with_prior": 4
+    },
+    {
+      "count": 8,
+      "group": "coverage-j",
+      "reference_ids": [
+        "coco128-000000000194",
+        "coco128-000000000315",
+        "coco128-000000000321",
+        "coco128-000000000326",
+        "coco128-000000000395",
+        "coco128-000000000397",
+        "coco128-000000000400",
+        "coco128-000000000404"
+      ],
+      "wave": 4,
+      "wave5_with_prior": 4
+    },
+    {
+      "count": 8,
+      "group": "coverage-k",
+      "reference_ids": [
+        "coco128-000000000360",
+        "coco128-000000000370",
+        "coco128-000000000387",
+        "coco128-000000000415",
+        "coco128-000000000446",
+        "coco128-000000000486",
+        "coco128-000000000508",
+        "coco128-000000000520"
+      ],
+      "wave": 4,
+      "wave5_with_prior": 4
+    },
+    {
+      "count": 8,
+      "group": "coverage-l",
+      "reference_ids": [
+        "coco128-000000000428",
+        "coco128-000000000436",
+        "coco128-000000000438",
+        "coco128-000000000474",
+        "coco128-000000000532",
+        "coco128-000000000536",
+        "coco128-000000000544",
+        "coco128-000000000564"
+      ],
+      "wave": 4,
+      "wave5_with_prior": 4
+    },
+    {
+      "count": 8,
+      "group": "coverage-m",
+      "reference_ids": [
+        "coco128-000000000488",
+        "coco128-000000000490",
+        "coco128-000000000502",
+        "coco128-000000000514",
+        "coco128-000000000569",
+        "coco128-000000000589",
+        "coco128-000000000597",
+        "coco128-000000000623"
+      ],
+      "wave": 4,
+      "wave5_with_prior": 4
+    },
+    {
+      "count": 8,
+      "group": "coverage-n",
+      "reference_ids": [
+        "coco128-000000000531",
+        "coco128-000000000540",
+        "coco128-000000000590",
+        "coco128-000000000595",
+        "coco128-000000000612",
+        "coco128-000000000620",
+        "coco128-000000000625",
+        "coco128-000000000643"
+      ],
+      "wave": 4,
+      "wave5_with_prior": 8
+    }
+  ],
+  "reference_manifest_sha256": "206f9ff075b401bde13ad90e284ff00370c4a927e35497ee24ccacf07fa8ce6d",
+  "schema": "painter.astra-high-100-assignments.v1",
+  "source_policy": "Only fixed 100 train photo hashes; visually inspect every reference and prior canvas; render and review before SFT/RL admission.",
+  "status": "coverage_plan_not_quality_approval",
+  "teacher": "gpt-6-astra/high"
+}

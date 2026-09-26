@@ -57,6 +57,16 @@ def validate_teacher_program(program):
     """
     if re.search(r"\b(?:let|const|var)\s+frame\s*=|\bfunction\s+mapped\s*\(", program):
         raise ValueError("Legacy affine teacher program: compile to canvas pixels before SFT")
+    # p5 binds these names as nonconfigurable globals. Node syntax checks pass,
+    # but the browser aborts before draw() with "Cannot redefine property".
+    p5_globals = ("smooth", "ellipse", "rect", "line", "fill", "stroke", "random", "noise",
+                  "createCanvas", "background", "noStroke", "noFill", "translate", "rotate",
+                  "scale", "image", "text", "color", "push", "pop", "beginShape", "endShape",
+                  "vertex", "circle", "pixelDensity", "frameRate")
+    collision = re.search(r"\b(?:function\s+|(?:const|let|var)\s+)(" + "|".join(p5_globals) +
+                          r")\s*(?:\(|=)", program)
+    if collision:
+        raise ValueError(f"Teacher program redefines p5 global: {collision.group(1)}")
     translations = re.findall(r"\btranslate\s*\(([^)]*)\)", program)
     if len(translations) != 1 or re.sub(r"\s", "", translations[0]) != "-300,-300":
         raise ValueError("Teacher must translate(-300,-300) exactly once")
