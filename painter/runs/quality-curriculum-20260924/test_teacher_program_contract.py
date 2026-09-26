@@ -28,6 +28,11 @@ class TeacherProgramContractTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "unsupported p5 quadraticVertex"):
             validate_teacher_program(source)
 
+    def test_unsupported_curve_vertex_is_rejected(self):
+        source = "function draw() { translate(-300,-300); curveVertex(1,2); noLoop(); }"
+        with self.assertRaisesRegex(ValueError, "unsupported p5 curveVertex"):
+            validate_teacher_program(source)
+
 
 if __name__ == "__main__":
     unittest.main()

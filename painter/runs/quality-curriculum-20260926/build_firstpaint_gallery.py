@@ -48,12 +48,17 @@ def collect() -> list[dict]:
             canvas = episode / "canvas.png"
             if status["valid"] and not canvas.is_file():
                 raise ValueError(f"valid row lacks canvas: {episode}")
+            error = status.get("error_summary") or status.get("error_code")
+            if not status["valid"] and not error and (episode / "canvas.json").is_file():
+                renderer_receipt = json.loads((episode / "canvas.json").read_text())
+                errors = renderer_receipt.get("errors") or renderer_receipt.get("error")
+                error = str(errors[0] if isinstance(errors, list) and errors else errors)[:240] if errors else None
             rows.append({"id": ident, "batch": batch, "run_id": summary["run_id"],
                          "mode": status["mode"], "category": source.get("category") or "uncategorized",
                          "prompt": prompt, "reference": None if prompt is not None else f"../{summary['run_id']}/episodes/{ident}/input.jpg",
                          "canvas": f"../{summary['run_id']}/episodes/{ident}/canvas.png" if canvas.is_file() else None,
                          "program": f"../{summary['run_id']}/episodes/{ident}/program.js",
-                         "valid": bool(status["valid"]), "error": status.get("error_code"),
+                         "valid": bool(status["valid"]), "error": error,
                          "elapsed_seconds": status.get("elapsed_seconds"),
                          "input_sha256": status["input_sha256"],
                          "program_sha256": status["program_sha256"],
