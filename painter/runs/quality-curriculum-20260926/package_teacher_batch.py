@@ -39,7 +39,7 @@ def candidates(source: Path, manifest: dict) -> list[dict]:
     if manifest.get("modality") == "image-to-painting-render-conditioned-correction":
         return [{"id": row["id"], "mode": "image_to_image",
                  "category": row["category"], "role": "render_conditioned_correction_candidate",
-                 "turn_count": 2, "program": row["new_program_path"],
+                 "turn_count": row.get("turn_count", 2), "program": row["new_program_path"],
                  "program_sha": row["new_program_sha256"],
                  "input": row["reference_path"], "input_sha": row["reference_sha256"],
                  "prompt": row["prompt_path"], "prompt_sha": row["prompt_sha256"],

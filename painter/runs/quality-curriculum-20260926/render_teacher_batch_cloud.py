@@ -90,7 +90,7 @@ def stage(batch: str, output: Path) -> tuple[dict, dict]:
                 expected = f"{folder}/{row['id']}{suffix}"
                 if row.get(field) != expected or sha((output / expected).read_bytes()) != row.get(digest_field):
                     raise ValueError(f"teacher prior path/hash mismatch: {row['id']} {field}")
-            if not row.get("prior_run_id") or row.get("turn_count") != 2:
+            if not row.get("prior_run_id") or not 2 <= row.get("turn_count", 0) <= 12:
                 raise ValueError("correction missing prior run or turn identity")
     (output / "source-public.json").write_text(json.dumps(receipt, indent=2, sort_keys=True) + "\n")
     return manifest, receipt

@@ -39,7 +39,8 @@ class BatchPipelineTest(unittest.TestCase):
                       "sol-photo-static-repair-v1", "astra-sol-text-static-repair-v1",
                       "astra-photo-static-repair-v1", "astra-sol-text-static-repair-v2",
                       "sol-astra-photo-static-repair-v1", "astra-simple-cc0-static-repair-v1",
-                      "astra-render-conditioned-correction-v1", "sol-render-conditioned-correction-v1"):
+                      "astra-render-conditioned-correction-v1", "sol-render-conditioned-correction-v1",
+                      "astra-shell-render-conditioned-turn3-v1", "sol-can-render-conditioned-turn3-v1"):
             with self.subTest(batch=batch), tempfile.TemporaryDirectory() as temporary:
                 source = COLLECTED / batch
                 receipt = json.loads((source / "source-receipt.json").read_text())
@@ -88,8 +89,11 @@ class BatchPipelineTest(unittest.TestCase):
                                         and row["baseline_program_sha256"] for row in manifest["rows"]))
                 if "render-conditioned" in batch:
                     self.assertTrue(all(row["role"] == "render_conditioned_correction_candidate"
-                                        and row["turn_count"] == 2
-                                        and row["prior_run_id"] == "teacher500-simple-cc0-pilot-20260926"
+                                        and row["turn_count"] == (3 if "turn3" in batch else 2)
+                                        and row["prior_run_id"] == (
+                                            "teacher500-simple-cc0-pilot-20260926" if "turn3" not in batch else
+                                            ("teacher500-astra-turn2-20260926" if batch.startswith("astra") else
+                                             "teacher500-sol-turn2-20260926"))
                                         and (Path(temporary) / "stage" / row["prior_canvas"]).is_file()
                                         and (Path(temporary) / "stage" / row["baseline_program"]).is_file()
                                         for row in manifest["rows"]))

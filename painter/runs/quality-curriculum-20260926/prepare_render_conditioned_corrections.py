@@ -34,12 +34,13 @@ def source_rows() -> dict[str, dict]:
     return {row["id"]: row for row in manifest["rows"]}
 
 
-def normalized_row(ident: str, source: dict, paths: dict, rationale: str) -> dict:
-    prior = POOL / "rendered-cloud" / PRIOR_RUN / "episodes" / ident
+def normalized_row(ident: str, source: dict, paths: dict, rationale: str,
+                   prior_run: str = PRIOR_RUN, turn_count: int = 2) -> dict:
+    prior = POOL / "rendered-cloud" / prior_run / "episodes" / ident
     # The uploaded first-turn source is authoritative for rights and input identity.
     if source["input_sha256"] != paths["reference"][1]:
         raise ValueError(f"correction reference differs from first turn: {ident}")
-    if source["program_sha256"] != paths["prior_program"][1]:
+    if turn_count == 2 and source["program_sha256"] != paths["prior_program"][1]:
         raise ValueError(f"correction prior program differs from first turn: {ident}")
     if source["prompt_sha256"] != paths["prompt"][1]:
         raise ValueError(f"correction prompt differs from first turn: {ident}")
@@ -47,7 +48,8 @@ def normalized_row(ident: str, source: dict, paths: dict, rationale: str) -> dic
     if (status.get("valid") is not True or status.get("canvas_sha256") != paths["prior_canvas"][1]
             or status.get("program_sha256") != paths["prior_program"][1]):
         raise ValueError(f"correction prior render identity mismatch: {ident}")
-    output = {"id": ident, "source_batch": SOURCE_BATCH, "prior_run_id": PRIOR_RUN,
+    output = {"id": ident, "source_batch": SOURCE_BATCH, "prior_run_id": prior_run,
+              "turn_count": turn_count,
               "category": source["category"], "rationale": rationale,
               "source_url": source["source_url"], "source_metadata": source["source_metadata"],
               "license": source["license"], "improvement_claim": False,
