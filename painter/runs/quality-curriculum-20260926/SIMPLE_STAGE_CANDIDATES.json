@@ -1,7 +1,13 @@
 {
   "additional_independent_visual_audit": "painter/collected/quality-curriculum-20260926/luna-four-corrections-audit.json",
-  "count": 5,
-  "decision_record": "DIVERSE_TURN2_REVIEW.md and TARGETED_CORRECTION_REVIEW.md",
+  "additional_independent_visual_audits": [
+    "painter/collected/quality-curriculum-20260926/luna-four-corrections-audit.json",
+    "painter/collected/quality-curriculum-20260926/luna-third-turns-audit.json",
+    "painter/collected/quality-curriculum-20260926/luna-bears-turn3-audit.json"
+  ],
+  "count": 9,
+  "decision_record": "DIVERSE_TURN2_REVIEW.md, TARGETED_CORRECTION_REVIEW.md, and THIRD_TURN_DIVERSE_REVIEW.md",
+  "distinct_input_states": 6,
   "independent_visual_audit": "painter/collected/quality-curriculum-20260926/luna-six-corrections-audit.json",
   "items": [
     {
@@ -72,6 +78,66 @@
       "relative_improvement": true,
       "run_id": "teacher500-astra-custard-turn2-20260926",
       "tier": "provisional_curated_positive",
+      "training_exported": false
+    },
+    {
+      "canvas_sha256": "211ddce6a9d1de31d7b404fa07cb582b09ab6dfa49f8ba5ef153ed6ff572e840",
+      "high_quality_exemplar": false,
+      "id": "coco-val2017-000000350388",
+      "input_sha256": "ee7973cada25a734fafed6e6938823c5e7dee82e76ad2d3749350d193ea8179f",
+      "matched_baseline": "exact prior canvas on same reference or prompt",
+      "prior_canvas_sha256": "dbfb68fdccb5a4fd233cc00c92bbebe2ed55728703d93c91c91aa5b5ae1d6012",
+      "prior_run_id": "teacher500-astra-coco-objects-turn2-20260926",
+      "program_sha256": "0e0115118d58b239a9eeb8190053a8dbe3349902f77bf49acdc127c2a10a4553",
+      "reference_fidelity_tradeoff": false,
+      "relative_improvement": true,
+      "run_id": "teacher500-astra-soup-bears-turn3-20260926",
+      "tier": "provisional_low_gain_refinement",
+      "training_exported": false
+    },
+    {
+      "canvas_sha256": "7f919c3d101a4e8acdff8493c3c55fe1f88d4965a07f07d49d31d3ceab06400c",
+      "high_quality_exemplar": true,
+      "id": "13-potter-unloading-kiln",
+      "input_sha256": "674fc56957a7f03bfb0996582988144e83482ba1b60095ed750e40d82478e7fc",
+      "matched_baseline": "exact prior canvas on same reference or prompt",
+      "prior_canvas_sha256": "8f935679d6942788df2368b805e04f22253130ad879d98fe976a9db9004566fc",
+      "prior_run_id": "teacher500-sol-text-turn2-20260926",
+      "program_sha256": "c753d48abffab32668ae636134a6b8dda6c48b0173a1351109de8e015c457636",
+      "reference_fidelity_tradeoff": false,
+      "relative_improvement": true,
+      "run_id": "teacher500-astra-potter-turn3-20260926",
+      "tier": "provisional_curated_positive",
+      "training_exported": false
+    },
+    {
+      "canvas_sha256": "a86377e04eb7008478d80fc55bd47e0b4699638661991a6f1c62bdd650c29fc6",
+      "high_quality_exemplar": false,
+      "id": "coco-val2017-000000056545",
+      "input_sha256": "852f95c0f7d5d72ec994fcead05a2a5501e7459966a360d92c26a5827584c744",
+      "matched_baseline": "exact prior canvas on same reference or prompt",
+      "prior_canvas_sha256": "1e8485d52a5631dd5fb32820c0217d8b10d02a6113e20752d4a2423d35752d67",
+      "prior_run_id": "teacher500-astra-coco-objects-turn2-20260926",
+      "program_sha256": "8c96510eb2f02d72f5da4acfbfbfa738933f12d150274d2da3f017664fbf9dc5",
+      "reference_fidelity_tradeoff": false,
+      "relative_improvement": true,
+      "run_id": "teacher500-astra-bird-turn3-20260926",
+      "tier": "provisional_simple_stage",
+      "training_exported": false
+    },
+    {
+      "canvas_sha256": "79f0d5ea67610bffe95e38eadaec704b0ad0aa5fdcb1216adc82c5b9f11bf703",
+      "high_quality_exemplar": true,
+      "id": "coco-val2017-000000073118",
+      "input_sha256": "b99729b8c45705912e2dbf30cdbc201dd599ff75d00b7ef54078b546195dff31",
+      "matched_baseline": "exact prior canvas on same reference or prompt",
+      "prior_canvas_sha256": "3b55b1443d032ceb416c5f48f8d9d6327f50eeb6ea04da951724b60beb64c5ee",
+      "prior_run_id": "teacher500-astra-coco-scenes-turn2-20260926",
+      "program_sha256": "b5eabe94c661c8fb1fba9c8a16180d70542c3fdff8aec2c25f0d97525d70e6b9",
+      "reference_fidelity_tradeoff": true,
+      "relative_improvement": true,
+      "run_id": "teacher500-astra-bears-turn3-runtimefix-20260926",
+      "tier": "provisional_curated_beauty",
       "training_exported": false
     }
   ],

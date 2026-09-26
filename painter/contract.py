@@ -67,6 +67,10 @@ def validate_teacher_program(program):
                           r")\s*(?:\(|=)", program)
     if collision:
         raise ValueError(f"Teacher program redefines p5 global: {collision.group(1)}")
+    # p5.js 2.3.2 in the pinned renderer has no quadraticVertex global.
+    # This otherwise survives JS syntax checks and aborts only inside draw().
+    if re.search(r"\bquadraticVertex\s*\(", program):
+        raise ValueError("Teacher program calls unsupported p5 quadraticVertex")
     translations = re.findall(r"\btranslate\s*\(([^)]*)\)", program)
     if len(translations) != 1 or re.sub(r"\s", "", translations[0]) != "-300,-300":
         raise ValueError("Teacher must translate(-300,-300) exactly once")

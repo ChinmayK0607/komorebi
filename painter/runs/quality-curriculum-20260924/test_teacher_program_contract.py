@@ -23,6 +23,11 @@ class TeacherProgramContractTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "redefines p5 global: box"):
             validate_teacher_program(source)
 
+    def test_unsupported_quadratic_vertex_is_rejected(self):
+        source = "function draw() { translate(-300,-300); quadraticVertex(1,2,3,4); noLoop(); }"
+        with self.assertRaisesRegex(ValueError, "unsupported p5 quadraticVertex"):
+            validate_teacher_program(source)
+
 
 if __name__ == "__main__":
     unittest.main()
