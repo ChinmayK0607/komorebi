@@ -1,0 +1,106 @@
+{
+  "schema": "painter.sol-redo-inspected.v1",
+  "source_pilot_sha256": "fee10e9bb8fd87f0f5640f546bef2a6a2496845a476b5c34c2be0c929b22cd52",
+  "status": "planned_not_generated",
+  "teacher_preference": "MiMo Flash for easy corrections and MiMo Pro for structurally hard scenes",
+  "max_turns": 6,
+  "candidate_policy": "render-inspect-revise; no SFT admission before pairwise review",
+  "rows": [
+    {
+      "audit_id": "t600-325",
+      "id": "13-greenhouse-tortoise",
+      "mode": "text_to_image",
+      "category": "animal_greenhouse_low_view",
+      "input_sha256": "e9d7368e07b2fac079d330c6b00ccfc4b64b8e4815aba344e9c42e5bbd066102",
+      "prior_program_sha256": "48dd1bbf3acc7368cd6a068b8ccc06d33e9a74e3fa95891b65fdf5bdee9595d2",
+      "prior_canvas_sha256": "ee4053f909b739443a02f15c87ef3eefce0630af8ea9eca634366cf2f0ad53d0",
+      "priority": "medium",
+      "parent_visual_weakness": "The tortoise and greenhouse are recognizable, but the shell is a repetitive diamond pattern and roof beams converge awkwardly into the animal. Add shell volume, leaf depth, humid light and convincing small droplets.",
+      "teacher_instruction": "Inspect the original prompt and exact current canvas. Produce a complete replacement p5.brush program, render it, inspect the result, and revise for stronger visual quality and subject structure. Do not merely change API names. Keep every valid iteration and its canvas for possible turn-wise SFT, but admit only the best visually reviewed output."
+    },
+    {
+      "audit_id": "t600-349",
+      "id": "02-airport-apron",
+      "mode": "text_to_image",
+      "category": "aviation_people_dawn",
+      "input_sha256": "485b0de5929d5bbbb1f3d225af9cb92ef4dbafc155ce77226bbd4fb69e056441",
+      "prior_program_sha256": "d95ad5f47c9181729179274239a47ce703f952264a6e9a8ee9ad4d0ca659be9f",
+      "prior_canvas_sha256": "87ad2140f7d5537807c34558d1f9b72eacf956122505cee3a11c224d8dc8c01c",
+      "priority": "high",
+      "parent_visual_weakness": "The jet nose reads, but crew are stick figures, the loader and baggage tug are schematic, and the wet tarmac lacks reflective depth. Rebuild human/vehicle proportions and the cargo-loading relationship.",
+      "teacher_instruction": "Inspect the original prompt and exact current canvas. Produce a complete replacement p5.brush program, render it, inspect the result, and revise for stronger visual quality and subject structure. Do not merely change API names. Keep every valid iteration and its canvas for possible turn-wise SFT, but admit only the best visually reviewed output."
+    },
+    {
+      "audit_id": "t600-583",
+      "id": "06-rowboat-reeds",
+      "mode": "text_to_image",
+      "category": "waterscape_boat_dawn",
+      "input_sha256": "0352b86d7c22a846db52ad0f1013baada7e302456c7a946a8774dcb3d4c9df61",
+      "prior_program_sha256": "1a5ff112ad05c2e493e6091d3836bb2bb56361bfb0ccb83ff7771be293bbe882",
+      "prior_canvas_sha256": "c94d463df944a329ae77066c6f7f6ed7aab7607f1fd392e1b09e651d0d3e6b16",
+      "priority": "medium",
+      "parent_visual_weakness": "The rowboat is well placed, but reeds and water are mostly straight strokes and flat planes. Preserve the boat silhouette while adding wood wear, softer mist and selective broken reflections.",
+      "teacher_instruction": "Inspect the original prompt and exact current canvas. Produce a complete replacement p5.brush program, render it, inspect the result, and revise for stronger visual quality and subject structure. Do not merely change API names. Keep every valid iteration and its canvas for possible turn-wise SFT, but admit only the best visually reviewed output."
+    },
+    {
+      "audit_id": "t600-326",
+      "id": "16-rain-frog",
+      "mode": "text_to_image",
+      "category": "animal_macro_weather",
+      "input_sha256": "feeaf02fc01775ac74188dce5bddddd0ede8b1e00e0381b12ffd0573f65ffc85",
+      "prior_program_sha256": "990709a1a3f67acd5697d7cf317ce802985449cfd5655d709eaccfd914c78e00",
+      "prior_canvas_sha256": "eacb27b4155f093be9851250ea90959a7d60a7fece164deb8e2c1f954ddbd4c6",
+      "priority": "medium",
+      "parent_visual_weakness": "The frog and leaf read immediately, but body volume is flat, toes are dots, and rain/droplets are sparse line and circle marks. Strengthen anatomy, wet translucency and depth.",
+      "teacher_instruction": "Inspect the original prompt and exact current canvas. Produce a complete replacement p5.brush program, render it, inspect the result, and revise for stronger visual quality and subject structure. Do not merely change API names. Keep every valid iteration and its canvas for possible turn-wise SFT, but admit only the best visually reviewed output."
+    },
+    {
+      "audit_id": "t600-375",
+      "id": "13-pantry-jars",
+      "mode": "text_to_image",
+      "category": "domestic_still_life_repetition",
+      "input_sha256": "9292efceb546b48839136230b5b430f5580780820222245431aa7c3107147592",
+      "prior_program_sha256": "9e5cdc66a8f0948ac8a54ac414e39b4a7fdf69551b021b72c94ff91e9bb8db68",
+      "prior_canvas_sha256": "1b508ea2f31e03111fe1b74818ef03a37de3a3487e93258b0659fcf4308041eb",
+      "priority": "high",
+      "parent_visual_weakness": "Jar silhouettes repeat mechanically with little glass transparency or distinct contents; the blue scale is a crude geometric block and scratch marks obscure the still life. Redo object overlap, refraction, labels and lighting.",
+      "teacher_instruction": "Inspect the original prompt and exact current canvas. Produce a complete replacement p5.brush program, render it, inspect the result, and revise for stronger visual quality and subject structure. Do not merely change API names. Keep every valid iteration and its canvas for possible turn-wise SFT, but admit only the best visually reviewed output."
+    },
+    {
+      "audit_id": "t600-387",
+      "id": "10-shepherd-flock",
+      "mode": "text_to_image",
+      "category": "farm_animals_landscape",
+      "input_sha256": "202182de29835cb41de1cef973bb9dcc184810689616baed0cc7e370cc146067",
+      "prior_program_sha256": "76cc17109ef2a12f1738f5552fc33f25b9809fea4c592c99d6320dea539d475a",
+      "prior_canvas_sha256": "e653fe90bc98937a1c4926c947828d0bd8381d89b82cf2eb3d3d620cbe849620",
+      "priority": "high",
+      "parent_visual_weakness": "The flock reads as repeated cream blobs, the shepherd is a stick figure and the collie is barely legible. Rebuild the animal/action silhouettes and use mountain lighting to separate the winding flock.",
+      "teacher_instruction": "Inspect the original prompt and exact current canvas. Produce a complete replacement p5.brush program, render it, inspect the result, and revise for stronger visual quality and subject structure. Do not merely change API names. Keep every valid iteration and its canvas for possible turn-wise SFT, but admit only the best visually reviewed output."
+    },
+    {
+      "audit_id": "t600-492",
+      "id": "21-container-terminal",
+      "mode": "text_to_image",
+      "category": "port_logistics_machine",
+      "input_sha256": "e703cc1084dadfdf43d1a784bf70efc947ec37244e274e2de50298c7e9135a3c",
+      "prior_program_sha256": "beb41720a826b35d8fa639dc50957d26e2db857389e0b77310364aeae170bfae",
+      "prior_canvas_sha256": "cb83deae48281cea2fc443c761390172b44fb194d5535760fd3ea4ed5d5cf218",
+      "priority": "high",
+      "parent_visual_weakness": "The reach stacker is a cartoon yellow vehicle; its arm does not visibly grip and lift the red container, and the stacked containers lack perspective. Rebuild the load-bearing geometry and port depth.",
+      "teacher_instruction": "Inspect the original prompt and exact current canvas. Produce a complete replacement p5.brush program, render it, inspect the result, and revise for stronger visual quality and subject structure. Do not merely change API names. Keep every valid iteration and its canvas for possible turn-wise SFT, but admit only the best visually reviewed output."
+    },
+    {
+      "audit_id": "t600-594",
+      "id": "04-fox-in-snow",
+      "mode": "text_to_image",
+      "category": "wildlife_winter_landscape",
+      "input_sha256": "8425f50cc400902b2fad6b43a8d542abae84cd287edaea02d74348e46c46310a",
+      "prior_program_sha256": "67aa96ba3de82ea59608f7110e7b866af41cf760e091f645865596509364d7d8",
+      "prior_canvas_sha256": "1c9a5857265cea8b02cb05ca1b0d75d6aa96a5edcc8570d30d186a827d27f3d2",
+      "priority": "high",
+      "parent_visual_weakness": "The fox is recognizable but highly geometric, with little fur, weak paws and no clear look-back gesture. Preserve its warm/cool contrast while improving anatomy, fur edges and low-sun shadows.",
+      "teacher_instruction": "Inspect the original prompt and exact current canvas. Produce a complete replacement p5.brush program, render it, inspect the result, and revise for stronger visual quality and subject structure. Do not merely change API names. Keep every valid iteration and its canvas for possible turn-wise SFT, but admit only the best visually reviewed output."
+    }
+  ]
+}
