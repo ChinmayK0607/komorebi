@@ -62,7 +62,8 @@ def stage(batch: str, output: Path) -> tuple[dict, dict]:
             target.write_bytes(archive.extractfile(member).read())
     manifest = json.loads((output / "manifest.json").read_text())
     if (manifest.get("schema") != "painter.teacher500-source.v1"
-            or manifest.get("batch") != batch or manifest.get("count") != receipt["count"]):
+            or manifest.get("batch") != batch or manifest.get("count") != receipt["count"]
+            or len(manifest.get("rows", [])) != receipt["count"]):
         raise ValueError("teacher source manifest mismatch")
     for row in manifest["rows"]:
         if row["mode"] not in {"text_to_image", "image_to_image"}:
@@ -99,11 +100,13 @@ def render_one(output: Path, row: dict, renderer: Path, python: Path,
     except Exception as exc:
         result = {"valid": False, "error_code": f"renderer_exception_{type(exc).__name__}",
                   "elapsed_seconds": None}
+    canvas_exists = canvas.is_file()
     status = {"id": row["id"], "mode": row["mode"],
               "program_sha256": row["program_sha256"],
               "input_sha256": row["input_sha256"],
-              "canvas_sha256": sha(canvas.read_bytes()) if canvas.is_file() else None,
-              "valid": result.get("valid") is True, "error_code": result.get("error_code"),
+              "canvas_sha256": sha(canvas.read_bytes()) if canvas_exists else None,
+              "valid": result.get("valid") is True and canvas_exists,
+              "error_code": result.get("error_code") or ("missing_canvas" if result.get("valid") and not canvas_exists else None),
               "elapsed_seconds": result.get("elapsed_seconds"),
               "visual_review_status": "pending"}
     (episode / "program.js").write_bytes(program.read_bytes())
