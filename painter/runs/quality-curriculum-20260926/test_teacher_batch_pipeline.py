@@ -4,11 +4,13 @@ from __future__ import annotations
 
 import importlib.util
 from contextlib import redirect_stdout
+import hashlib
 import io
 import json
 from pathlib import Path
 import tempfile
 import threading
+import tarfile
 import unittest
 from unittest.mock import patch
 
@@ -23,6 +25,10 @@ PUBLISH_SPEC = importlib.util.spec_from_file_location("publish_teacher_batch", H
 assert PUBLISH_SPEC and PUBLISH_SPEC.loader
 PUBLISHER = importlib.util.module_from_spec(PUBLISH_SPEC)
 PUBLISH_SPEC.loader.exec_module(PUBLISHER)
+COLLECT_SPEC = importlib.util.spec_from_file_location("collect_teacher_render", HERE / "collect_teacher_render.py")
+assert COLLECT_SPEC and COLLECT_SPEC.loader
+COLLECTOR = importlib.util.module_from_spec(COLLECT_SPEC)
+COLLECT_SPEC.loader.exec_module(COLLECTOR)
 
 
 class BatchPipelineTest(unittest.TestCase):
@@ -112,6 +118,45 @@ class BatchPipelineTest(unittest.TestCase):
             statuses = RENDERER.render_rows(Path("/tmp"), rows, Path("renderer"), Path("python"),
                                              Path("browser"), 30, workers=2)
         self.assertEqual([status["id"] for status in statuses], ["first", "second", "third"])
+
+    def test_public_render_collection_binds_input_program_and_canvas(self) -> None:
+        digest = lambda raw: hashlib.sha256(raw).hexdigest()
+        prompt, program, canvas = b"A blue flower", b"function setup() {}", b"fake-canvas"
+        source_sha, revision = "a" * 64, "b" * 40
+        status = {"id": "flower", "mode": "text_to_image", "valid": True,
+                  "input_sha256": digest(prompt), "program_sha256": digest(program),
+                  "canvas_sha256": digest(canvas)}
+        summary = {"schema": "painter.teacher500-render.v1", "run_id": "fixture-run",
+                   "batch": "fixture-batch", "count": 1, "valid": 1,
+                   "statuses": [status], "source_bundle_sha256": source_sha,
+                   "source_dataset_commit": revision}
+        members = {"run-summary.json": json.dumps(summary).encode(),
+                   "episodes/flower/input.txt": prompt,
+                   "episodes/flower/program.js": program,
+                   "episodes/flower/canvas.png": canvas,
+                   "episodes/flower/render-status.json": json.dumps(status).encode()}
+        memory = io.BytesIO()
+        with tarfile.open(fileobj=memory, mode="w:gz") as archive:
+            for name, raw in members.items():
+                entry = tarfile.TarInfo(name)
+                entry.size = len(raw)
+                archive.addfile(entry, io.BytesIO(raw))
+        with tempfile.TemporaryDirectory() as temporary:
+            out = Path(temporary) / "rendered-cloud"
+            source = out.parent / "fixture-batch"
+            source.mkdir()
+            (source / "source-public.json").write_text(json.dumps({"archive_sha256": source_sha,
+                                                                     "dataset_commit": revision}))
+
+            def fetch(_run_id, path):
+                path.write_bytes(memory.getvalue())
+                return {"sha256": digest(memory.getvalue()), "public_hash_verified": True}
+
+            with patch.object(COLLECTOR, "OUT", out), patch.object(COLLECTOR, "download", side_effect=fetch):
+                target, loaded = COLLECTOR.collect("fixture-run")
+                page = COLLECTOR.gallery(target, loaded)
+            self.assertIn("A blue flower", page.read_text())
+            self.assertIn("renderer-valid", page.read_text())
 
 
 if __name__ == "__main__":
