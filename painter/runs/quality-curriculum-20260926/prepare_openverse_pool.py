@@ -119,21 +119,36 @@ def download(manifest: dict, output: Path, count: int) -> dict:
             by_query[row["query"]].append(row)
     interleaved = [row for offset in range(manifest.get("train_per_query", 5)) for query in queries
                    for row in by_query[query][offset:offset + 1]]
-    rows = interleaved[:count]
     refs = output / "references"
     refs.mkdir(parents=True, exist_ok=True)
     receipts = []
-    for index, row in enumerate(rows, 1):
+    skipped = []
+    for row in interleaved:
+        if len(receipts) >= count:
+            break
         target = output / row["local_reference"]
-        raw = target.read_bytes() if target.exists() else request_bytes(row["thumbnail_url"])
+        try:
+            raw = target.read_bytes() if target.exists() else request_bytes(row["thumbnail_url"])
+        except HTTPError as error:
+            if error.code not in {403, 404, 410, 424}:
+                raise
+            skipped.append({"id": row["id"], "http_status": error.code})
+            print(f"unavailable reference {row['id']} HTTP {error.code}", flush=True)
+            continue
         if len(raw) > 5_000_000 or not raw.startswith(b"\xff\xd8\xff"):
-            raise ValueError(f"Openverse thumbnail is not a bounded JPEG: {row['id']}")
+            skipped.append({"id": row["id"], "reason": "invalid_bounded_jpeg"})
+            print(f"invalid reference {row['id']}", flush=True)
+            continue
         if not target.exists():
             target.write_bytes(raw)
         receipts.append({"id": row["id"], "path": row["local_reference"],
                          "bytes": len(raw), "sha256": sha(raw), "thumbnail_url": row["thumbnail_url"]})
-        print(f"reference {index}/{len(rows)} {row['id']} {len(raw)} bytes", flush=True)
+        print(f"reference {len(receipts)}/{count} {row['id']} {len(raw)} bytes", flush=True)
+    if len(receipts) != count:
+        raise ValueError(f"only {len(receipts)} of {count} requested reference thumbnails available")
     receipt = {"schema": "painter.openverse-cc0-download.v1", "count": len(receipts), "files": receipts}
+    if skipped:
+        receipt["skipped"] = skipped
     payload = json.dumps(receipt, indent=2, sort_keys=True) + "\n"
     (output / f"download-receipt-n{len(receipts)}.json").write_text(payload)
     (output / "download-receipt.json").write_text(payload)
