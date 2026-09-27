@@ -80,29 +80,33 @@ def main() -> None:
     parser.add_argument("--root", type=Path, required=True)
     parser.add_argument("--step", type=int, required=True)
     parser.add_argument("--token-file", type=Path, required=True)
+    parser.add_argument("--remote-path", default=REMOTE_PATH,
+                        help="distinct HF dataset path for each matched checkpoint")
     args = parser.parse_args()
     root = args.root.resolve()
     token_file = args.token_file
     if token_file.is_symlink() or not token_file.is_file() or token_file.stat().st_mode & 0o077:
         raise PermissionError("HF token file must be owner-only and not a symlink")
-    output = root / "final-evidence.tar.gz"
+    if not args.remote_path.startswith("runs/quality-oss-rl-20260927/") or not args.remote_path.endswith(".tar.gz"):
+        raise ValueError("remote evidence path must stay inside this run's HF prefix")
+    output = root / f"final-evidence-step-{args.step}.tar.gz"
     summary = package(root, args.step, output)
     token = token_file.read_text().strip()
     api = HfApi(token=token)
     info = api.repo_info(REPO_ID, repo_type="dataset")
     if info.private:
         raise ValueError("evidence dataset is private")
-    commit = api.upload_file(path_or_fileobj=str(output), path_in_repo=REMOTE_PATH,
+    commit = api.upload_file(path_or_fileobj=str(output), path_in_repo=args.remote_path,
                              repo_id=REPO_ID, repo_type="dataset", token=token)
     # Verify with no credential. A private or incomplete upload cannot pass.
-    downloaded = Path(hf_hub_download(REPO_ID, filename=REMOTE_PATH, repo_type="dataset",
+    downloaded = Path(hf_hub_download(REPO_ID, filename=args.remote_path, repo_type="dataset",
                                       revision="main", token=False, force_download=True,
                                       local_dir=root / "public-verification"))
     if digest(downloaded) != summary["sha256"]:
         raise ValueError("public remote evidence hash mismatch")
-    result = {**summary, "repo_id": REPO_ID, "path": REMOTE_PATH,
+    result = {**summary, "repo_id": REPO_ID, "path": args.remote_path,
               "commit": getattr(commit, "oid", None), "private": False, "verified": True}
-    (root / "final-evidence-upload.json").write_text(json.dumps(result, indent=2, sort_keys=True) + "\n")
+    (root / f"final-evidence-step-{args.step}-upload.json").write_text(json.dumps(result, indent=2, sort_keys=True) + "\n")
     print(json.dumps(result, sort_keys=True))
 
 
