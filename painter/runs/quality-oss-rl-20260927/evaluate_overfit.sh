@@ -104,7 +104,9 @@ start_server() {
 wait_server() {
   local policy=$1 port=$2 pid=$3 model=$4 deadline=$((SECONDS+900))
   while (( SECONDS < deadline )); do
-    kill -0 "$pid" 2>/dev/null || { echo "$policy server exited" >&2; return 1; }
+    local state
+    state="$(ps -o stat= -p "$pid" 2>/dev/null | tr -d '[:space:]' || true)"
+    [[ -n "$state" && "$state" != Z* ]] || { echo "$policy server exited" >&2; return 1; }
     if "$PYTHON" - "$port" "$model" <<'PY' >/dev/null 2>&1
 import json,sys,urllib.request
 with urllib.request.urlopen(f'http://127.0.0.1:{sys.argv[1]}/v1/models',timeout=5) as r: models=json.load(r)['data']
