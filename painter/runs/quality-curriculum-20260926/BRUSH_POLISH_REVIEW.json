@@ -1,0 +1,49 @@
+{
+  "schema": "painter.brush-polish-visual-review.v1",
+  "run_id": "brush-polish-four-20260927",
+  "source_git_commit": "eec717a",
+  "source_archive_sha256": "a5165a1eb9b49d1293fef87b18d1e940d4dea7d4f63bfd5b25d3671501847f4b",
+  "result_archive_sha256": "6d546399a147cf0a674ea3660d63ebce58be5947e80e560b3b8d0bbb914ee5e0",
+  "result_dataset_commit": "8448138174ccb8abcba9e663e53f2557abe507b9",
+  "result_archive_bytes": 1678225,
+  "cloud_task_id": "task_e_6ab8b9fc0714832b86b759972db44fb7",
+  "model": "xiaomi/mimo-v2.6-pro",
+  "scope": "Four user-liked manual baseline paintings, two photo and two text briefs; unblinded full-canvas parent review of source, baseline and actual turns",
+  "matched_baseline": "Exact current manual painting for each source, pinned in BRUSH_POLISH_PUBLIC.json",
+  "episodes": 4,
+  "provider_requests": 8,
+  "valid_new_rendered_turns": 7,
+  "invalid_new_rendered_turns": 1,
+  "total_tokens": 166434,
+  "provider_cost_complete": false,
+  "cpu_utilization_measured": false,
+  "gpu_rented": false,
+  "direct_sft_admissions": 0,
+  "parent_provisional_decisions": [
+    {
+      "id": "t600-080",
+      "preferred_variant": "turn-01",
+      "decision": "relative_style_candidate",
+      "assessment": "Broccoli receives some granular detail without losing the soup bowl, but the gain over the clean baseline is small. Turn two has richer broccoli yet adds a conspicuous hard green corner and stray marks. Preserve the baseline for source-conditioned SFT selection."
+    },
+    {
+      "id": "t600-332",
+      "preferred_variant": "turn-02",
+      "decision": "direct_sft_candidate_pending_user_review",
+      "assessment": "Fine broken edges on arms and mantle add visible brush feel while the cuttlefish pose, eye, palette, seabed and seagrass remain stable. Improvement is modest and still stylized, but this is the cleanest of four polish outcomes."
+    },
+    {
+      "id": "t600-033",
+      "preferred_variant": "baseline",
+      "decision": "reject_polish_variant",
+      "assessment": "Pencil-like feather and branch marks become scratchy; bright sprayed bokeh on turn one is especially distracting. Turn two removes some excess but remains less beautiful than the coherent baseline."
+    },
+    {
+      "id": "t600-595",
+      "preferred_variant": "baseline_or_turn-02",
+      "decision": "relative_style_candidate",
+      "assessment": "Turn one did not render; turn two keeps the three-boat harbor and adds water texture, but stippled hulls and mast marks reduce the baseline's quiet foggy atmosphere. Useful style contrast, not a clear direct SFT improvement."
+    }
+  ],
+  "decision": "Do not scale this code-copy brush-polish prompt unchanged. Retain the three user-liked baselines and the cuttlefish revision; keep soup and harbor variants as style/preference candidates. For later brush-feel data, request medium-specific stroke placement and restraint, and score brush feel jointly with overall appeal and source fidelity."
+}
