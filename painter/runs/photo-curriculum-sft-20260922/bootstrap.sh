@@ -27,7 +27,13 @@ export PATH="$ROOT/bootstrap/bin:$PATH"
 
 # The base snapshot is independent of the Prime checkout and CUDA extras.
 # Start it as soon as the verified Hub client exists to avoid serial startup.
-bootstrap/bin/python download_model.py > logs/download.log 2>&1 &
+# Keep the setup lock out of the background worker. A separate download lock
+# serializes resumable snapshot verification across failed-setup retries.
+(
+  exec 7>"$ROOT/model-download.lock"
+  flock -x 7
+  bootstrap/bin/python download_model.py > logs/download.log 2>&1
+) 9>&- &
 DOWNLOAD_PID=$!
 
 python3 - "$ROOT" <<'PY'
