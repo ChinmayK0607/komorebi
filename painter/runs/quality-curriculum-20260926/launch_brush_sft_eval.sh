@@ -21,6 +21,10 @@ MANIFEST="$RUN/painter/eval-prep/eval-manifest.json"
 EVAL_ROOT="$RUN/eval/$POLICY"
 case "$POLICY" in baseline) PORT=8100;; trained) PORT=8101;; midpoint) PORT=8102;; esac
 GPU="${EVAL_GPU:-1}"
+CONTEXT_LENGTH="${EVAL_CONTEXT_LENGTH:-32768}"
+[[ "$CONTEXT_LENGTH" =~ ^[0-9]+$ ]] && (( CONTEXT_LENGTH >= 24576 )) || {
+  echo 'evaluation context must be at least 24,576 tokens to fit the 8,192-token reply after a painted first turn' >&2; exit 2;
+}
 mkdir -p "$EVAL_ROOT" "$EVAL_ROOT/cache"
 exec 8>"$EVAL_ROOT/eval.lock"
 if [[ "$POLICY" != baseline ]]; then
@@ -58,16 +62,19 @@ else:
     if sha(weight)!=expected:raise ValueError('trained adapter hash differs from public receipt')
 print(json.dumps({'policy':policy,'adapter_sha256':sha(weight),'manifest_sha256':sha(manifest)}))
 PY
-if [[ "$POLICY" != baseline && -f "$EVAL_ROOT/completion.json" ]]; then
-  "$PY" - "$EVAL_ROOT/completion.json" "$ADAPTER/adapter_model.safetensors" "$MANIFEST" "$POLICY" <<'PY'
+if [[ -f "$EVAL_ROOT/completion.json" ]]; then
+  "$PY" - "$EVAL_ROOT/completion.json" "$ADAPTER/adapter_model.safetensors" "$MANIFEST" "$POLICY" "$EVAL_ROOT/eval.toml" "$EVAL_ROOT/protocol.json" "$CONTEXT_LENGTH" <<'PY'
 import hashlib,json,pathlib,sys
 record=json.loads(pathlib.Path(sys.argv[1]).read_text())
+protocol=json.loads(pathlib.Path(sys.argv[6]).read_text())
 def sha(p):return hashlib.sha256(pathlib.Path(p).read_bytes()).hexdigest()
 if (record.get('status')!='completed' or record.get('policy')!=sys.argv[4]
         or record.get('adapter_sha256')!=sha(sys.argv[2])
         or record.get('manifest_sha256')!=sha(sys.argv[3])
+        or record.get('config_sha256')!=sha(sys.argv[5])
+        or protocol.get('protocol',{}).get('context_length')!=int(sys.argv[7])
         or record.get('case_count')!=28 or record.get('max_turns')!=2):
-    raise ValueError('existing trained evaluation is not the matched completed run')
+    raise ValueError('existing evaluation is not the matched completed run')
 print('matched evaluation already complete; skipping duplicate')
 PY
   exit 0
@@ -80,7 +87,7 @@ export LD_LIBRARY_PATH="$CUDA_HOME/lib:${LD_LIBRARY_PATH:-}"
   --root "$RUN/painter" --manifest "$MANIFEST" --policy-label "brush-sft-$POLICY" \
   --model "$POLICY" --output-dir "$EVAL_ROOT/results" --config "$EVAL_ROOT/eval.toml" \
   --expected-count 28 --max-tokens 8192 --max-turns 2 \
-  --rollout-timeout 1800 --context-length 16384 > "$EVAL_ROOT/protocol.json"
+  --rollout-timeout 1800 --context-length "$CONTEXT_LENGTH" > "$EVAL_ROOT/protocol.json"
 "$PY" - "$EVAL_ROOT/eval.toml" "$PORT" <<'PY'
 import pathlib,sys
 p=pathlib.Path(sys.argv[1]);s=p.read_text();old='base_url = "http://127.0.0.1:8000/v1"'
@@ -103,7 +110,7 @@ setsid env CUDA_VISIBLE_DEVICES="$GPU" TOKENIZERS_PARALLELISM=false \
   TORCHINDUCTOR_CACHE_DIR="$EVAL_ROOT/cache/torchinductor" \
   TRITON_CACHE_DIR="$EVAL_ROOT/cache/triton" \
   "$VLLM" serve "$MODEL_DIR" --served-model-name base --host 127.0.0.1 --port "$PORT" \
-    --dtype bfloat16 --max-model-len 16384 --max-num-seqs 4 \
+    --dtype bfloat16 --max-model-len "$CONTEXT_LENGTH" --max-num-seqs 4 \
     --max-num-batched-tokens 8192 --gpu-memory-utilization 0.90 \
     --limit-mm-per-prompt '{"image":14,"video":0}' --gdn-prefill-backend triton \
     --kernel-config '{"enable_jit_warmup":false}' \

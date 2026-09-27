@@ -14,11 +14,12 @@ RUN_NAME = "brush-sft-20260927-v1"
 FILES = (
     "training.exit", "sft.toml", "sft.setup.json", "processor-audit.json",
     "gpu-telemetry.csv", "gpu-telemetry-summary.json", "data/mix-manifest.json",
-    "train.log", "campaign-training.log", "campaign-baseline.log", "campaign-trained.log",
+    "train.log", "campaign-training.log", "campaign-baseline.log", "campaign-midpoint.log", "campaign-trained.log",
     "painter/eval-prep/eval-manifest.json",
     f"train-output/{RUN_NAME}/artifacts/initial-adapter-audit.json",
 )
-TREES = ("eval/baseline/results", "eval/midpoint/results", "eval/trained/results",
+TREES = ("eval/baseline/results", "eval/baseline/duplicate-interrupted",
+         "eval/midpoint/results", "eval/trained/results",
          "painter/eval-prep/references", "painter/evaluation-rollouts")
 
 
