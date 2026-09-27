@@ -188,7 +188,8 @@ def package(source: Path) -> dict:
     original = json.loads(original_raw)
     model = original.get("author_model", original.get("model"))
     effort = original.get("reasoning_effort")
-    if model not in {"gpt-5.6-sol", "gpt-6-astra"} or effort != "high":
+    if (model, effort) not in {("gpt-5.6-sol", "high"), ("gpt-6-astra", "high"),
+                               ("codex-parent", "not-exposed")}:
         raise ValueError("unexpected teacher model or reasoning effort")
     normalized = []
     members: dict[str, bytes] = {}
