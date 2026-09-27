@@ -1,0 +1,20 @@
+{
+  "schema": "painter.sol-brush-two-axis-review.v1",
+  "review_date": "2026-09-27",
+  "paired_review": "SOL_BRUSH_PILOT_REVIEW.json",
+  "public_dataset_revision": "957b165b3947c995d9de7faea0b6325c62d0c5bf",
+  "method": "Full-size visual review of the same eight paired original and translated canvases. This is an aesthetic and subject-legibility assessment distinct from the earlier source-fidelity preference. Labels are qualitative, not a blinded user study or an estimate of all 55 candidates.",
+  "user_feedback": "User reported that the translated paintings also look good; preserve their painterly merit instead of interpreting eight fidelity losses as eight aesthetic failures.",
+  "rows": [
+    {"audit_id": "t600-325", "painterly_appeal": "weak", "subject_fidelity": "weak", "disposition": "exclude", "reason": "The diagonal scratch marks obscure the tortoise and its shell."},
+    {"audit_id": "t600-349", "painterly_appeal": "moderate", "subject_fidelity": "weaker_than_original", "disposition": "review_for_style", "reason": "The warm, hazy airport palette is appealing, though the aircraft and ground crew lose definition."},
+    {"audit_id": "t600-583", "painterly_appeal": "strong", "subject_fidelity": "weaker_than_original", "disposition": "style_candidate", "reason": "Atmospheric reeds, water and distant mountains work well as a soft painting; the boat hull needs stronger opacity for the source-matched objective."},
+    {"audit_id": "t600-326", "painterly_appeal": "moderate", "subject_fidelity": "weaker_than_original", "disposition": "review_for_style", "reason": "Rain and dark green palette are attractive, but the frog and leaf are too translucent."},
+    {"audit_id": "t600-375", "painterly_appeal": "weak", "subject_fidelity": "weak", "disposition": "exclude", "reason": "Long diagonal marks dominate the shelves and jars."},
+    {"audit_id": "t600-387", "painterly_appeal": "moderate", "subject_fidelity": "weaker_than_original", "disposition": "review_for_style", "reason": "The muted landscape and flock are pleasant, but the shepherd and sheep lack clear separation."},
+    {"audit_id": "t600-492", "painterly_appeal": "moderate", "subject_fidelity": "weaker_than_original", "disposition": "review_for_style", "reason": "The stacked-container colors and warm light appeal, but load-bearing geometry becomes unclear."},
+    {"audit_id": "t600-594", "painterly_appeal": "strong", "subject_fidelity": "weaker_than_original", "disposition": "style_candidate", "reason": "A soft snowy fox scene with pleasing warm/cool color; fox legs and silhouette are less defined than the original."}
+  ],
+  "decision": "Do not treat all translations as failed paintings. Keep the two strong examples and four moderate examples available as painterly-style candidates. Do not silently substitute any for source-matched SFT targets or count them as improvements until subject fidelity is repaired and independently reviewed. Use the soft wash as an optional style signal while keeping opaque forms for the subject.",
+  "training_admission": "none yet; style candidates only"
+}
