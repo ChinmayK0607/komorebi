@@ -1,0 +1,13 @@
+{
+  "anonymous_hash_verified": true,
+  "archive_bytes": 26668860,
+  "archive_sha256": "708baccf6fa840be367944d8b68b620ffc04b4c897a15f7d2873fcf79f8b9077",
+  "count": 100,
+  "dataset": "CK0607/komorebi-painter-teachers",
+  "dataset_commit": "4439d7d6c4ddfafbe5e3d9e401699c44bcbb5e85",
+  "manifest_sha256": "e4660ae1ac9a8e2da62d7660f83fdda61f9ad73647b4ec2a9d8bf35e0e5e9964",
+  "path": "curricula/teacher600/repair-hundred-v1/source.tar.gz",
+  "plan_sha256": "67ef355d615877f617448af16c14e38deca8f540899fdf40f62cb9d6bdcb4035",
+  "schema": "painter.teacher600-repair-hundred-public-source.v1",
+  "status": "unreviewed_correction_states_not_sft_targets"
+}

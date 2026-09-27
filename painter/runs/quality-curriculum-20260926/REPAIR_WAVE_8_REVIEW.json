@@ -1,0 +1,144 @@
+{
+  "cost": {
+    "catalog_list_price_estimate_usd": 0.1896,
+    "estimate_note": "Uses pinned model catalog prices; excludes unknown Gateway adjustments. Not a billed charge.",
+    "gateway_reported_complete": false,
+    "recorded_completion_tokens": 211900,
+    "recorded_prompt_tokens": 214820
+  },
+  "counts": {
+    "curriculum_sft_candidates": 5,
+    "episodes": 8,
+    "invalid_or_no_code_or_api_error_turns": 10,
+    "relative_only": 3,
+    "relative_visual_wins": 8,
+    "valid_turns": 19
+  },
+  "decision": "Use the eight selected revisions as relative quality pairs; five simple/middle cases can seed a balanced multi-turn SFT curriculum after export checks. Keep three hard cases as RL preference or further-correction states. Scale teacher generation with exact source/first-paint matching and repair format/renderer failures.",
+  "failure_breakdown": {
+    "syntax_or_renderer_errors": 4,
+    "plan_only_no_code": 4,
+    "gateway_stream_duration_errors": 2,
+    "note": "These are ten turn outcomes, not ten failed scenes; all eight scenes have a selected valid improvement. Provider errors were not counted as painting judgments."
+  },
+  "method": "Parent inspected all eight exact source/first-paint/best-turn images, and all valid intermediate turns where present. Pairwise preference is relative to each exact first paint; SFT candidacy is separate from admission.",
+  "public_results": {
+    "flash": {
+      "bundle_sha256": "ea550ceb452a2f590920b422b7a1242da866195bf11e6becea59c99266ed60c4",
+      "dataset_commit": "829d06ad9ee0e0eb5d4dc9b9b355d61191309a7b"
+    },
+    "pro": {
+      "bundle_sha256": "0158f3aebab3c318f774c81e19a5b86d85122fe153fd167d6ea8e2bac093b8bc",
+      "dataset_commit": "8bfc81e9b83e181f81bc02990da708730f6d9710"
+    }
+  },
+  "rows": [
+    {
+      "audit_id": "t600-013",
+      "first_paint_sha256": "fc70959d8f8ee977d36c41e4f65f616b8b9280e9f14eab00f27ede9665db7bbc",
+      "mode": "image_to_image",
+      "model": "xiaomi/mimo-v2.6-pro",
+      "preferred": "selected_revision_over_exact_first_paint",
+      "public_result_run_id": "teacher600-repair-eight-v2-20260927-pro",
+      "selected_canvas_sha256": "91be6aed2d5b10ad505b87b84b9b96be59ba694a4f90bcff978fc23c185c5aa5",
+      "selected_program_sha256": "f1ab939c437fa5da6a844c0fb0da56577c1bd8305e1ead4e316d0a108ea3ec8b",
+      "selected_turn": 4,
+      "training_route": "relative_only",
+      "visual_observation": "The black dog is recognizable and far more source-like than the mint ghost, but the source head tilt and furry muzzle are lost; snow and eyes are overly regular."
+    },
+    {
+      "audit_id": "t600-085",
+      "first_paint_sha256": "3731b340ce8c6041a9fa6a09e7d23d820aacdb009a8f2e64a0760e8983870b5b",
+      "mode": "image_to_image",
+      "model": "xiaomi/mimo-v2.6-flash",
+      "preferred": "selected_revision_over_exact_first_paint",
+      "public_result_run_id": "teacher600-repair-eight-v2-20260927-flash",
+      "selected_canvas_sha256": "6410c00281c9b2cd90e486773b788bfec5069d33a4561a8bbe7b072fd26915fa",
+      "selected_program_sha256": "94a2bad7c42c28af2bf3c2c81ebacc18266aeec3996f75d7646866d405645036",
+      "selected_turn": 3,
+      "training_route": "curriculum_sft_candidate",
+      "visual_observation": "The plate has depth and the noodle tangle and broccoli florets are clear. Ribbons remain pale and somewhat uniform, but the prior loose loops and dot-broccoli are repaired."
+    },
+    {
+      "audit_id": "t600-145",
+      "first_paint_sha256": "8430c7ffe7b1a62030e3d7ac5f80ddabe6776c362ea5a1a79cb33d5bb4724abe",
+      "mode": "image_to_image",
+      "model": "xiaomi/mimo-v2.6-pro",
+      "preferred": "selected_revision_over_exact_first_paint",
+      "public_result_run_id": "teacher600-repair-eight-v2-20260927-pro",
+      "selected_canvas_sha256": "1a068d6c00066b1c08fd416ddb15326647f1e7e241b9e16aa39289aacdfa11e2",
+      "selected_program_sha256": "0e385b226cbe19817210a2366c0bebb8aeeb2926c9ca252975218208f544b796",
+      "selected_turn": 4,
+      "training_route": "relative_only",
+      "visual_observation": "The monochrome village, wooded slopes, peaks and boat now form a coherent scene. The painting adds a second rower where the written brief asked for one, though the photograph shows two; resolve caption/source conflict before SFT."
+    },
+    {
+      "audit_id": "t600-181",
+      "first_paint_sha256": "b6b8f723466fca515daeb3566800868aec7687e0e38f531255e6dca0214af65a",
+      "mode": "image_to_image",
+      "model": "xiaomi/mimo-v2.6-flash",
+      "preferred": "selected_revision_over_exact_first_paint",
+      "public_result_run_id": "teacher600-repair-eight-v2-20260927-flash",
+      "selected_canvas_sha256": "19fe8dbfe1b40f81f2d178d518ac9e7502caabbfff2f497b80918dce526a04cf",
+      "selected_program_sha256": "e014d6af34de12f475704be4bb52fd6b402fccb06046c461d466027437d23ee3",
+      "selected_turn": 2,
+      "training_route": "curriculum_sft_candidate",
+      "visual_observation": "The pot has a concave metal body, long spout, dark wooden handle, reflections and contact shadow close to the source. Faceted edges still feel somewhat digital."
+    },
+    {
+      "audit_id": "t600-331",
+      "first_paint_sha256": "1dea71ea758773464c2a343bf0f5932e85aebf8d93369ce142ef80b76a871f79",
+      "mode": "text_to_image",
+      "model": "xiaomi/mimo-v2.6-flash",
+      "preferred": "selected_revision_over_exact_first_paint",
+      "public_result_run_id": "teacher600-repair-eight-v2-20260927-flash",
+      "selected_canvas_sha256": "ae4ed4d8c006a76f4b4ecbad8d6d2b74a53f4da03d36d05194538f2c67d62d25",
+      "selected_program_sha256": "1e5e9ed57e42913d65000d126c612eee26481578a2ac99b8360d27be4d66372e",
+      "selected_turn": 1,
+      "training_route": "curriculum_sft_candidate",
+      "visual_observation": "The hedgehog now has dense varied spines, a clear face, short feet and a more grounded path; round body and spike rhythm are still stylized."
+    },
+    {
+      "audit_id": "t600-427",
+      "first_paint_sha256": "d430da004d251a5bf71254e0036d658c03e4b7d57593460a0a66b2c852220d24",
+      "mode": "text_to_image",
+      "model": "xiaomi/mimo-v2.6-flash",
+      "preferred": "selected_revision_over_exact_first_paint",
+      "public_result_run_id": "teacher600-repair-eight-v2-20260927-flash",
+      "selected_canvas_sha256": "27a29f2c0e8814271ef05239cdbddbab032d5153e16419b58ba5ea3188d96ce6",
+      "selected_program_sha256": "f8fbe19305afa85976dc841f4975e2e8fc4b4c1f14311a4835f728672330a78e",
+      "selected_turn": 4,
+      "training_route": "curriculum_sft_candidate",
+      "visual_observation": "Opaque dark rinds, distinct pit and empty cavity, green flesh and contact shadows replace the pale flat halves. The forms are simple but attractive."
+    },
+    {
+      "audit_id": "t600-457",
+      "first_paint_sha256": "19a96fcda5f9b1dac1e6278214635e4e8c748591e61600f6393c05e578e13098",
+      "mode": "text_to_image",
+      "model": "xiaomi/mimo-v2.6-pro",
+      "preferred": "selected_revision_over_exact_first_paint",
+      "public_result_run_id": "teacher600-repair-eight-v2-20260927-pro",
+      "selected_canvas_sha256": "280bad9155c366a73996595efd18f47a2321d5901ae014f94ca43f94236803ec",
+      "selected_program_sha256": "3c642cd38899654168db8b0c95cfb5c56b1b48cf468cc8522da161c87c0c563f",
+      "selected_turn": 4,
+      "training_route": "relative_only",
+      "visual_observation": "Black basalt, cobalt sea, white surf and a distant island repair the washed-out first paint; the rust beach remains almost absent and repeated polygon facets look mechanical."
+    },
+    {
+      "audit_id": "t600-511",
+      "first_paint_sha256": "78f555659d1295850351b59b6b074e11832239d0393fc5999e33f1b4f3e58315",
+      "mode": "text_to_image",
+      "model": "xiaomi/mimo-v2.6-flash",
+      "preferred": "selected_revision_over_exact_first_paint",
+      "public_result_run_id": "teacher600-repair-eight-v2-20260927-flash",
+      "selected_canvas_sha256": "492a6910ce11e9b1291adb71f5c10272f2c1e9599c7dd3cf070907f56f01567a",
+      "selected_program_sha256": "74ce3fa1985ec30afca38f7baf4eeb98ae70e2cd156dc3138435d4e423b156e0",
+      "selected_turn": 4,
+      "training_route": "curriculum_sft_candidate",
+      "visual_observation": "The wood decoy has a stronger honey body, beak, carved wing and contact shadow. Wood grain and tail could be improved further."
+    }
+  ],
+  "schema": "painter.teacher600-repair-eight-visual-review.v1",
+  "source_archive_sha256": "0e1cfcd4b18e53c6851f41177a34c13f330aa38e35cefa675a7d37410f2af337",
+  "source_commit": "d7e55e5e373d5f4a3aa4a4c3b2c21645c90ea258"
+}
