@@ -26,6 +26,14 @@ from contract import NEXT_VERSION, SYSTEM, identity, paint_target, validate_teac
 from export_turn_sft import image_part  # noqa: E402
 
 BRUSH_MARK = re.compile(r"\bbrush\.(?:line|polygon|rect|ellipse|stroke|spline|hatch)\s*\(")
+# Exact pinned Qwen processor audit on the Linux node (16,384-token window).
+# Keep these complete renderings as evidence, but never truncate an SFT target.
+PROCESSOR_OVERSIZE_IDS = frozenset({
+    "gateway__pro-02__t600-240__04", "gateway__pro-02__t600-118__03",
+    "gateway__pro-02__t600-118__04", "gateway__pro__t600-145__03",
+    "gateway__flash-02__t600-463__02", "gateway__flash-02__t600-463__03",
+    "gateway__pro-02__t600-071__04", "gateway__flash-02__t600-463__04",
+})
 
 
 def sha(path: Path) -> str:
@@ -222,6 +230,11 @@ def build(output: Path, seed: int) -> dict:
     for root in (eight / "flash", eight / "pro", polish):
         paintings.extend(gateway_revisions(root, holdout, source_hashes, rejected))
     paintings.extend(manual_revisions(holdout, source_hashes, rejected))
+    detected = {item["id"] for item in paintings if item["id"] in PROCESSOR_OVERSIZE_IDS}
+    if detected != PROCESSOR_OVERSIZE_IDS:
+        raise ValueError("processor oversize exclusion no longer matches source data")
+    paintings = [item for item in paintings if item["id"] not in PROCESSOR_OVERSIZE_IDS]
+    rejected["processor_oversize_no_truncation"] = len(PROCESSOR_OVERSIZE_IDS)
     if len({item["id"] for item in paintings}) != len(paintings):
         raise ValueError("duplicate SFT row IDs")
     # One exposure per audited painting; retain procedural format/validity with
