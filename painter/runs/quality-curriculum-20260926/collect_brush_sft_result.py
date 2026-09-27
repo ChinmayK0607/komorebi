@@ -18,7 +18,7 @@ FILES = (
     "painter/eval-prep/eval-manifest.json",
     f"train-output/{RUN_NAME}/artifacts/initial-adapter-audit.json",
 )
-TREES = ("eval/baseline/results", "eval/trained/results",
+TREES = ("eval/baseline/results", "eval/midpoint/results", "eval/trained/results",
          "painter/eval-prep/references", "painter/evaluation-rollouts")
 
 
@@ -46,7 +46,9 @@ def bundle(root: Path, output: Path) -> dict:
         tree = root / name
         if tree.is_dir():
             paths.extend(path for path in tree.rglob("*") if path.is_file() and not path.is_symlink())
-    for policy in ("baseline", "trained"):
+    for policy in ("baseline", "midpoint", "trained"):
+        if policy == "midpoint" and not (root / "eval/midpoint/completion.json").is_file():
+            continue
         paths.extend(path for path in (root / "eval" / policy).iterdir()
                      if path.is_file() and path.name != "eval.lock")
     for item in (root / f"train-output/{RUN_NAME}/artifacts/adapters").glob("step_*/hf-upload.json"):

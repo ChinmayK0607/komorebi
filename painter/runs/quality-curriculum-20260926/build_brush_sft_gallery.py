@@ -10,7 +10,7 @@ from pathlib import Path
 
 
 HERE = Path(__file__).resolve().parent
-SOURCE = HERE.parent / "quality-curriculum-20260924/build_astra_firstpaint_gallery.py"
+SOURCE = HERE.parent / "quality-curriculum-20260924/build_multiturn_gallery.py"
 
 
 if __name__ == "__main__":

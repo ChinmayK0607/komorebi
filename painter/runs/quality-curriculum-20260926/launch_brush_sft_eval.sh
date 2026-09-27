@@ -2,9 +2,9 @@
 # Frozen 28-photo two-turn evaluation; compare first paints and their revisions
 # against the same step-512 baseline.
 set -Eeuo pipefail
-RUN="$(cd "${1:?usage: launch_brush_sft_eval.sh RUN_DIRECTORY baseline|trained}" && pwd -P)"
-POLICY="${2:?choose baseline or trained}"
-[[ "$POLICY" == baseline || "$POLICY" == trained ]] || exit 2
+RUN="$(cd "${1:?usage: launch_brush_sft_eval.sh RUN_DIRECTORY baseline|midpoint|trained}" && pwd -P)"
+POLICY="${2:?choose baseline, midpoint or trained}"
+[[ "$POLICY" == baseline || "$POLICY" == midpoint || "$POLICY" == trained ]] || exit 2
 [[ "$(uname -s)" == Linux && -f "$RUN/env.sh" && -x "$RUN/painter/renderer-env/bin/python" ]] || {
   echo 'training bootstrap and eval renderer setup are required' >&2; exit 2;
 }
@@ -19,7 +19,7 @@ VLLM="$PRIME_ROOT/.venv/bin/vllm"
 MODEL_DIR="$(cat "$RUN/model-path.txt")"
 MANIFEST="$RUN/painter/eval-prep/eval-manifest.json"
 EVAL_ROOT="$RUN/eval/$POLICY"
-case "$POLICY" in baseline) PORT=8100;; trained) PORT=8101;; esac
+case "$POLICY" in baseline) PORT=8100;; trained) PORT=8101;; midpoint) PORT=8102;; esac
 GPU="${EVAL_GPU:-1}"
 mkdir -p "$EVAL_ROOT" "$EVAL_ROOT/cache"
 exec 8>"$EVAL_ROOT/eval.lock"
@@ -36,7 +36,7 @@ import json,sys
 print(json.load(open(sys.argv[1]))['optimizer_steps'])
 PY
 )"
-  STEP="$FINAL_STEP"
+  if [[ "$POLICY" == midpoint ]]; then STEP=40; else STEP="$FINAL_STEP"; fi
   ADAPTER="$RUN/train-output/brush-sft-20260927-v1/artifacts/adapters/step_$STEP"
 fi
 "$PY" - "$RUN" "$POLICY" "$ADAPTER" "$MANIFEST" <<'PY'
