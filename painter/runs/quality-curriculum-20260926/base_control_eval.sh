@@ -39,7 +39,23 @@ if a:
 print(json.dumps({'policy':policy,'manifest_verified':True,'public_adapter_verified':bool(a)}))
 PY
 if [[ -f "$OUT/completion.json" ]]; then
-  echo "Completed $POLICY evaluation already exists"; exit 0
+  "$PY" - "$OUT" "$RUN/painter/eval-prep/eval-manifest.json" "$ADAPTER" "$POLICY" <<'PY'
+import hashlib,json,pathlib,sys
+out,manifest=pathlib.Path(sys.argv[1]),pathlib.Path(sys.argv[2])
+adapter=pathlib.Path(sys.argv[3]) if sys.argv[3] else None
+policy=sys.argv[4]
+sha=lambda p:hashlib.sha256(p.read_bytes()).hexdigest()
+record=json.loads((out/'completion.json').read_text())
+expected=sha(adapter/'adapter_model.safetensors') if adapter else None
+if (record.get('status')!='completed' or record.get('policy')!=policy
+        or record.get('case_count')!=28 or record.get('max_turns')!=2
+        or record.get('context_length')!=32768 or record.get('adapter_sha256')!=expected
+        or record.get('manifest_sha256')!=sha(manifest)
+        or record.get('config_sha256')!=sha(out/'eval.toml')):
+    raise ValueError('existing evaluation is not the matched completed run')
+print('matched evaluation already complete; skipping duplicate')
+PY
+  exit 0
 fi
 CUDA_HOME="$($PY -c 'import sysconfig; print(sysconfig.get_paths()["purelib"] + "/nvidia/cu13")')"
 [[ -d "$CUDA_HOME" ]] || exit 2

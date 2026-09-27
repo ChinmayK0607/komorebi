@@ -3,6 +3,8 @@
 set -Eeuo pipefail
 RUN="$(cd "${1:?usage: base_control_node.sh EXTRACTED_PACKAGE}" && pwd -P)"
 [[ "$(uname -s)" == Linux && -f "$RUN/private/hf-token" ]] || exit 2
+exec 9>"$RUN/base-control.lock"
+flock -n 9 || { echo 'base control already running' >&2; exit 2; }
 export HF_TOKEN_PATH="$RUN/private/hf-token" BRUSH_ROOT="$RUN/source/brush-rl"
 export BRUSH_MODEL_PROFILE=qwen38_27b
 export RUN_NAME=brush-base-control-20260927-v1
