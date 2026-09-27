@@ -1,8 +1,8 @@
 # Four-reference Gateway RL overfit, 2026-09-28
 
-Status: finite four-update run completed on a two-GPU Linux node. All four
-adapters are public and hash-verified; matched visual evaluation is running.
-Visual improvement remains unverified. This record distinguishes preparation
+Status: finite four-update run and two matched checkpoint evaluations completed.
+All four adapters and both evaluation archives are public and hash-verified.
+The four-scene test does not establish a net visual improvement. This record distinguishes preparation
 from results; raw rollouts and images live outside Git.
 
 ## Hypothesis and matched baseline
@@ -138,7 +138,10 @@ optimizing trainer kernels. At step 3 the orchestrator discarded 12 of 20
 episodes as stale with `max_off_policy_steps=1` and about 22 in flight. This
 is a concrete waste to fix before scaling: reduce the in-flight window and
 benchmark fresh episodes per GPU-hour rather than merely keeping decoding
-busy.
+busy. The config generator now accepts explicit `initial_inflight` and
+`max_inflight` bounds while preserving its old defaults. An 8/12 window with
+the same batch/group size is a candidate for the next measured run, not yet a
+validated throughput setting; the current run used the original 16/24 window.
 
 The rollout renderer produced receipts for 192 paint actions, of which 157
 were valid; the mean measured paint time was 14.97 seconds. Invalid actions
@@ -155,4 +158,55 @@ The matched step-512 versus RL-step-4 evaluation uses four references, one
 rollout per policy and reference, seed 918200, temperature 1, an 8,192-token
 per-turn limit, four turns, and the same pinned renderer. Its gallery and
 two-orientation Gateway labels are pending; this small development set is an
-overfit check, not a held-out generalization test.
+overfit check, not a held-out generalization test. Step four's matched MiMo
+comparison split 2–2 (RL on bus and dog, SFT on sphere and flower). Manual
+inspection found the dog in the RL image faint and poorly structured even
+though its warm palette and skateboard led MiMo to prefer it. This is a
+reference-fidelity failure and a judge calibration concern, not a clean
+quality gain.
+
+## Matched checkpoint decision and evidence, 2026-09-27 20:32 UTC
+
+The [step-four gallery](collected-eval/review/index.html) and
+[step-two gallery](collected-eval-step2/review/index.html) use the same four
+references, seed 918200, temperature 1, four-turn and 8,192-token-per-turn
+limits, and renderer as the frozen step-512 SFT baseline. Step-four MiMo
+Flash labels are 2 RL wins (bus, dog), 2 SFT wins (sphere, flower), no
+censoring. Step two is 2 RL wins (bus, flower), 1 SFT win (sphere), and 1
+censored dog scene. Its dog program produced no valid canvas on any of its
+four turns: the `a is not iterable` page error recurred despite feedback.
+This disqualifies step two as a reliable four-scene policy, despite its higher
+second training-batch reward. The step-four dog is valid but its animal is
+faint and anatomically weak; a subject-fidelity prompt probe reversed the
+initial MiMo preference on that pair. The four-scene labels are insufficient
+to claim an overall quality gain or calibrate a scale-up reward. Step four is
+the most usable RL checkpoint tested, not a promoted replacement for SFT.
+
+The step-four [public evidence archive](https://huggingface.co/datasets/CK0607/komorebi-painter-experiments/blob/e09f64b141993eabc917e0df9d5efcd6110240c9/runs/quality-oss-rl-20260927/overfit-four-20260928-evidence.tar.gz)
+contains 798 screened files, 20,044,724 bytes, SHA-256
+`25db53de7cce4e480b799cb2457b7fab3d34a87a465c4e6c08b70aaebc0dc674`.
+The step-two [public evidence archive](https://huggingface.co/datasets/CK0607/komorebi-painter-experiments/blob/63416d3d7fae4065b5a6a44e7d74c2c8a5d63d4e/runs/quality-oss-rl-20260927/overfit-step2-matched-20260928-evidence.tar.gz)
+contains 789 screened files, 17,666,467 bytes, SHA-256
+`b1b9d16c7db1dfe9203f2256e8273f66106427ac27523c9ecc316e68747e4de9`.
+Both archives were anonymously downloaded and hash-verified after upload;
+their rollouts and judgment receipts permit auditing the invalid dog scene
+and pairwise decisions.
+
+Decision: preserve the SFT baseline and step-four RL adapter, calibrate the
+judge against human subject-fidelity labels, and fix recurrent generated-code
+errors before a larger curriculum. For the next short throughput test, compare
+the measured 16/24 in-flight setting with 8/12, because step three discarded
+12/20 sampled episodes as stale. The renderer itself is not the bottleneck
+measured here: its 0.41 paintings/s standalone capacity exceeded the rollout
+action rate, while the inference GPU was busy in 98.4% of samples and the
+trainer was busy in 20.5%. Do not rewrite p5.brush rendering or claim a
+speed gain without a matched visual-contract and throughput check.
+
+After both archive receipts reported public, unauthenticated hash verification,
+the two-GPU rental was removed. `lium ps --format json` then returned `[]`.
+Its last observed accumulated charge before removal was $4.24; with the
+previously released four-GPU profile node at approximately $2.99, observed
+GPU spend was at least $7.23 and remained well below the $25 GPU-only cap.
+The final billing amount may be slightly higher than that last observation.
+Gateway usage is separate; the training judge worker logged about $0.06122,
+and matched-evaluation judging may add further API charges.
