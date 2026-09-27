@@ -90,8 +90,12 @@ def collect(run_id: str, selected_shards: tuple[str, ...]) -> dict:
             figures.append(f'<figure><img src="{shard}/episodes/{escape(ep.name)}/first-paint.png"><figcaption>Matched first painting</figcaption></figure>')
             for turn in state["turns"]:
                 rendered = turn.get("render") or {}
+                # A FINISHED message may validly reuse the preceding canvas.
+                # It is a completed action, not a newly rendered training turn.
+                new_canvas = bool(rendered.get("valid") and not rendered.get("skipped")
+                                  and rendered.get("canvas_sha256"))
                 record = {"turn": turn["turn"], "api_status": turn.get("api_status"),
-                          "valid": bool(rendered.get("valid")),
+                          "valid": new_canvas, "finished_without_code": bool(rendered.get("finished_without_code")),
                           "finish_reason": (turn.get("response") or {}).get("finish_reason"),
                           "total_tokens": ((turn.get("response") or {}).get("usage") or {}).get("total_tokens"),
                           "error": turn.get("render_error") or turn.get("api_error")}
@@ -116,7 +120,7 @@ def collect(run_id: str, selected_shards: tuple[str, ...]) -> dict:
                             "episode_directory": ep.name, "archive_sha256": receipt["sha256"]})
             brief = escape(prompt.read_text())
             errors = "; ".join(f"Turn {t['turn']}: {t['error'] or t['finish_reason'] or 'invalid'}"
-                               for t in turns if not t["valid"])
+                               for t in turns if not t["valid"] and not t["finished_without_code"])
             cards.append(f'<article><h2>{aid} · {escape(model)} · {escape(state["status"])}</h2>'
                          f'<p><strong>Shard/category:</strong> {escape(shard)} / {escape(row["category"])}</p>'
                          f'<p><strong>Source:</strong> {brief}</p>'
@@ -140,7 +144,9 @@ def collect(run_id: str, selected_shards: tuple[str, ...]) -> dict:
     (result_root / f"collection-summary{suffix}.json").write_text(json.dumps(summary, indent=2, sort_keys=True) + "\n")
     return {"review": str(review), "episodes": len(records),
             "valid_turns": sum(t["valid"] for r in records for t in r["turns"]),
-            "invalid_turns": sum(not t["valid"] for r in records for t in r["turns"])}
+            "finished_without_code": sum(t["finished_without_code"] for r in records for t in r["turns"]),
+            "invalid_turns": sum(not t["valid"] and not t["finished_without_code"]
+                                 for r in records for t in r["turns"])}
 
 
 if __name__ == "__main__":
