@@ -2,9 +2,10 @@
   "direct_sft_candidates": 5,
   "labels_provisional": true,
   "matched_baseline": "Each exact first-paint canvas and source input from the immutable 600-task inventory",
-  "next_decision": "Calibrate labels with blinded pairwise visual judgment, then admit only strong source-faithful examples; inspect all 100 MiMo repairs before the one planned LoRA canary.",
+  "next_decision": "Retain all 15 as visually appealing candidates in the user's batch-level assessment. Keep parent source-fidelity cautions distinct from aesthetics; use source-faithful examples for direct paired SFT and consider the rest for style or preference data after matched review. Add brush-feel refinement examples before the one planned LoRA canary; inspect all 100 MiMo repairs.",
   "plan_sha256": "977cabde641fc6c41cee5a799d64e8a5878c0f7c6aa029e57f451831b3b13c37",
   "rejected": 2,
+  "review_dimension_note": "The original parent decisions are provisional source-matched training labels, not a claim that the paintings are aesthetically unappealing. The two 'reject' labels refer to direct source-conditioned SFT in this unblinded review, not exclusion from the candidate pool.",
   "relative_only": 8,
   "render_bundles_sha256": {
     "astra": "aa22bc3f4924279936797898525ef5d943138f39cd617aa1494bc932ffb976a1",
@@ -239,5 +240,12 @@
     }
   ],
   "schema": "painter.manual-multi-teacher-review.v1",
+  "user_batch_feedback_2026_09_27": {
+    "scope": "All 15 candidates in the combined manual multi-teacher gallery",
+    "aesthetic_assessment": "User likes all candidates, explicitly including the two marked reject by the parent review.",
+    "brush_feel_assessment": "The paintings are missing some brush-like feeling.",
+    "label_provenance": "Batch-level user feedback, not individual blinded pairwise labels or a source-fidelity judgment.",
+    "retention_decision": "Retain all 15 candidate programs and canvases for training selection; preserve source-fidelity cautions for choosing their role."
+  },
   "scope": "15 full-size new canvases viewed alongside all 15 matched first paints, six photo sources and nine exact text briefs; unblinded parent assessment"
 }
