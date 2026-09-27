@@ -9,15 +9,16 @@ REPO_ROOT="$(cd "${PAINTER_REPO_ROOT:?set PAINTER_REPO_ROOT to the checkout}" &&
 PRIME_ROOT="$(cd "${PRIME_ROOT:?set PRIME_ROOT to the pinned Prime checkout}" && pwd -P)"
 PRIME_COMMIT="26b3131d2716a4f8210b165df584b83b4bc54f61"
 BASE_MODEL_REVISION="1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0"
-ADAPTER_REVISION="adf687e5b321514eda7be6eab050434fdc8e44ff"
-ADAPTER_PREFIX="photo-curriculum-sft-20260922-balanced/step_512"
-ADAPTER_SHA256="bea72b066986faa1b92b9dc539c710093181ee916b99323e2b2498f318ac1740"
 HF_REPO="CK0607/qwen3.8-27b-brush-painting"
 RUN_NAME="${PAINTER_RL_RUN_NAME:-photo-curriculum-rl-20260922}"
-FROZEN_SFT_ALIAS="${PAINTER_FROZEN_SFT_ALIAS:-sft-step512}"
+RL_MODE="${PAINTER_RL_MODE:-fresh}"
+FROZEN_SFT_ALIAS="sft-step512"
+FROZEN_SFT_CHECKPOINT_SHA256="bea72b066986faa1b92b9dc539c710093181ee916b99323e2b2498f318ac1740"
 MODEL_DIR="${MODEL_DIR:?set MODEL_DIR to the staged base snapshot}"
+LIVE_POLICY_ALIAS="${PAINTER_RL_LIVE_POLICY_ALIAS:-$MODEL_DIR}"
 BRUSH_ROOT="${BRUSH_ROOT:-$ROOT/source/brush-rl}"
-INITIAL_ADAPTER="${WATERCOLOUR_INIT_ADAPTER:?set WATERCOLOUR_INIT_ADAPTER to the public step-512 adapter directory}"
+INITIAL_ADAPTER="${WATERCOLOUR_INIT_ADAPTER:?set WATERCOLOUR_INIT_ADAPTER to the declared policy adapter directory}"
+FROZEN_ADAPTER="${PAINTER_FROZEN_SFT_ADAPTER:-}"
 MANIFEST="${PAINTER_RL_MANIFEST:-$ROOT/source-manifest.json}"
 MAX_STEPS="${PAINTER_RL_MAX_STEPS:-32}"
 GPUS_PER_NODE="${PAINTER_GPUS_PER_NODE:-2}"
@@ -26,6 +27,25 @@ NUM_INFER_GPUS="${PAINTER_NUM_INFER_GPUS:-1}"
 CONFIG="${PAINTER_RL_CONFIG:-$ROOT/native-rl.toml}"
 PYTHON="$PRIME_ROOT/.venv/bin/python"
 UV_BIN="${UV_BIN:-uv}"
+
+case "$RL_MODE" in
+  recovered_policy|fresh) ;;
+  *) echo "PAINTER_RL_MODE must be fresh or recovered_policy" >&2; exit 1 ;;
+esac
+[[ "${PAINTER_FROZEN_SFT_ALIAS:-$FROZEN_SFT_ALIAS}" == "$FROZEN_SFT_ALIAS" ]] || {
+  echo "the frozen SFT anchor alias is pinned to $FROZEN_SFT_ALIAS" >&2
+  exit 1
+}
+if [[ "$RL_MODE" == "recovered_policy" ]]; then
+  ADAPTER_REVISION="${PAINTER_RL_ADAPTER_REVISION:?set PAINTER_RL_ADAPTER_REVISION for the recovered policy}"
+  ADAPTER_PREFIX="${PAINTER_RL_ADAPTER_PREFIX:?set PAINTER_RL_ADAPTER_PREFIX for the recovered policy}"
+  ADAPTER_SHA256="${PAINTER_RL_ADAPTER_SHA256:?set PAINTER_RL_ADAPTER_SHA256 for the recovered policy}"
+  FROZEN_ADAPTER="${FROZEN_ADAPTER:?set PAINTER_FROZEN_SFT_ADAPTER for the immutable SFT anchor}"
+else
+  ADAPTER_REVISION="${PAINTER_RL_ADAPTER_REVISION:-unknown}"
+  ADAPTER_PREFIX="${PAINTER_RL_ADAPTER_PREFIX:-declared-adapter}"
+  ADAPTER_SHA256="${PAINTER_RL_ADAPTER_SHA256:?set PAINTER_RL_ADAPTER_SHA256 for the fresh adapter}"
+fi
 
 [[ -x "$PYTHON" ]] || { echo "missing pinned Prime Python: $PYTHON" >&2; exit 1; }
 [[ "$(git -C "$PRIME_ROOT" rev-parse HEAD)" == "$PRIME_COMMIT" ]] || {
@@ -55,7 +75,17 @@ done
   echo "initial adapter is not a portable LoRA directory" >&2
   exit 1
 }
-[[ "$FROZEN_SFT_ALIAS" != "$MODEL_DIR" ]] || {
+if [[ "$RL_MODE" == "recovered_policy" ]]; then
+  [[ -f "$FROZEN_ADAPTER/adapter_model.safetensors" && -f "$FROZEN_ADAPTER/adapter_config.json" ]] || {
+    echo "immutable frozen SFT adapter is not a portable LoRA directory" >&2
+    exit 1
+  }
+  [[ "$(cd "$INITIAL_ADAPTER" && pwd -P)" != "$(cd "$FROZEN_ADAPTER" && pwd -P)" ]] || {
+    echo "recovered policy initializer must be distinct from the frozen SFT adapter" >&2
+    exit 1
+  }
+fi
+[[ "$FROZEN_SFT_ALIAS" != "$LIVE_POLICY_ALIAS" ]] || {
   echo "frozen SFT anchor alias must differ from the live Prime LoRA alias" >&2
   exit 1
 }
@@ -65,6 +95,9 @@ done
 }
 
 export BRUSH_ROOT BRUSH_MODEL_PROFILE=qwen38_27b PRIME_ROOT MODEL_DIR
+export PAINTER_RL_MODE PAINTER_RL_ADAPTER_REVISION="$ADAPTER_REVISION"
+export PAINTER_RL_ADAPTER_PREFIX="$ADAPTER_PREFIX" PAINTER_RL_ADAPTER_SHA256="$ADAPTER_SHA256"
+export PAINTER_RL_LIVE_POLICY_ALIAS="$LIVE_POLICY_ALIAS"
 export PAINTER_FROZEN_SFT_ALIAS="$FROZEN_SFT_ALIAS"
 # The frozen opponent is a separate, immutable inference route.  Keep every
 # path explicit so the lazy generator cannot fall back to an unrelated local
@@ -81,6 +114,9 @@ export PAINTER_FROZEN_OPPONENT_ENDPOINT="${PAINTER_FROZEN_OPPONENT_ENDPOINT:-htt
 export PAINTER_FROZEN_OPPONENT_CONFIG="${PAINTER_FROZEN_OPPONENT_CONFIG:-$ROOT/frozen-opponent-config.json}"
 export PLAYWRIGHT_BROWSERS_PATH="${PLAYWRIGHT_BROWSERS_PATH:-$ROOT/browsers}"
 export WATERCOLOUR_INIT_ADAPTER="$(cd "$INITIAL_ADAPTER" && pwd -P)"
+if [[ "$RL_MODE" == "recovered_policy" ]]; then
+  export PAINTER_FROZEN_SFT_ADAPTER="$(cd "$FROZEN_ADAPTER" && pwd -P)"
+fi
 export HF_TOKEN_PATH="${HF_TOKEN_PATH:-$ROOT/private/hf-token}"
 if [[ -z "${HF_TOKEN:-}" ]]; then
   HF_TOKEN="$(tr -d '\r\n' < "$HF_TOKEN_PATH")"
@@ -141,13 +177,29 @@ receipt = {
     "adapter_path": str(adapter),
     "manifest": str(Path(manifest).resolve()),
     "initialization": "trainer_exact_copy_and_inference_preload",
-    "live_policy_alias": "Prime served base-model name (reloaded in place)",
-    "frozen_sft_alias": os.environ.get("PAINTER_FROZEN_SFT_ALIAS", "sft-step512"),
+    "mode": os.environ.get("PAINTER_RL_MODE", "fresh"),
+    "live_policy_alias": os.environ.get("PAINTER_RL_LIVE_POLICY_ALIAS", str(model)),
+    "frozen_sft_alias": "sft-step512",
+    "frozen_checkpoint_sha256": "bea72b066986faa1b92b9dc539c710093181ee916b99323e2b2498f318ac1740",
+    "frozen_anchor_immutable": True,
     "optimizer_resume": False,
     "reward": "terminal_aesthetic_only; no speed reward",
 }
 Path(root, "initial-adapter-receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
 PY
+
+if [[ "$RL_MODE" == "recovered_policy" ]]; then
+  "$PYTHON" - "$FROZEN_ADAPTER" "$FROZEN_SFT_CHECKPOINT_SHA256" <<'PY'
+import hashlib
+import sys
+from pathlib import Path
+
+weight = Path(sys.argv[1]) / "adapter_model.safetensors"
+actual = hashlib.sha256(weight.read_bytes()).hexdigest()
+if actual != sys.argv[2]:
+    raise SystemExit("immutable frozen SFT adapter SHA-256 does not match the pinned step-512 anchor")
+PY
+fi
 
 if [[ ! -f "$CONFIG" ]]; then
   "$PYTHON" "$ROOT/prepare_rl_config.py" \
@@ -155,12 +207,57 @@ if [[ ! -f "$CONFIG" ]]; then
     --manifest "$(python3 -c 'import os,sys;print(os.path.relpath(sys.argv[1],sys.argv[2]))' "$MANIFEST" "$ROOT")" \
     --max-steps "$MAX_STEPS" --gpus-per-node "$GPUS_PER_NODE" \
     --num-train-gpus "$NUM_TRAIN_GPUS" --num-infer-gpus "$NUM_INFER_GPUS" \
-    --checkpoint-interval 8 --run-name "$RUN_NAME" --prime-root "$PRIME_ROOT" --validate-prime
+    --checkpoint-interval 8 --run-name "$RUN_NAME" --mode "$RL_MODE" \
+    --adapter-revision "$ADAPTER_REVISION" --adapter-prefix "$ADAPTER_PREFIX" \
+    --adapter-sha256 "$ADAPTER_SHA256" --prime-root "$PRIME_ROOT" --validate-prime
 fi
 [[ -f "$PAINTER_FROZEN_OPPONENT_CONFIG" ]] || {
   echo "frozen opponent operational config is missing: $PAINTER_FROZEN_OPPONENT_CONFIG" >&2
   exit 1
 }
+
+# Reusing a prepared config is safe only when its deployment roles and policy
+# initializer still match this invocation. This catches accidentally reusing
+# the old two-GPU/SFT-start config on the four-GPU recovered-policy node.
+"$PYTHON" - "$CONFIG" "$ROOT/rl-config-receipt.json" "$GPUS_PER_NODE" \
+  "$NUM_TRAIN_GPUS" "$NUM_INFER_GPUS" "$RL_MODE" "$ADAPTER_REVISION" \
+  "$ADAPTER_PREFIX" "$ADAPTER_SHA256" <<'PY'
+import json
+import sys
+import tomllib
+from pathlib import Path
+
+config_path, receipt_path, gpus, train, infer, mode, revision, prefix, sha = sys.argv[1:]
+raw = Path(config_path).read_bytes()
+config = json.loads(raw) if raw.lstrip().startswith(b"{") else tomllib.loads(raw.decode())
+deployment = config.get("deployment", {})
+expected = {"gpus_per_node": int(gpus), "num_train_gpus": int(train), "num_infer_gpus": int(infer)}
+actual = {key: deployment.get(key) for key in expected}
+if actual != expected:
+    raise SystemExit(f"config deployment roles do not match launcher: {actual} != {expected}")
+vllm = config.get("inference", {}).get("vllm", {})
+if vllm.get("tensor_parallel_size") != 1 or vllm.get("data_parallel_size") != int(infer):
+    raise SystemExit("config inference parallelism does not match independent inference role count")
+receipt = Path(receipt_path)
+if not receipt.is_file():
+    raise SystemExit(f"missing config receipt: {receipt}")
+metadata = json.loads(receipt.read_text())
+checks = {
+    "mode": mode,
+    "adapter_revision": revision,
+    "adapter_prefix": prefix,
+    "adapter_sha256": sha,
+}
+for key, value in checks.items():
+    if metadata.get(key) != value:
+        raise SystemExit(f"config receipt {key} does not match launcher")
+if metadata.get("frozen_anchor", {}).get("immutable") is not True:
+    raise SystemExit("frozen SFT anchor is not marked immutable")
+anchor = metadata.get("frozen_anchor", {})
+if anchor.get("alias") != "sft-step512" or anchor.get("checkpoint_sha256") != "bea72b066986faa1b92b9dc539c710093181ee916b99323e2b2498f318ac1740":
+    raise SystemExit("frozen SFT anchor identity is not the pinned step-512 checkpoint")
+print(json.dumps({"status": "config_roles_verified", **actual}, sort_keys=True))
+PY
 
 # Use the already-installed pinned package; this is dependency-free and does
 # not mutate the runtime lock.  Prime's own child processes inherit the same

@@ -1,0 +1,75 @@
+# Four-reference Gateway RL overfit, 2026-09-28
+
+Status: finite run started on a two-GPU Linux node. No optimizer update or visual
+improvement has been verified yet. This record distinguishes preparation from
+results; raw rollouts and images live outside Git.
+
+## Hypothesis and matched baseline
+
+On four fixed references (sphere, bus, flower, and one COCO dog photo), RL from
+the visually preferred Qwen3.8-27B SFT step-512 adapter should improve final
+p5.brush paintings against the same frozen adapter. A real improvement requires
+an actual optimizer step, changed adapter weights, and a matched render review
+with identical references, generation limits, and renderer. This is an overfit
+test, not a generalization claim. Quality is the only reward; speed reward is
+absent.
+
+Base model: `Qwen/Qwen3.8-27B` revision
+`1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0`. Initial and frozen adapter:
+public `CK0607/qwen3.8-27b-brush-painting/photo-curriculum-sft-20260922-balanced/step_512`,
+revision `adf687e5b321514eda7be6eab050434fdc8e44ff`, weight SHA-256
+`bea72b066986faa1b92b9dc539c710093181ee916b99323e2b2498f318ac1740`.
+Prime revision `26b3131d2716a4f8210b165df584b83b4bc54f61`.
+
+The four-row manifest is derived from the 134-row regenerated profile set,
+whose 48 procedural reference images were rendered from hash-checked p5.brush
+source programs. The immutable profile archive is [public and hash-verified](https://huggingface.co/datasets/CK0607/komorebi-painter-experiments/blob/main/runs/quality-oss-rl-20260927/profile-evidence.tar.gz)
+(archive SHA-256 `b48659cdedae0121b7a4388658d97d7a760acf5cf7f4e0fe9d9c5d9ce8a028d0`).
+Four-row manifest SHA-256: `58a5d1f06910d60d5b3e5726a1e73692a08d8739fc582847bf23e5fd7619c62a`.
+Its row IDs are `sc-v1-train-sphere-0099`, `sc-v1-train-bus-0189`,
+`sc-v1-train-flower-0199`, and `coco128-000000000490`.
+
+Two RTX PRO 6000 Blackwell GPUs at $2.38/hour are split trainer 1 and inference
+1. The node has a seven-hour automatic termination. The former four-GPU
+$4.76/hour profiling node was removed after its archive was independently
+downloaded and hash-verified from public Hugging Face. Combined GPU spend is
+tracked against the user's $25 GPU-only ceiling. Gateway API use is tracked
+separately.
+
+The prepared run is four updates, batch 8, group 4, at most four paint/inspect
+turns, 8,192 completion tokens, context 32,768, learning rate `1e-6`, and a
+public adapter checkpoint requested every update. Config SHA-256 and public
+checkpoint identifiers will be appended after verification. The executable
+medium remains p5.brush.
+
+## Judge and renderer checks
+
+The Vercel AI Gateway judge is `xiaomi/mimo-v2.6-flash`. It sees a single
+labeled contact sheet containing reference, A, and B, and returns weaknesses
+for both paintings. The contact sheet fixed an observed A/B reversal on bus
+and ribbons controls. One otherwise correct response used singular
+`weakness_A/B` keys; the parser normalizes these aliases before enforcing the
+closed preference schema. The queue smoke test scored both orientations,
+installed an image-hash-bound receipt, and verified a bus over wrong-subject
+control scored 1.0. Failed or uncertain judgments remain unscored. The
+format drift and controls are preserved on the node and should be included in
+the final evidence archive.
+
+The initial renderer profile found 48/48 valid procedural images, mean
+16.69 seconds per image and mean 14.42 seconds inside painting itself, with
+12 parallel workers on the old node. On the two-GPU node, 16 images took
+39 seconds at both eight and sixteen workers; eight workers lowered average
+individual painting time from 18.66 to 15.28 seconds. Chromium is using
+software SwiftShader WebGL; ANGLE GL and EGL probes did not obtain a WebGL
+context. These are renderer measurements, not full RL throughput. Profile
+actual rollout and trainer wait during the run before changing the renderer
+contract.
+
+## Decision after the run
+
+Record optimizer steps, gradient/update evidence, checkpoint upload and hash,
+accepted/excluded judgments, fixed-reference baseline versus trained wins,
+turn/token counts, GPU busy fractions over a stated window, and total GPU
+cost. Promote no adapter solely from reward or training loss. If the fixed
+set fails to improve, diagnose which of generation, rendering, judging,
+credit assignment, or optimizer/broadcast broke before expanding the data.

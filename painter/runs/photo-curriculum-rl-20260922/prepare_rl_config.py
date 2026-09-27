@@ -21,9 +21,6 @@ if str(REPO_ROOT) not in sys.path:
 
 from painter.prepare_scaled_native_rl import (  # noqa: E402
     DEFAULT_CHECKPOINT_INTERVAL,
-    DEFAULT_GPUS_PER_NODE,
-    DEFAULT_NUM_INFER_GPUS,
-    DEFAULT_NUM_TRAIN_GPUS,
     build_config as _build_native_config,
     render_toml,
     validate_with_prime,
@@ -34,6 +31,12 @@ RUN_NAME = "photo-curriculum-rl-20260922"
 PRIME_COMMIT = "26b3131d2716a4f8210b165df584b83b4bc54f61"
 BASE_MODEL_ID = "Qwen/Qwen3.8-27B"
 BASE_MODEL_REVISION = "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0"
+# Keep role counts explicit and operator-configurable. The historical two-GPU
+# default remains conservative while a four-GPU node can be selected with
+# --gpus-per-node 4 --num-train-gpus 1 --num-infer-gpus 3.
+DEFAULT_GPUS_PER_NODE = 2
+DEFAULT_NUM_TRAIN_GPUS = 1
+DEFAULT_NUM_INFER_GPUS = 1
 INITIAL_UPDATES = 32
 MAX_UPDATES = 128
 SEQ_LEN = 32_768
@@ -57,6 +60,34 @@ FROZEN_CHECKPOINT_SHA256 = "bea72b066986faa1b92b9dc539c710093181ee916b99323e2b24
 FROZEN_PROTOCOL_VERSION = "native-painting-rl-v1"
 FROZEN_RENDER_PROTOCOL = "native-painting-v1"
 FROZEN_GENERATOR = "frozen_opponent:generate_frozen_opponent"
+DEFAULT_MODE = "fresh"
+DEFAULT_ADAPTER_REVISION = ""
+DEFAULT_ADAPTER_PREFIX = ""
+DEFAULT_ADAPTER_SHA256 = ""
+
+
+def _sha256(value: str, *, name: str, required: bool = True) -> str:
+    if not isinstance(value, str) or (required and not value):
+        raise ValueError(f"{name} must be a lowercase SHA-256")
+    if not value and not required:
+        return value
+    if len(value) != 64 or any(char not in "0123456789abcdef" for char in value):
+        raise ValueError(f"{name} must be a lowercase SHA-256")
+    return value
+
+
+def _adapter_identity(*, mode: str, revision: str, prefix: str, sha256: str) -> dict[str, str]:
+    if mode not in {"fresh", "recovered_policy"}:
+        raise ValueError("mode must be fresh or recovered_policy")
+    if not isinstance(revision, str) or not revision:
+        raise ValueError("adapter_revision is required")
+    if not isinstance(prefix, str) or not prefix or prefix.startswith("/"):
+        raise ValueError("adapter_prefix must be a non-empty repository-relative path")
+    return {
+        "revision": revision,
+        "prefix": prefix,
+        "sha256": _sha256(sha256, name="adapter_sha256"),
+    }
 
 
 def _positive_int(name: str, value: int) -> int:
@@ -77,6 +108,15 @@ def build_config(
     checkpoint_interval: int = CHECKPOINT_INTERVAL,
     run_name: str = RUN_NAME,
     expected_count: int = EXPECTED_COUNT,
+    mode: str = DEFAULT_MODE,
+    adapter_revision: str = DEFAULT_ADAPTER_REVISION,
+    adapter_prefix: str = DEFAULT_ADAPTER_PREFIX,
+    adapter_sha256: str = DEFAULT_ADAPTER_SHA256,
+    batch_size: int = BATCH_SIZE,
+    group_size: int = GROUP_SIZE,
+    max_turns: int = MAX_TURNS,
+    max_completion_tokens: int = MAX_COMPLETION_TOKENS,
+    learning_rate: float = LEARNING_RATE,
 ) -> dict:
     """Return the validated-shape native RL config for this run."""
 
@@ -89,6 +129,14 @@ def build_config(
     if not isinstance(manifest, str) or not manifest or Path(manifest).is_absolute():
         raise ValueError("manifest must be a non-empty relative path")
     expected_count = _positive_int("expected_count", expected_count)
+    batch_size = _positive_int("batch_size", batch_size)
+    group_size = _positive_int("group_size", group_size)
+    max_turns = _positive_int("max_turns", max_turns)
+    max_completion_tokens = _positive_int("max_completion_tokens", max_completion_tokens)
+    if batch_size % group_size:
+        raise ValueError("batch_size must be divisible by group_size")
+    if not 0 < learning_rate <= 1e-4:
+        raise ValueError("learning_rate must be in (0, 1e-4]")
 
     config = _build_native_config(
         model=model,
@@ -106,23 +154,28 @@ def build_config(
     config["seq_len"] = SEQ_LEN
     config["trainer"]["max_steps"] = max_steps
     config["trainer"]["model"]["seq_len"] = SEQ_LEN
-    config["trainer"]["optim"]["lr"] = LEARNING_RATE
-    config["orchestrator"]["batch_size"] = BATCH_SIZE
-    config["orchestrator"]["group_size"] = GROUP_SIZE
+    config["trainer"]["optim"]["lr"] = learning_rate
+    config["orchestrator"]["batch_size"] = batch_size
+    config["orchestrator"]["group_size"] = group_size
     config["orchestrator"]["seq_len"] = SEQ_LEN
     config["orchestrator"]["max_steps"] = max_steps
     config["orchestrator"]["max_off_policy_steps"] = 1
+    inference_slots = num_infer_gpus * VLLM_MAX_NUM_SEQS
+    initial_inflight = max(
+        batch_size,
+        ((inference_slots + batch_size - 1) // batch_size) * batch_size,
+    )
     config["orchestrator"]["concurrency"] = {
-        "min_inflight": BATCH_SIZE,
-        "initial_inflight": BATCH_SIZE,
-        # Keep one decode batch active while the preceding batch waits for
-        # bounded judge receipts.  vLLM still admits at most BATCH_SIZE
-        # sequences; the smaller serving cap keeps long-context requests from
-        # thrashing while the orchestrator's pending window overlaps scoring.
-        "max_inflight": BATCH_SIZE * 2,
+        "min_inflight": batch_size,
+        # Keep one complete decode window plus one training batch active while
+        # the preceding batch waits for bounded judge receipts. With three
+        # inference replicas at max_num_seqs=16 this resolves to 64/96; the
+        # one-GPU default remains the historical 32/64 shape.
+        "initial_inflight": initial_inflight,
+        "max_inflight": initial_inflight + batch_size,
     }
     sampling = config["orchestrator"]["train"]["sampling"]
-    sampling["max_completion_tokens"] = MAX_COMPLETION_TOKENS
+    sampling["max_completion_tokens"] = max_completion_tokens
     source = config["orchestrator"]["train"]["source"][0]
     source["env"]["agent"]["timeout"].update(
         {
@@ -135,7 +188,7 @@ def build_config(
         {
             "manifest": manifest,
             "expected_count": expected_count,
-            "max_turns": MAX_TURNS,
+            "max_turns": max_turns,
             "policy_label": "training",
             "output_root": "rl-rollouts",
             "preserve_manifest_order": True,
@@ -149,13 +202,19 @@ def build_config(
             "opponent_seed": 20260922,
             "opponent_generator": FROZEN_GENERATOR,
             "opponent_lock_timeout_seconds": OPPONENT_LOCK_TIMEOUT_SECONDS,
-            "opponent_max_completion_tokens": MAX_COMPLETION_TOKENS,
+            "opponent_max_completion_tokens": max_completion_tokens,
             "opponent_context_length": SEQ_LEN,
         }
     )
     config["inference"]["vllm"].update(
         {
             "max_model_len": SEQ_LEN,
+            # Prime's pinned RLConfig maps each inference GPU to one vLLM DP
+            # replica when tensor parallelism is one. Write the resolved
+            # values explicitly so a four-GPU role split cannot silently fall
+            # back to one server after config composition.
+            "tensor_parallel_size": 1,
+            "data_parallel_size": num_infer_gpus,
             "max_num_seqs": VLLM_MAX_NUM_SEQS,
             "max_num_batched_tokens": SEQ_LEN,
             # Keep the immutable SFT anchor resident alongside Prime's live
@@ -208,6 +267,15 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--checkpoint-interval", type=int, default=CHECKPOINT_INTERVAL)
     parser.add_argument("--run-name", default=RUN_NAME)
     parser.add_argument("--expected-count", type=int, default=EXPECTED_COUNT)
+    parser.add_argument("--batch-size", type=int, default=BATCH_SIZE)
+    parser.add_argument("--group-size", type=int, default=GROUP_SIZE)
+    parser.add_argument("--max-turns", type=int, default=MAX_TURNS)
+    parser.add_argument("--max-completion-tokens", type=int, default=MAX_COMPLETION_TOKENS)
+    parser.add_argument("--learning-rate", type=float, default=LEARNING_RATE)
+    parser.add_argument("--mode", choices=("fresh", "recovered_policy"), default=DEFAULT_MODE)
+    parser.add_argument("--adapter-revision", default=DEFAULT_ADAPTER_REVISION)
+    parser.add_argument("--adapter-prefix", default=DEFAULT_ADAPTER_PREFIX)
+    parser.add_argument("--adapter-sha256", default=DEFAULT_ADAPTER_SHA256)
     parser.add_argument("--prime-root", type=Path)
     parser.add_argument("--validate-prime", action="store_true")
     return parser
@@ -215,6 +283,12 @@ def _parser() -> argparse.ArgumentParser:
 
 def main(argv: list[str] | None = None) -> int:
     args = _parser().parse_args(argv)
+    adapter = _adapter_identity(
+        mode=args.mode,
+        revision=args.adapter_revision,
+        prefix=args.adapter_prefix,
+        sha256=args.adapter_sha256,
+    )
     config = build_config(
         model=args.model,
         run_root=args.run_root,
@@ -226,6 +300,15 @@ def main(argv: list[str] | None = None) -> int:
         checkpoint_interval=args.checkpoint_interval,
         run_name=args.run_name,
         expected_count=args.expected_count,
+        mode=args.mode,
+        adapter_revision=args.adapter_revision,
+        adapter_prefix=args.adapter_prefix,
+        adapter_sha256=args.adapter_sha256,
+        batch_size=args.batch_size,
+        group_size=args.group_size,
+        max_turns=args.max_turns,
+        max_completion_tokens=args.max_completion_tokens,
+        learning_rate=args.learning_rate,
     )
     message = write_config(args.output, config, validate_prime=args.validate_prime, prime_root=args.prime_root)
     receipt = {
@@ -238,21 +321,44 @@ def main(argv: list[str] | None = None) -> int:
         "initial_updates": INITIAL_UPDATES,
         "max_updates": MAX_UPDATES,
         "max_steps": args.max_steps,
-        "batch_size": BATCH_SIZE,
-        "group_size": GROUP_SIZE,
+        "batch_size": args.batch_size,
+        "group_size": args.group_size,
+        "gpus_per_node": args.gpus_per_node,
+        "num_train_gpus": args.num_train_gpus,
+        "num_infer_gpus": args.num_infer_gpus,
+        "inference_tensor_parallel_size": 1,
+        "inference_data_parallel_size": args.num_infer_gpus,
+        "initial_inflight": config["orchestrator"]["concurrency"]["initial_inflight"],
+        "max_inflight": config["orchestrator"]["concurrency"]["max_inflight"],
         "vllm_max_num_seqs": VLLM_MAX_NUM_SEQS,
-        "max_turns": MAX_TURNS,
+        "max_turns": args.max_turns,
         "seq_len": SEQ_LEN,
-        "max_completion_tokens": MAX_COMPLETION_TOKENS,
+        "max_completion_tokens": args.max_completion_tokens,
         "rollout_timeout_seconds": ROLLOUT_TIMEOUT_SECONDS,
         "scoring_timeout_seconds": SCORING_TIMEOUT_SECONDS,
         "episode_timeout_seconds": EPISODE_TIMEOUT_SECONDS,
         "frozen_episode_timeout_seconds": FROZEN_EPISODE_TIMEOUT_SECONDS,
         "opponent_lock_timeout_seconds": OPPONENT_LOCK_TIMEOUT_SECONDS,
-        "learning_rate": LEARNING_RATE,
+        "learning_rate": args.learning_rate,
         "checkpoint_interval": args.checkpoint_interval,
         "reward": "terminal_aesthetic_only; no speed reward",
         "prime_validation": message,
+        "mode": args.mode,
+        "initialization": "fresh_optimizer_from_recovered_policy_adapter" if args.mode == "recovered_policy" else "fresh_optimizer_from_declared_adapter",
+        "optimizer_resume": False,
+        "adapter_revision": adapter["revision"],
+        "adapter_prefix": adapter["prefix"],
+        "adapter_sha256": adapter["sha256"],
+        "frozen_anchor": {
+            "alias": FROZEN_ALIAS,
+            "checkpoint_sha256": FROZEN_CHECKPOINT_SHA256,
+            "immutable": True,
+        },
+        "deployment": {
+            "gpus_per_node": args.gpus_per_node,
+            "num_train_gpus": args.num_train_gpus,
+            "num_infer_gpus": args.num_infer_gpus,
+        },
     }
     args.output.with_name("rl-config-receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
     print(json.dumps({"output": str(args.output.resolve()), "prime_validation": message}))

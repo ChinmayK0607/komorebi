@@ -48,6 +48,18 @@ def _adapter_path() -> Path:
     return path
 
 
+def _frozen_adapter_path(*, required: bool) -> Path | None:
+    value = os.environ.get("PAINTER_FROZEN_SFT_ADAPTER")
+    if not value:
+        if required:
+            raise ValueError("PAINTER_FROZEN_SFT_ADAPTER is required for a recovered-policy run")
+        return None
+    path = Path(value).resolve(strict=True)
+    if not (path / "adapter_model.safetensors").is_file():
+        raise ValueError("PAINTER_FROZEN_SFT_ADAPTER lacks adapter_model.safetensors")
+    return path
+
+
 def _request(url: str, *, payload: dict | None = None, timeout: float = 10.0) -> tuple[int, bytes]:
     data = None
     headers = {}
@@ -172,7 +184,14 @@ def _prewarm_frozen_opponent(
     return result
 
 
-def _wait_and_load(process, adapter: Path, *, base_url: str, aliases: tuple[str, ...]) -> None:
+def _wait_and_load(
+    process,
+    adapter: Path,
+    *,
+    base_url: str,
+    aliases: tuple[str, ...],
+    frozen_adapter: Path | None = None,
+) -> None:
     if not aliases or any(not alias for alias in aliases) or len(set(aliases)) != len(aliases):
         raise ValueError("initial adapter aliases must be non-empty and distinct")
     deadline = time.monotonic() + READY_TIMEOUT_SECONDS
@@ -193,6 +212,7 @@ def _wait_and_load(process, adapter: Path, *, base_url: str, aliases: tuple[str,
             raise TimeoutError(f"owned inference server did not become ready (last status {last_status!r})")
 
         for alias in aliases:
+            alias_adapter = frozen_adapter if alias == aliases[1] and frozen_adapter is not None else adapter
             load_deadline = time.monotonic() + LOAD_TIMEOUT_SECONDS
             while time.monotonic() < load_deadline:
                 if process.poll() is not None:
@@ -200,7 +220,7 @@ def _wait_and_load(process, adapter: Path, *, base_url: str, aliases: tuple[str,
                 try:
                     status, _ = _request(
                         base_url.rstrip("/") + "/load_lora_adapter",
-                        payload={"lora_name": alias, "lora_path": adapter.as_posix()},
+                        payload={"lora_name": alias, "lora_path": alias_adapter.as_posix()},
                         timeout=30.0,
                     )
                     if status == 200:
@@ -264,6 +284,8 @@ def main() -> None:
     import prime_rl.entrypoints.rl as entrypoint
 
     adapter = _adapter_path()
+    mode = os.environ.get("PAINTER_RL_MODE", "fresh")
+    frozen_adapter = _frozen_adapter_path(required=mode == "recovered_policy")
     root = Path(__file__).resolve().parent
     wrapper = Path(__file__).with_name("train_from_sft.py").resolve(strict=True)
     rl_config_path = _rl_config_path(sys.argv[1:])
@@ -290,7 +312,13 @@ def main() -> None:
             inference_started = True
             kwargs["env"] = _cache_env(root, "inference", environment)
             process = original(command, *args, **kwargs)
-            _wait_and_load(process, adapter, base_url=base_url, aliases=aliases)
+            _wait_and_load(
+                process,
+                adapter,
+                base_url=base_url,
+                aliases=aliases,
+                frozen_adapter=frozen_adapter,
+            )
             try:
                 _prewarm_frozen_opponent(rl_config_path)
             except Exception:

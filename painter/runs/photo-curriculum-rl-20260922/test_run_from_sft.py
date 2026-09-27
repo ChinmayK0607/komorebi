@@ -9,6 +9,7 @@ from tempfile import TemporaryDirectory
 import tomllib
 import unittest
 from types import SimpleNamespace
+from unittest.mock import patch
 
 
 ROOT = Path(__file__).resolve().parent
@@ -23,6 +24,37 @@ class PhotoRLRunnerTests(unittest.TestCase):
         self.assertEqual(MODULE._initial_aliases("/tmp/base", "sft-step512"), ("/tmp/base", "sft-step512"))
         with self.assertRaises(ValueError):
             MODULE._initial_aliases("/tmp/base", "/tmp/base")
+
+    def test_recovered_policy_loads_frozen_alias_from_distinct_adapter(self):
+        with TemporaryDirectory() as temp:
+            root = Path(temp)
+            live = root / "recovered"
+            frozen = root / "sft-step512"
+            for adapter in (live, frozen):
+                adapter.mkdir()
+                (adapter / "adapter_model.safetensors").write_bytes(adapter.name.encode())
+            calls = []
+
+            class Process:
+                returncode = None
+
+                def poll(self):
+                    return None
+
+            def request(_url, *, payload=None, timeout=10.0):
+                calls.append(payload)
+                return 200, b""
+
+            with patch.object(MODULE, "_request", side_effect=request):
+                MODULE._wait_and_load(
+                    Process(), live, base_url="http://127.0.0.1:8000",
+                    aliases=("/base", "sft-step512"), frozen_adapter=frozen,
+                )
+            self.assertEqual(calls[0], None)
+            self.assertEqual(calls[1]["lora_name"], "/base")
+            self.assertEqual(calls[1]["lora_path"], live.as_posix())
+            self.assertEqual(calls[2]["lora_name"], "sft-step512")
+            self.assertEqual(calls[2]["lora_path"], frozen.as_posix())
 
     def test_trainer_command_only_replaces_pinned_prime_child(self):
         command = [

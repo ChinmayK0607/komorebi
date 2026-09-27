@@ -38,6 +38,14 @@ class PhotoRLConfigTests(unittest.TestCase):
             "max_inflight": 64,
         })
         self.assertEqual(config["inference"]["vllm"]["max_num_seqs"], 16)
+        self.assertEqual(config["inference"]["vllm"]["tensor_parallel_size"], 1)
+        self.assertEqual(config["inference"]["vllm"]["data_parallel_size"], 1)
+        self.assertEqual(config["deployment"], {
+            "type": "single_node",
+            "gpus_per_node": 2,
+            "num_train_gpus": 1,
+            "num_infer_gpus": 1,
+        })
         source = config["orchestrator"]["train"]["source"][0]
         self.assertEqual(source["env"]["agent"]["timeout"], {
             "rollout": 7200,
@@ -54,6 +62,55 @@ class PhotoRLConfigTests(unittest.TestCase):
         self.assertEqual(taskset["max_turns"], 6)
         self.assertEqual(taskset["opponent_lock_timeout_seconds"], 4200)
         self.assertEqual(config["orchestrator"]["train"]["sampling"]["max_completion_tokens"], 8192)
+
+    def test_recovered_policy_metadata_is_explicit_and_anchor_is_separate(self):
+        config = MODULE.build_config(
+            model="/tmp/1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+            run_root=Path("/tmp/photo-rl"),
+            mode="recovered_policy",
+            adapter_revision="recovered-revision",
+            adapter_prefix="photo-curriculum-rl-20260922/step_8",
+            adapter_sha256="a" * 64,
+        )
+        self.assertEqual(config["deployment"]["num_infer_gpus"], 1)
+        self.assertEqual(config["orchestrator"]["group_size"], 8)
+        self.assertEqual(MODULE.FROZEN_ALIAS, "sft-step512")
+        self.assertNotEqual("recovered-policy", MODULE.FROZEN_ALIAS)
+        with self.assertRaisesRegex(ValueError, "adapter_revision"):
+            MODULE._adapter_identity(mode="recovered_policy", revision="", prefix="step_8", sha256="a" * 64)
+        with self.assertRaisesRegex(ValueError, "lowercase SHA-256"):
+            MODULE._adapter_identity(mode="recovered_policy", revision="r", prefix="step_8", sha256="A" * 64)
+
+    def test_four_gpu_role_split_is_supported_explicitly(self):
+        config = MODULE.build_config(
+            model="/tmp/model",
+            run_root=Path("/tmp/photo-rl"),
+            gpus_per_node=4,
+            num_train_gpus=1,
+            num_infer_gpus=3,
+        )
+        self.assertEqual(config["deployment"]["gpus_per_node"], 4)
+        self.assertEqual(config["deployment"]["num_train_gpus"], 1)
+        self.assertEqual(config["deployment"]["num_infer_gpus"], 3)
+        self.assertEqual(config["inference"]["vllm"]["data_parallel_size"], 3)
+        self.assertEqual(config["orchestrator"]["concurrency"]["initial_inflight"], 64)
+        self.assertEqual(config["orchestrator"]["concurrency"]["max_inflight"], 96)
+        parsed = tomllib.loads(MODULE.render_toml(config))
+        self.assertEqual(parsed["deployment"]["gpus_per_node"], 4)
+        self.assertEqual(parsed["inference"]["vllm"]["data_parallel_size"], 3)
+
+    def test_recovered_checkpoint_caps_are_explicitly_supported(self):
+        for cap in (24, 25):
+            config = MODULE.build_config(
+                model="/tmp/model",
+                run_root=Path("/tmp/photo-rl"),
+                max_steps=cap,
+                mode="recovered_policy",
+                adapter_revision="r",
+                adapter_prefix=f"step_{cap}",
+                adapter_sha256="b" * 64,
+            )
+            self.assertEqual(config["max_steps"], cap)
 
     def test_horizon_is_extensible_but_bounded(self):
         extended = MODULE.build_config(

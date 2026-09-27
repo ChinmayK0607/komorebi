@@ -16,6 +16,6 @@
     "foundation_lock.py": "cac75e5bf7f14898cbea5b5581062afd7cdf5db5497bd76cc5489dce807477d0",
     "vendor/integrations/watercolour/assets/p5.brush.js": "9c6e271a78e5dcb23c9cfa9d085775317fe5fb2188f976465c83c1f7965d1ec8",
     "vendor/integrations/watercolour/assets/p5.min.js": "87adc350e8ec0e9bced22d4f03c181bdd208dc997d3956ab3ec2e90537643c9a",
-    "vendor/integrations/watercolour/renderer.py": "ad7ba24d632f0f16989741560c3af0fe42e426275c1df01954b60ddd69b63395"
+    "vendor/integrations/watercolour/renderer.py": "6181fb904a0c5dcd580f5c3cb01eaf341a14b7a15479e811d99ebb10b70bc841"
   }
 }
