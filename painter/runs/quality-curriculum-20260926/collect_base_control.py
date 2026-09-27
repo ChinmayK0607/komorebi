@@ -41,6 +41,10 @@ def bundle(root: Path, output: Path) -> dict:
         if completion.get("status") != "completed" or completion.get("case_count") != 28:
             raise ValueError(f"incomplete {policy} evaluation")
         paths.extend(path for path in folder.rglob("*") if path.is_file() and "cache" not in path.parts)
+        render_tree = root / "painter/evaluation-rollouts" / f"base-control-{policy}"
+        if not render_tree.is_dir():
+            raise ValueError(f"missing saved canvases and programs for {policy}")
+        paths.extend(path for path in render_tree.rglob("*") if path.is_file())
     paths.extend(path for path in (root / "painter/eval-prep/references").iterdir() if path.is_file())
     adapters = root / "train-output" / RUN_NAME / "artifacts/adapters"
     for step in (0, 40, 80, 120, 160):
