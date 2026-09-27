@@ -1,0 +1,11 @@
+{
+  "anonymous_hash_verified": true,
+  "archive_bytes": 894335,
+  "archive_sha256": "a5165a1eb9b49d1293fef87b18d1e940d4dea7d4f63bfd5b25d3671501847f4b",
+  "count": 4,
+  "dataset": "CK0607/komorebi-painter-teachers",
+  "dataset_commit": "c9576537964d985382c48eab57b0a0dc357fd03a",
+  "manifest_sha256": "553d63827e1a375592149a41db6f801ce59c89fa5ad40de8763f9e39adc94473",
+  "path": "curricula/teacher600/brush-polish-four-20260927/source.tar.gz",
+  "schema": "painter.brush-polish-public.v1"
+}

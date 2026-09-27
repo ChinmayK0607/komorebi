@@ -287,6 +287,10 @@ def load_inputs(root: Path, *, model_ids: Sequence[str] | None = None, fetch_unk
     temperature = config.get("temperature", 0.7)
     if not isinstance(temperature, (int, float)) or not 0 <= float(temperature) <= 2:
         raise BenchmarkError("config.temperature must be between 0 and 2")
+    task_text_max_chars = config.get("task_text_max_chars", 4000)
+    if (not isinstance(task_text_max_chars, int) or isinstance(task_text_max_chars, bool)
+            or not 4000 <= task_text_max_chars <= 20000):
+        raise BenchmarkError("config.task_text_max_chars must be an integer from 4000 to 20000")
     references = refs_doc.get("references") if isinstance(refs_doc, dict) else None
     if not isinstance(references, list) or not references:
         raise BenchmarkError("refs.json must contain a non-empty references list")
@@ -315,8 +319,8 @@ def load_inputs(root: Path, *, model_ids: Sequence[str] | None = None, fetch_unk
         if actual != declared:
             raise BenchmarkError(f"reference hash mismatch for {ref_id}: expected {declared}, found {actual}")
         image_mime(image)
-        if "task_text" in item and (not isinstance(item["task_text"], str) or len(item["task_text"]) > 4000):
-            raise BenchmarkError(f"reference {ref_id}.task_text must be text of at most 4000 characters")
+        if "task_text" in item and (not isinstance(item["task_text"], str) or len(item["task_text"]) > task_text_max_chars):
+            raise BenchmarkError(f"reference {ref_id}.task_text must be text of at most {task_text_max_chars} characters")
         prior_value = item.get("prior_canvas")
         if prior_value is not None:
             if not isinstance(prior_value, str) or not prior_value or Path(prior_value).is_absolute():
