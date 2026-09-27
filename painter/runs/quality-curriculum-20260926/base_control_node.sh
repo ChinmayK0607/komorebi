@@ -15,13 +15,19 @@ python3 - "$RUN" <<'PY'
 import hashlib,json,pathlib,sys
 r=pathlib.Path(sys.argv[1]);m=json.loads((r/'data/mix-manifest.json').read_text())
 assert m['schema']=='painter.brush-sft-data.v1' and m['optimizer_steps']==160
+expected={'train':'5d74c7eacb31370a1befb42c8499d6775c1021f68d7fc889fe017b96bff3ec51',
+          'validation':'080535a0d8669401ac663ba1719b5839b9f5d9c20efd8440d778c35d96ed3735'}
+assert hashlib.sha256((r/'data/mix-manifest.json').read_bytes()).hexdigest()=='b94c8b568e84dd1831b9062aa4197cdf0dd01a58990339b4cfd832b37c3c5323'
 for split in ('train','validation'):
-    assert hashlib.sha256((r/'data'/f'{split}.jsonl').read_bytes()).hexdigest()==m['output_sha256'][split]
+    assert m['output_sha256'][split]==expected[split]
+    assert hashlib.sha256((r/'data'/f'{split}.jsonl').read_bytes()).hexdigest()==expected[split]
 print(json.dumps({'verified_data':True,'train_sha256':m['output_sha256']['train'],'steps':160}))
 PY
-bash "$RUN/bootstrap.sh" "$RUN"
+if [[ ! -f "$RUN/training-ready.json" ]]; then bash "$RUN/bootstrap.sh" "$RUN"; fi
 source "$RUN/env.sh"
-"$RUN/bootstrap/bin/python" "$RUN/stage_model.py"
+if [[ ! -f "$RUN/model-staging-receipt.json" ]]; then
+  "$RUN/bootstrap/bin/python" "$RUN/stage_model.py"
+fi
 "$RUN/bootstrap/bin/python" "$RUN/make_sft_config.py" \
   --data "$RUN/data" --model-path "$(cat "$RUN/model-path.txt")" \
   --output "$RUN/base-control.toml" --output-dir "$RUN/train-output" \
