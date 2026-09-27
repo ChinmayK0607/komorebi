@@ -5,6 +5,7 @@ set -Eeuo pipefail
 # must already exist; no GPU is allocated in --preflight mode.
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
 export PAINTER_REPO_ROOT="${PAINTER_REPO_ROOT:-$(cd "$ROOT/../../.." && pwd -P)}"
+export BRUSH_ROOT="${BRUSH_ROOT:-$PAINTER_REPO_ROOT/painter/rl_helpers}"
 export PRIME_ROOT="${PRIME_ROOT:-/root/painter/prime}"
 export MODEL_DIR="${MODEL_DIR:-/root/painter/model-cache/qwen/1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0}"
 export HF_TOKEN_PATH="${HF_TOKEN_PATH:-/root/painter/private/hf-token}"

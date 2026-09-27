@@ -39,8 +39,20 @@ separately.
 The prepared run is four updates, batch 8, group 4, at most four paint/inspect
 turns, 8,192 completion tokens, context 32,768, learning rate `1e-6`, and a
 public adapter checkpoint requested every update. Config SHA-256 and public
-checkpoint identifiers will be appended after verification. The executable
+checkpoint identifiers will be appended after verification. The prepared TOML
+config SHA-256 is `b1ae9ab26b065d890931c0b707783a4b13c68f27d0da31a9fc68a7156356697b`.
+The source commit `0e77820cbf592bc9a6f2fd24a20628bca2bdb128` was fetched
+into the node as a Git bundle; active Gateway source file hashes match it.
+The executable
 medium remains p5.brush.
+
+For a fresh Linux node, stage the HF token and Gateway `.env.local` as
+owner-only files under `/root/painter/private`, clone the committed repository,
+then run `bash painter/runs/quality-oss-rl-20260927/setup_node_once.sh`. It
+downloads and verifies public inputs, installs the pinned runtime, constructs
+the fixed manifest and config, and exits after a native preflight. Launch is
+the separate finite `bash painter/runs/quality-oss-rl-20260927/run_overfit.sh`.
+The private files are not part of the Git or Hugging Face artifacts.
 
 ## Judge and renderer checks
 
