@@ -14,12 +14,13 @@ from __future__ import annotations
 
 import json
 import math
+import os
 from typing import Any
 
 
-PROTOCOL_VERSION = "aesthetic-pairwise-v1"
-JUDGE_MODEL = "gpt-5.6-luna"
-REASONING_EFFORT = "low"
+PROTOCOL_VERSION = os.environ.get("PAINTER_JUDGE_PROTOCOL", "aesthetic-pairwise-v1")
+JUDGE_MODEL = os.environ.get("PAINTER_JUDGE_MODEL", "gpt-5.6-luna")
+REASONING_EFFORT = os.environ.get("PAINTER_JUDGE_EFFORT", "low")
 
 WINNERS = frozenset({"A", "B", "tie", "uncertain"})
 JUDGMENT_FIELDS = frozenset({
