@@ -14,7 +14,8 @@ def sha(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def build(*, manifest: Path, rollout_root: Path, outdir: Path, step: int) -> dict:
+def build(*, manifest: Path, rollout_root: Path, outdir: Path, step: int,
+          latest_episode: bool = False) -> dict:
     cases = json.loads(manifest.read_text())["cases"]
     if len(cases) != 4:
         raise ValueError("matched gallery requires exactly four cases")
@@ -32,9 +33,9 @@ def build(*, manifest: Path, rollout_root: Path, outdir: Path, step: int) -> dic
         record = {"id": case_id, "reference_sha256": case["reference_sha256"]}
         for policy, label in (("sft-step512", "SFT step 512"), (f"rl-step-{step}", f"RL step {step}")):
             episodes = [p for p in (rollout_root / policy / case_id).glob("*") if p.is_dir()]
-            if len(episodes) != 1:
+            if len(episodes) != 1 and not (latest_episode and episodes):
                 raise ValueError(f"expected one {policy} episode for {case_id}, found {len(episodes)}")
-            episode = episodes[0]
+            episode = max(episodes, key=lambda path: path.stat().st_mtime_ns) if latest_episode else episodes[0]
             turns = []
             for turn in sorted(episode.glob("turn-*"), key=lambda p: int(p.name.split("-")[-1])):
                 receipt = turn / "painting.json"
@@ -84,9 +85,12 @@ def main() -> None:
     parser.add_argument("--rollout-root", type=Path, required=True)
     parser.add_argument("--outdir", type=Path, required=True)
     parser.add_argument("--step", type=int, required=True)
+    parser.add_argument("--latest-episode", action="store_true",
+                        help="select the newest episode when a matched policy was rerun")
     args = parser.parse_args()
     report = build(manifest=args.manifest, rollout_root=args.rollout_root,
-                   outdir=args.outdir, step=args.step)
+                   outdir=args.outdir, step=args.step,
+                   latest_episode=args.latest_episode)
     print(json.dumps({"cases": len(report["rows"]), "gallery": str(args.outdir / "index.html")}))
 
 
