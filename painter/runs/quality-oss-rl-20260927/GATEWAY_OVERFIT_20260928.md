@@ -1,7 +1,8 @@
 # Four-reference Gateway RL overfit, 2026-09-28
 
-Status: finite run started on a two-GPU Linux node. No optimizer update or visual
-improvement has been verified yet. This record distinguishes preparation from
+Status: finite run active on a two-GPU Linux node. Two real optimizer updates
+completed and their adapters are public and hash-verified; matched visual
+improvement remains unverified. This record distinguishes preparation from
 results; raw rollouts and images live outside Git.
 
 ## Hypothesis and matched baseline
@@ -85,3 +86,33 @@ turn/token counts, GPU busy fractions over a stated window, and total GPU
 cost. Promote no adapter solely from reward or training loss. If the fixed
 set fails to improve, diagnose which of generation, rendering, judging,
 credit assignment, or optimizer/broadcast broke before expanding the data.
+
+## Interim run evidence, 2026-09-27 19:38 UTC
+
+The first two eight-episode batches were trainable 8/8, with no reported
+episode errors, cancellations, or truncations. Prime recorded optimizer step 1
+at 19:30:56 UTC (loss 0.0402, gradient norm 0.1089, 519 train tokens/s) and
+step 2 at 19:36:07 UTC (loss 0.0114, gradient norm 0.0613, 956 train tokens/s).
+The inference server acknowledged the step-1 adapter broadcast. The online
+reward summaries rose from 0.5000 to 0.6875, but these are small, stochastic
+training batches and do not establish a matched visual gain.
+
+[Step 1](https://huggingface.co/CK0607/qwen3.8-27b-brush-painting/tree/3a3a0e17f71d4225f81133b6559a8a1a80ba1b9e/gateway-overfit-four-20260928/step_1)
+is public with weight SHA-256
+`f7fff04e68ddaff229da87f4c8115521e0290a3936fff0490400e7313c43ea8f`;
+the upload receipt reports remote hash verification. An unauthenticated HTTP
+request to the step-1 adapter configuration returned 200. Step 2 upload was
+also reported public and verified; its immutable identity will be recorded
+after collection. The matched four-reference evaluation launcher passed a
+no-GPU preflight against step 1. It will be run against the last checkpoint
+after training exits.
+
+Renderer receipts across 73 actual rollout paintings averaged 15.76 seconds
+inside the painting stage. The standalone node profile completed 16 paintings
+in 39 seconds with eight workers, or about 0.41 paintings/second. The active
+policy has produced fewer than that per second while its inference GPU remains
+busy; renderer work is not yet demonstrated to be the full-pipeline bottleneck.
+The step-1 training interval included several minutes of idle trainer time
+while inference and judgment filled the first batch. Prime's model FLOPS
+utilization figures use an A100 fallback peak for the Blackwell card and
+should not be interpreted as measured full-pipeline utilization.
