@@ -1,9 +1,9 @@
 # Four-reference Gateway RL overfit, 2026-09-28
 
-Status: finite run active on a two-GPU Linux node. Two real optimizer updates
-completed and their adapters are public and hash-verified; matched visual
-improvement remains unverified. This record distinguishes preparation from
-results; raw rollouts and images live outside Git.
+Status: finite four-update run completed on a two-GPU Linux node. All four
+adapters are public and hash-verified; matched visual evaluation is running.
+Visual improvement remains unverified. This record distinguishes preparation
+from results; raw rollouts and images live outside Git.
 
 ## Hypothesis and matched baseline
 
@@ -116,3 +116,43 @@ The step-1 training interval included several minutes of idle trainer time
 while inference and judgment filled the first batch. Prime's model FLOPS
 utilization figures use an A100 fallback peak for the Blackwell card and
 should not be interpreted as measured full-pipeline utilization.
+
+## Completed training and throughput, 2026-09-27 19:52 UTC
+
+Four optimizer updates completed with nonzero gradient norms, a new adapter
+weight hash at each step, and live-policy broadcasts. The last public adapter
+is [step 4](https://huggingface.co/CK0607/qwen3.8-27b-brush-painting/tree/8e3e1b28c65b10d59bdf46c297141b7ab3995171/gateway-overfit-four-20260928/step_4),
+weight SHA-256
+`484d6ecf9396fd38b4b1fc3b4c7927f57b6f23cb5266652dac2d477c96728582`.
+The last online rollout batch had reward 0.5625 and 8/8 trainable episodes;
+the four batch rewards were 0.5000, 0.6875, 0.6250, and 0.5625. These values
+are stochastic and cannot rank the checkpoints by painting quality.
+
+Across 185 equally spaced telemetry samples from 19:20:30–19:51:22 UTC,
+inference GPU 0 averaged 98.2% utilization and was at least 50% busy on
+98.4% of samples. Trainer GPU 1 averaged 20.2% and was at least 50% busy on
+20.5%. These are sampled GPU engine activity fractions, not model FLOPS or
+end-to-end utilization. The inference stage was saturated while the trainer
+waited for batches; another inference replica would be more useful than
+optimizing trainer kernels. At step 3 the orchestrator discarded 12 of 20
+episodes as stale with `max_off_policy_steps=1` and about 22 in flight. This
+is a concrete waste to fix before scaling: reduce the in-flight window and
+benchmark fresh episodes per GPU-hour rather than merely keeping decoding
+busy.
+
+The rollout renderer produced receipts for 192 paint actions, of which 157
+were valid; the mean measured paint time was 14.97 seconds. Invalid actions
+were predominantly model JavaScript errors, not renderer service failures.
+Standalone rendering capacity was roughly 0.41 paintings/second with eight
+workers, higher than the observed end-to-end action rate. A renderer rewrite
+would not relieve the measured generation bottleneck in this run and would
+change the visual reward contract. The Gateway worker logged 95 requests for
+92 unique pair IDs: 92 labeled responses and three timeouts that were later
+retried. Its logged API cost was $0.06122. All four optimizer batches remained
+8/8 trainable. These counts include speculative work later discarded by Prime.
+
+The matched step-512 versus RL-step-4 evaluation uses four references, one
+rollout per policy and reference, seed 918200, temperature 1, an 8,192-token
+per-turn limit, four turns, and the same pinned renderer. Its gallery and
+two-orientation Gateway labels are pending; this small development set is an
+overfit check, not a held-out generalization test.

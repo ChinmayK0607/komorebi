@@ -99,6 +99,25 @@ class PhotoRLConfigTests(unittest.TestCase):
         self.assertEqual(parsed["deployment"]["gpus_per_node"], 4)
         self.assertEqual(parsed["inference"]["vllm"]["data_parallel_size"], 3)
 
+    def test_bounded_inflight_can_limit_stale_speculation(self):
+        config = MODULE.build_config(
+            model="/tmp/model", run_root=Path("/tmp/photo-rl"),
+            batch_size=8, group_size=4,
+            initial_inflight=8, max_inflight=12,
+        )
+        self.assertEqual(config["orchestrator"]["concurrency"], {
+            "min_inflight": 8, "initial_inflight": 8, "max_inflight": 12,
+        })
+        self.assertEqual(config["orchestrator"]["max_off_policy_steps"], 1)
+        with self.assertRaisesRegex(ValueError, "inflight bounds"):
+            MODULE.build_config(model="/tmp/model", run_root=Path("/tmp/photo-rl"),
+                                batch_size=8, group_size=4,
+                                initial_inflight=8, max_inflight=4)
+        with self.assertRaisesRegex(ValueError, "divisible"):
+            MODULE.build_config(model="/tmp/model", run_root=Path("/tmp/photo-rl"),
+                                batch_size=8, group_size=4,
+                                initial_inflight=8, max_inflight=10)
+
     def test_recovered_checkpoint_caps_are_explicitly_supported(self):
         for cap in (24, 25):
             config = MODULE.build_config(

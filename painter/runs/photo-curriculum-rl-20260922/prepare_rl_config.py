@@ -117,6 +117,8 @@ def build_config(
     max_turns: int = MAX_TURNS,
     max_completion_tokens: int = MAX_COMPLETION_TOKENS,
     learning_rate: float = LEARNING_RATE,
+    initial_inflight: int | None = None,
+    max_inflight: int | None = None,
 ) -> dict:
     """Return the validated-shape native RL config for this run."""
 
@@ -161,18 +163,28 @@ def build_config(
     config["orchestrator"]["max_steps"] = max_steps
     config["orchestrator"]["max_off_policy_steps"] = 1
     inference_slots = num_infer_gpus * VLLM_MAX_NUM_SEQS
-    initial_inflight = max(
-        batch_size,
-        ((inference_slots + batch_size - 1) // batch_size) * batch_size,
-    )
+    if initial_inflight is None:
+        initial_inflight = max(
+            batch_size,
+            ((inference_slots + batch_size - 1) // batch_size) * batch_size,
+        )
+    else:
+        initial_inflight = _positive_int("initial_inflight", initial_inflight)
+    if max_inflight is None:
+        max_inflight = initial_inflight + batch_size
+    else:
+        max_inflight = _positive_int("max_inflight", max_inflight)
+    if initial_inflight < batch_size or max_inflight < initial_inflight:
+        raise ValueError("inflight bounds must satisfy batch_size <= initial_inflight <= max_inflight")
+    if initial_inflight % group_size or max_inflight % group_size:
+        raise ValueError("inflight bounds must be divisible by group_size")
     config["orchestrator"]["concurrency"] = {
         "min_inflight": batch_size,
-        # Keep one complete decode window plus one training batch active while
-        # the preceding batch waits for bounded judge receipts. With three
-        # inference replicas at max_num_seqs=16 this resolves to 64/96; the
-        # one-GPU default remains the historical 32/64 shape.
+        # The default keeps one decode window plus one training batch active.
+        # The explicit bounds allow a measured run to trade some concurrency
+        # for fewer stale episodes without changing the off-policy limit.
         "initial_inflight": initial_inflight,
-        "max_inflight": initial_inflight + batch_size,
+        "max_inflight": max_inflight,
     }
     sampling = config["orchestrator"]["train"]["sampling"]
     sampling["max_completion_tokens"] = max_completion_tokens
@@ -272,6 +284,8 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--max-turns", type=int, default=MAX_TURNS)
     parser.add_argument("--max-completion-tokens", type=int, default=MAX_COMPLETION_TOKENS)
     parser.add_argument("--learning-rate", type=float, default=LEARNING_RATE)
+    parser.add_argument("--initial-inflight", type=int)
+    parser.add_argument("--max-inflight", type=int)
     parser.add_argument("--mode", choices=("fresh", "recovered_policy"), default=DEFAULT_MODE)
     parser.add_argument("--adapter-revision", default=DEFAULT_ADAPTER_REVISION)
     parser.add_argument("--adapter-prefix", default=DEFAULT_ADAPTER_PREFIX)
@@ -309,6 +323,8 @@ def main(argv: list[str] | None = None) -> int:
         max_turns=args.max_turns,
         max_completion_tokens=args.max_completion_tokens,
         learning_rate=args.learning_rate,
+        initial_inflight=args.initial_inflight,
+        max_inflight=args.max_inflight,
     )
     message = write_config(args.output, config, validate_prime=args.validate_prime, prime_root=args.prime_root)
     receipt = {
