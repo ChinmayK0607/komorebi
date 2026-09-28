@@ -20,6 +20,7 @@ SECRET_PATTERNS = (
     re.compile(rb"AI_GATEWAY_API_KEY"),
     re.compile(rb"Authorization:\s*Bearer", re.I),
     re.compile(rb"sk-or-v1-[A-Za-z0-9]{20,}"),
+    re.compile(rb"vck_[A-Za-z0-9]{20,}"),
     re.compile(rb"hf_[A-Za-z0-9]{20,}"),
 )
 
