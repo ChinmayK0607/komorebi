@@ -1,6 +1,7 @@
 # Four-scene recovery and in-flight test, 2026-09-28
 
-Status: prepared locally; no new GPU run or API calibration result yet.
+Status: finite 8/12 in-flight GPU run launched at 2026-09-28 00:18 UTC;
+subject-first API calibration is running separately. No visual result yet.
 
 ## Question and matched baseline
 
@@ -24,7 +25,12 @@ Base Qwen3.8-27B revision is `1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0`;
 Prime revision is `26b3131d2716a4f8210b165df584b83b4bc54f61`.
 The four-row data manifest SHA-256 is
 `58a5d1f06910d60d5b3e5726a1e73692a08d8739fc582847bf23e5fd7619c62a`.
-Record the new source commit and native TOML hash before launch.
+The launched source commit is
+`65f679b01418b2f87dca55276a53e940edc2aea6`; the native TOML SHA-256 is
+`8ec44fed5e4314e83c7fe9020e6aeb9a90ed6d78802b62032df03755f3be192b`.
+Prime's pinned config validator accepted batch 8/group 4 and the exact
+concurrency values `min_inflight=8`, `initial_inflight=8`, `max_inflight=12`.
+Native task serialization and the node preflight passed before training.
 
 ## Concrete changes before spending
 
