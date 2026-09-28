@@ -64,7 +64,11 @@ promoted. Among 82 training-attempt traces, 38 were visually scored, 32 had
 no valid canvas, and 12 failed due to renderer deadlines. The invalid
 programs include missing code blocks and JavaScript syntax errors; this is
 not explained by the 8192-token ceiling, as only one invalid model call ended
-at length.
+at length. The first attempt's [public evidence archive](https://huggingface.co/datasets/CK0607/komorebi-painter-experiments/blob/676d60b189df2cff02459138fdb9682efb85ba5f/runs/text-pairwise-rl-20260928/first-step4-evidence.tar.gz)
+contains 768 screened files (48.4 MB), including frozen prompts/anchors,
+rollouts, traces, judge receipts, validation summaries, and telemetry. Its
+anonymously verified SHA-256 is
+`9359749a69aad9724b4548bcc884d9e3de87798b8d707ac20dbaa90498cf1eef`.
 
 A second attempt starts from the same step-512 adapter, frozen 40-row train
 manifest, and visual comparator. Its only reward-path repair classifies a
