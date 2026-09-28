@@ -124,6 +124,14 @@ def _view(*, key: str, brief: str, a: Path, b: Path) -> dict:
     }
 
 
+async def _view_with_parse_retry(*, key: str, brief: str, a: Path, b: Path) -> dict:
+    """Retry one malformed provider answer; never turn it into a visual loss."""
+    try:
+        return await asyncio.to_thread(_view, key=key, brief=brief, a=a, b=b)
+    except ValueError:
+        return await asyncio.to_thread(_view, key=key, brief=brief, a=a, b=b)
+
+
 async def judge_pair(*, brief: Path, anchor: Path, candidate: Path, key_file: Path) -> dict:
     for path in (brief, anchor, candidate):
         if not path.is_file() or path.is_symlink():
@@ -137,8 +145,8 @@ async def judge_pair(*, brief: Path, anchor: Path, candidate: Path, key_file: Pa
                 "candidate_sha256": digest(candidate), "views": []}
     key = load_key(key_file)
     first, second = await asyncio.gather(
-        asyncio.to_thread(_view, key=key, brief=text, a=anchor, b=candidate),
-        asyncio.to_thread(_view, key=key, brief=text, a=candidate, b=anchor),
+        _view_with_parse_retry(key=key, brief=text, a=anchor, b=candidate),
+        _view_with_parse_retry(key=key, brief=text, a=candidate, b=anchor),
     )
     values = {"A": 0.0, "B": 1.0, "tie": 0.5}
     score = (values[first["label"]["winner"]]

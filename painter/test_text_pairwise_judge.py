@@ -45,6 +45,37 @@ class TextPairwiseJudgeTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "weaknesses_B"):
             judge._label('{"winner":"A","reason":"clearer pear","weaknesses_A":["flat"]}')
 
+    def test_malformed_provider_view_gets_one_retry_without_becoming_a_loss(self):
+        with TemporaryDirectory() as temp:
+            root = Path(temp)
+            brief = root / "brief.txt"
+            brief.write_text("Paint a pear.\n")
+            anchor, candidate = root / "sft.png", root / "rl.png"
+            Image.new("RGB", (20, 20), "red").save(anchor)
+            Image.new("RGB", (20, 20), "blue").save(candidate)
+            key_file = root / "gateway.env"
+            key_file.write_text("AI_GATEWAY_API_KEY=dummy-for-offline-test\n")
+            key_file.chmod(0o600)
+            calls = {"forward": 0}
+
+            def fake_view(*, key, brief, a, b):
+                if a == anchor:
+                    calls["forward"] += 1
+                    if calls["forward"] == 1:
+                        raise ValueError("provider returned malformed JSON")
+                    winner = "B"
+                else:
+                    winner = "A"
+                return {"label": {"winner": winner}}
+
+            with patch.object(judge, "_view", side_effect=fake_view) as mocked:
+                result = asyncio.run(judge.judge_pair(
+                    brief=brief, anchor=anchor, candidate=candidate,
+                    key_file=key_file,
+                ))
+            self.assertEqual(mocked.call_count, 3)
+            self.assertEqual(result["score"], 1.0)
+
 
 if __name__ == "__main__":
     unittest.main()
