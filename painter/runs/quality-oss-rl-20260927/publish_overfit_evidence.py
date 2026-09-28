@@ -32,8 +32,9 @@ def select(root: Path, step: int, run_name: str = "gateway-overfit-four-20260928
         raise ValueError("unsafe run name")
     run = root / "async-output" / run_name
     matched = root / f"matched-eval-step-{step}"
+    config_name = "native-rl-window.toml" if run_name == "gateway-overfit-window-20260928" else "native-rl-overfit-four.toml"
     required = [root / "profile-data/overfit-four-manifest.json",
-                root / "native-rl-overfit-four.toml",
+                root / config_name,
                 matched / "identity.json", matched / "cases.json",
                 matched / "completion.json", matched / "review/index.html",
                 matched / "review/report.json", matched / "review/judge.json"]
