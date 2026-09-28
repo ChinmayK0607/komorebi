@@ -1,7 +1,7 @@
 # Eight-candidate relative-quality RL diagnostic
 
-Status: eight-candidate clean retry running; first optimizer update completed.
-The matched visual comparison and final cost are pending.
+Status: evaluated; retain SFT step 512. Public evidence verified and GPU node
+released.
 
 ## Hypothesis and matched baseline
 
@@ -100,8 +100,8 @@ four valid final canvases, and a real two-orientation relative-rank audit.
 All seven traces had nonzero sampled-token advantages. The two rankings
 agreed exactly on four valid horse paintings. One subsequent group was only
 partially complete. The 251 MB output, raw rollouts, judge receipts, telemetry,
-and group audit remain separately preserved on the node as an interrupted
-attempt; they are not a trained checkpoint.
+and group audit were preserved as an interrupted attempt before the public
+archive was made; they are not a trained checkpoint.
 
 The interruption was based on a mistaken diagnostic: reading `/proc/environ`
 after Prime changed its process title showed zeroed bytes, and the group audit
@@ -127,10 +127,9 @@ confirmed optimizer step one at 10:46:06 UTC: loss 0.0018, gradient norm
 0.0228, learning rate 1e-6, 600 training tokens/s, reported MFU 40.9%, and
 92.2 GiB peak memory. The inference GPU generated the next group while the
 trainer updated. The node's whole-life rental meter read $3.03 at 10:48 UTC;
-that includes setup and the interrupted attempt. Four updates, public
-checkpoints, matched evaluation, and final spend remain pending. The
-interrupted attempt's raw evidence will be included in the public audit,
-excluding a duplicate step-zero weight file.
+that includes setup and the interrupted attempt. The interrupted attempt's
+evidence was later included in the public audit, excluding the duplicate
+step-zero weight file and one inference log with a credential-like marker.
 
 Optimizer step two completed at 11:03:20 UTC with gradient norm 0.0378 and
 the same 1e-6 learning rate. Its 233,590,600-byte adapter is [public on Hugging
@@ -170,6 +169,67 @@ GPU 1 trainer. The pipeline was not saturated: the trainer spent most wall
 time awaiting rollouts and external judgments. The retry's logged Vercel
 terminal-pair calls cost $0.04479; ten group-ranking views cost $0.01148.
 The interrupted attempt adds $0.00469 terminal and $0.00107 group calls.
-These $0.06203 in logged provider usage exclude the pending matched-eval
-judge and do not assert a provider billing total. The node's rental meter
-read $4.39 at approximately 11:22 UTC; final rental spend is pending.
+These $0.06203 in logged provider usage exclude the matched-eval judge and do
+not assert a provider billing total.
+
+## Matched evaluation and decision
+
+Both policies completed ten matched four-turn episodes at sampling seed
+918200, up to 8,192 completion tokens per turn. The seven held-out photos
+were excluded from this run's nine-row training curriculum; the three
+procedural shapes were in the curriculum but never entered an accepted
+optimizer batch. Evaluation inputs and adapter hashes passed preflight. The
+[local paired gallery](local-evidence/review/index.html) retains every
+rendered turn and attempted program. Two-orientation MiMo Flash judging of
+final canvases gave, on held-out photos, SFT 3 wins, RL 1 win, two ties, and
+one censored case where neither policy made a valid canvas. On the three
+shapes it gave SFT 1 win and two ties. Total: **SFT 4, RL 1, four ties, one
+censored**. RL had one additional missing final canvas; SFT had none outside
+the shared censored case. This is a ten-case developmental comparison, not a
+population estimate.
+
+The visual review agrees with the direction of the judge: RL gives a clearer
+lizard and sink in photo 208, but loses the recognizable coffee-and-cake
+composition in photo 127 and has no valid kitchen canvas in photo 089. Its
+photo-127 turn three was a thin wireframe; turn four was a blank white image
+despite a render-valid receipt. That turn combined `brush.fill` with p5's
+`beginShape` after `noStroke`, leaving no visible painted shapes. This is a
+concrete action-semantics/visual-validity failure, not a parsing error.
+The simple shapes were visually close to SFT and provide no evidence of a
+quality gain. **Retain the frozen SFT step-512 adapter; do not promote RL
+step four.** Eight-way ranking fixed sparse token credit but did not make
+four photo-only optimizer updates generalize.
+
+The first final-gallery scorer used a 180-second provider timeout and wrote
+only a final aggregate; one timeout lost its completed paid responses. The
+replacement [resumable scorer](score_resumable.py) writes hash-bound receipts
+after each orientation, skips them on rerun, and uses a 360-second timeout.
+An offline cache-resume test passed locally and on the node. Its 16 saved
+views recorded $0.006293 of Gateway usage. The training attempts recorded
+$0.06203, so **$0.068323 is the observed lower bound on provider usage**;
+the first failed final-gallery pass has unmeasured calls and is not included
+in that figure.
+
+The full 1,920-file [public evidence archive](https://huggingface.co/datasets/CK0607/komorebi-painter-experiments/blob/98b4cfbdecee8699a78520c23c2784a21d90cebb/runs/quality-relative-rl-20260928/step-4-evidence.tar.gz)
+is 126,313,885 bytes, SHA-256
+`249eb93f32bf34f320ee1c60952949034616cff7343fd60d22f3c81f1088ed82`,
+and was anonymously re-downloaded and hash-checked on the node. A separate
+anonymous metadata check agreed with that SHA and size. It includes the
+matched images and labels, group-credit audits, Prime traces, worker logs,
+telemetry, and the recoverable interrupted attempt. The interrupted
+inference log was explicitly excluded for its credential-like marker.
+
+The two-GPU node cost **$6.39** from creation through removal, including
+setup, the interrupted attempt, four-step retry, matched evaluation, and
+archive upload. Its 10:10:37–11:24:38 UTC training-window utilization figures
+above exclude the evaluation interval. The prior campaign's recorded GPU
+spend lower bound was about $16.54, making the combined known lower bound
+about $22.93; historical completeness is not asserted. The node was removed,
+and `lium ps` returned an empty inventory. No scheduled watcher was created.
+
+Next research decision: preserve the SFT baseline, repair visual emptiness
+and p5-versus-p5.brush action semantics, and test enough distinct references
+per update before increasing group size again. The one-step off-policy queue
+discarded paid inference work; that policy/window must be addressed before
+another asynchronous scaled run. A larger group alone is not the missing
+quality intervention.
