@@ -13,10 +13,17 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from painter.native_painting_report import _trace_data, read_traces  # noqa: E402
-from painter.text_pairwise_judge import judge_pair  # noqa: E402
+from painter.text_pairwise_judge import judge_pair as binary_judge_pair  # noqa: E402
+from painter.text_pairwise_margin_judge import judge_pair as margin_judge_pair  # noqa: E402
 
 
-async def score(manifest: Path, eval_root: Path, output: Path, key_file: Path) -> dict:
+async def score(manifest: Path, eval_root: Path, output: Path, key_file: Path,
+                protocol: str = "text-paint-sft-pairwise-v1") -> dict:
+    judges = {"text-paint-sft-pairwise-v1": binary_judge_pair,
+              "text-paint-sft-pairwise-margin-v1": margin_judge_pair}
+    if protocol not in judges:
+        raise ValueError(f"unsupported judge protocol: {protocol}")
+    judge_pair = judges[protocol]
     cases = json.loads(manifest.read_text())["cases"]
     traces, errors, files = read_traces(eval_root)
     if errors or not files:
@@ -61,7 +68,7 @@ async def score(manifest: Path, eval_root: Path, output: Path, key_file: Path) -
     rows = await asyncio.gather(*(one(row) for row in cases))
     comparable = [row for row in rows if row["status"] in {"scored", "model_invalid"}]
     summary = {
-        "schema": "painter-text-pairwise-validation-v1",
+        "schema": "painter-text-pairwise-validation-v1", "protocol": protocol,
         "manifest": str(manifest), "eval_root": str(eval_root),
         "expected": len(cases), "comparable": len(comparable),
         "censored": sum(row["status"] == "censored" for row in rows),
@@ -83,6 +90,7 @@ def main() -> None:
     parser.add_argument("--eval-root", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--key-file", type=Path, required=True)
+    parser.add_argument("--protocol", default="text-paint-sft-pairwise-v1")
     args = parser.parse_args()
     result = asyncio.run(score(**vars(args)))
     print(json.dumps({key: value for key, value in result.items() if key != "rows"}, sort_keys=True))

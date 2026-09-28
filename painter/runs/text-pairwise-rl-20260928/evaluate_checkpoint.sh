@@ -96,4 +96,5 @@ env PYTHONPATH="$REPO/painter" PAINTER_LOCAL_API_KEY=local \
   bash -c 'cd "$1"; exec "$2" @ "$3" --no-serve --no-push' \
   _ "$PRIME_ROOT" "$EVAL" "$OUT/eval.toml" >"$OUT/logs/eval.log" 2>&1
 "$PY" "$RUN/score_validation.py" --manifest "$OUT/cases.json" \
-  --eval-root "$OUT/eval" --output "$OUT/comparison" --key-file "$KEY"
+  --eval-root "$OUT/eval" --output "$OUT/comparison" --key-file "$KEY" \
+  --protocol "${PAINTER_JUDGE_PROTOCOL:-text-paint-sft-pairwise-v1}"

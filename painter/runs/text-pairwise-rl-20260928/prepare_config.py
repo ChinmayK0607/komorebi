@@ -20,11 +20,15 @@ RUN_NAME = "text-pairwise-rl-20260928"
 
 def prepare(*, output: Path, model: Path, run_root: Path, manifest: Path,
             prime_root: Path | None = None, max_steps: int = 20,
-            run_name: str = RUN_NAME, output_root: str = "rl-rollouts") -> dict:
+            run_name: str = RUN_NAME, output_root: str = "rl-rollouts",
+            judge_protocol: str = "text-paint-sft-pairwise-v1") -> dict:
     if not run_name or "/" in run_name or "\\" in run_name:
         raise ValueError("run_name must be a simple non-empty name")
     if not output_root or "/" in output_root or "\\" in output_root:
         raise ValueError("output_root must be a simple non-empty name")
+    if judge_protocol not in {"text-paint-sft-pairwise-v1",
+                              "text-paint-sft-pairwise-margin-v1"}:
+        raise ValueError("unsupported text judge protocol")
     rows = json.loads(manifest.read_text())["rows"]
     if len(rows) != 40 or len({row["id"] for row in rows}) != 40:
         raise ValueError("expected 40 unique fixed-anchor training rows")
@@ -62,7 +66,7 @@ def prepare(*, output: Path, model: Path, run_root: Path, manifest: Path,
         "frozen_anchor": {"alias": "sft-step512", "immutable": True,
                           "checkpoint_sha256": "bea72b066986faa1b92b9dc539c710093181ee916b99323e2b2498f318ac1740"},
         "deployment": config["deployment"], "manifest": relative,
-        "reward": "text-paint-sft-pairwise-v1", "prime_validation": message,
+        "reward": judge_protocol, "prime_validation": message,
     }
     output.with_name("rl-config-receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
     return receipt
@@ -78,6 +82,7 @@ def main() -> None:
     parser.add_argument("--max-steps", type=int, default=20)
     parser.add_argument("--run-name", default=RUN_NAME)
     parser.add_argument("--output-root", default="rl-rollouts")
+    parser.add_argument("--judge-protocol", default="text-paint-sft-pairwise-v1")
     args = parser.parse_args()
     print(json.dumps(prepare(**vars(args)), sort_keys=True))
 

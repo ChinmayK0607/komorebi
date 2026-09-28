@@ -17,7 +17,7 @@ export PAINTER_GPUS_PER_NODE=2 PAINTER_NUM_TRAIN_GPUS=1 PAINTER_NUM_INFER_GPUS=1
 export PAINTER_RL_ADAPTER_REVISION=adf687e5b321514eda7be6eab050434fdc8e44ff
 export PAINTER_RL_ADAPTER_PREFIX=photo-curriculum-sft-20260922-balanced/step_512
 export PAINTER_RL_ADAPTER_SHA256=bea72b066986faa1b92b9dc539c710093181ee916b99323e2b2498f318ac1740
-export PAINTER_JUDGE_PROTOCOL=text-paint-sft-pairwise-v1
+export PAINTER_JUDGE_PROTOCOL="${PAINTER_JUDGE_PROTOCOL:-text-paint-sft-pairwise-v1}"
 export PAINTER_JUDGE_MODEL=xiaomi/mimo-v2.6-flash
 export PAINTER_JUDGE_EFFORT=gateway-default
 export PAINTER_RL_FIXED_OPPONENT=1
@@ -26,6 +26,13 @@ export PYTHONPATH="$PAINTER_REPO_ROOT/painter:$RUN${PYTHONPATH:+:$PYTHONPATH}"
 [[ -f "$PAINTER_RL_CONFIG" && -f "$PAINTER_RL_MANIFEST" ]] || {
   echo 'frozen anchors and RL config must exist before launch' >&2; exit 1;
 }
+python3 - "$RUN/rl-config-receipt.json" "$PAINTER_JUDGE_PROTOCOL" <<'PY'
+import json,sys
+from pathlib import Path
+receipt=json.loads(Path(sys.argv[1]).read_text())
+if receipt.get('reward') != sys.argv[2]:
+    raise SystemExit('judge protocol does not match prepared config receipt')
+PY
 [[ -f "$PAINTER_GATEWAY_ENV_FILE" && ! -L "$PAINTER_GATEWAY_ENV_FILE" ]] || {
   echo 'private Gateway key file missing' >&2; exit 1;
 }

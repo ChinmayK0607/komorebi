@@ -459,10 +459,22 @@ class NativePaintingRLTask(vf.Task[NativePaintingRLData, vf.State, vf.TaskConfig
             raise ValueError("reference cannot be used as the RL opponent")
 
         if self.data.reference_kind == "text":
+            text_protocol = os.environ.get(
+                "PAINTER_JUDGE_PROTOCOL", "text-paint-sft-pairwise-v1")
             try:
-                from painter.text_pairwise_judge import judge_pair
+                if text_protocol == "text-paint-sft-pairwise-margin-v1":
+                    from painter.text_pairwise_margin_judge import judge_pair
+                elif text_protocol == "text-paint-sft-pairwise-v1":
+                    from painter.text_pairwise_judge import judge_pair
+                else:
+                    raise ValueError(f"unsupported text judge protocol: {text_protocol}")
             except ImportError:
-                from text_pairwise_judge import judge_pair
+                if text_protocol == "text-paint-sft-pairwise-margin-v1":
+                    from text_pairwise_margin_judge import judge_pair
+                elif text_protocol == "text-paint-sft-pairwise-v1":
+                    from text_pairwise_judge import judge_pair
+                else:
+                    raise
             try:
                 result = await judge_pair(
                     brief=reference, anchor=opponent, candidate=candidate,

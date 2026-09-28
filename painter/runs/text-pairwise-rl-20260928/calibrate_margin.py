@@ -39,7 +39,7 @@ def cases(run: Path) -> list[dict]:
             ident = info.get("task_id")
             if ident in seen or ident not in train or not info.get("final_canvas_valid"):
                 continue
-            reward = trace.get("rewards", {}).get("final_canvas_aesthetic", {}).get("score")
+            reward = (trace.get("rewards", {}).get("final_canvas_aesthetic") or {}).get("score")
             if reward != 0:
                 continue
             row = train[ident]
