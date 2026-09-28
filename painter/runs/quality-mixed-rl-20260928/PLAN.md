@@ -1,7 +1,10 @@
 # Mixed-reference fixed-anchor RL, 2026-09-28
 
-Status: inputs public and independently hash verified; node launch pending.
-No quality result exists for this run yet.
+Status: inputs public and independently hash verified; node setup and Prime
+config preflight passed. Training has not launched and no quality result exists yet. The
+staged source commit is `a549955a9917a6c86f16b1f70cb036e501528143`;
+the transferred Git bundle SHA-256 is
+`da0ff6c52f626e5fb58ebfcf237c1e8a5191b6fb9a238c764f046fca2831adde`.
 
 ## Hypothesis and matched baseline
 
@@ -55,8 +58,15 @@ revision `1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0`, uses Prime RL at
 `26b3131d2716a4f8210b165df584b83b4bc54f61`, one trainer and one inference
 GPU, batch eight/group four, 12 optimizer updates, four turns, 8,192-token
 ceiling, LoRA learning rate `1e-6`, exact eight in-flight, and checkpoints at
-steps four, eight, and twelve. Record the actual generated TOML hash and
-source commit before launch. Each checkpoint must be public and hash verified.
+steps four, eight, and twelve. Record the actual generated TOML hash before
+launch. Each checkpoint must be public and hash verified.
+
+The node-generated native TOML SHA-256 is
+`5050f0f62e3d3262deebad5cd8b0ee5fe1e969c273bbe3d718e1f65b1e43ae78`.
+Prime's pinned validator accepted this config, and the native task preflight
+serialized a fixed-anchor photo row successfully. The inspected TOML has
+`min_inflight=initial_inflight=max_inflight=8`, batch eight/group four,
+12 steps, and 15 expected tasks. No training had started at this check.
 
 The combined campaign GPU spending observed before this run was at least
 about $10.70; this run plus evaluation and node setup must stay below the
