@@ -142,3 +142,34 @@ count and SHA-256. The second group had six valid canvases and five positive
 adjusted rewards, with nonzero token credit on all eight traces. This is not a
 held-out visual result. A separate copy of the small step-two upload receipt
 is retained on the node in case Prime prunes the local step-two directory.
+
+All four optimizer updates completed. Step four finished at 11:24:34 UTC with
+gradient norm 0.0277, then uploaded a [public adapter](https://huggingface.co/CK0607/qwen3.8-27b-brush-painting/tree/e85f7f9c5429cccc7d232cbab1efc4d997988720/quality-relative-eight-20260928/step_4),
+commit `e85f7f9c5429cccc7d232cbab1efc4d997988720`, weight SHA-256
+`abf4de4c4eb60ce5c3a3774273b3e5270ee4b621cf9efe62c1905372d6a2e823`.
+Anonymous repository and LFS metadata independently match the receipt. All
+four accepted batches had eight trainable traces and zero truncation. Their
+orchestrator reward means were 0.2812, 0.4688, 0.1562, and 0.3438; those
+nonmatched, changing-reference training values do not measure visual gain.
+The four accepted batch reward means match distinct audited photo references
+049, 572, 431, and 634 in that order. Photo 322 was also scored in a fifth
+group audit but did not enter an optimizer update. The trace stream contains
+partial or canceled sphere, bus, and photo-562 groups; no procedural shape
+entered the four accepted batches. After step two,
+Prime discarded eight stale queued traces and canceled two episodes at its
+one-step off-policy limit; step three reported 63.6% canceled episodes. The
+trainer exited after step four, but Prime's orchestrator remained in a
+zero-inflight drain loop. Its process group and the separate judge worker were
+terminated after both public checkpoint receipts were verified; no optimizer
+update was interrupted.
+
+During the 10:10:37–11:24:38 UTC training window, 445 ten-second samples gave
+94.7% average inference-GPU utilization (94.6% of samples above 80%) and
+12.7% average trainer-GPU utilization (12.4% above 80%). GPU 0 was inference,
+GPU 1 trainer. The pipeline was not saturated: the trainer spent most wall
+time awaiting rollouts and external judgments. The retry's logged Vercel
+terminal-pair calls cost $0.04479; ten group-ranking views cost $0.01148.
+The interrupted attempt adds $0.00469 terminal and $0.00107 group calls.
+These $0.06203 in logged provider usage exclude the pending matched-eval
+judge and do not assert a provider billing total. The node's rental meter
+read $4.39 at approximately 11:22 UTC; final rental spend is pending.

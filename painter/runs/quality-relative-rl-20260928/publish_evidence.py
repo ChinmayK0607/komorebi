@@ -37,7 +37,12 @@ def interrupted_files(interrupted: Path) -> list[tuple[Path, str]]:
         if source.is_dir():
             selected.extend((path, f"interrupted/{path.relative_to(interrupted).as_posix()}")
                             for path in source.rglob("*")
-                            if path.is_file() and path.suffix.lower() in ALLOWED)
+                            if path.is_file() and path.suffix.lower() in ALLOWED
+                            # This aborted attempt's inference log contains a
+                            # credential-like marker; retain it only on the
+                            # protected node, never in the public archive.
+                            and path.relative_to(interrupted).as_posix()
+                            != "async-output/logs/attempt_1/inference.log")
     for name in ("launch.log", "gateway-worker.log", "gpu-telemetry.csv"):
         path = interrupted / name
         if path.is_file():
