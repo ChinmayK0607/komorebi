@@ -114,6 +114,20 @@ cases, 13 valid candidates, 2 censored. A fourth attempt, named
 adapter with simple briefs first and started when GPU rental spend was $9.88.
 Its reward and checkpoint evaluations must use the margin protocol; old
 binary-judge validation scores are not comparable to it.
+The fourth attempt was stopped before an optimizer update after its training
+worker revealed a Python import-path error in the new judge module. Four
+visual scoring attempts failed as service errors; none were assigned visual
+losses. The fallback import was fixed at source commit `7777de8` and verified
+inside an isolated Prime-worker-style Python path, then by a real two-order
+MiMo judgment of an inspected seahorse pair (score 0.667, no order gap).
+The fifth attempt, `text-pairwise-margin-workerfix-20260928`, preserves the
+same frozen manifest, step-512 initializer, easy-to-hard order, graded
+pairwise protocol, and render-timeout classification. It passed preflight
+with the simple first brief. No margin-RL optimizer result is claimed yet.
+The three stopped attempts' partial rollouts, configs, raw traces, logs, and
+GPU telemetry are in a [public, anonymously hash-verified archive](https://huggingface.co/datasets/CK0607/komorebi-painter-experiments/blob/5d3e58d94c02b989de1df767d9ccc382736597bb/runs/text-pairwise-rl-20260928/stopped-attempts-evidence.tar.gz)
+of 299 screened files, SHA-256
+`4491bc4ee89c68d3d7a6566513f0baa3cf97ef3c8597c185aa93a2d9f89e3cd9`.
 Gateway usage reported $0.007977 for the 24 calibration image-order calls,
 $0.000351 for the two blank-control calls, and $0.008493 for 26 margin
 step-0 rescoring calls. These are receipt totals only; any failed/retried
