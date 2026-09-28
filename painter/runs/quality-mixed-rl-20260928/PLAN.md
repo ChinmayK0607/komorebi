@@ -211,3 +211,9 @@ another GPU. More inference capacity is useful only once the extra rollouts
 can enter useful gradients; this run's 24 GB three/four-card options could
 not host the pinned 27B trainer/inference split as configured, while the
 four-H200 whole node cost $13.60/hour at the inventory check.
+Separate one-card 96 GB pods were listed near $1.29/hour. A two-card trainer
+pod plus one such inference pod could be a more economical three-GPU layout,
+but distributed Prime launch, model sync and network throughput were not
+validated for this campaign. Renting it during a run that discarded many
+zero-contrast or stale samples would have increased cost without proving
+better quality. Validate that multi-node path after fixing the reward signal.
