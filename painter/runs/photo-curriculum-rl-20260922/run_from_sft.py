@@ -11,6 +11,7 @@ adapter reset or optimizer resume is introduced here.
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -124,11 +125,18 @@ def _prewarm_frozen_opponent(
     provider_factory: Callable[[Any], Any] | None = None,
     spec_type: type | None = None,
 ) -> Any:
-    """Resolve one real lazy opponent before Prime admits candidate rollouts."""
+    """Verify a fixed anchor or resolve one lazy opponent before rollouts."""
     task = task_loader() if task_loader is not None else _load_first_rl_task(config_path)
     data = task.data
     if data.opponent is not None:
-        raise ValueError("frozen-opponent prewarm requires a lazy opponent task")
+        anchor = Path(data.opponent)
+        expected = data.opponent_sha256
+        if not anchor.is_file() or not expected:
+            raise ValueError("fixed opponent is missing or lacks a SHA-256")
+        actual = hashlib.sha256(anchor.read_bytes()).hexdigest()
+        if actual != expected:
+            raise ValueError("fixed opponent SHA-256 changed after task loading")
+        return {"status": "fixed_verified", "path": str(anchor), "sha256": actual}
     required = (
         data.opponent_model_alias,
         data.opponent_checkpoint_sha256,

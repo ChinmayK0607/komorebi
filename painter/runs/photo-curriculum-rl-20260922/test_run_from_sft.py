@@ -145,6 +145,28 @@ class PhotoRLRunnerTests(unittest.TestCase):
                 spec_type=OpponentSpec,
             )
 
+    def test_prewarm_verifies_fixed_opponent_without_provider(self):
+        import hashlib
+
+        with TemporaryDirectory() as temp:
+            anchor = Path(temp) / "anchor.png"
+            anchor.write_bytes(b"fixed painting")
+            expected = hashlib.sha256(anchor.read_bytes()).hexdigest()
+            data = SimpleNamespace(opponent=str(anchor), opponent_sha256=expected)
+            result = MODULE._prewarm_frozen_opponent(
+                Path(temp) / "native-rl.toml",
+                task_loader=lambda: SimpleNamespace(data=data),
+                provider_factory=lambda _data: self.fail("lazy provider was called"),
+            )
+            self.assertEqual(result["status"], "fixed_verified")
+            self.assertEqual(result["sha256"], expected)
+            anchor.write_bytes(b"changed painting")
+            with self.assertRaisesRegex(ValueError, "SHA-256 changed"):
+                MODULE._prewarm_frozen_opponent(
+                    Path(temp) / "native-rl.toml",
+                    task_loader=lambda: SimpleNamespace(data=data),
+                )
+
 
 if __name__ == "__main__":
     unittest.main()

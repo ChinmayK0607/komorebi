@@ -68,6 +68,13 @@ serialized a fixed-anchor photo row successfully. The inspected TOML has
 `min_inflight=initial_inflight=max_inflight=8`, batch eight/group four,
 12 steps, and 15 expected tasks. No training had started at this check.
 
+The first launch reached inference warmup and then stopped before any rollout
+or optimizer step: `run_from_sft.py` assumed the first task always used a lazy
+opponent and rejected this fixed-anchor task. The runner now verifies the
+fixed anchor's SHA-256 and skips lazy generation; the focused runner tests
+pass. This was a launch-scaffold failure, not an RL result. The failed attempt
+used source `a549955a`; record the patched source commit on restart.
+
 The combined campaign GPU spending observed before this run was at least
 about $10.70; this run plus evaluation and node setup must stay below the
 user's $25 GPU-only ceiling. The currently available two-card 96 GB node is
