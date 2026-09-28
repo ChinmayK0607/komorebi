@@ -1,11 +1,16 @@
 # Text painting: fixed-SFT pairwise RL
 
-Status: GPU setup in progress; no baseline or training result claimed.
+Status: GPU baseline rendering in progress; no training result claimed.
 
 Rental update (2026-09-28 15:04 UTC): a two-96-GB-GPU node was rented at
 **$2.38/hour total** with a ten-hour automatic rental expiry (maximum quoted
 GPU rental $23.80). This is a finite rental limit, not a recurring watcher.
-Setup is in progress; no baseline or training result has been observed yet.
+Setup completed after removing an unnecessary `pip --version` probe from the
+uv-managed Prime runtime; baseline sampling is now running on two GPUs. No
+baseline or training result has been observed yet.
+The two-orientation Gateway smoke judged an obvious red-circle-versus-blue-circle
+pair correctly (score 1.0 for red under a red-circle brief). This confirms
+endpoint/schema/image delivery, not judge reliability on real paintings.
 
 ## Hypothesis and matched baseline
 

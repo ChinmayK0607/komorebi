@@ -44,6 +44,34 @@ class _Trace:
 
 
 class NativePaintingRLTests(unittest.TestCase):
+    def test_text_reward_uses_fixed_anchor_pairwise_score(self):
+        module = _load_rl_module()
+        with TemporaryDirectory() as temp:
+            root = Path(temp)
+            brief, anchor, canvas = (root / name for name in ("brief.txt", "anchor.png", "canvas.png"))
+            brief.write_text("Paint a pear beside a cup.\n")
+            anchor.write_bytes(b"anchor")
+            canvas.write_bytes(b"candidate")
+            data = module.NativePaintingRLData(
+                root=str(root), task_id="text-1", source_group="text-1", family="simple",
+                reference=str(brief), reference_sha256=_digest(brief), reference_kind="text",
+                opponent=str(anchor), opponent_sha256=_digest(anchor),
+                output_root="rl-rollouts", mode="fresh",
+            )
+            async def fake_judge(**kwargs):
+                self.assertEqual((kwargs["brief"], kwargs["anchor"], kwargs["candidate"]),
+                                 (brief, anchor, canvas))
+                return {"protocol": "text-paint-sft-pairwise-v1", "score": 0.25,
+                        "status": "scored", "views": []}
+            trace = _Trace(final_canvas=str(canvas), final_canvas_valid=True)
+            with patch.dict("os.environ", {"PAINTER_GATEWAY_ENV_FILE": str(root / "key")}), \
+                 patch("painter.text_pairwise_judge.judge_pair", fake_judge):
+                score = asyncio.run(module.NativePaintingRLTask(data).final_canvas_aesthetic(trace))
+            self.assertEqual(score, 0.25)
+            self.assertEqual(trace.info["score_evidence"]["protocol_version"],
+                             "text-paint-sft-pairwise-v1")
+            self.assertTrue((root / "rl-rollouts/trace-test/text-judge.json").is_file())
+
     def test_text_loader_requires_matching_fixed_sft_canvas(self):
         module = _load_rl_module()
         with TemporaryDirectory() as temp:
