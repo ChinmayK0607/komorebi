@@ -196,6 +196,7 @@ class NativePaintingTests(unittest.TestCase):
             self.assertEqual(task.data.reference_kind, "text")
             self.assertIn("PAINTING BRIEF", task.data.system_prompt)
             self.assertNotIn("reference", task.data.system_prompt.lower())
+            self.assertIn("exposes `brush` as a global", task.data.system_prompt)
             self.assertTrue(all(not hasattr(part, "image_url")
                                 for part in task.data.prompt[0].content))
             agents = _Agents(["FINISHED", "FINISHED"])

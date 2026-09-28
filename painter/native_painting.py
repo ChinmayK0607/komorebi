@@ -31,7 +31,13 @@ TEXT_SYSTEM = (SYSTEM
     .replace("Reproduce the supplied reference", "Depict the supplied PAINTING BRIEF")
     .replace("Inspect the reference and current canvas", "Inspect the PAINTING BRIEF and current canvas")
     .replace("faithfully matches the reference", "faithfully depicts the PAINTING BRIEF")
-    .replace("matches the reference", "satisfies the PAINTING BRIEF"))
+    .replace("matches the reference", "satisfies the PAINTING BRIEF")
+    + "\nThe renderer has already loaded p5.js and p5.brush and exposes `brush` as a global. "
+      "Output only JavaScript in a ```javascript code block; never output HTML, CSS, <script> tags, imports, or CDN URLs. "
+      "Do not declare, construct, or reassign `brush`; `new p5.brush(...)`, `p5.brush(...)`, and `brush.create(...)` are invalid here. "
+      "Do not redefine p5 globals such as translate or use brush.rect/brush.ellipse. Use brush.polygon for filled shapes and brush.line for strokes. "
+      "A valid skeleton is `function setup(){createCanvas(600,600,WEBGL);} "
+      "function draw(){translate(-300,-300); background('#f5efe4'); /* brush strokes */ noLoop();}`.")
 TEXT_NEXT_VERSION = "Inspect the PAINTING BRIEF and current canvas, then paint the next complete version."
 TEXT_NO_CHANGE = ("Your previous revision made no change to the current canvas. Inspect the PAINTING BRIEF "
                   "and current canvas. If the painting already satisfies the brief, respond FINISHED without code. "
@@ -145,7 +151,11 @@ def _program_failure_feedback(errors: Any) -> str:
     detail = detail[:700]
     lower = detail.lower()
     guidance = "Return a complete, readable JavaScript sketch in one code block; do not repeat the failed sketch."
-    if "syntaxerror" in lower or any(word in lower for word in ("unexpected token", "missing )", "unexpected end")):
+    if "no complete javascript code block" in lower:
+        guidance = ("Return only a complete ```javascript code block with setup() and draw(); "
+                    "do not return HTML, <script> tags, imports, or CDN URLs. "
+                    "The renderer exposes global brush; do not construct or reassign it.")
+    elif "syntaxerror" in lower or any(word in lower for word in ("unexpected token", "missing )", "unexpected end")):
         guidance = "Fix the JavaScript syntax; avoid compressed one-line code and return a complete sketch in one code block."
     elif "cannot redefine property" in lower:
         guidance = "Do not redefine p5 globals such as ellipse, line, fill, or background; rename your helper and return a complete sketch."

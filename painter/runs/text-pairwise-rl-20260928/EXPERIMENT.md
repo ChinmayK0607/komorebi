@@ -12,6 +12,14 @@ The two-orientation Gateway smoke judged an obvious red-circle-versus-blue-circl
 pair correctly (score 1.0 for red under a red-circle brief). This confirms
 endpoint/schema/image delivery, not judge reliability on real paintings.
 
+The first baseline attempt was stopped after its earliest completed traces
+showed repeated full HTML documents and invalid attempts to construct
+`p5.brush`. One inspected final canvas was a weak but recognizable towel roll;
+the failures were chiefly format/API errors, not a scored RL result. The
+attempt is retained separately. The text-only system prompt and missing-code
+feedback now state the renderer's JavaScript-only/global-brush contract; all
+baseline prompts must be regenerated under this changed protocol before RL.
+
 ## Hypothesis and matched baseline
 
 On text painting briefs, Qwen3.8-27B initialized from the photo-curriculum
