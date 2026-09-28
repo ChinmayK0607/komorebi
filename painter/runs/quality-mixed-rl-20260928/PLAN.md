@@ -75,6 +75,15 @@ fixed anchor's SHA-256 and skips lazy generation; the focused runner tests
 pass. This was a launch-scaffold failure, not an RL result. The failed attempt
 used source `a549955a`; record the patched source commit on restart.
 
+The immediate retry also made no rollout: Prime found the failed launch's
+nonempty output directory and correctly refused to treat it as a fresh run.
+That directory, containing only configuration and startup logs, was renamed
+and retained. The active restart uses patched source commit
+`407836865085d00d537da0508d54ea9c15ff4082`; a direct node-side CPU check
+returned `fixed_verified` for the first anchor before model warmup. The
+setup and launch scripts now exercise that check and detect an existing run
+directory before loading the model on future attempts.
+
 The combined campaign GPU spending observed before this run was at least
 about $10.70; this run plus evaluation and node setup must stay below the
 user's $25 GPU-only ceiling. The currently available two-card 96 GB node is

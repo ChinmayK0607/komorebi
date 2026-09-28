@@ -85,6 +85,17 @@ if [[ ! -f "$CONFIG" ]]; then
     --adapter-sha256 bea72b066986faa1b92b9dc539c710093181ee916b99323e2b2498f318ac1740 \
     --prime-root "$PRIME_ROOT" --validate-prime
 fi
+# The generic preflight validates the task wire format; it does not exercise
+# the SFT/fixed-opponent startup branch. Check that branch before GPU warmup.
+PYTHONPATH="$REPO/painter:$OLD" "$PRIME_ROOT/.venv/bin/python" - "$CONFIG" <<'PY'
+from pathlib import Path
+import sys
+from run_from_sft import _prewarm_frozen_opponent
+result = _prewarm_frozen_opponent(Path(sys.argv[1]))
+if result.get('status') != 'fixed_verified':
+    raise SystemExit('fixed-opponent startup check did not verify the anchor')
+print('FIXED_ANCHOR_STARTUP_VERIFIED', result['sha256'], flush=True)
+PY
 PAINTER_RL_CONFIG="$CONFIG" \
   PAINTER_RL_MANIFEST="$MANIFEST" \
   PAINTER_RL_MAX_STEPS=12 PAINTER_RL_RUN_NAME="$RUN_NAME" \

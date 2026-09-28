@@ -27,6 +27,11 @@ if [[ "${1:-}" == '--preflight' ]]; then
   exit
 fi
 [[ $# == 0 ]] || { echo 'usage: run.sh [--preflight]' >&2; exit 2; }
+RUN_OUTPUT="$OLD/async-output/$PAINTER_RL_RUN_NAME"
+[[ ! -e "$RUN_OUTPUT" ]] || {
+  echo "Run output already exists; preserve or move it before a fresh launch: $RUN_OUTPUT" >&2
+  exit 1
+}
 [[ -r "$GATEWAY_KEY_FILE" ]] || { echo 'Gateway key file missing' >&2; exit 1; }
 mkdir -p "$OLD/logs"
 "$PRIME_ROOT/.venv/bin/python" "$OLD/gateway_queue_worker.py" \
