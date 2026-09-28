@@ -44,7 +44,9 @@ def prepare(*, output: Path, model: Path, run_root: Path, manifest: Path,
     source = config["orchestrator"]["train"]["source"][0]
     source["name"] = "text-paint-fixed-sft-pairwise"
     source["env"]["taskset"]["lazy_opponent"] = False
-    source["env"]["taskset"]["preserve_manifest_order"] = False
+    # The frozen manifest is ordered simple -> intermediate. NativePaintingRLData
+    # otherwise interleaves families alphabetically, starting with intermediate.
+    source["env"]["taskset"]["preserve_manifest_order"] = True
     source["env"]["taskset"]["output_root"] = output_root
     source["env"]["agent"]["timeout"]["scoring"] = 600
     config["orchestrator"]["max_off_policy_steps"] = 1

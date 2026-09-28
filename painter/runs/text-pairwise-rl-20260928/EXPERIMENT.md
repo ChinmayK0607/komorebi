@@ -73,7 +73,22 @@ action with feedback; absent workers and other service failures remain
 censored. It has a distinct Prime run name and output root so the first
 attempt is immutable. The node preflight passed source/task serialization
 and the 1-trainer/1-inference GPU roles. Spend was $8.14 at restart, still
-under the $25 GPU rental cap. Validation of the second attempt is pending.
+under the $25 GPU rental cap. The default eight-case pilot contains three
+censored cases in the step-0 control and is too small to decide promotion.
+Instead, check the corrected attempt on the full frozen 16 after step 8,
+then only repeat at a later checkpoint if the first comparison and remaining
+budget justify it. Report every checked checkpoint and selection explicitly;
+neither rising training reward nor a subset alone promotes the adapter.
+The second attempt was stopped before an optimizer update after a curriculum
+ordering audit: the task loader's default family interleave alphabetically
+put intermediate tasks ahead of simple ones. Its earliest completed traces
+all lost to the strong SFT anchor, so continuing would not test the intended
+easy-to-hard hypothesis. The third attempt preserves the frozen manifest
+order (24 simple, then 16 intermediate) and retains the render-timeout
+classification fix. It again starts from step 512 with a distinct run name;
+preflight must show a simple brief first. Validate on the full frozen 16
+after an informative checkpoint and report all attempts, including this
+stopped one. No corrected checkpoint has been promoted.
 
 Data scaling has been staged independently of this live 40-brief run. A
 deterministic expansion of the same audited source contains all 290 distinct
