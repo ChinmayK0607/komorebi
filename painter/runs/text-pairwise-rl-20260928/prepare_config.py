@@ -19,7 +19,12 @@ RUN_NAME = "text-pairwise-rl-20260928"
 
 
 def prepare(*, output: Path, model: Path, run_root: Path, manifest: Path,
-            prime_root: Path | None = None, max_steps: int = 20) -> dict:
+            prime_root: Path | None = None, max_steps: int = 20,
+            run_name: str = RUN_NAME, output_root: str = "rl-rollouts") -> dict:
+    if not run_name or "/" in run_name or "\\" in run_name:
+        raise ValueError("run_name must be a simple non-empty name")
+    if not output_root or "/" in output_root or "\\" in output_root:
+        raise ValueError("output_root must be a simple non-empty name")
     rows = json.loads(manifest.read_text())["rows"]
     if len(rows) != 40 or len({row["id"] for row in rows}) != 40:
         raise ValueError("expected 40 unique fixed-anchor training rows")
@@ -28,7 +33,7 @@ def prepare(*, output: Path, model: Path, run_root: Path, manifest: Path,
     relative = str(manifest.resolve().relative_to(run_root.resolve()))
     config = photo.build_config(
         model=str(model), run_root=run_root, manifest=relative,
-        max_steps=max_steps, checkpoint_interval=4, run_name=RUN_NAME,
+        max_steps=max_steps, checkpoint_interval=4, run_name=run_name,
         expected_count=40, batch_size=8, group_size=4, max_turns=3,
         max_completion_tokens=8192, learning_rate=1e-6,
         initial_inflight=8, max_inflight=8,
@@ -40,12 +45,13 @@ def prepare(*, output: Path, model: Path, run_root: Path, manifest: Path,
     source["name"] = "text-paint-fixed-sft-pairwise"
     source["env"]["taskset"]["lazy_opponent"] = False
     source["env"]["taskset"]["preserve_manifest_order"] = False
+    source["env"]["taskset"]["output_root"] = output_root
     source["env"]["agent"]["timeout"]["scoring"] = 600
     config["orchestrator"]["max_off_policy_steps"] = 1
     message = photo.write_config(output, config, validate_prime=prime_root is not None,
                                  prime_root=prime_root)
     receipt = {
-        "run_name": RUN_NAME, "prime_revision": photo.PRIME_COMMIT,
+        "run_name": run_name, "prime_revision": photo.PRIME_COMMIT,
         "model_revision": photo.BASE_MODEL_REVISION,
         "adapter_revision": "adf687e5b321514eda7be6eab050434fdc8e44ff",
         "adapter_prefix": "photo-curriculum-sft-20260922-balanced/step_512",
@@ -68,6 +74,8 @@ def main() -> None:
     parser.add_argument("--manifest", type=Path, required=True)
     parser.add_argument("--prime-root", type=Path)
     parser.add_argument("--max-steps", type=int, default=20)
+    parser.add_argument("--run-name", default=RUN_NAME)
+    parser.add_argument("--output-root", default="rl-rollouts")
     args = parser.parse_args()
     print(json.dumps(prepare(**vars(args)), sort_keys=True))
 

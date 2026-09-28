@@ -13,9 +13,10 @@ MODEL_DIR="${MODEL_DIR:-/root/painter/model-cache/qwen/1d4bf0f2ff6012fd82039f2fa
 PY="$PRIME_ROOT/.venv/bin/python"
 VLLM="$PRIME_ROOT/.venv/bin/vllm"
 EVAL="$PRIME_ROOT/.venv/bin/eval"
-ADAPTER="$RUN/async-output/text-pairwise-rl-20260928/artifacts/adapters/step_$STEP"
+RUN_NAME="${PAINTER_RL_RUN_NAME:-text-pairwise-rl-20260928}"
+ADAPTER="$RUN/async-output/$RUN_NAME/artifacts/adapters/step_$STEP"
 KEY="${PAINTER_GATEWAY_ENV_FILE:-/root/painter/private/gateway.env}"
-OUT="$RUN/validation/step-$STEP-n$COUNT"
+OUT="$RUN/validation/$RUN_NAME-step-$STEP-n$COUNT"
 [[ -f "$ADAPTER/adapter_model.safetensors" ]] || { echo 'checkpoint adapter missing' >&2; exit 1; }
 [[ -f "$ADAPTER/hf-upload.json" ]] || { echo 'checkpoint upload verification missing' >&2; exit 1; }
 [[ -r "$KEY" && ! -L "$KEY" && "$(stat -c %a "$KEY")" == 600 ]] || {
