@@ -1,7 +1,8 @@
 # Mixed-reference fixed-anchor RL, 2026-09-28
 
-Status: inputs public and independently hash verified; node setup and Prime
-config preflight passed; training is running. No optimizer checkpoint or quality result existed at the 06:44 UTC observation. The
+Status: four-update diagnostic completed and evaluated; public evidence was
+independently hash verified; the GPU node was released. No RL checkpoint was
+promoted. The
 staged source commit is `a549955a9917a6c86f16b1f70cb036e501528143`;
 the transferred Git bundle SHA-256 is
 `da0ff6c52f626e5fb58ebfcf237c1e8a5191b6fb9a238c764f046fca2831adde`.
@@ -133,3 +134,80 @@ invalid counts, image-order conflicts, full turn galleries, and manual visual
 inspection of subject structure and beauty. Publish raw receipts/rollouts
 before deleting the node. Retain step-512 SFT unless held-out evidence supports
 a better painting policy.
+
+## Result and decision, 2026-09-28
+
+The active run stopped after its first planned public checkpoint at step four
+because invalid actions and fixed-anchor zero-contrast groups made further
+sampling inefficient. This was a deliberate early stop, not completion of the
+configured twelve updates. All four updates had nonzero gradient norms:
+0.0165, 0.0352, 0.0415, and 0.0486. Their online mean rewards were 0.125,
+0.375, 0.3125, and 0.500; these values compare against static anchors and do
+not establish improved painting. End-to-end step durations were 33m35s,
+9m45s, 18m31s, and 18m42s. Step one discarded 12/20 completed episodes for
+no signal; step three discarded 12/20 (eight stale, four no signal). The
+65 completed traces had 49 zero, six tie (0.5), and ten win (1.0) terminal
+rewards. Their 261 rendered turn attempts produced 110 valid and 151 invalid
+canvases. A locally tested blank-canvas eligibility fix was committed after
+the running source commit and did not affect this run.
+
+The [public step-four adapter](https://huggingface.co/CK0607/qwen3.8-27b-brush-painting/tree/ab5f4162f7626a1838a8b7b1bf603e22909987c1/quality-mixed-anchors-20260928/step_4)
+has local and upload-receipt weight SHA-256
+`dc75aedf0dddef52d19e916c6daaa6668ecc4c4a1534511d25d87ab2d4ba9023`;
+the receipt states public and verified. The frozen SFT step-512 and RL
+step-four policies were evaluated on identical ten references, seed 918200,
+temperature 1, 8,192-token per-turn ceiling, four-turn cap, renderer and
+server profile. The evaluation completed all ten cases per policy. Its
+two-orientation MiMo Flash judge scored six SFT wins, two RL wins, and two
+ties, with no censored judgment. On seven held-out photos: five SFT wins,
+one RL win, one tie; RL had three invalid final canvases, SFT none. On three
+training shapes: one win each and one tie. Manual review of the [local
+gallery](collected-step4/review/index.html) agrees with the broad held-out
+conclusion: SFT preserves recognizable people and scene structure on the
+frisbee and tennis photos where RL becomes blocky; RL is missing entirely on
+three held-out cases. The small procedural paintings are closer, and RL's bus
+is a plausible local gain. The ten-case set is a diagnostic, not a population
+quality estimate. Retain SFT step 512; do not continue this reward recipe.
+
+The public [evidence archive](https://huggingface.co/datasets/CK0607/komorebi-painter-experiments/blob/dc8044d996d52c46e2fc0a7b901ebd2a28c390b4/runs/quality-mixed-rl-20260928/step-4-evidence.tar.gz)
+has 1,020 screened files, 34,774,022 bytes and SHA-256
+`154ad715234899e23a05d7e32479510eeb8445c42eb78043792b06977825c24e`.
+It was anonymously re-downloaded at its commit and hash checked. The local
+gallery transfer archive also passed a source/destination SHA-256 check.
+The archive contains renderer programs, canvases, reward files, judge receipts,
+and matched evaluation turns. It does **not** contain Prime's packed trace
+JSONL or trainer/orchestrator logs; those were not selected by the evidence
+packager and were lost when the node was removed. Thus the recorded gradient
+and discarded-episode counts are transcribed from the live logs, while the
+exact native sampled token/log-probability arrays are no longer recoverable.
+The visual result, checkpoint, reward receipts, and telemetry remain
+independently inspectable. The archive selector must include screened native
+traces and run logs in future experiments before node deletion.
+
+During 06:16:36–07:40:38 UTC, 505 ten-second samples per GPU showed mean
+sampled utilization 99.1% on inference GPU 0 (99.2% of samples at least 50%)
+and 12.5% on trainer GPU 1 (12.9% at least 50%). This is not full-pipeline
+saturation. During the matched evaluation's 07:44:08–08:12:58 UTC window,
+174 ten-second samples per GPU averaged 72.4% on SFT GPU 0 and 87.8% on RL
+GPU 1. Model decoding dominated elapsed time, but rendering was still
+nontrivial: valid evaluation turns averaged 23.2 seconds for SFT and 9.4
+seconds for RL, with one hard-render deadline on each side. The last observed
+node charge was about $5.84 at $2.38/hour. Together with at least ~$10.70
+observed earlier in the campaign, observed GPU spend remained below $25.
+The node was removed and a fresh `lium ps` returned no pods. No scheduled
+task or watcher was created.
+
+Next method decision: before another GPU launch, fix invalid p5.brush
+generation with a small matched validity evaluation, and replace the sparse
+anchor-only 0/0.5/1 signal with calibrated **pairwise candidate ranking within
+each rollout group** when every candidate loses to a strong anchor. Keep a
+single visual-quality ranking criterion tied to the reference; retain the
+anchor as a check rather than adding unrelated metric bonuses. Reorder the
+curriculum from simple shapes to photos and compare it with the same frozen
+four-turn SFT baseline. The current Prime config preserved manifest order,
+which put all twelve photos before the three procedural shapes. Test the
+within-group ranking and renderer speed on CPU/Cloud evidence before renting
+another GPU. More inference capacity is useful only once the extra rollouts
+can enter useful gradients; this run's 24 GB three/four-card options could
+not host the pinned 27B trainer/inference split as configured, while the
+four-H200 whole node cost $13.60/hour at the inventory check.

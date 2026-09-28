@@ -14,7 +14,7 @@ from huggingface_hub import HfApi, hf_hub_download
 REPO_ID = "CK0607/komorebi-painter-experiments"
 REMOTE_PATH = "runs/quality-mixed-rl-20260928/evidence.tar.gz"
 RUN_NAME = "quality-mixed-anchors-20260928"
-TEXT_SUFFIXES = {".js", ".json", ".jsonl", ".csv", ".html", ".toml"}
+TEXT_SUFFIXES = {".js", ".json", ".jsonl", ".csv", ".html", ".toml", ".log"}
 ALLOWED_SUFFIXES = TEXT_SUFFIXES | {".png", ".jpg", ".jpeg"}
 FORBIDDEN_TEXT = (b"AI_GATEWAY_API_KEY", b"Authorization: Bearer", b"sk-or-v1-", b"hf_")
 
@@ -45,6 +45,10 @@ def select(old: Path, evaluation: Path, pack: Path, telemetry: Path,
         (matched / "review/report.json", "matched-eval/review/report.json"),
         (matched / "review/judge.json", "matched-eval/review/judge.json"),
         (telemetry, "telemetry/gpu-telemetry.csv"),
+        (run / "monitors/file/traces/stream/00000.jsonl", "prime/traces/stream/00000.jsonl"),
+        (run / "monitors/file/metrics.jsonl", "prime/metrics.jsonl"),
+        (run / "logs/attempt_1/orchestrator.log", "prime/orchestrator.log"),
+        (run / "logs/attempt_1/trainer.log", "prime/trainer.log"),
     ]
     for checkpoint in (4, 8, 12):
         if checkpoint > step:
@@ -57,6 +61,7 @@ def select(old: Path, evaluation: Path, pack: Path, telemetry: Path,
     optional: list[tuple[Path, str]] = []
     for folder, name in ((old / "rl-rollouts", "rl-rollouts"),
                          (old / "judge-queue", "judge-queue"),
+                         (run / "monitors/file/traces", "prime/traces"),
                          (matched / "review", "matched-eval/review")):
         if folder.is_dir():
             optional.extend((path, f"{name}/{path.relative_to(folder).as_posix()}")
