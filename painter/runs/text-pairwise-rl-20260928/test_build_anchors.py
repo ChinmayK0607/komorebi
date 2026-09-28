@@ -50,6 +50,23 @@ class AnchorBuilderTest(unittest.TestCase):
             self.assertEqual(sum(bool(row.get("reserve_replacement")) for row in train), 1)
             self.assertEqual(audit["validation_usable"], 16)
             self.assertTrue(all(Path(row["opponent"]).is_file() for row in train))
+            retry = root / "retry"
+            retry.mkdir()
+            retry_canvas = retry / "repaint.png"
+            image = Image.new("RGB", (256, 256), "white")
+            ImageDraw.Draw(image).rectangle((30, 30, 210, 210), fill="blue")
+            image.save(retry_canvas)
+            (retry / "traces.jsonl").write_text(json.dumps({
+                "task": {"data": {"task_id": rejected["id"]}},
+                "info": {"final_canvas_valid": True, "final_canvas": str(retry_canvas)},
+            }) + "\n")
+            retry_audit = MODULE.build(pool=root / "pool.json", eval_root=eval_root,
+                                       retry_roots=(retry,), output=root / "frozen-retry")
+            retry_train = json.loads((root / "frozen-retry/train-manifest.json").read_text())["rows"]
+            self.assertIn(rejected["id"], {row["id"] for row in retry_train})
+            self.assertEqual(sum(bool(row.get("reserve_replacement")) for row in retry_train), 0)
+            record = next(row for row in retry_audit["decisions"] if row["id"] == rejected["id"])
+            self.assertEqual(record["chosen_attempt"], 1)
 
 
 if __name__ == "__main__":

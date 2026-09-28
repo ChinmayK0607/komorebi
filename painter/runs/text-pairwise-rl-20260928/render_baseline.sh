@@ -10,18 +10,22 @@ PY="$PRIME_ROOT/.venv/bin/python"
 VLLM="$PRIME_ROOT/.venv/bin/vllm"
 EVAL="$PRIME_ROOT/.venv/bin/eval"
 ADAPTER="$(tr -d '\r\n' < "$RUN/../photo-curriculum-rl-20260922/initial-adapter-path.txt")"
-OUT="$RUN/baseline"
+POOL="${PAINTER_POOL_PATH:-$RUN/prepared/pool.json}"
+OUT="${PAINTER_EVAL_OUT:-$RUN/baseline}"
+SEED="${PAINTER_EVAL_SEED:-918200}"
+[[ "$SEED" =~ ^[0-9]+$ ]] || { echo 'PAINTER_EVAL_SEED must be an integer' >&2; exit 2; }
 [[ "$(uname -s)" == Linux ]] || { echo 'Linux required' >&2; exit 1; }
 [[ "$(nvidia-smi --query-gpu=index --format=csv,noheader | wc -l)" -ge 2 ]] || {
   echo 'two GPUs required for parallel baseline' >&2; exit 1;
 }
 [[ -f "$ADAPTER/adapter_model.safetensors" ]] || { echo 'SFT adapter missing' >&2; exit 1; }
 mkdir -p "$OUT/logs"
-"$PY" - "$RUN/prepared/pool.json" "$OUT" <<'PY'
+"$PY" - "$POOL" "$OUT" <<'PY'
 import hashlib,json,sys
 from pathlib import Path
 pool,out=map(Path,sys.argv[1:]); raw=json.loads(pool.read_text()); rows=raw['cases']
-if len(rows)!=72:raise SystemExit('pool count changed')
+if len(rows)<2 or len({row['id'] for row in rows})!=len(rows):
+    raise SystemExit('eval pool must contain at least two distinct cases')
 for i in range(2):
     cases=[]
     for row in rows[i::2]:
@@ -37,15 +41,19 @@ for i in 0 1; do
     --root "$REPO/painter" --manifest "$OUT/shard-$i.json" \
     --policy-label sft-step512 --model sft-step512 \
     --output-dir "$OUT/shard-$i" --config "$OUT/shard-$i.toml" \
-    --expected-count 36 --max-turns 3 --max-tokens 8192 \
+    --expected-count "$("$PY" -c 'import json,sys;print(len(json.load(open(sys.argv[1]))["cases"]))' "$OUT/shard-$i.json")" \
+    --max-turns 3 --max-tokens 8192 \
     --rollout-timeout 1800 >"$OUT/logs/config-$i.json"
-  "$PY" - "$OUT/shard-$i.toml" "$port" <<'PY'
+  "$PY" - "$OUT/shard-$i.toml" "$port" "$SEED" <<'PY'
 from pathlib import Path
 import sys
 path=Path(sys.argv[1]); before='base_url = "http://127.0.0.1:8000/v1"'
 text=path.read_text()
 if text.count(before)!=1:raise SystemExit('unexpected VF endpoint')
-path.write_text(text.replace(before,f'base_url = "http://127.0.0.1:{sys.argv[2]}/v1"'))
+seed='seed = 918200'
+if text.count(seed)!=1:raise SystemExit('unexpected eval seed')
+path.write_text(text.replace(before,f'base_url = "http://127.0.0.1:{sys.argv[2]}/v1"')
+                    .replace(seed,f'seed = {sys.argv[3]}'))
 PY
 done
 if [[ "${1:-}" == '--preflight' ]]; then
@@ -69,9 +77,9 @@ for i in 0 1; do
   port=$((8100+i))
   setsid env CUDA_VISIBLE_DEVICES="$i" TOKENIZERS_PARALLELISM=false \
     VLLM_USE_FLASHINFER_SAMPLER=0 OMP_NUM_THREADS=6 \
-    VLLM_CACHE_ROOT="$OUT/cache-$i/vllm" \
-    TORCHINDUCTOR_CACHE_DIR="$OUT/cache-$i/torchinductor" \
-    TRITON_CACHE_DIR="$OUT/cache-$i/triton" \
+    VLLM_CACHE_ROOT="$RUN/baseline/cache-$i/vllm" \
+    TORCHINDUCTOR_CACHE_DIR="$RUN/baseline/cache-$i/torchinductor" \
+    TRITON_CACHE_DIR="$RUN/baseline/cache-$i/triton" \
     "$VLLM" serve "$MODEL_DIR" --served-model-name sft-step512 \
     --host 127.0.0.1 --port "$port" --dtype bfloat16 \
     --max-model-len 32768 --max-num-seqs 4 --max-num-batched-tokens 8192 \
@@ -107,5 +115,7 @@ for i in 0 1; do
 done
 wait "${pids[2]}"
 wait "${pids[3]}"
-"$PY" "$RUN/build_anchors.py" --pool "$RUN/prepared/pool.json" \
-  --eval-root "$OUT" --output "$RUN/anchors-frozen"
+if [[ "${PAINTER_BUILD_ANCHORS:-1}" == 1 ]]; then
+  "$PY" "$RUN/build_anchors.py" --pool "$RUN/prepared/pool.json" \
+    --eval-root "$OUT" --output "$RUN/anchors-frozen"
+fi

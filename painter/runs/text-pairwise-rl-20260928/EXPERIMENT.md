@@ -47,6 +47,12 @@ the selected pool SHA-256 is
 Teacher paintings/ratings are not RL rewards or held-out student results.
 
 Before training, render step-512 on every brief and hash the fixed canvases.
+If the pinned single-sample baseline produces too few valid anchors, rerun
+**only invalid briefs** with the same policy, prompt, renderer, and decoding
+settings but a predeclared different seed. Freeze the *first valid* canvas in
+attempt order, never the prettiest judged canvas. Keep the single-sample
+validity rate and retry count separate in results; the comparator then is a
+validity-conditioned SFT baseline rather than a matched one-sample baseline.
 Training rows with invalid or blank anchors are replaced only by predeclared
 same-tier reserve rows, if possible. Report all rejected rows. Validation
 membership is never selected using RL outcomes. The frozen SFT painting for

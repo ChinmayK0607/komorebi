@@ -48,22 +48,26 @@ def usable(canvas: Path) -> tuple[bool, str]:
     return True, "valid"
 
 
-def build(*, pool: Path, eval_root: Path, output: Path) -> dict:
+def build(*, pool: Path, eval_root: Path, output: Path,
+          retry_roots: tuple[Path, ...] = ()) -> dict:
     source = json.loads(pool.read_text())
     rows = source["cases"]
     if len(rows) != 72 or len({row["id"] for row in rows}) != 72:
         raise ValueError("expected the frozen 72-brief pool")
-    traces, errors, files = read_traces(eval_root)
-    if errors:
-        raise ValueError("trace read errors: " + "; ".join(errors[:3]))
-    if not files:
-        raise FileNotFoundError("no evaluation traces")
-    by_id: dict[str, list[dict]] = defaultdict(list)
-    for trace in traces:
-        data, info = _trace_data(trace)
-        task_id = data.get("task_id") or data.get("name")
-        if isinstance(task_id, str):
-            by_id[task_id].append(info)
+    files = []
+    by_id: dict[str, dict[int, list[dict]]] = defaultdict(lambda: defaultdict(list))
+    for attempt, source_root in enumerate((eval_root, *retry_roots)):
+        traces, errors, source_files = read_traces(source_root)
+        if errors:
+            raise ValueError("trace read errors: " + "; ".join(errors[:3]))
+        if not source_files:
+            raise FileNotFoundError(f"no evaluation traces in attempt {attempt}")
+        files.extend(source_files)
+        for trace in traces:
+            data, info = _trace_data(trace)
+            task_id = data.get("task_id") or data.get("name")
+            if isinstance(task_id, str):
+                by_id[task_id][attempt].append(info)
     output.mkdir(parents=True, exist_ok=True)
     anchors = output / "anchors"
     anchors.mkdir(exist_ok=True)
@@ -73,28 +77,39 @@ def build(*, pool: Path, eval_root: Path, output: Path) -> dict:
         brief = pool.parent / row["reference"]
         if sha(brief) != row["reference_sha256"]:
             raise ValueError(f"prompt hash mismatch: {row['id']}")
-        episodes = by_id.get(row["id"], [])
+        episodes_by_attempt = by_id.get(row["id"], {})
         reason = "missing_trace"
         canvas = None
-        if len(episodes) > 1:
-            reason = "duplicate_trace"
-        elif episodes:
-            info = episodes[0]
-            if info.get("service_failure"):
-                reason = "service_failure"
-            elif not info.get("final_canvas_valid"):
-                reason = "invalid_model_output"
-            else:
-                raw = info.get("final_canvas")
-                candidate = Path(raw) if isinstance(raw, str) and raw else None
-                if candidate is not None and not candidate.is_absolute():
-                    candidate = eval_root / candidate
-                if candidate is not None:
-                    valid, reason = usable(candidate)
-                    if valid:
-                        canvas = candidate
+        chosen_attempt = None
+        attempts = []
+        for attempt, source_root in enumerate((eval_root, *retry_roots)):
+            episodes = episodes_by_attempt.get(attempt, [])
+            outcome = "missing_trace"
+            if len(episodes) > 1:
+                outcome = "duplicate_trace"
+            elif episodes:
+                info = episodes[0]
+                if info.get("service_failure"):
+                    outcome = "service_failure"
+                elif not info.get("final_canvas_valid"):
+                    outcome = "invalid_model_output"
+                else:
+                    raw = info.get("final_canvas")
+                    candidate = Path(raw) if isinstance(raw, str) and raw else None
+                    if candidate is not None and not candidate.is_absolute():
+                        candidate = source_root / candidate
+                    if candidate is not None:
+                        valid, outcome = usable(candidate)
+                        if valid and canvas is None:
+                            canvas = candidate
+                            chosen_attempt = attempt
+            attempts.append(outcome)
+            if canvas is not None:
+                break
+            reason = outcome
         decision = {"id": row["id"], "split": row["split"], "family": row["family"],
-                    "reason": reason}
+                    "reason": "valid" if canvas is not None else reason,
+                    "attempts": attempts, "chosen_attempt": chosen_attempt}
         if canvas is not None:
             destination = anchors / (row["id"] + ".png")
             shutil.copyfile(canvas, destination)
@@ -131,9 +146,11 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--pool", type=Path, required=True)
     parser.add_argument("--eval-root", type=Path, required=True)
+    parser.add_argument("--retry-root", action="append", type=Path, default=[])
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
-    result = build(pool=args.pool, eval_root=args.eval_root, output=args.output)
+    result = build(pool=args.pool, eval_root=args.eval_root, output=args.output,
+                   retry_roots=tuple(args.retry_root))
     print(json.dumps({key: value for key, value in result.items() if key != "decisions"}, sort_keys=True))
 
 
