@@ -14,7 +14,7 @@ from huggingface_hub import HfApi, hf_hub_download
 
 
 REPO_ID = "CK0607/komorebi-painter-experiments"
-TEXT_EXT = {".json", ".jsonl", ".js", ".txt", ".toml", ".log", ".csv", ".md"}
+TEXT_EXT = {".json", ".jsonl", ".js", ".txt", ".toml", ".log", ".csv", ".md", ".html"}
 IMAGE_EXT = {".png", ".jpg", ".jpeg"}
 SECRET_PATTERNS = (
     re.compile(rb"AI_GATEWAY_API_KEY"),

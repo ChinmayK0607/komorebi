@@ -40,6 +40,7 @@ def select(run: Path, eval_dirs: list[str]) -> dict[str, Path]:
         "prepared/prompts", "anchors-frozen/anchors",
         "rl-rollouts-margin-workerfix",
         "validation/sft-step512-control/comparison-margin",
+        "validation/checkpoint-gallery",
     ):
         _add_dir(files, run, folder)
     for eval_dir in eval_dirs:
