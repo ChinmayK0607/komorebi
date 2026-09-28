@@ -1,6 +1,7 @@
 # Eight-candidate relative-quality RL diagnostic
 
-Status: prepared, not launched. No GPU is rented for this run as of this record.
+Status: eight-candidate clean retry running; first optimizer update completed.
+The matched visual comparison and final cost are pending.
 
 ## Hypothesis and matched baseline
 
@@ -85,3 +86,48 @@ paintings improve visibly without a material validity regression. Otherwise
 retain SFT step 512. Track GPU rental against the user’s cumulative $25
 GPU-only ceiling; previous campaign spending was at least about $16.54, so
 remaining headroom is limited. Vercel API usage is itemized separately.
+
+## Launch record and corrected diagnosis
+
+The first launch used painter source `1008a5e9686edb0fa1698b64cf14de8ed0747227`
+and generated TOML SHA-256
+`d2cfff1f93830d59fd28868344f8fa646e3a8adb992711dd04452a93309dd7e6`.
+It started at approximately 09:41 UTC on a two-card 96 GB Edition node quoted
+at $2.38/hour. Prime loaded the SFT initializer and ran rollouts, but it
+was interrupted before its first optimizer update. The first complete
+eight-member group had seven trainable traces (one renderer service failure),
+four valid final canvases, and a real two-orientation relative-rank audit.
+All seven traces had nonzero sampled-token advantages. The two rankings
+agreed exactly on four valid horse paintings. One subsequent group was only
+partially complete. The 251 MB output, raw rollouts, judge receipts, telemetry,
+and group audit remain separately preserved on the node as an interrupted
+attempt; they are not a trained checkpoint.
+
+The interruption was based on a mistaken diagnostic: reading `/proc/environ`
+after Prime changed its process title showed zeroed bytes, and the group audit
+was checked before it appeared. Those observations did not prove the hook was
+missing. The scorer was in fact active on the first launch. Source
+`e472d6b4bb45be138499464f8ec255af14c38293` additionally forwards the
+group-hook module, gateway key-file path, and Python import path explicitly
+through Prime's child-environment wrapper; twelve focused local tests pass.
+The clean retry started at approximately 10:10 UTC with the same model,
+curriculum, group size, and generated TOML. This defensive change must not be
+presented as the reason the reward began working. A stale terminal-judge
+receipt from the interrupted attempt made the retry's worker exit; its
+reward-batch directory was isolated, and a fresh worker was started without
+resetting the GPU run. The future launcher now refuses any nonempty prior
+rollout, judge, reward, or group-credit state and supervises the terminal
+worker, stopping the run if that worker exits first.
+
+The retry's first group had eight trainable traces, five valid final canvases,
+four positive adjusted rewards, and nonzero sampled-token credit for all
+eight traces. The two reversed-order MiMo rankings returned complete results;
+this is evidence of a usable reward path, not visual improvement. The trainer
+confirmed optimizer step one at 10:46:06 UTC: loss 0.0018, gradient norm
+0.0228, learning rate 1e-6, 600 training tokens/s, reported MFU 40.9%, and
+92.2 GiB peak memory. The inference GPU generated the next group while the
+trainer updated. The node's whole-life rental meter read $3.03 at 10:48 UTC;
+that includes setup and the interrupted attempt. Four updates, public
+checkpoints, matched evaluation, and final spend remain pending. The
+interrupted attempt's raw evidence will be included in the public audit,
+excluding a duplicate step-zero weight file.

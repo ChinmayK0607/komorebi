@@ -27,7 +27,26 @@ def sha(path: Path) -> str:
     return h.hexdigest()
 
 
-def select(old: Path, root: Path, pack: Path, telemetry: Path) -> list[tuple[Path, str]]:
+def interrupted_files(interrupted: Path) -> list[tuple[Path, str]]:
+    """Keep the stopped diagnostic's evidence, excluding duplicate step-zero weights."""
+    folders = ("group-credit", "rl-rollouts", "judge-queue", "reward-batches",
+               "async-output/logs", "async-output/monitors")
+    selected = []
+    for folder in folders:
+        source = interrupted / folder
+        if source.is_dir():
+            selected.extend((path, f"interrupted/{path.relative_to(interrupted).as_posix()}")
+                            for path in source.rglob("*")
+                            if path.is_file() and path.suffix.lower() in ALLOWED)
+    for name in ("launch.log", "gateway-worker.log", "gpu-telemetry.csv"):
+        path = interrupted / name
+        if path.is_file():
+            selected.append((path, f"interrupted/{name}"))
+    return selected
+
+
+def select(old: Path, root: Path, pack: Path, telemetry: Path,
+           interrupted: Path | None = None) -> list[tuple[Path, str]]:
     run = old / "async-output" / RUN
     matched = root / "matched-eval-step-4"
     required = [
@@ -56,6 +75,7 @@ def select(old: Path, root: Path, pack: Path, telemetry: Path) -> list[tuple[Pat
         (old / "group-credit", "group-credit"),
         (old / "rl-rollouts", "rl-rollouts"),
         (old / "judge-queue", "judge-queue"),
+        (old / "reward-batches", "reward-batches"),
         (run / "monitors/file/traces", "prime/traces"),
         (matched / "review", "matched-eval/review"),
     ):
@@ -65,11 +85,20 @@ def select(old: Path, root: Path, pack: Path, telemetry: Path) -> list[tuple[Pat
     if not any(name.startswith("group-credit/") and name.endswith("/audit.json")
                for _, name in optional):
         raise FileNotFoundError("no per-group token-credit audit was retained")
+    for name in ("gateway-worker-relative-eight.log", "gateway-worker-retry2.log"):
+        path = old / "logs" / name
+        if path.is_file():
+            optional.append((path, f"worker/{name}"))
+    if interrupted is not None:
+        if not any((interrupted / "group-credit").rglob("audit.json")):
+            raise FileNotFoundError("interrupted attempt lacks a group-credit audit")
+        optional.extend(interrupted_files(interrupted))
     return sorted({name: path for path, name in required + optional}.items())
 
 
-def package(old: Path, root: Path, pack: Path, telemetry: Path, output: Path) -> dict:
-    selected = select(old, root, pack, telemetry)
+def package(old: Path, root: Path, pack: Path, telemetry: Path, output: Path,
+            interrupted: Path | None = None) -> dict:
+    selected = select(old, root, pack, telemetry, interrupted)
     records = []
     output.parent.mkdir(parents=True, exist_ok=True)
     with tarfile.open(output, "w:gz") as archive:
@@ -97,13 +126,15 @@ def main() -> None:
     parser.add_argument("--root", type=Path, required=True)
     parser.add_argument("--pack-root", type=Path, required=True)
     parser.add_argument("--telemetry", type=Path, required=True)
+    parser.add_argument("--interrupted-root", type=Path)
     parser.add_argument("--token-file", type=Path, required=True)
     args = parser.parse_args()
     token_file = args.token_file
     if token_file.is_symlink() or not token_file.is_file() or token_file.stat().st_mode & 0o077:
         raise PermissionError("HF token file must be owner-only and not a symlink")
     output = args.root / "matched-eval-step-4/collected-evidence.tar.gz"
-    summary = package(args.old_root, args.root, args.pack_root, args.telemetry, output)
+    summary = package(args.old_root, args.root, args.pack_root, args.telemetry,
+                      output, args.interrupted_root)
     token = token_file.read_text().strip()
     api = HfApi(token=token)
     if api.repo_info(REPO_ID, repo_type="dataset").private:

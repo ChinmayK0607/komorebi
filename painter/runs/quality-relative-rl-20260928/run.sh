@@ -37,6 +37,12 @@ fi
 [[ ! -e "$OLD/async-output/$PAINTER_RL_RUN_NAME" ]] || {
   echo 'run output already exists; resume or preserve it explicitly' >&2; exit 1;
 }
+for state in rl-rollouts judge-queue reward-batches group-credit; do
+  if [[ -d "$OLD/$state" && -n "$(find "$OLD/$state" -mindepth 1 -print -quit)" ]]; then
+    echo "stale $state state exists; preserve and isolate the previous attempt before launch" >&2
+    exit 1
+  fi
+done
 [[ -r "$PAINTER_GATEWAY_ENV_FILE" ]] || { echo 'Gateway key file missing' >&2; exit 1; }
 mkdir -p "$OLD/logs"
 "$PRIME_ROOT/.venv/bin/python" "$OLD/gateway_queue_worker.py" \
@@ -44,12 +50,25 @@ mkdir -p "$OLD/logs"
   --seconds 18000 --workers 8 --batch-limit 16 \
   >"$OLD/logs/gateway-worker-relative-eight.log" 2>&1 &
 worker_pid=$!
+rl_pid=''
 cleanup() {
   local status=$?
   trap - EXIT INT TERM
+  if [[ -n "$rl_pid" ]]; then kill -TERM "$rl_pid" 2>/dev/null || true; fi
   kill "$worker_pid" 2>/dev/null || true
+  if [[ -n "$rl_pid" ]]; then wait "$rl_pid" 2>/dev/null || true; fi
   wait "$worker_pid" 2>/dev/null || true
   exit "$status"
 }
 trap cleanup EXIT INT TERM
-bash "$OLD/launch_rl.sh" "$OLD"
+bash "$OLD/launch_rl.sh" "$OLD" &
+rl_pid=$!
+set +e
+wait -n -p finished_pid "$worker_pid" "$rl_pid"
+first_status=$?
+set -e
+if [[ "$finished_pid" == "$worker_pid" ]]; then
+  echo 'terminal judge worker exited before the RL run; stopping GPUs' >&2
+  exit 1
+fi
+exit "$first_status"
