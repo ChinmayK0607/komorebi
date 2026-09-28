@@ -20,6 +20,7 @@ export PAINTER_RL_ADAPTER_SHA256=bea72b066986faa1b92b9dc539c710093181ee916b99323
 export PAINTER_JUDGE_PROTOCOL=text-paint-sft-pairwise-v1
 export PAINTER_JUDGE_MODEL=xiaomi/mimo-v2.6-flash
 export PAINTER_JUDGE_EFFORT=gateway-default
+export PAINTER_RL_FIXED_OPPONENT=1
 export PYTHONPATH="$PAINTER_REPO_ROOT/painter:$RUN${PYTHONPATH:+:$PYTHONPATH}"
 [[ "$(uname -s)" == Linux ]] || { echo 'Linux GPU node required' >&2; exit 1; }
 [[ -f "$PAINTER_RL_CONFIG" && -f "$PAINTER_RL_MANIFEST" ]] || {

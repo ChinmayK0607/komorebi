@@ -211,10 +211,12 @@ if [[ ! -f "$CONFIG" ]]; then
     --adapter-revision "$ADAPTER_REVISION" --adapter-prefix "$ADAPTER_PREFIX" \
     --adapter-sha256 "$ADAPTER_SHA256" --prime-root "$PRIME_ROOT" --validate-prime
 fi
-[[ -f "$PAINTER_FROZEN_OPPONENT_CONFIG" ]] || {
-  echo "frozen opponent operational config is missing: $PAINTER_FROZEN_OPPONENT_CONFIG" >&2
-  exit 1
-}
+if [[ "${PAINTER_RL_FIXED_OPPONENT:-0}" != 1 ]]; then
+  [[ -f "$PAINTER_FROZEN_OPPONENT_CONFIG" ]] || {
+    echo "frozen opponent operational config is missing: $PAINTER_FROZEN_OPPONENT_CONFIG" >&2
+    exit 1
+  }
+fi
 
 # Reusing a prepared config is safe only when its deployment roles and policy
 # initializer still match this invocation. This catches accidentally reusing
