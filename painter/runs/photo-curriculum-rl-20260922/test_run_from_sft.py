@@ -20,6 +20,17 @@ SPEC.loader.exec_module(MODULE)
 
 
 class PhotoRLRunnerTests(unittest.TestCase):
+    def test_group_rank_environment_reaches_prime_orchestrator_child(self):
+        parent = {
+            "PAINTER_GROUP_RANK_MODULE": "group_rank",
+            "PAINTER_GATEWAY_ENV_FILE": "/root/painter/private/gateway.env",
+            "PYTHONPATH": "/root/painter/repo/checkout/painter/runs/quality-relative-rl-20260928",
+        }
+        with patch.dict(MODULE.os.environ, parent):
+            child = MODULE._orchestrator_env({"MODEL_DIR": "/tmp/model"})
+        self.assertEqual({name: child[name] for name in parent}, parent)
+        self.assertEqual(child["MODEL_DIR"], "/tmp/model")
+
     def test_initial_live_and_frozen_aliases_are_distinct(self):
         self.assertEqual(MODULE._initial_aliases("/tmp/base", "sft-step512"), ("/tmp/base", "sft-step512"))
         with self.assertRaises(ValueError):

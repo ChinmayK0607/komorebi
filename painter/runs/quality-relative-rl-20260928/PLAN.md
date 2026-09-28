@@ -49,9 +49,13 @@ seven-candidate smoke exposed response truncation at 3,072 tokens; after
 raising the cap to 12,288, both reversed views returned complete rankings
 with the same bottom five and swapped top two. They took 168.4 and 92.8
 seconds, costing $0.001947 and $0.001374. The request timeout is now 360
-seconds; judge latency is a measured throughput concern. These selected
-checks test format and obvious-case ordering, not eight-way judgment accuracy
-or human agreement. The local all-anchor-loss unit test confirms two
+seconds; judge latency is a measured throughput concern. An exact
+eight-candidate format smoke, using seven individual saved paintings and one
+triptych distractor of the same reference, returned complete reversed-order
+rankings in 33.0 and 36.6 seconds at $0.000597 and $0.000507. The best two
+swapped order; weaker middle candidates were less stable. These selected
+checks test format and obvious-case ordering, not human agreement. The local
+all-anchor-loss unit test confirms two
 different valid paintings still get different token credit. Any eight-way
 truncation or omission stops the run rather than silently changing the reward.
 

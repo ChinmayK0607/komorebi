@@ -288,6 +288,22 @@ def _cache_env(root: Path, role: str, environment: dict[str, str]) -> dict[str, 
     return values
 
 
+def _orchestrator_env(environment: dict[str, str]) -> dict[str, str]:
+    """Forward painter's optional group scorer through Prime's role env.
+
+    Prime supplies a separate child environment to ``Popen``. Keeping only
+    the parent's three required values avoids inheriting unrelated secrets.
+    The gateway variable is a path to an owner-only credential file, not the
+    credential itself.
+    """
+    values = dict(environment)
+    for name in ("PAINTER_GROUP_RANK_MODULE", "PAINTER_GATEWAY_ENV_FILE", "PYTHONPATH"):
+        value = os.environ.get(name)
+        if value is not None:
+            values[name] = value
+    return values
+
+
 def main() -> None:
     import prime_rl.entrypoints.rl as entrypoint
 
@@ -345,7 +361,7 @@ def main() -> None:
             if len(result) < 3 or result[1] != "@":
                 raise ValueError("Unexpected Prime orchestrator invocation")
             _verify_orchestrator_policy(Path(result[2]).resolve(), live_alias)
-            kwargs["env"] = environment
+            kwargs["env"] = _orchestrator_env(environment)
             return original(command, *args, **kwargs)
         modified = trainer_command(result, wrapper)
         if modified != result:
