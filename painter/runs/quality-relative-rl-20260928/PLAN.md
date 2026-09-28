@@ -44,11 +44,16 @@ adjusted rewards, and post-GRPO sampled-token advantages must be retained.
 
 An offline five-candidate smoke test on saved tennis paintings ranked
 recognizable SFT canvases above the fragmented RL outputs in both image
-orders. The two responses cost approximately $0.00079 combined. This tests
-format and obvious-case ordering, not eight-way judgment accuracy or human
-agreement. The local all-anchor-loss unit test confirms two different valid
-paintings still get different token credit. Any eight-way truncation or
-omission stops the run rather than silently changing the reward.
+orders. The two responses cost approximately $0.00079 combined. A later
+seven-candidate smoke exposed response truncation at 3,072 tokens; after
+raising the cap to 12,288, both reversed views returned complete rankings
+with the same bottom five and swapped top two. They took 168.4 and 92.8
+seconds, costing $0.001947 and $0.001374. The request timeout is now 360
+seconds; judge latency is a measured throughput concern. These selected
+checks test format and obvious-case ordering, not eight-way judgment accuracy
+or human agreement. The local all-anchor-loss unit test confirms two
+different valid paintings still get different token credit. Any eight-way
+truncation or omission stops the run rather than silently changing the reward.
 
 ## Finite run and decision
 

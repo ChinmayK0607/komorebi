@@ -86,7 +86,7 @@ def _one_view(*, key: str, reference: Path, labeled: list[tuple[str, Path]]) -> 
     labels = [label for label, _ in labeled]
     image, sheet_sha = _sheet(reference, labeled)
     payload = {
-        "model": MODEL, "temperature": 0, "max_tokens": 3072,
+        "model": MODEL, "temperature": 0, "max_tokens": 12288,
         "response_format": {"type": "json_object"}, "stream": False,
         "messages": [
             {"role": "system", "content": PROMPT},
@@ -102,7 +102,7 @@ def _one_view(*, key: str, reference: Path, labeled: list[tuple[str, Path]]) -> 
     )
     started = time.monotonic()
     try:
-        with urllib.request.urlopen(request, timeout=180) as response:
+        with urllib.request.urlopen(request, timeout=360) as response:
             body = json.load(response)
     except urllib.error.HTTPError as exc:
         raise RuntimeError(f"group judge HTTP {exc.code}") from None
