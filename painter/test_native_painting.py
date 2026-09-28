@@ -180,6 +180,19 @@ class _Agents:
 
 
 class NativePaintingTests(unittest.TestCase):
+    def test_program_errors_get_specific_repair_feedback(self):
+        module = _load_module()
+        cases = (
+            (["SyntaxError: unexpected token ')'"], "Fix the JavaScript syntax"),
+            (["TypeError: Cannot redefine property: ellipse"], "Do not redefine p5 globals"),
+            (["TypeError: a is not iterable"], "brush.polygon point list"),
+        )
+        for errors, expected in cases:
+            with self.subTest(errors=errors):
+                feedback = module._program_failure_feedback(errors)
+                self.assertIn(expected, feedback)
+                self.assertIn(errors[0], feedback)
+
     def test_image_preserves_bytes_and_uses_png_or_jpeg_mime(self):
         module = _load_module()
         with TemporaryDirectory() as temp:

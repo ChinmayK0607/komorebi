@@ -5,6 +5,8 @@ import json
 import sys
 import unittest
 from pathlib import Path
+from tempfile import TemporaryDirectory
+from unittest.mock import patch
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
@@ -15,6 +17,25 @@ spec.loader.exec_module(gateway)
 
 
 class GatewayLabelTest(unittest.TestCase):
+    def test_subject_first_prompt_is_forwarded_without_changing_default(self):
+        self.assertIn("principal subjects", gateway.SUBJECT_FIRST_PROMPT)
+        self.assertNotEqual(gateway.PROMPT, gateway.SUBJECT_FIRST_PROMPT)
+        with TemporaryDirectory() as temp:
+            root = Path(temp)
+            reference, a, b = (root / name for name in ("reference.png", "a.png", "b.png"))
+            for path, payload in ((reference, b"ref"), (a, b"A"), (b, b"B")):
+                path.write_bytes(payload)
+            with patch.object(gateway, "judge_view", side_effect=[
+                {"label": {"winner": "A"}}, {"label": {"winner": "B"}},
+            ]) as judge_view:
+                result = gateway.judge_pair(
+                    key="unused", reference=reference, a=a, b=b,
+                    prompt=gateway.SUBJECT_FIRST_PROMPT,
+                )
+            self.assertEqual(result["score_A"], 1.0)
+            self.assertEqual(judge_view.call_args_list[0].kwargs["prompt"],
+                             gateway.SUBJECT_FIRST_PROMPT)
+
     def test_singular_weakness_keys(self):
         raw = json.dumps({"winner": "A", "reason": "A preserves the bus",
                           "weakness_A": ["Slightly flat"],

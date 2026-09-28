@@ -6,6 +6,7 @@ import argparse
 import hashlib
 import html
 import json
+import re
 import shutil
 from pathlib import Path
 
@@ -24,6 +25,8 @@ def build(*, manifest: Path, rollout_root: Path, outdir: Path, step: int,
     cards = []
     for case in cases:
         case_id = case["id"]
+        if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]*", case_id):
+            raise ValueError(f"unsafe case id: {case_id!r}")
         reference = Path(case["reference"])
         if not reference.is_file() or sha(reference) != case["reference_sha256"]:
             raise ValueError(f"reference changed: {case_id}")
@@ -37,13 +40,28 @@ def build(*, manifest: Path, rollout_root: Path, outdir: Path, step: int,
                 raise ValueError(f"expected one {policy} episode for {case_id}, found {len(episodes)}")
             episode = max(episodes, key=lambda path: path.stat().st_mtime_ns) if latest_episode else episodes[0]
             turns = []
+            attempted_turns = []
             for turn in sorted(episode.glob("turn-*"), key=lambda p: int(p.name.split("-")[-1])):
                 receipt = turn / "painting.json"
                 image = turn / "painting.png"
-                if not receipt.is_file() or not image.is_file():
+                program = turn / "program.js"
+                if not receipt.is_file():
                     continue
                 data = json.loads(receipt.read_text())
-                if not data.get("valid"):
+                evidence = outdir / "evidence" / case_id / policy / turn.name
+                evidence.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(receipt, evidence / "painting.json")
+                if program.is_file():
+                    shutil.copy2(program, evidence / "program.js")
+                attempted_turns.append({
+                    "turn": int(turn.name.split("-")[-1]), "valid": bool(data.get("valid")),
+                    "program_sha256": sha(program) if program.is_file() else None,
+                    "receipt_sha256": sha(receipt),
+                    "program": str((evidence / "program.js").relative_to(outdir)) if program.is_file() else None,
+                    "receipt": str((evidence / "painting.json").relative_to(outdir)),
+                    "errors": data.get("errors") or data.get("error"),
+                })
+                if not data.get("valid") or not image.is_file():
                     continue
                 name = f"{case_id}-{policy}-{turn.name}.png"
                 shutil.copy2(image, outdir / name)
@@ -51,6 +69,7 @@ def build(*, manifest: Path, rollout_root: Path, outdir: Path, step: int,
                               "sha256": sha(image), "render_seconds": data.get("painting_seconds")})
             final = turns[-1]["image"] if turns else None
             record[policy] = {"episode": str(episode), "valid_turns": turns,
+                              "attempted_turns": attempted_turns,
                               "final": final, "final_sha256": turns[-1]["sha256"] if turns else None}
             cells.append((label, final, turns))
         rows.append(record)
@@ -59,6 +78,14 @@ def build(*, manifest: Path, rollout_root: Path, outdir: Path, step: int,
             image_html = (f'<img src="{html.escape(image)}" loading="lazy" alt="{html.escape(label)} for {html.escape(case_id)}">'
                           if image else '<div class="missing">No valid canvas</div>')
             links = " ".join(f'<a href="{html.escape(item["image"])}">turn {item["turn"]}</a>' for item in turns)
+            policy = ("sft-step512" if label == "SFT step 512" else
+                      f"rl-step-{step}" if label == f"RL step {step}" else None)
+            attempts = record.get(policy, {}).get("attempted_turns", []) if policy else []
+            links += " " + " ".join(
+                f'<a href="{html.escape(item["receipt"])}">turn {item["turn"]} '
+                f'{"receipt" if item["valid"] else "error"}</a>'
+                for item in attempts
+            )
             pieces.append(f'<div class="cell"><h3>{html.escape(label)}</h3>{image_html}<div class="turns">{links}</div></div>')
         cards.append(f'<section><h2>{html.escape(case_id)}</h2><div class="grid">{"".join(pieces)}</div></section>')
     report = {"schema": "matched-overfit-gallery-v1", "step": step, "rows": rows}

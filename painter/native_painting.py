@@ -32,7 +32,7 @@ except ImportError:
     from native_painting_renderer import render_action
 
 
-PROTOCOL_VERSION = "native-painting-eval-v1"
+PROTOCOL_VERSION = "native-painting-eval-v2"
 DEFAULT_SEED = 918200
 DEFAULT_MAX_TURNS = 6
 DEFAULT_MAX_OUTPUT_TOKENS = 8192
@@ -109,6 +109,25 @@ def _read_manifest_rows(path: Path) -> list[dict[str, Any]]:
 
 def _is_finish(reply: str) -> bool:
     return "```" not in reply and bool(re.search(r"(?m)^\s*FINISHED\s*$", reply))
+
+
+def _program_failure_feedback(errors: Any) -> str:
+    """Give a concise, actionable model-code error without rewriting its sketch."""
+
+    if isinstance(errors, list):
+        detail = "; ".join(str(item) for item in errors if item)
+    else:
+        detail = str(errors or "unknown JavaScript error")
+    detail = detail[:700]
+    lower = detail.lower()
+    guidance = "Return a complete, readable JavaScript sketch in one code block; do not repeat the failed sketch."
+    if "syntaxerror" in lower or any(word in lower for word in ("unexpected token", "missing )", "unexpected end")):
+        guidance = "Fix the JavaScript syntax; avoid compressed one-line code and return a complete sketch in one code block."
+    elif "cannot redefine property" in lower:
+        guidance = "Do not redefine p5 globals such as ellipse, line, fill, or background; rename your helper and return a complete sketch."
+    elif "not iterable" in lower:
+        guidance = "Check every brush.polygon point list and every spread, destructuring, or for-of source; each must receive an iterable. Return a complete sketch."
+    return f"The sketch produced no valid canvas. Renderer error: {detail}\n{guidance}"
 
 
 class NativePaintingData(vf.TaskData):
@@ -300,9 +319,9 @@ class NativePaintingEnv(vf.Env[NativePaintingEnvConfig]):
                         current_program = result.get("program") or current_program
                         feedback = NO_CHANGE if result.get("no_change") else NEXT_VERSION
                     else:
-                        feedback = "The sketch did not produce a valid canvas. Fix the reported program error and return a complete javascript code block."
-                        if result.get("error"):
-                            feedback += "\nRenderer feedback: " + str(result["error"])
+                        feedback = _program_failure_feedback(
+                            result.get("renderer_errors") or result.get("error")
+                        )
                 interaction.trace.info.setdefault("turns", []).append(turn_info)
                 if turn >= data.max_turns:
                     break

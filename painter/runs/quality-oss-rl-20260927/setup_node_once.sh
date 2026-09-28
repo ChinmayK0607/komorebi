@@ -13,6 +13,8 @@ export HF_TOKEN_PATH="${HF_TOKEN_PATH:-$NODE_ROOT/private/hf-token}"
 export GATEWAY_KEY_FILE="${GATEWAY_KEY_FILE:-$NODE_ROOT/private/gateway.env}"
 MODEL_REVISION=1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0
 MODEL_DIR="$NODE_ROOT/model-cache/qwen/$MODEL_REVISION"
+RUN_NAME="${PAINTER_RL_RUN_NAME:-gateway-overfit-four-20260928}"
+CONFIG_PATH="${PAINTER_RL_CONFIG:-$ROOT/native-rl-overfit-four.toml}"
 
 [[ "$(uname -s)" == Linux ]] || { echo 'Linux node required' >&2; exit 1; }
 [[ -f "$REPO/painter/foundation-lock.json" ]] || { echo 'painter checkout missing' >&2; exit 1; }
@@ -143,15 +145,22 @@ if ! wait "$inputs_pid"; then
 fi
 trap - EXIT
 
-if [[ ! -f "$ROOT/native-rl-overfit-four.toml" ]]; then
+if [[ ! -f "$CONFIG_PATH" ]]; then
+  INFLIGHT_ARGS=()
+  if [[ -n "${PAINTER_INITIAL_INFLIGHT:-}" || -n "${PAINTER_MAX_INFLIGHT:-}" ]]; then
+    [[ -n "${PAINTER_INITIAL_INFLIGHT:-}" && -n "${PAINTER_MAX_INFLIGHT:-}" ]] || {
+      echo 'Set both PAINTER_INITIAL_INFLIGHT and PAINTER_MAX_INFLIGHT' >&2; exit 2;
+    }
+    INFLIGHT_ARGS=(--initial-inflight "$PAINTER_INITIAL_INFLIGHT" --max-inflight "$PAINTER_MAX_INFLIGHT")
+  fi
   PYTHONPATH="$REPO/painter:$ROOT" "$PRIME_ROOT/.venv/bin/python" "$ROOT/prepare_rl_config.py" \
-    --output "$ROOT/native-rl-overfit-four.toml" --model "$MODEL_DIR" \
+    --output "$CONFIG_PATH" --model "$MODEL_DIR" \
     --run-root "$ROOT" --manifest profile-data/overfit-four-manifest.json \
     --expected-count 4 --max-steps 4 --checkpoint-interval 1 \
     --gpus-per-node 2 --num-train-gpus 1 --num-infer-gpus 1 \
     --batch-size 8 --group-size 4 --max-turns 4 \
     --max-completion-tokens 8192 --learning-rate 1e-6 \
-    --run-name gateway-overfit-four-20260928 \
+    --run-name "$RUN_NAME" "${INFLIGHT_ARGS[@]}" \
     --adapter-revision adf687e5b321514eda7be6eab050434fdc8e44ff \
     --adapter-prefix photo-curriculum-sft-20260922-balanced/step_512 \
     --adapter-sha256 bea72b066986faa1b92b9dc539c710093181ee916b99323e2b2498f318ac1740 \
@@ -159,6 +168,7 @@ if [[ ! -f "$ROOT/native-rl-overfit-four.toml" ]]; then
 fi
 
 MODEL_DIR="$MODEL_DIR" PRIME_ROOT="$PRIME_ROOT" PAINTER_REPO_ROOT="$REPO" \
-  BRUSH_ROOT="$REPO/painter/rl_helpers" \
+  BRUSH_ROOT="$REPO/painter/rl_helpers" PAINTER_RL_RUN_NAME="$RUN_NAME" \
+  PAINTER_RL_CONFIG="$CONFIG_PATH" \
   bash "$ROOT/run_overfit.sh" --preflight
 echo 'NODE_READY: launch with bash painter/runs/quality-oss-rl-20260927/run_overfit.sh'

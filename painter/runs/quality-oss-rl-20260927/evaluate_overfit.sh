@@ -9,19 +9,20 @@ PAINTER_ROOT="$REPO/painter"
 PRIME_ROOT="${PRIME_ROOT:-/root/painter/prime}"
 MODEL_DIR="${MODEL_DIR:-/root/painter/model-cache/qwen/1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0}"
 STEP="${RL_STEP:-4}"
+RUN_NAME="${RL_RUN_NAME:-gateway-overfit-four-20260928}"
 [[ "$STEP" =~ ^[1-9][0-9]*$ ]] || { echo 'RL_STEP must be a positive integer' >&2; exit 2; }
 OUT="$ROOT/matched-eval-step-$STEP"
 SFT_ADAPTER="$(tr -d '\r\n' < "$ROOT/../photo-curriculum-rl-20260922/initial-adapter-path.txt")"
-RL_ADAPTER="$ROOT/async-output/gateway-overfit-four-20260928/artifacts/adapters/step_$STEP"
+RL_ADAPTER="$ROOT/async-output/$RUN_NAME/artifacts/adapters/step_$STEP"
 PYTHON="$PRIME_ROOT/.venv/bin/python"
 VLLM="$PRIME_ROOT/.venv/bin/vllm"
 EVAL="$PRIME_ROOT/.venv/bin/eval"
 mkdir -p "$OUT/logs" "$OUT/cache/sft" "$OUT/cache/rl"
 
-"$PYTHON" - "$ROOT/profile-data/overfit-four-manifest.json" "$OUT" "$SFT_ADAPTER" "$RL_ADAPTER" "$STEP" <<'PY'
+"$PYTHON" - "$ROOT/profile-data/overfit-four-manifest.json" "$OUT" "$SFT_ADAPTER" "$RL_ADAPTER" "$STEP" "$RUN_NAME" <<'PY'
 import hashlib, json, sys
 from pathlib import Path
-manifest, out, sft, rl, step = Path(sys.argv[1]), Path(sys.argv[2]), Path(sys.argv[3]), Path(sys.argv[4]), int(sys.argv[5])
+manifest, out, sft, rl, step, run_name = Path(sys.argv[1]), Path(sys.argv[2]), Path(sys.argv[3]), Path(sys.argv[4]), int(sys.argv[5]), sys.argv[6]
 def digest(path):
     h=hashlib.sha256()
     with path.open('rb') as stream:
@@ -37,7 +38,7 @@ for row in rows:
 if digest(sft/'adapter_model.safetensors')!='bea72b066986faa1b92b9dc539c710093181ee916b99323e2b2498f318ac1740':
     raise SystemExit('SFT adapter hash mismatch')
 upload=json.loads((rl/'hf-upload.json').read_text())
-if upload.get('verified') is not True or upload.get('private') is not False or upload.get('path')!=f'gateway-overfit-four-20260928/step_{step}':
+if upload.get('verified') is not True or upload.get('private') is not False or upload.get('path')!=f'{run_name}/step_{step}':
     raise SystemExit('RL adapter is not public and verified for requested step')
 expected=upload['files']['adapter_model.safetensors']['sha256']
 if digest(rl/'adapter_model.safetensors')!=expected: raise SystemExit('RL adapter hash mismatch')

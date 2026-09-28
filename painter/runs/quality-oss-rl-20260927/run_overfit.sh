@@ -11,8 +11,8 @@ export MODEL_DIR="${MODEL_DIR:-/root/painter/model-cache/qwen/1d4bf0f2ff6012fd82
 export HF_TOKEN_PATH="${HF_TOKEN_PATH:-/root/painter/private/hf-token}"
 GATEWAY_KEY_FILE="${GATEWAY_KEY_FILE:-/root/painter/private/gateway.env}"
 export WATERCOLOUR_INIT_ADAPTER="$(cat "$ROOT/../photo-curriculum-rl-20260922/initial-adapter-path.txt")"
-export PAINTER_RL_RUN_NAME="gateway-overfit-four-20260928"
-export PAINTER_RL_CONFIG="$ROOT/native-rl-overfit-four.toml"
+export PAINTER_RL_RUN_NAME="${PAINTER_RL_RUN_NAME:-gateway-overfit-four-20260928}"
+export PAINTER_RL_CONFIG="${PAINTER_RL_CONFIG:-$ROOT/native-rl-overfit-four.toml}"
 export PAINTER_RL_MANIFEST="$ROOT/profile-data/overfit-four-manifest.json"
 export PAINTER_RL_MAX_STEPS=4
 export PAINTER_GPUS_PER_NODE=2 PAINTER_NUM_TRAIN_GPUS=1 PAINTER_NUM_INFER_GPUS=1

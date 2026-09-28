@@ -27,8 +27,10 @@ def digest(path: Path) -> str:
     return h.hexdigest()
 
 
-def select(root: Path, step: int) -> list[Path]:
-    run = root / "async-output/gateway-overfit-four-20260928"
+def select(root: Path, step: int, run_name: str = "gateway-overfit-four-20260928") -> list[Path]:
+    if not run_name.startswith("gateway-overfit-") or "/" in run_name or ".." in run_name:
+        raise ValueError("unsafe run name")
+    run = root / "async-output" / run_name
     matched = root / f"matched-eval-step-{step}"
     required = [root / "profile-data/overfit-four-manifest.json",
                 root / "native-rl-overfit-four.toml",
@@ -48,8 +50,9 @@ def select(root: Path, step: int) -> list[Path]:
     return sorted(set(required + optional))
 
 
-def package(root: Path, step: int, output: Path) -> dict:
-    files = select(root, step)
+def package(root: Path, step: int, output: Path,
+            run_name: str = "gateway-overfit-four-20260928") -> dict:
+    files = select(root, step, run_name)
     records = []
     for path in files:
         if path.is_symlink() or path.suffix.lower() not in ALLOWED_SUFFIXES:
@@ -82,6 +85,7 @@ def main() -> None:
     parser.add_argument("--token-file", type=Path, required=True)
     parser.add_argument("--remote-path", default=REMOTE_PATH,
                         help="distinct HF dataset path for each matched checkpoint")
+    parser.add_argument("--run-name", default="gateway-overfit-four-20260928")
     args = parser.parse_args()
     root = args.root.resolve()
     token_file = args.token_file
@@ -89,8 +93,8 @@ def main() -> None:
         raise PermissionError("HF token file must be owner-only and not a symlink")
     if not args.remote_path.startswith("runs/quality-oss-rl-20260927/") or not args.remote_path.endswith(".tar.gz"):
         raise ValueError("remote evidence path must stay inside this run's HF prefix")
-    output = root / f"final-evidence-step-{args.step}.tar.gz"
-    summary = package(root, args.step, output)
+    output = root / f"final-evidence-{args.run_name}-step-{args.step}.tar.gz"
+    summary = package(root, args.step, output, run_name=args.run_name)
     token = token_file.read_text().strip()
     api = HfApi(token=token)
     info = api.repo_info(REPO_ID, repo_type="dataset")
@@ -106,7 +110,7 @@ def main() -> None:
         raise ValueError("public remote evidence hash mismatch")
     result = {**summary, "repo_id": REPO_ID, "path": args.remote_path,
               "commit": getattr(commit, "oid", None), "private": False, "verified": True}
-    (root / f"final-evidence-step-{args.step}-upload.json").write_text(json.dumps(result, indent=2, sort_keys=True) + "\n")
+    (root / f"final-evidence-{args.run_name}-step-{args.step}-upload.json").write_text(json.dumps(result, indent=2, sort_keys=True) + "\n")
     print(json.dumps(result, sort_keys=True))
 
 
