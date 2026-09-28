@@ -173,7 +173,8 @@ references, seed 918200, temperature 1, four-turn and 8,192-token-per-turn
 limits, and renderer as the frozen step-512 SFT baseline. Step-four MiMo
 Flash labels are 2 RL wins (bus, dog), 2 SFT wins (sphere, flower), no
 censoring. Step two is 2 RL wins (bus, flower), 1 SFT win (sphere), and 1
-censored dog scene. Its dog program produced no valid canvas on any of its
+censored dog scene in the original judge JSON. Its dog program produced no
+valid canvas on any of its
 four turns: the `a is not iterable` page error recurred despite feedback.
 This disqualifies step two as a reliable four-scene policy, despite its higher
 second training-batch reward. The step-four dog is valid but its animal is
@@ -189,8 +190,14 @@ The step-two [public evidence archive](https://huggingface.co/datasets/CK0607/ko
 contains 789 screened files, 17,666,467 bytes, SHA-256
 `b1b9d16c7db1dfe9203f2256e8273f66106427ac27523c9ecc316e68747e4de9`.
 Both archives were anonymously downloaded and hash-verified after upload;
-their rollouts and judgment receipts permit auditing the invalid dog scene
-and pairwise decisions.
+their training rollouts and judgment receipts permit auditing the pairwise
+decisions. The step-two archive **omitted the raw matched-evaluation programs
+and renderer receipts**, so the exact four failed dog programs were lost when
+the node was released. The matched gallery still proves no valid dog canvas
+was produced. The subsequent evaluator correction counts this as a
+deterministic SFT win, giving step two a 2–2 split by usable final canvases;
+it does not overwrite or misrepresent the original MiMo labels. Future
+galleries copy every attempted program and receipt before node release.
 
 Decision: preserve the SFT baseline and step-four RL adapter, calibrate the
 judge against human subject-fidelity labels, and fix recurrent generated-code
