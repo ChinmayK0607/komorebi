@@ -108,8 +108,19 @@ def render_action(
     if not receipt.get("valid"):
         error = str(receipt.get("errors") or receipt.get("error") or completed.stderr)
         error_code = receipt.get("error_code")
+        if error_code == "render_timeout" and receipt.get("timed_out"):
+            # The browser worker launched and exhausted the action deadline.
+            # A non-terminating or prohibitively expensive model program is an
+            # invalid action; preserve the prior canvas and let the next turn
+            # repair it. Other runtime errors remain censored service failures.
+            row.update(
+                error=f"Your painting program exceeded the {deadline_seconds}s render limit. Simplify it and call noLoop() in draw().",
+                renderer_errors=["Painting program exceeded the render limit"],
+                failure_kind="program_timeout",
+            )
+            return row
         # The vendor renderer uses an error_code for worker/runtime failures
-        # (missing Playwright, browser startup, deadline, or child failure).
+        # (missing Playwright, browser startup, or child failure).
         # Those are infrastructure outages and must reach the native loop's
         # service-failure path; only a receipt with page-level errors and no
         # runtime error code is a model-program failure.

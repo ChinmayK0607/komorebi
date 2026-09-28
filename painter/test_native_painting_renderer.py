@@ -115,6 +115,36 @@ class NativePaintingRendererTests(unittest.TestCase):
                         renderer=renderer, renderer_python=renderer_python,
                     )
 
+    def test_completed_worker_timeout_is_invalid_model_action(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            folder = root / "episode"
+            renderer = root / "renderer.py"
+            renderer_python = root / "python"
+            renderer.write_text("# test renderer\n")
+            renderer_python.write_text("# test python\n")
+
+            def fake_run(command, **kwargs):
+                output = Path(command[8])
+                output.with_suffix(".json").write_text(json.dumps({
+                    "valid": False,
+                    "timed_out": True,
+                    "error_code": "render_timeout",
+                    "error": "Hard render deadline exceeded (180s)",
+                }))
+                return SimpleNamespace(returncode=0, stderr="")
+
+            with patch.object(renderer_module.subprocess, "run", side_effect=fake_run):
+                result = renderer_module.render_action(
+                    root=root, folder=folder,
+                    reply="```javascript\nfunction draw() {}\n```",
+                    initial_canvas=None, initial_program=None,
+                    renderer=renderer, renderer_python=renderer_python,
+                )
+            self.assertFalse(result["valid"])
+            self.assertEqual(result["failure_kind"], "program_timeout")
+            self.assertIn("noLoop", result["error"])
+
 
 if __name__ == "__main__":
     unittest.main()
