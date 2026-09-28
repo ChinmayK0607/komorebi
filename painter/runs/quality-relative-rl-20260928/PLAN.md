@@ -131,3 +131,14 @@ that includes setup and the interrupted attempt. Four updates, public
 checkpoints, matched evaluation, and final spend remain pending. The
 interrupted attempt's raw evidence will be included in the public audit,
 excluding a duplicate step-zero weight file.
+
+Optimizer step two completed at 11:03:20 UTC with gradient norm 0.0378 and
+the same 1e-6 learning rate. Its 233,590,600-byte adapter is [public on Hugging
+Face](https://huggingface.co/CK0607/qwen3.8-27b-brush-painting/tree/a2e78de540035fcd39039fac6710e13dd8e1528e/quality-relative-eight-20260928/step_2),
+commit `a2e78de540035fcd39039fac6710e13dd8e1528e`, weight SHA-256
+`4ca0b90b26d3d818fd96a21eda0f101fbfc4717bc42a839a211be851767a0d9a`.
+Anonymous repository and LFS metadata agree with the upload receipt's byte
+count and SHA-256. The second group had six valid canvases and five positive
+adjusted rewards, with nonzero token credit on all eight traces. This is not a
+held-out visual result. A separate copy of the small step-two upload receipt
+is retained on the node in case Prime prunes the local step-two directory.

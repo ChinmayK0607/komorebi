@@ -49,6 +49,10 @@ def select(old: Path, root: Path, pack: Path, telemetry: Path,
            interrupted: Path | None = None) -> list[tuple[Path, str]]:
     run = old / "async-output" / RUN
     matched = root / "matched-eval-step-4"
+    step_two_receipt = run / "artifacts/adapters/step_2/hf-upload.json"
+    if not step_two_receipt.is_file():
+        # Prime may prune the local step-two directory after saving step four.
+        step_two_receipt = old / "checkpoint-receipts/step_2/hf-upload.json"
     required = [
         (old / "native-rl-relative-eight.toml", "config/native-rl-relative-eight.toml"),
         (pack / "train-manifest.json", "curriculum/train-manifest.json"),
@@ -64,7 +68,7 @@ def select(old: Path, root: Path, pack: Path, telemetry: Path,
         (run / "monitors/file/metrics.jsonl", "prime/metrics.jsonl"),
         (run / "logs/attempt_1/orchestrator.log", "prime/orchestrator.log"),
         (run / "logs/attempt_1/trainer.log", "prime/trainer.log"),
-        (run / "artifacts/adapters/step_2/hf-upload.json", "checkpoints/step_2/hf-upload.json"),
+        (step_two_receipt, "checkpoints/step_2/hf-upload.json"),
         (run / "artifacts/adapters/step_4/hf-upload.json", "checkpoints/step_4/hf-upload.json"),
     ]
     absent = [name for path, name in required if not path.is_file()]
