@@ -138,6 +138,12 @@ publicly and hash-verified at Hugging Face revision
 `8a990737e719e86d8f91125c951d15066200d71c`, path
 `text-pairwise-margin-workerfix-20260928/step_4`, with adapter weight SHA-256
 `1279982e1f6d1dbc53c2bad82ced7fee0e2b447989ef1ec228fce6a700eb4c2a`.
+For this attempt, compare the public step-4, step-12, and final step-20
+adapters on the same full 16-case held-out set under the margin protocol,
+subject to the rental deadline. This spacing was chosen before seeing any
+checkpoint validation result. If the finite run ends early, use its latest
+public checkpoint in place of step 20. Keep all checked results, including
+regressions, and reserve time for evidence upload and pod termination.
 During the active fifth attempt from 19:34–19:57 UTC, GPU 0 (inference)
 averaged 99.46% utilization with 99.3% of 143 ten-second samples at or above
 90%; GPU 1 (trainer) averaged 10.04%, with 9.8% of samples at or above 90%.
