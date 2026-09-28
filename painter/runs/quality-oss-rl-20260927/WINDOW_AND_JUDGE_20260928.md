@@ -1,7 +1,8 @@
 # Four-scene recovery and in-flight test, 2026-09-28
 
-Status: finite 8/12 in-flight GPU run launched at 2026-09-28 00:18 UTC;
-subject-first API calibration is running separately. No visual result yet.
+Status: finite 8/12 in-flight GPU run and matched step-four evaluation completed;
+public evidence is hash-verified and the GPU node was released. Do not scale
+this checkpoint on the current reward and rollout configuration.
 
 ## Question and matched baseline
 
@@ -88,3 +89,78 @@ wall time per update, GPU utilization over a stated window, and cost per
 accepted judged episode. Preserve raw judge labels and failed programs.
 Do not promote the new checkpoint solely from online reward; compare rendered
 finals and retain the public SFT baseline if the visual result is not better.
+
+## Result and decision, 2026-09-28
+
+The finite run exited zero. All four accepted batches contained 8/8 trainable
+episodes; their online rewards were 0.50, 0.625, 0.50 and 0.50. Trainer gradient
+norms were 0.0962, 0.1006, 0.1436 and 0.0767. The four adapter files changed
+from the initializer and each has a public, hash-verified HF receipt. Step four
+is [public at revision `61f06efa`](https://huggingface.co/CK0607/qwen3.8-27b-brush-painting/tree/61f06efa09a3419fc8b902503a344dce9ecad7eb/gateway-overfit-window-20260928/step_4),
+with weight SHA-256
+`1fae84a66095115a79aa81aa4665966ec0b93f8cbc4057cdde936fd17dbf1fdb`.
+The online reward sequence does not establish visual improvement.
+
+The matched evaluation used the four pinned training references, seed 918200,
+temperature 1, four turns, the same 8,192-token per-turn ceiling and renderer.
+It completed both policies successfully. The [local gallery](collected-window-eval/review/index.html)
+shows three MiMo pairwise wins for the frozen SFT step-512 policy (sphere/vase,
+bus/mug/tree, flower/cylinder). RL's only win was the dog/skateboard photo:
+SFT produced no valid final canvas, so the scorer correctly assigned a
+deterministic RL win without an API call. The RL dog remains visibly crude.
+Visual inspection agrees that the simple-scene RL variants lose important
+structure: its mug handle floats free, and its sphere/vase and flower/vessel
+are less faithful. This one-seed four-scene result is an overfit diagnostic,
+not a generalization estimate or evidence that concurrency alone caused the
+regression; the error-feedback scaffold also changed.
+
+Training collection ran from 00:27:34 to 01:08:44 UTC. Across 245 ten-second
+telemetry samples per GPU, inference GPU 0 averaged 98.0% engine activity
+(98.4% of samples at or above 50%), while trainer GPU 1 averaged 13.5%
+(13.9% at or above 50%). These are sampled busy fractions over that interval,
+not FLOPS. Accepted collection steps took 13m56s, 8m44s, 10m29s and 5m25s.
+Prime logged six dropped queued traces and eleven canceled stale in-flight
+episodes across the run; these are different units and must not be summed as
+completed renderings. The smaller 8/12 window therefore did not remove stale
+work. The live renderer recorded 185 attempts, 139 valid and 46 invalid; 21
+invalid attempts contained JavaScript syntax errors, nine undefined names,
+and eight unsupported API calls. Mean receipt wall time was 17.0 seconds.
+Previously measured parallel renderer capacity was about 0.41 paintings/s,
+above this run's end-to-end action rate, while inference was busy almost
+continuously. A renderer rewrite is not justified by this profile.
+
+The separate subject-first prompt calibration used the *previous* window's
+four rendered pairs. Its eight orientation calls changed the sphere winner
+and made the dog orientation-dependent; it did not establish better agreement
+with a human gold set. The current live reward kept the original prompt.
+The prior calibration receipts and image hashes are included under
+`matched-eval-step-4/review/prior-step4-judge-calibration/` in the public
+archive, explicitly scoped to that prior checkpoint. Do not present them as
+labels for this window's step four.
+
+The [public evidence archive](https://huggingface.co/datasets/CK0607/komorebi-painter-experiments/blob/b377353e87fb56003b3ed1509d34f97c8fad0606/runs/quality-oss-rl-20260927/window-overfit-20260928-evidence.tar.gz)
+contains 847 screened files, including the actual window config, raw failed
+programs, renderer receipts, matched images, judge labels, and frozen opponent
+receipts/images. Its SHA-256 is
+`05c3667ae14a9850968225ee8e22026e10166c546bc8b89a47673d2a17fe3581`;
+an unauthenticated re-download matched. The evidence packager fix is commit
+`f0e035b`, made *after* training; training itself used `65f679b`. The
+additional targeted feedback for `brush.ellipse()` and undefined names is
+commit `b608142`, also post-run and untested by training. Focused feedback
+tests pass.
+
+The last observed Lium spend for this node was $3.47 at about 1.5 hours;
+combined with the prior observed at-least $7.23, campaign GPU spend was at
+least approximately $10.70, below the $25 GPU-only ceiling. Vercel API costs
+are separate. The exact owned node was removed and `lium ps --format json`
+returned `[]`. No scheduled task was created.
+
+**Next decision:** retain SFT step 512. Do not launch a larger version of this
+RL recipe. First calibrate the image-bound pairwise judge against the existing
+24 unique human-labeled category pairs plus a small set of current
+SFT-versus-RL visual pairs, including missing-subject and attractive-background
+failures. Measure category-wise agreement and orientation consistency. Keep
+renderability as eligibility, not visual reward. Then test a group-aware or
+tighter in-flight policy on a broader mixed-reference curriculum, measuring
+quality-evaluable updates per GPU-hour and stale work; only scale if a matched
+held-out gallery shows an actual visual gain.
