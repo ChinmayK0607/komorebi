@@ -43,6 +43,11 @@ def select(root: Path, step: int, run_name: str = "gateway-overfit-four-20260928
     if missing:
         raise FileNotFoundError("required evidence missing: " + ", ".join(missing))
     optional = list((root / "logs").glob("gpu-telemetry-*.csv"))
+    # The lazy SFT opponent is expensive to regenerate on a fresh node.
+    # Keep only immutable receipts and canvases, never its temporary work,
+    # locks, vLLM cache, or evaluation process files.
+    optional.extend((root / "frozen-opponents/receipts").glob("*.json"))
+    optional.extend((root / "frozen-opponents/images").glob("*.png"))
     for folder in (root / "rl-rollouts", root / "judge-queue", matched / "review"):
         if folder.is_dir():
             optional.extend(path for path in folder.rglob("*")

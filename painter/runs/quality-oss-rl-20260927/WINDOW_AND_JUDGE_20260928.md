@@ -55,6 +55,17 @@ has a faint, poorly formed animal. Compare prompt variants with image hashes
 and any user preference before deciding whether to change the training
 reward. Do not fabricate a human gold label from a model response.
 
+The four-pair subject-first calibration finished with all eight image-order
+calls scored. In SFT-score order sphere/bus/flower/dog, the default prompt
+gave `1/0/1/0`, while subject-first gave `0/0/1/0.5`. Thus wording flipped
+the sphere and made dog orientation-dependent; it did not establish a better
+judge. The two prompts agree on bus and flower. The eight calls' provider
+usage totals approximately $0.00770. Raw image-bound labels and prompt hashes
+are saved under the ignored `collected-eval/judge-calibration/` evidence tree
+and will be backed up publicly before releasing the node. Keep the default
+live reward for the finite window run; seek human subject-fidelity labels
+before changing the training reward.
+
 ## Operating bounds and decision
 
 Use one finite 2-GPU node at no more than $2.38/hour if the previous 96 GB
