@@ -66,6 +66,15 @@ and will be backed up publicly before releasing the node. Keep the default
 live reward for the finite window run; seek human subject-fidelity labels
 before changing the training reward.
 
+At 00:26 UTC the launch finished a cold-start prewarm of one frozen SFT
+opponent; the first receipt was created around eight minutes after launch.
+Additional opponent cache entries are generated on demand. This is a
+one-time cost separate from steady-state rollout throughput. The public
+evidence packager now retains hash-bound opponent receipts and canvases,
+and a next-node setup option restores them only from an archive with a
+supplied exact SHA-256. Those restore changes were prepared after the
+training source commit and do not affect this run.
+
 ## Operating bounds and decision
 
 Use one finite 2-GPU node at no more than $2.38/hour if the previous 96 GB

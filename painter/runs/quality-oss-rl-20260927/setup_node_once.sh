@@ -145,6 +145,15 @@ if ! wait "$inputs_pid"; then
 fi
 trap - EXIT
 
+if [[ -n "${PAINTER_FROZEN_CACHE_REMOTE_PATH:-}" || -n "${PAINTER_FROZEN_CACHE_SHA256:-}" ]]; then
+  [[ -n "${PAINTER_FROZEN_CACHE_REMOTE_PATH:-}" && -n "${PAINTER_FROZEN_CACHE_SHA256:-}" ]] || {
+    echo 'Set both PAINTER_FROZEN_CACHE_REMOTE_PATH and PAINTER_FROZEN_CACHE_SHA256' >&2; exit 2;
+  }
+  "$BOOTSTRAP/bin/python" "$ROOT/restore_frozen_cache.py" \
+    --root "$ROOT" --hf-path "$PAINTER_FROZEN_CACHE_REMOTE_PATH" \
+    --archive-sha256 "$PAINTER_FROZEN_CACHE_SHA256"
+fi
+
 if [[ ! -f "$CONFIG_PATH" ]]; then
   INFLIGHT_ARGS=()
   if [[ -n "${PAINTER_INITIAL_INFLIGHT:-}" || -n "${PAINTER_MAX_INFLIGHT:-}" ]]; then
