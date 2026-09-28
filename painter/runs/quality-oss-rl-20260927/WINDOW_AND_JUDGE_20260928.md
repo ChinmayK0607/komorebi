@@ -156,11 +156,42 @@ are separate. The exact owned node was removed and `lium ps --format json`
 returned `[]`. No scheduled task was created.
 
 **Next decision:** retain SFT step 512. Do not launch a larger version of this
-RL recipe. First calibrate the image-bound pairwise judge against the existing
-24 unique human-labeled category pairs plus a small set of current
-SFT-versus-RL visual pairs, including missing-subject and attractive-background
-failures. Measure category-wise agreement and orientation consistency. Keep
-renderability as eligibility, not visual reward. Then test a group-aware or
-tighter in-flight policy on a broader mixed-reference curriculum, measuring
-quality-evaluable updates per GPU-hour and stale work; only scale if a matched
-held-out gallery shows an actual visual gain.
+RL recipe. Keep renderability as eligibility, not visual reward. The default
+MiMo prompt remains in place pending actual beauty labels. Expand the
+category and aesthetic calibration beyond the small development set, focusing
+on equally poor/tie cases and wrong-subject but attractive-background pairs.
+Then test a group-aware or tighter in-flight policy on a broader
+mixed-reference curriculum, measuring quality-evaluable updates per GPU-hour
+and stale work; only scale if a matched held-out gallery shows a visual gain.
+
+## Human category-label audit, 2026-09-28
+
+The earlier `golden-categories-v1` export contains 24 unique reviewed cases,
+but only 19 distinct usable A/B/tie preferences for this comparison. All
+reference and candidate pixels were checked against the frozen image hashes;
+the panel manifest identity is
+`f70b8d592f101f351ff175224ffc33bbcfc4ecb1f3b78d65577e8b7e3086df78`.
+The reviewed human-label JSON SHA-256 is
+`423c2916ee90d238f05c6fd3128abad962301cb90ab1c20d501b388d85bc62e3`.
+The finite [calibration script](calibrate_human_categories.py) called the
+Vercel MiMo Flash judge on each case with both the live and subject-first
+prompts and both candidate orders: 76 image-bound receipts, zero failures,
+total provider-reported cost approximately $0.0509. It performed no local
+model inference, rendering, or GPU rental. The raw receipts and
+[summary](collected-window-eval/human-category-calibration/summary.json) are
+local ignored evidence; the summary SHA-256 is
+`5ac0507ad262311094aecf221939d5cb408fd71f10726af48c69e658bd4fddfb`.
+
+The live/default prompt exactly matched 16/19 human preferences and had one
+image-order split. The subject-first prompt matched 15/19 and had three
+splits. Default category counts were completeness 3/3, identity 1/1,
+layout 5/5, preservation 5/6, shape 0/1, and values/color 2/3. These tiny
+per-category denominators are descriptive only. The two human ties (house
+values and leaf shape) were missed by both prompts, which chose one candidate
+despite both paintings being comparably incomplete. The preservation
+headphone case split with A/B order under both prompts. Inspection of the
+[disagreement sheet](collected-window-eval/human-category-calibration/disagreements.jpg)
+supports the tie/ordering concern. The current default prompt is preferable
+to the subject-first variant on this development set, but 16/19 agreement on
+category preferences is **not** a validated beauty reward or a held-out
+generalization result. Do not retune on these same 19 and claim success.
