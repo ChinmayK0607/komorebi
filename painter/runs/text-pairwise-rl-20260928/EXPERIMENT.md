@@ -54,8 +54,26 @@ and 0.375 in steps 1–3. The trainer confirmed four nonzero-gradient updates,
 but spent 14m55s waiting for its fourth batch versus 58.3s of active work.
 The step-4 LoRA was uploaded publicly and hash-verified at revision
 `6066f125e0e15ec69b52b7799219afb29d2fa062`. The first attempt was
-stopped after that checkpoint for a full held-out comparison; its final
-promotion decision is pending that evaluation.
+stopped after that checkpoint for a full held-out comparison. On all 16
+validation briefs, step 4 had 13 comparable cases (3 wins, 3 ties, 7 losses),
+10 valid candidates, 3 censored, and mean reward 0.346. The independently
+sampled SFT step-0 control had 13 comparable cases (4 wins, 3 ties, 6
+losses), 12 valid candidates, 3 censored, and mean reward 0.423. On the 11
+cases comparable in both runs, both means were 0.409. The checkpoint is not
+promoted. Among 82 training-attempt traces, 38 were visually scored, 32 had
+no valid canvas, and 12 failed due to renderer deadlines. The invalid
+programs include missing code blocks and JavaScript syntax errors; this is
+not explained by the 8192-token ceiling, as only one invalid model call ended
+at length.
+
+A second attempt starts from the same step-512 adapter, frozen 40-row train
+manifest, and visual comparator. Its only reward-path repair classifies a
+completed renderer receipt with a hard program timeout as an invalid model
+action with feedback; absent workers and other service failures remain
+censored. It has a distinct Prime run name and output root so the first
+attempt is immutable. The node preflight passed source/task serialization
+and the 1-trainer/1-inference GPU roles. Spend was $8.14 at restart, still
+under the $25 GPU rental cap. Validation of the second attempt is pending.
 
 Data scaling has been staged independently of this live 40-brief run. A
 deterministic expansion of the same audited source contains all 290 distinct
@@ -63,6 +81,8 @@ text briefs: it preserves all 72 original assignments and prompt hashes,
 adds 186 complex briefs to train and 32 complex briefs to blind validation.
 The expanded pool is `prepared/expanded/pool.json`, SHA-256
 `181d7fc907681b5d9729edf1e8be4091b775ecd1a33086e6b96c1a64d2b06406`.
+Its [public, anonymously hash-verified archive](https://huggingface.co/datasets/CK0607/komorebi-painter-teachers/blob/a9ea9bc36ab9bbed6e8abe4313f88367aee69810/pools/text-paint-expanded-20260928.tar.gz)
+has archive SHA-256 `5c249648cd5f1c041967070e89362b6750cb9833d3d52f6ea8d75746e002c2ee`.
 These 218 additional briefs have **not** been SFT-rendered or trained. Their
 inclusion in a later RL run requires separately frozen, hash-verified SFT
 opponents and a same-protocol step-0 control; the 32 new validation prompts
