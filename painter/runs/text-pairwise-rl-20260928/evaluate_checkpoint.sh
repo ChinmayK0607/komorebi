@@ -28,8 +28,8 @@ import json,sys
 from pathlib import Path
 source,target=map(Path,sys.argv[1:3]);count=int(sys.argv[3]);rows=json.loads(source.read_text())['cases']
 if count==8:
-    simple=[r for r in rows if r['family']=='simple'][::2]
-    intermediate=[r for r in rows if r['family']=='intermediate'][::2]
+    simple=[r for r in rows if r['family']=='simple'][:4]
+    intermediate=[r for r in rows if r['family']=='intermediate'][:4]
     rows=simple+intermediate
 if len(rows)!=count or len({r['id'] for r in rows})!=count:
     raise SystemExit(f'expected {count} distinct available validation rows')

@@ -44,6 +44,6 @@ fi
 [[ "${PAINTER_GPU_DEADLINE_UTC:-}" =~ ^[0-9]+$ ]] || {
   echo 'set PAINTER_GPU_DEADLINE_UTC to the Unix timestamp for the rental cap' >&2; exit 2;
 }
-remaining=$((PAINTER_GPU_DEADLINE_UTC-$(date -u +%s)-1200))
+remaining=$((PAINTER_GPU_DEADLINE_UTC-$(date -u +%s)-5400))
 (( remaining > 600 )) || { echo 'insufficient rental budget for RL plus evidence upload' >&2; exit 1; }
 timeout --signal=INT --kill-after=90 "${remaining}s" bash "$RUN/launch_rl.sh" "$RUN"
