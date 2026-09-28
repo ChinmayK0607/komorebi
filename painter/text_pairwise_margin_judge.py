@@ -14,7 +14,11 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 
-from painter.text_pairwise_judge import ENDPOINT, MODEL, _sheet, digest, load_key
+try:
+    from painter.text_pairwise_judge import ENDPOINT, MODEL, _sheet, digest, load_key
+except ImportError:
+    # Prime's task worker imports painter modules from BRUSH_ROOT directly.
+    from text_pairwise_judge import ENDPOINT, MODEL, _sheet, digest, load_key
 
 
 PROTOCOL = "text-paint-sft-pairwise-margin-v1"
