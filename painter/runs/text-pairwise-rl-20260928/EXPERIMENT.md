@@ -123,7 +123,27 @@ MiMo judgment of an inspected seahorse pair (score 0.667, no order gap).
 The fifth attempt, `text-pairwise-margin-workerfix-20260928`, preserves the
 same frozen manifest, step-512 initializer, easy-to-hard order, graded
 pairwise protocol, and render-timeout classification. It passed preflight
-with the simple first brief. No margin-RL optimizer result is claimed yet.
+with the simple first brief. Its first two eight-rollout batches completed
+with train rewards 0.0938 and 0.1562, respectively. The trainer logged
+nonzero gradient norms 0.0064 and 0.0190, mismatch KL 0.0003 and 0.0004,
+and no rollout truncation. These batches covered different training briefs;
+their reward difference is not a within-task learning curve. One judge
+response with contradictory winner and strength survived a retry and was
+censored as a service failure. No held-out improvement is claimed until a
+checkpoint is evaluated against the frozen 16-case margin baseline.
+Steps 3 and 4 then produced train rewards 0.0417 and 0.3958 on further
+different briefs, with nonzero gradient norms 0.0099 and 0.0354. The large
+step-4 batch reward is not a held-out gain. The step-4 adapter was uploaded
+publicly and hash-verified at Hugging Face revision
+`8a990737e719e86d8f91125c951d15066200d71c`, path
+`text-pairwise-margin-workerfix-20260928/step_4`, with adapter weight SHA-256
+`1279982e1f6d1dbc53c2bad82ced7fee0e2b447989ef1ec228fce6a700eb4c2a`.
+During the active fifth attempt from 19:34–19:57 UTC, GPU 0 (inference)
+averaged 99.46% utilization with 99.3% of 143 ten-second samples at or above
+90%; GPU 1 (trainer) averaged 10.04%, with 9.8% of samples at or above 90%.
+This measures a 23-minute interval, not whole-run saturation. It confirms
+that inference rollout production, not judge latency or gradient compute,
+currently bounds throughput on this two-GPU node.
 The three stopped attempts' partial rollouts, configs, raw traces, logs, and
 GPU telemetry are in a [public, anonymously hash-verified archive](https://huggingface.co/datasets/CK0607/komorebi-painter-experiments/blob/5d3e58d94c02b989de1df767d9ccc382736597bb/runs/text-pairwise-rl-20260928/stopped-attempts-evidence.tar.gz)
 of 299 screened files, SHA-256
