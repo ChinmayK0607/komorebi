@@ -29,8 +29,8 @@ def digest(path: Path) -> str:
 
 def select(old: Path, evaluation: Path, pack: Path, telemetry: Path,
            step: int) -> list[tuple[Path, str]]:
-    if step != 12:
-        raise ValueError("this finite run requires final step 12")
+    if step not in (4, 8, 12):
+        raise ValueError("evaluation step must be a planned public checkpoint: 4, 8, or 12")
     run = old / "async-output" / RUN_NAME
     matched = evaluation / f"matched-eval-step-{step}"
     required: list[tuple[Path, str]] = [
@@ -47,6 +47,8 @@ def select(old: Path, evaluation: Path, pack: Path, telemetry: Path,
         (telemetry, "telemetry/gpu-telemetry.csv"),
     ]
     for checkpoint in (4, 8, 12):
+        if checkpoint > step:
+            continue
         required.append((run / f"artifacts/adapters/step_{checkpoint}/hf-upload.json",
                          f"checkpoints/step_{checkpoint}/hf-upload.json"))
     missing = [name for path, name in required if not path.is_file()]
@@ -112,15 +114,16 @@ def main() -> None:
     api = HfApi(token=token)
     if api.repo_info(REPO_ID, repo_type="dataset").private:
         raise ValueError("evidence dataset is private")
-    commit = api.upload_file(path_or_fileobj=str(output), path_in_repo=REMOTE_PATH,
+    remote_path = REMOTE_PATH.replace("evidence.tar.gz", f"step-{args.step}-evidence.tar.gz")
+    commit = api.upload_file(path_or_fileobj=str(output), path_in_repo=remote_path,
                              repo_id=REPO_ID, repo_type="dataset", token=token)
-    remote = Path(hf_hub_download(REPO_ID, filename=REMOTE_PATH, repo_type="dataset",
+    remote = Path(hf_hub_download(REPO_ID, filename=remote_path, repo_type="dataset",
                                   revision=getattr(commit, "oid"), token=False,
                                   force_download=True,
                                   local_dir=args.eval_root / "public-verification"))
     if digest(remote) != summary["sha256"]:
         raise ValueError("anonymous remote evidence hash mismatch")
-    receipt = {**summary, "repo_id": REPO_ID, "path": REMOTE_PATH,
+    receipt = {**summary, "repo_id": REPO_ID, "path": remote_path,
                "commit": getattr(commit, "oid"), "private": False, "verified": True}
     (args.eval_root / "collected-evidence-upload.json").write_text(
         json.dumps(receipt, indent=2, sort_keys=True) + "\n")

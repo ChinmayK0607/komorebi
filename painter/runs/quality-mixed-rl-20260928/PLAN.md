@@ -1,7 +1,7 @@
 # Mixed-reference fixed-anchor RL, 2026-09-28
 
 Status: inputs public and independently hash verified; node setup and Prime
-config preflight passed. Training has not launched and no quality result exists yet. The
+config preflight passed; training is running. No optimizer checkpoint or quality result existed at the 06:44 UTC observation. The
 staged source commit is `a549955a9917a6c86f16b1f70cb036e501528143`;
 the transferred Git bundle SHA-256 is
 `da0ff6c52f626e5fb58ebfcf237c1e8a5191b6fb9a238c764f046fca2831adde`.
@@ -92,6 +92,34 @@ larger 96 GB class is eight cards at $10/hour, so a larger whole node is not
 cost-effective within the remaining ceiling. This pricing is a 2026-09-28
 inventory snapshot, not a fixed quote. No recurring watcher or scheduled
 task is authorized.
+
+## Live rollout diagnosis, 2026-09-28 06:44 UTC
+
+The active run's source commit is `407836865085d00d537da0508d54ea9c15ff4082`.
+After model warmup at 06:15 UTC, its first completed group produced no admitted
+gradient; the next group admitted four episodes and was waiting for the rest
+of the first batch. Eight scored rewards included seven zeros and one tie at
+0.5. This is an early sample, not a training or quality result. The first 86
+rendered turn receipts comprised 18 valid and 68 invalid canvases. Common
+errors included malformed JavaScript, collisions with p5.brush global names,
+and unsupported brush calls. One syntactically valid no-drawing program
+produced an all-black canvas; it earned zero reward. A tested source fix
+(`5bc2680`) now marks near-uniform canvases invalid for **future** launches;
+it was not installed in the running process and is not counted as this run's
+behavior.
+
+The one inference GPU was decoding continuously at roughly 170 aggregate
+output tokens/second with eight active requests at this observation. Through
+the earlier 06:16–06:36 UTC telemetry window, its mean sampled utilization
+was 96.6% over 122 ten-second samples and it was at least 50% busy in 96.7%
+of those samples; the trainer GPU averaged 0% before its first update. This
+is not a saturated training pipeline. More inference workers on the existing
+card are unlikely to improve throughput appreciably. The live available
+four-card 140 GB node was $13.60/hour and the larger 96 GB class eight cards
+at $10/hour, versus $2.38/hour for this two-card node, so migration would
+consume the remaining GPU budget before a matched evaluation. An early-stop
+path will publish and compare a public checkpoint if 12 updates cannot fit
+the ceiling; online wins against weak one-turn photo anchors cannot promote it.
 
 ## What to record afterward
 
