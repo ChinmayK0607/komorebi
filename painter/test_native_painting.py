@@ -194,6 +194,8 @@ class NativePaintingTests(unittest.TestCase):
                 root=str(root), manifest=manifest.name, expected_count=1, max_turns=2,
             )).load())[0]
             self.assertEqual(task.data.reference_kind, "text")
+            self.assertIn("PAINTING BRIEF", task.data.system_prompt)
+            self.assertNotIn("reference", task.data.system_prompt.lower())
             self.assertTrue(all(not hasattr(part, "image_url")
                                 for part in task.data.prompt[0].content))
             agents = _Agents(["FINISHED", "FINISHED"])

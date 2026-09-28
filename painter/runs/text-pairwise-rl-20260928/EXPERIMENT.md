@@ -1,6 +1,11 @@
 # Text painting: fixed-SFT pairwise RL
 
-Status: prepared; no GPU has been rented or training result claimed.
+Status: GPU setup in progress; no baseline or training result claimed.
+
+Rental update (2026-09-28 15:04 UTC): a two-96-GB-GPU node was rented at
+**$2.38/hour total** with a ten-hour automatic rental expiry (maximum quoted
+GPU rental $23.80). This is a finite rental limit, not a recurring watcher.
+Setup is in progress; no baseline or training result has been observed yet.
 
 ## Hypothesis and matched baseline
 

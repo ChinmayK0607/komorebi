@@ -43,7 +43,6 @@ PRIME_ROOT="$PRIME_ROOT" PAINTER_RENDER_ROOT="$REPO/painter" UV_BIN="$NODE_ROOT/
 wait "$model_pid"
 trap - EXIT
 [[ -f "$MODEL_DIR/config.json" ]] || { tail -30 "$RUN/logs/model-download.log" >&2; exit 1; }
-"$PRIME_ROOT/.venv/bin/python" -m pip --version >/dev/null
 "$NODE_ROOT/bootstrap/bin/uv" pip install --python "$PRIME_ROOT/.venv/bin/python" \
   --no-deps --no-build-isolation -e "$REPO/painter"
 echo 'TEXT_RL_NODE_READY: run render_baseline.sh; then prepare_config.py and run.sh'

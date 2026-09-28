@@ -26,6 +26,17 @@ try:
 except ImportError:
     from contract import FINISH_WITHOUT_CANVAS, NEXT_VERSION, NO_CHANGE, SYSTEM
 
+
+TEXT_SYSTEM = (SYSTEM
+    .replace("Reproduce the supplied reference", "Depict the supplied PAINTING BRIEF")
+    .replace("Inspect the reference and current canvas", "Inspect the PAINTING BRIEF and current canvas")
+    .replace("faithfully matches the reference", "faithfully depicts the PAINTING BRIEF")
+    .replace("matches the reference", "satisfies the PAINTING BRIEF"))
+TEXT_NEXT_VERSION = "Inspect the PAINTING BRIEF and current canvas, then paint the next complete version."
+TEXT_NO_CHANGE = ("Your previous revision made no change to the current canvas. Inspect the PAINTING BRIEF "
+                  "and current canvas. If the painting already satisfies the brief, respond FINISHED without code. "
+                  "Otherwise identify a specific mismatch and change the sketch; do not repeat the same program.")
+
 try:
     from painter.native_painting_renderer import render_action
 except ImportError:
@@ -233,12 +244,12 @@ class NativePaintingTaskset(vf.Taskset[NativePaintingTask, NativePaintingConfig]
             prompt = _reference_parts(reference_path, reference_kind)
             if mode == "correction":
                 prompt.extend([_text("CURRENT CANVAS"), _image(initial_canvas_path), _text("Current program:\n" + str(initial_program_value))])
-            prompt.append(_text(NEXT_VERSION))
+            prompt.append(_text(TEXT_NEXT_VERSION if reference_kind == "text" else NEXT_VERSION))
             data = NativePaintingData(
                 idx=index,
                 name=str(task_id),
                 prompt=[vf.UserMessage(content=prompt)],
-                system_prompt=SYSTEM,
+                system_prompt=TEXT_SYSTEM if reference_kind == "text" else SYSTEM,
                 root=str(root),
                 task_id=str(task_id),
                 source_group=str(source_group),
@@ -338,7 +349,7 @@ class NativePaintingEnv(vf.Env[NativePaintingEnvConfig]):
                     if result.get("valid"):
                         current_canvas = Path(str(result["canvas"])) if result.get("canvas") else current_canvas
                         current_program = result.get("program") or current_program
-                        feedback = NO_CHANGE if result.get("no_change") else NEXT_VERSION
+                        feedback = (TEXT_NO_CHANGE if result.get("no_change") else TEXT_NEXT_VERSION) if data.reference_kind == "text" else (NO_CHANGE if result.get("no_change") else NEXT_VERSION)
                     else:
                         feedback = _program_failure_feedback(
                             result.get("renderer_errors") or result.get("error")

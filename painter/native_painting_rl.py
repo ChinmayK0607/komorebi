@@ -38,6 +38,8 @@ try:
         NativePaintingEnv,
         NativePaintingEnvConfig,
         NativePaintingTask,
+        TEXT_NEXT_VERSION,
+        TEXT_SYSTEM,
         _image,
         _reference_parts,
         _resolve,
@@ -50,6 +52,8 @@ except ImportError:
         NativePaintingEnv,
         NativePaintingEnvConfig,
         NativePaintingTask,
+        TEXT_NEXT_VERSION,
+        TEXT_SYSTEM,
         _image,
         _reference_parts,
         _resolve,
@@ -822,12 +826,12 @@ class NativePaintingRLTaskset(vf.Taskset[NativePaintingRLTask, NativePaintingRLC
                         _text("Current program:\n" + str(row["initial_program"])),
                     ]
                 )
-            prompt_parts.append(_text(NEXT_VERSION))
+            prompt_parts.append(_text(TEXT_NEXT_VERSION if row["reference_kind"] == "text" else NEXT_VERSION))
             data = NativePaintingRLData(
                 idx=index,
                 name=row["task_id"],
                 prompt=[vf.UserMessage(content=prompt_parts)],
-                system_prompt=SYSTEM,
+                system_prompt=TEXT_SYSTEM if row["reference_kind"] == "text" else SYSTEM,
                 root=str(root),
                 task_id=row["task_id"],
                 source_group=row["source_group"],
