@@ -7,6 +7,8 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
 
+from PIL import Image
+
 
 from painter import native_painting_renderer as renderer_module
 
@@ -24,7 +26,9 @@ class NativePaintingRendererTests(unittest.TestCase):
             def fake_run(command, **kwargs):
                 source = Path(command[6])
                 output = Path(command[8])
-                output.write_bytes(b"png")
+                image = Image.new("RGB", (600, 600), "white")
+                image.paste("#315b70", (100, 100, 500, 500))
+                image.save(output)
                 receipt = {
                     "valid": True,
                     "source_sha256": hashlib.sha256(source.read_bytes()).hexdigest(),
@@ -53,6 +57,36 @@ class NativePaintingRendererTests(unittest.TestCase):
             with self.subTest(value=value), patch.dict(os.environ, {"PAINTER_RENDER_TIMEOUT_SECONDS": value}, clear=False):
                 with self.assertRaises(ValueError):
                     renderer_module.render_timeout_seconds()
+
+    def test_blank_canvas_is_model_failure_even_when_renderer_reports_valid(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            renderer = root / "renderer.py"
+            renderer_python = root / "python"
+            renderer.write_text("# test renderer\n")
+            renderer_python.write_text("# test python\n")
+
+            def fake_run(command, **kwargs):
+                source = Path(command[6])
+                output = Path(command[8])
+                Image.new("RGB", (600, 600), "black").save(output)
+                output.with_suffix(".json").write_text(json.dumps({
+                    "valid": True,
+                    "source_sha256": hashlib.sha256(source.read_bytes()).hexdigest(),
+                    "png_sha256": hashlib.sha256(output.read_bytes()).hexdigest(),
+                }))
+                return SimpleNamespace(returncode=0, stderr="")
+
+            with patch.object(renderer_module.subprocess, "run", side_effect=fake_run):
+                result = renderer_module.render_action(
+                    root=root, folder=root / "episode",
+                    reply="```javascript\nfunction setup() {}\n```",
+                    initial_canvas=None, initial_program=None,
+                    renderer=renderer, renderer_python=renderer_python,
+                )
+            self.assertFalse(result["valid"])
+            self.assertEqual(result["failure_kind"], "blank_canvas")
+            self.assertIsNone(result["canvas"])
 
     def test_runtime_receipt_failure_is_service_error(self):
         with tempfile.TemporaryDirectory() as temp:

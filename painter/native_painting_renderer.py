@@ -16,8 +16,11 @@ import subprocess
 from pathlib import Path
 from typing import Any
 
+from PIL import Image, ImageStat
+
 DEFAULT_RENDER_TIMEOUT_SECONDS = 180
 MAX_RENDER_TIMEOUT_SECONDS = 180
+MIN_CANVAS_CHANNEL_VARIANCE = 1.0
 
 
 def extract_sketch(reply: str) -> str:
@@ -128,6 +131,16 @@ def render_action(
         raise RuntimeError("renderer source hash does not match submitted program")
     if receipt.get("png_sha256") != _sha(output):
         raise RuntimeError("renderer canvas hash does not match output")
+    with Image.open(output) as image:
+        channel_variance = max(ImageStat.Stat(image.convert("RGB")).var)
+    if channel_variance < MIN_CANVAS_CHANNEL_VARIANCE:
+        row.update(
+            error="Rendered canvas is blank or nearly uniform; paint visible reference subjects.",
+            renderer_errors=["Rendered canvas is blank or nearly uniform"],
+            failure_kind="blank_canvas",
+            canvas_variance=channel_variance,
+        )
+        return row
     row.update(
         valid=True,
         canvas=str(output),
