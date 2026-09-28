@@ -138,6 +138,19 @@ publicly and hash-verified at Hugging Face revision
 `8a990737e719e86d8f91125c951d15066200d71c`, path
 `text-pairwise-margin-workerfix-20260928/step_4`, with adapter weight SHA-256
 `1279982e1f6d1dbc53c2bad82ced7fee0e2b447989ef1ec228fce6a700eb4c2a`.
+Step 8 also completed and uploaded publicly with hash verification at revision
+`90e49aadce95d09fd402dbc1d6a63fc6477a26fb`, path
+`text-pairwise-margin-workerfix-20260928/step_8`, adapter weight SHA-256
+`496ccb13a01575e3c0ddc82236dc4c41d809f6e32001ffe9de82dc76ff3a32f6`.
+Its batch reward was 0.1354 after step 7's 0.2083, again across different
+briefs; step 8's trainer gradient norm was 0.0092. The node's reported total
+rental spend was $13.77 at approximately 20:51 UTC, still below the $25 cap.
+Step 12 completed on the progressing curriculum with batch reward 0.2396,
+trainer gradient norm 0.0242, and a public hash-verified adapter at revision
+`bab8a97dc9871ef436980e5c5b7eee9c4ad86665`, path
+`text-pairwise-margin-workerfix-20260928/step_12`, weight SHA-256
+`12e959e5e28e469b7926e15cc5aabf5e4f9a1668b8a3c1c95ab69ed86a7c7fd3`.
+This remains a training signal, not a held-out quality result.
 For this attempt, compare the public step-4, step-12, and final step-20
 adapters on the same full 16-case held-out set under the margin protocol,
 subject to the rental deadline. This spacing was chosen before seeing any
