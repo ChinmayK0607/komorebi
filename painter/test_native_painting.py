@@ -185,6 +185,8 @@ class NativePaintingTests(unittest.TestCase):
         cases = (
             (["SyntaxError: unexpected token ')'"], "Fix the JavaScript syntax"),
             (["TypeError: Cannot redefine property: ellipse"], "Do not redefine p5 globals"),
+            (["TypeError: brush.ellipse is not a function"], "has no brush.ellipse() method"),
+            (["ReferenceError: v is not defined"], "Define every variable"),
             (["TypeError: a is not iterable"], "brush.polygon point list"),
         )
         for errors, expected in cases:

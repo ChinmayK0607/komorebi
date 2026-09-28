@@ -125,6 +125,10 @@ def _program_failure_feedback(errors: Any) -> str:
         guidance = "Fix the JavaScript syntax; avoid compressed one-line code and return a complete sketch in one code block."
     elif "cannot redefine property" in lower:
         guidance = "Do not redefine p5 globals such as ellipse, line, fill, or background; rename your helper and return a complete sketch."
+    elif "brush.ellipse" in lower and "not a function" in lower:
+        guidance = "p5.brush has no brush.ellipse() method. Approximate the ellipse with perimeter points passed to brush.polygon([...]); return a complete sketch."
+    elif "is not defined" in lower:
+        guidance = "Define every variable and helper before use, then return a complete sketch."
     elif "not iterable" in lower:
         guidance = "Check every brush.polygon point list and every spread, destructuring, or for-of source; each must receive an iterable. Return a complete sketch."
     return f"The sketch produced no valid canvas. Renderer error: {detail}\n{guidance}"
