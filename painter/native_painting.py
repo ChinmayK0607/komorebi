@@ -76,6 +76,19 @@ def _text(value: str) -> vf.TextContentPart:
     return vf.TextContentPart(text=value)
 
 
+def _reference_parts(path: Path, kind: str) -> list[Any]:
+    if kind == "image":
+        return [_text("REFERENCE"), _image(path)]
+    if kind == "text":
+        if path.suffix.lower() != ".txt" or not path.is_file():
+            raise ValueError("text painting reference must be an existing .txt file")
+        brief = path.read_text(encoding="utf-8").strip()
+        if not brief or len(brief) > 4000:
+            raise ValueError("text painting reference must contain 1–4000 characters")
+        return [_text("PAINTING BRIEF\n" + brief)]
+    raise ValueError(f"unsupported painting reference kind: {kind}")
+
+
 def _rows(raw: Any) -> list[dict[str, Any]]:
     if isinstance(raw, list):
         values = raw
@@ -141,6 +154,7 @@ class NativePaintingData(vf.TaskData):
     family: str | None = None
     reference: str
     reference_sha256: str
+    reference_kind: str = "image"
     policy_label: str = "unknown"
     output_root: str = "evaluation-rollouts"
     renderer: str | None = None
@@ -189,6 +203,7 @@ class NativePaintingTaskset(vf.Taskset[NativePaintingTask, NativePaintingConfig]
             reference_path = Path(reference) if Path(reference).is_absolute() else manifest_path.parent / reference
             if not reference_path.is_file():
                 reference_path = _resolve(root, reference)
+            reference_kind = str(row.get("reference_kind", "image"))
             mode = str(row.get("mode", "fresh"))
             if mode not in {"fresh", "correction"}:
                 raise ValueError(f"unsupported evaluation mode for {task_id}: {mode}")
@@ -215,7 +230,7 @@ class NativePaintingTaskset(vf.Taskset[NativePaintingTask, NativePaintingConfig]
             actual_sha = sha(reference_path)
             if expected_sha is not None and expected_sha != actual_sha:
                 raise ValueError(f"reference hash mismatch for {task_id}: {actual_sha}")
-            prompt = [_text("REFERENCE"), _image(reference_path)]
+            prompt = _reference_parts(reference_path, reference_kind)
             if mode == "correction":
                 prompt.extend([_text("CURRENT CANVAS"), _image(initial_canvas_path), _text("Current program:\n" + str(initial_program_value))])
             prompt.append(_text(NEXT_VERSION))
@@ -230,6 +245,7 @@ class NativePaintingTaskset(vf.Taskset[NativePaintingTask, NativePaintingConfig]
                 family=row.get("family"),
                 reference=str(reference_path),
                 reference_sha256=actual_sha,
+                reference_kind=reference_kind,
                 policy_label=self.config.policy_label,
                 output_root=self.config.output_root,
                 renderer=self.config.renderer,
@@ -267,6 +283,7 @@ class NativePaintingEnv(vf.Env[NativePaintingEnvConfig]):
             "family": data.family,
             "reference": str(reference),
             "reference_sha256": data.reference_sha256,
+            "reference_kind": data.reference_kind,
             "initial_canvas": str(current_canvas) if current_canvas else None,
             "turn_cap": data.max_turns,
             "turns": [],
@@ -329,7 +346,7 @@ class NativePaintingEnv(vf.Env[NativePaintingEnvConfig]):
                 interaction.trace.info.setdefault("turns", []).append(turn_info)
                 if turn >= data.max_turns:
                     break
-                parts: list[Any] = [_text("REFERENCE"), _image(reference)]
+                parts: list[Any] = _reference_parts(reference, data.reference_kind)
                 if current_canvas is not None and current_canvas.is_file():
                     parts.extend([_text("CURRENT CANVAS"), _image(current_canvas)])
                 if current_program is not None:

@@ -180,6 +180,28 @@ class _Agents:
 
 
 class NativePaintingTests(unittest.TestCase):
+    def test_text_reference_is_text_only_on_first_and_revision_turns(self):
+        module = _load_module()
+        with TemporaryDirectory() as temp:
+            root = Path(temp)
+            (root / "brief.txt").write_text("Paint a pear left of a blue mug.\n")
+            manifest = root / "tasks.json"
+            manifest.write_text(json.dumps({"cases": [{
+                "id": "text-pear", "source_group": "text-pear",
+                "reference": "brief.txt", "reference_kind": "text",
+            }]}))
+            task = list(module.NativePaintingTaskset(module.NativePaintingConfig(
+                root=str(root), manifest=manifest.name, expected_count=1, max_turns=2,
+            )).load())[0]
+            self.assertEqual(task.data.reference_kind, "text")
+            self.assertTrue(all(not hasattr(part, "image_url")
+                                for part in task.data.prompt[0].content))
+            agents = _Agents(["FINISHED", "FINISHED"])
+            asyncio.run(module.NativePaintingEnv.__dict__["run"](_DummyEnv(), task, agents))
+            followup = agents.agent.interaction_obj.messages[1][0].content
+            self.assertTrue(all(not hasattr(part, "image_url") for part in followup))
+            self.assertIn("pear left of a blue mug", " ".join(part.text for part in followup))
+
     def test_program_errors_get_specific_repair_feedback(self):
         module = _load_module()
         cases = (

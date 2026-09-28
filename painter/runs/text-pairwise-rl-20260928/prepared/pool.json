@@ -1,0 +1,727 @@
+{
+  "cases": [
+    {
+      "category": "simple / sporting object",
+      "family": "simple",
+      "id": "t600-540",
+      "reference": "prompts/t600-540.txt",
+      "reference_kind": "text",
+      "reference_sha256": "45d3dbf4eae97c1ccd3021d1475d8bfca8e70b9097b27b742c00c2674a04726e",
+      "source_group": "t600-540",
+      "split": "train"
+    },
+    {
+      "category": "simple / hardware pair",
+      "family": "simple",
+      "id": "t600-522",
+      "reference": "prompts/t600-522.txt",
+      "reference_kind": "text",
+      "reference_sha256": "e145992b06d4bd9b7188099d83545c241d04bf146fd3f63cf0aef1c8c51d79f5",
+      "source_group": "t600-522",
+      "split": "train"
+    },
+    {
+      "category": "simple / botanical pair",
+      "family": "simple",
+      "id": "t600-510",
+      "reference": "prompts/t600-510.txt",
+      "reference_kind": "text",
+      "reference_sha256": "331e7181fb42639630978dacaa7f820bda0332ba3d2a455859f67c7a0e12fa68",
+      "source_group": "t600-510",
+      "split": "train"
+    },
+    {
+      "category": "simple / artist tool",
+      "family": "simple",
+      "id": "t600-509",
+      "reference": "prompts/t600-509.txt",
+      "reference_kind": "text",
+      "reference_sha256": "045b4d71c655bde7d542b07036cac06bba0c9caa02ec60df1fdb14cb975bdd66",
+      "source_group": "t600-509",
+      "split": "train"
+    },
+    {
+      "category": "simple / transparent material",
+      "family": "simple",
+      "id": "t600-544",
+      "reference": "prompts/t600-544.txt",
+      "reference_kind": "text",
+      "reference_sha256": "9c622b51901df35962fdd83a14da2e4406ad7739de7b2968b5d267a151ecafc9",
+      "source_group": "t600-544",
+      "split": "train"
+    },
+    {
+      "category": "simple / metal object",
+      "family": "simple",
+      "id": "t600-528",
+      "reference": "prompts/t600-528.txt",
+      "reference_kind": "text",
+      "reference_sha256": "a5591bd33745c6eda8b973e4bebcd42b57534461ba71a55a1dc8d26b8fcbd811",
+      "source_group": "t600-528",
+      "split": "train"
+    },
+    {
+      "category": "simple / soft textile",
+      "family": "simple",
+      "id": "t600-539",
+      "reference": "prompts/t600-539.txt",
+      "reference_kind": "text",
+      "reference_sha256": "20001d70eae7030de849ac6cbf68a3f95b8a878b96ce51239223aecc83a778bf",
+      "source_group": "t600-539",
+      "split": "train"
+    },
+    {
+      "category": "simple / food object",
+      "family": "simple",
+      "id": "t600-518",
+      "reference": "prompts/t600-518.txt",
+      "reference_kind": "text",
+      "reference_sha256": "53cad0e9a26669565e6dea61dc3f4ba9fbbc8d4a324816a8b27271773b6f6cd3",
+      "source_group": "t600-518",
+      "split": "train"
+    },
+    {
+      "category": "simple / personal object",
+      "family": "simple",
+      "id": "t600-535",
+      "reference": "prompts/t600-535.txt",
+      "reference_kind": "text",
+      "reference_sha256": "07f9f29e81422cc58215ce9579b91bfb397ee1982f6ded550c4a207ab2e1d694",
+      "source_group": "t600-535",
+      "split": "train"
+    },
+    {
+      "category": "simple / geometry tool",
+      "family": "simple",
+      "id": "t600-521",
+      "reference": "prompts/t600-521.txt",
+      "reference_kind": "text",
+      "reference_sha256": "a82cb12eb89aec224829adfdbbb684c5e23a316006294a4a762006028c7de00d",
+      "source_group": "t600-521",
+      "split": "train"
+    },
+    {
+      "category": "simple / metal objects",
+      "family": "simple",
+      "id": "t600-529",
+      "reference": "prompts/t600-529.txt",
+      "reference_kind": "text",
+      "reference_sha256": "f5e4078ea865d5411b409d8e1d809ba68093100560c7cee6c9e8a5970b1e4a53",
+      "source_group": "t600-529",
+      "split": "train"
+    },
+    {
+      "category": "simple / natural object",
+      "family": "simple",
+      "id": "t600-533",
+      "reference": "prompts/t600-533.txt",
+      "reference_kind": "text",
+      "reference_sha256": "6b8a00e8c54512184062b7ce4c9131126caec3dc968e0b3f50543f2c938fec75",
+      "source_group": "t600-533",
+      "split": "train"
+    },
+    {
+      "category": "simple / carved object",
+      "family": "simple",
+      "id": "t600-511",
+      "reference": "prompts/t600-511.txt",
+      "reference_kind": "text",
+      "reference_sha256": "323803da3bfd41922aba5d04c1bcc0865670a7ca4a6caf9d6481a759793d9056",
+      "source_group": "t600-511",
+      "split": "train"
+    },
+    {
+      "category": "simple / fruit still life",
+      "family": "simple",
+      "id": "t600-520",
+      "reference": "prompts/t600-520.txt",
+      "reference_kind": "text",
+      "reference_sha256": "c907693ec5a72af127ba44378ca4972c921ff518fb4647acec7c7b8a9d0131a8",
+      "source_group": "t600-520",
+      "split": "train"
+    },
+    {
+      "category": "simple / stationery pair",
+      "family": "simple",
+      "id": "t600-541",
+      "reference": "prompts/t600-541.txt",
+      "reference_kind": "text",
+      "reference_sha256": "2bbc88bf59861ef61e2044b41d3b84711fb63f7a558aed40c29a7dbb6e7a654f",
+      "source_group": "t600-541",
+      "split": "train"
+    },
+    {
+      "category": "simple / kitchen tool",
+      "family": "simple",
+      "id": "t600-524",
+      "reference": "prompts/t600-524.txt",
+      "reference_kind": "text",
+      "reference_sha256": "5dcf7fac51657ee27838c6d60c83b35a122f464f1f27bbcde4da1a3dcd52b546",
+      "source_group": "t600-524",
+      "split": "train"
+    },
+    {
+      "category": "simple / natural balance",
+      "family": "simple",
+      "id": "t600-530",
+      "reference": "prompts/t600-530.txt",
+      "reference_kind": "text",
+      "reference_sha256": "fd86c82621f8844214f694fb599dcbf3202535af7a4fbc7927157da70ee5dc01",
+      "source_group": "t600-530",
+      "split": "train"
+    },
+    {
+      "category": "simple / metal object",
+      "family": "simple",
+      "id": "t600-527",
+      "reference": "prompts/t600-527.txt",
+      "reference_kind": "text",
+      "reference_sha256": "e8874d5afc3085e8c70832531715eea2952f436decfe4e18e2b18461b6c83987",
+      "source_group": "t600-527",
+      "split": "train"
+    },
+    {
+      "category": "simple / natural object",
+      "family": "simple",
+      "id": "t600-531",
+      "reference": "prompts/t600-531.txt",
+      "reference_kind": "text",
+      "reference_sha256": "e64aeab8ede0c54dee5022296c6031749e634235f1db976a8bb093769ad3b26a",
+      "source_group": "t600-531",
+      "split": "train"
+    },
+    {
+      "category": "simple / vegetable still life",
+      "family": "simple",
+      "id": "t600-546",
+      "reference": "prompts/t600-546.txt",
+      "reference_kind": "text",
+      "reference_sha256": "6292c7bc9935b74736e05e3aafc8e1224091d8fbb901965b601ea124eeb9ad36",
+      "source_group": "t600-546",
+      "split": "train"
+    },
+    {
+      "category": "simple / leather object",
+      "family": "simple",
+      "id": "t600-525",
+      "reference": "prompts/t600-525.txt",
+      "reference_kind": "text",
+      "reference_sha256": "ae1f316fe04b0dba8c8533218d6c2be912b762715ab23bf6df80dddb40cc7c72",
+      "source_group": "t600-525",
+      "split": "train"
+    },
+    {
+      "category": "simple / small metal object",
+      "family": "simple",
+      "id": "t600-537",
+      "reference": "prompts/t600-537.txt",
+      "reference_kind": "text",
+      "reference_sha256": "9001589936fbb0845a4880b301abf37832c51406a56c755200a30a36dd7b6f8e",
+      "source_group": "t600-537",
+      "split": "train"
+    },
+    {
+      "category": "simple / vegetable still life",
+      "family": "simple",
+      "id": "t600-545",
+      "reference": "prompts/t600-545.txt",
+      "reference_kind": "text",
+      "reference_sha256": "81de98a895c2c3b754ae9766f2d278bd2ba5423c97f9b35f00d6d35b876b8481",
+      "source_group": "t600-545",
+      "split": "train"
+    },
+    {
+      "category": "simple / sewing object",
+      "family": "simple",
+      "id": "t600-536",
+      "reference": "prompts/t600-536.txt",
+      "reference_kind": "text",
+      "reference_sha256": "5c5ae00017a97ee947b1d3ccadb663c175c1901bdd0427ed904c96befda6c908",
+      "source_group": "t600-536",
+      "split": "train"
+    },
+    {
+      "category": "simple / wooden kitchen tool",
+      "family": "simple",
+      "id": "t600-547",
+      "reference": "prompts/t600-547.txt",
+      "reference_kind": "text",
+      "reference_sha256": "08f1aa4ca4838f1b66fe0e2aadbacb2a68d0121dc540f8719088c875afeaa2de",
+      "source_group": "t600-547",
+      "split": "validation"
+    },
+    {
+      "category": "simple / soft container",
+      "family": "simple",
+      "id": "t600-538",
+      "reference": "prompts/t600-538.txt",
+      "reference_kind": "text",
+      "reference_sha256": "dff5b3ff7a45d4f18ac27e485b84e9c040d3bf10e18610dfa18f1e4a58017f57",
+      "source_group": "t600-538",
+      "split": "validation"
+    },
+    {
+      "category": "simple / textile tools",
+      "family": "simple",
+      "id": "t600-542",
+      "reference": "prompts/t600-542.txt",
+      "reference_kind": "text",
+      "reference_sha256": "bcb278d8335fbb3bf677378f95de26f28599c50527a16c369b69ddc7769a73c7",
+      "source_group": "t600-542",
+      "split": "validation"
+    },
+    {
+      "category": "simple / toy object",
+      "family": "simple",
+      "id": "t600-543",
+      "reference": "prompts/t600-543.txt",
+      "reference_kind": "text",
+      "reference_sha256": "70f430a37efa3f83971a14b2c701367409da580cdcbe6a5321bc8855cc5a594a",
+      "source_group": "t600-543",
+      "split": "validation"
+    },
+    {
+      "category": "simple / folded object",
+      "family": "simple",
+      "id": "t600-516",
+      "reference": "prompts/t600-516.txt",
+      "reference_kind": "text",
+      "reference_sha256": "84257c7f886fc2bd4a7dac29a6d51d6f20cbfcf844087b0c2631671674b7e8cd",
+      "source_group": "t600-516",
+      "split": "validation"
+    },
+    {
+      "category": "simple / clothing pair",
+      "family": "simple",
+      "id": "t600-512",
+      "reference": "prompts/t600-512.txt",
+      "reference_kind": "text",
+      "reference_sha256": "663925784762919c5d855c012efd6382cd5762316a385816dd9f391b1bf2abc7",
+      "source_group": "t600-512",
+      "split": "validation"
+    },
+    {
+      "category": "simple / jewelry object",
+      "family": "simple",
+      "id": "t600-523",
+      "reference": "prompts/t600-523.txt",
+      "reference_kind": "text",
+      "reference_sha256": "7ea6598a6eee518ba77224643fe9a26eb52c4dd19707d759ae334e0ddb197ab7",
+      "source_group": "t600-523",
+      "split": "validation"
+    },
+    {
+      "category": "simple / paper and wood",
+      "family": "simple",
+      "id": "t600-534",
+      "reference": "prompts/t600-534.txt",
+      "reference_kind": "text",
+      "reference_sha256": "f242cf71975b3aa48c54ead9d04d8bf9136ba776d79ba86a6f07152a709a4c70",
+      "source_group": "t600-534",
+      "split": "validation"
+    },
+    {
+      "category": "simple / material study",
+      "family": "simple",
+      "id": "t600-526",
+      "reference": "prompts/t600-526.txt",
+      "reference_kind": "text",
+      "reference_sha256": "d4effe3af025270ced71a2c1941e58d33151f3ff7da37835d8bad0862c65723a",
+      "source_group": "t600-526",
+      "split": "reserve"
+    },
+    {
+      "category": "simple / fruit cross-section",
+      "family": "simple",
+      "id": "t600-519",
+      "reference": "prompts/t600-519.txt",
+      "reference_kind": "text",
+      "reference_sha256": "009bb2bf34271e60827a5dec0c252dbce77eb8d02043262872cf093a3635bfed",
+      "source_group": "t600-519",
+      "split": "reserve"
+    },
+    {
+      "category": "simple / workshop object",
+      "family": "simple",
+      "id": "t600-548",
+      "reference": "prompts/t600-548.txt",
+      "reference_kind": "text",
+      "reference_sha256": "f3b3d53c5d66b18f3785d84c9c79d4d99521140b41998a0b84bb61ef14860a63",
+      "source_group": "t600-548",
+      "split": "reserve"
+    },
+    {
+      "category": "simple / fabric object",
+      "family": "simple",
+      "id": "t600-515",
+      "reference": "prompts/t600-515.txt",
+      "reference_kind": "text",
+      "reference_sha256": "84ef262949d6259909b63307e6aa2d7ff66267f8d3e66bec1a63f6790c57c38a",
+      "source_group": "t600-515",
+      "split": "reserve"
+    },
+    {
+      "category": "simple / natural object",
+      "family": "simple",
+      "id": "t600-532",
+      "reference": "prompts/t600-532.txt",
+      "reference_kind": "text",
+      "reference_sha256": "8f456fab3872092ba0c3a72806ef5946b57a219a2f5ae9a568dae6e95e3f673d",
+      "source_group": "t600-532",
+      "split": "reserve"
+    },
+    {
+      "category": "simple / dry pigment objects",
+      "family": "simple",
+      "id": "t600-513",
+      "reference": "prompts/t600-513.txt",
+      "reference_kind": "text",
+      "reference_sha256": "48a202e7cee4cde07133e1230283ac9fc6ecdbe86694c340bce180359749d337",
+      "source_group": "t600-513",
+      "split": "reserve"
+    },
+    {
+      "category": "simple / folded paper object",
+      "family": "simple",
+      "id": "t600-517",
+      "reference": "prompts/t600-517.txt",
+      "reference_kind": "text",
+      "reference_sha256": "977110bb2e18a70cc432ee72d807dc3dec553b32e1c6ae39fb915aac2a384a37",
+      "source_group": "t600-517",
+      "split": "reserve"
+    },
+    {
+      "category": "simple / everyday mechanism",
+      "family": "simple",
+      "id": "t600-514",
+      "reference": "prompts/t600-514.txt",
+      "reference_kind": "text",
+      "reference_sha256": "e6069279de4225ad0c34487bfeb3255346b446110cadca6ae72dad9a30c493a9",
+      "source_group": "t600-514",
+      "split": "reserve"
+    },
+    {
+      "category": "intermediate / hand tool",
+      "family": "intermediate",
+      "id": "t600-432",
+      "reference": "prompts/t600-432.txt",
+      "reference_kind": "text",
+      "reference_sha256": "7b1d31eaa7f86e4f438d75e4af738297cd6df527a3c879dd99fbd4de75b07751",
+      "source_group": "t600-432",
+      "split": "train"
+    },
+    {
+      "category": "intermediate / household object",
+      "family": "intermediate",
+      "id": "t600-435",
+      "reference": "prompts/t600-435.txt",
+      "reference_kind": "text",
+      "reference_sha256": "a2fbfcfe7e09b7632fb24c648096b62488c4aae68950fd747bb67fea190fcbcf",
+      "source_group": "t600-435",
+      "split": "train"
+    },
+    {
+      "category": "intermediate / small mechanism",
+      "family": "intermediate",
+      "id": "t600-453",
+      "reference": "prompts/t600-453.txt",
+      "reference_kind": "text",
+      "reference_sha256": "3fd9380a8825676bbc875bd8bb4478e3e5a0fe96d340ce8ab2021539bd3bb18a",
+      "source_group": "t600-453",
+      "split": "train"
+    },
+    {
+      "category": "intermediate / optical object",
+      "family": "intermediate",
+      "id": "t600-448",
+      "reference": "prompts/t600-448.txt",
+      "reference_kind": "text",
+      "reference_sha256": "68e0d50adcac707c5e779a3c193e142e78395a7d5c56ef31249118fe7356b075",
+      "source_group": "t600-448",
+      "split": "train"
+    },
+    {
+      "category": "intermediate / food still life",
+      "family": "intermediate",
+      "id": "t600-427",
+      "reference": "prompts/t600-427.txt",
+      "reference_kind": "text",
+      "reference_sha256": "18db8d9450fd93053f630e61955165cffee3d9168a21cff8a980c28a296682d6",
+      "source_group": "t600-427",
+      "split": "train"
+    },
+    {
+      "category": "intermediate / insect anatomy",
+      "family": "intermediate",
+      "id": "t600-442",
+      "reference": "prompts/t600-442.txt",
+      "reference_kind": "text",
+      "reference_sha256": "1c30c8d312ad265bc17294b75ab2b3da346bd80e35536862e83567e95b719ee7",
+      "source_group": "t600-442",
+      "split": "train"
+    },
+    {
+      "category": "intermediate / small mechanism",
+      "family": "intermediate",
+      "id": "t600-452",
+      "reference": "prompts/t600-452.txt",
+      "reference_kind": "text",
+      "reference_sha256": "4a90f75e0df054a4c119a7ed8c6c180f8576a22d03cecaead46319851eb4466a",
+      "source_group": "t600-452",
+      "split": "train"
+    },
+    {
+      "category": "intermediate / musical object",
+      "family": "intermediate",
+      "id": "t600-446",
+      "reference": "prompts/t600-446.txt",
+      "reference_kind": "text",
+      "reference_sha256": "193effa7d9a10643edd208628bf057693238b08c75224f6a813e5dd9036dddaa",
+      "source_group": "t600-446",
+      "split": "train"
+    },
+    {
+      "category": "intermediate / glass and metal",
+      "family": "intermediate",
+      "id": "t600-430",
+      "reference": "prompts/t600-430.txt",
+      "reference_kind": "text",
+      "reference_sha256": "1d2cba0e274ec5eac39bd5094e03bf458b76019034626095fc691798ae64cbed",
+      "source_group": "t600-430",
+      "split": "train"
+    },
+    {
+      "category": "intermediate / glass and wood",
+      "family": "intermediate",
+      "id": "t600-431",
+      "reference": "prompts/t600-431.txt",
+      "reference_kind": "text",
+      "reference_sha256": "5949e4fa25adb8529220fe29a14721424d29472af48a1ee37da56208e218365f",
+      "source_group": "t600-431",
+      "split": "train"
+    },
+    {
+      "category": "intermediate / sporting object",
+      "family": "intermediate",
+      "id": "t600-454",
+      "reference": "prompts/t600-454.txt",
+      "reference_kind": "text",
+      "reference_sha256": "6bbbdc692d95c5e77abcd229b6a7d56a9154532f4b030ebfa97afbde24b5c022",
+      "source_group": "t600-454",
+      "split": "train"
+    },
+    {
+      "category": "intermediate / household object",
+      "family": "intermediate",
+      "id": "t600-437",
+      "reference": "prompts/t600-437.txt",
+      "reference_kind": "text",
+      "reference_sha256": "e9bcb1046185229c2969ff4649fd604a2788f912218b2b0e73d5bd4cd0f354f0",
+      "source_group": "t600-437",
+      "split": "train"
+    },
+    {
+      "category": "intermediate / kitchen tool pair",
+      "family": "intermediate",
+      "id": "t600-444",
+      "reference": "prompts/t600-444.txt",
+      "reference_kind": "text",
+      "reference_sha256": "9d766432b1617987aad27ad727fba909a96936551eca2a6d5b475e08f3719b1a",
+      "source_group": "t600-444",
+      "split": "train"
+    },
+    {
+      "category": "intermediate / animal anatomy",
+      "family": "intermediate",
+      "id": "t600-424",
+      "reference": "prompts/t600-424.txt",
+      "reference_kind": "text",
+      "reference_sha256": "ce3faedd2d16469bffc3f924e1f06cda9ec7721b0753bc2e6e6ba3793c632e35",
+      "source_group": "t600-424",
+      "split": "train"
+    },
+    {
+      "category": "intermediate / kitchen mechanism",
+      "family": "intermediate",
+      "id": "t600-443",
+      "reference": "prompts/t600-443.txt",
+      "reference_kind": "text",
+      "reference_sha256": "cedc9bc4b7c74d7c346d43a0da7b77e1810e50f35ff2f7d0b9288d6bb3523d66",
+      "source_group": "t600-443",
+      "split": "train"
+    },
+    {
+      "category": "intermediate / furniture",
+      "family": "intermediate",
+      "id": "t600-429",
+      "reference": "prompts/t600-429.txt",
+      "reference_kind": "text",
+      "reference_sha256": "20080c1b8180b990da1274a375bf2d1a5ebf4035748dbf7090babd931432fd2e",
+      "source_group": "t600-429",
+      "split": "train"
+    },
+    {
+      "category": "intermediate / animal anatomy",
+      "family": "intermediate",
+      "id": "t600-425",
+      "reference": "prompts/t600-425.txt",
+      "reference_kind": "text",
+      "reference_sha256": "ed7ea501e4f8e85f687542e05ce1856a7fb6525856b9b239890dbf3d36b55c05",
+      "source_group": "t600-425",
+      "split": "validation"
+    },
+    {
+      "category": "intermediate / insect",
+      "family": "intermediate",
+      "id": "t600-440",
+      "reference": "prompts/t600-440.txt",
+      "reference_kind": "text",
+      "reference_sha256": "82570a9da9aa00f9b03ada29e3a8248e8aa75621f2f6afec733e8233957ffb66",
+      "source_group": "t600-440",
+      "split": "validation"
+    },
+    {
+      "category": "intermediate / musical object",
+      "family": "intermediate",
+      "id": "t600-445",
+      "reference": "prompts/t600-445.txt",
+      "reference_kind": "text",
+      "reference_sha256": "5cb91bc6e86620ceb99bb6337671912302051548448434ad331ece4420214637",
+      "source_group": "t600-445",
+      "split": "validation"
+    },
+    {
+      "category": "intermediate / animal anatomy",
+      "family": "intermediate",
+      "id": "t600-423",
+      "reference": "prompts/t600-423.txt",
+      "reference_kind": "text",
+      "reference_sha256": "1ee68e24cefd27d09f6570ab3800c3a32067b87b8d2d1a05fd683f0f0c233720",
+      "source_group": "t600-423",
+      "split": "validation"
+    },
+    {
+      "category": "intermediate / hand tool",
+      "family": "intermediate",
+      "id": "t600-433",
+      "reference": "prompts/t600-433.txt",
+      "reference_kind": "text",
+      "reference_sha256": "b39bf8d483d896f53007b52788f013190e429b9229e36d894e452e1f2a331e04",
+      "source_group": "t600-433",
+      "split": "validation"
+    },
+    {
+      "category": "intermediate / insect",
+      "family": "intermediate",
+      "id": "t600-441",
+      "reference": "prompts/t600-441.txt",
+      "reference_kind": "text",
+      "reference_sha256": "f06ddfe7ca6baeb8cd2e1aceed7f0a7c7541c7265d3a76201b752b53f4136b47",
+      "source_group": "t600-441",
+      "split": "validation"
+    },
+    {
+      "category": "intermediate / desktop pair",
+      "family": "intermediate",
+      "id": "t600-426",
+      "reference": "prompts/t600-426.txt",
+      "reference_kind": "text",
+      "reference_sha256": "97d6a2d42c938ac4d616b7f7da4dce39e88b330e4f00b6f921be9f740b774920",
+      "source_group": "t600-426",
+      "split": "validation"
+    },
+    {
+      "category": "intermediate / household object",
+      "family": "intermediate",
+      "id": "t600-439",
+      "reference": "prompts/t600-439.txt",
+      "reference_kind": "text",
+      "reference_sha256": "b29873b817bbae3689a3a9ddbd4cb72da75d70e6c52c2cfcc5aa5ca15bdeb4e9",
+      "source_group": "t600-439",
+      "split": "validation"
+    },
+    {
+      "category": "intermediate / hand tool pair",
+      "family": "intermediate",
+      "id": "t600-434",
+      "reference": "prompts/t600-434.txt",
+      "reference_kind": "text",
+      "reference_sha256": "08f8f4aae18c71bc4648c2b3d1ce79a78684d8d6754ca8690dd27fbf07fbaed6",
+      "source_group": "t600-434",
+      "split": "reserve"
+    },
+    {
+      "category": "intermediate / household object",
+      "family": "intermediate",
+      "id": "t600-436",
+      "reference": "prompts/t600-436.txt",
+      "reference_kind": "text",
+      "reference_sha256": "7264601c081a227d6f5b46a326a433062351e9fdad6c02a01fb87574ed263198",
+      "source_group": "t600-436",
+      "split": "reserve"
+    },
+    {
+      "category": "intermediate / open metalwork",
+      "family": "intermediate",
+      "id": "t600-447",
+      "reference": "prompts/t600-447.txt",
+      "reference_kind": "text",
+      "reference_sha256": "663db010fbfe6cc85c5655d211be235a4275dc284ebfadb460bd40b27a629b1c",
+      "source_group": "t600-447",
+      "split": "reserve"
+    },
+    {
+      "category": "intermediate / footwear",
+      "family": "intermediate",
+      "id": "t600-428",
+      "reference": "prompts/t600-428.txt",
+      "reference_kind": "text",
+      "reference_sha256": "0677ced1b03a7fd03529c0f016eab4fe7c86cb8473518453c98b9d755d4b57d5",
+      "source_group": "t600-428",
+      "split": "reserve"
+    },
+    {
+      "category": "intermediate / precision object",
+      "family": "intermediate",
+      "id": "t600-450",
+      "reference": "prompts/t600-450.txt",
+      "reference_kind": "text",
+      "reference_sha256": "38e272ae707d52e10179779b8dd71b344b66012de566daab134ca92172e2c5ec",
+      "source_group": "t600-450",
+      "split": "reserve"
+    },
+    {
+      "category": "intermediate / precision instrument",
+      "family": "intermediate",
+      "id": "t600-449",
+      "reference": "prompts/t600-449.txt",
+      "reference_kind": "text",
+      "reference_sha256": "a1273ac0dc9b5309472d9c6868ad9d56782e777c1dca43ea67acdac93755e13e",
+      "source_group": "t600-449",
+      "split": "reserve"
+    },
+    {
+      "category": "intermediate / household object",
+      "family": "intermediate",
+      "id": "t600-438",
+      "reference": "prompts/t600-438.txt",
+      "reference_kind": "text",
+      "reference_sha256": "5eed2a782f5dcc60ec59c419e1299b62cbcbe3ead31fd785c6dcb163c41ce0a7",
+      "source_group": "t600-438",
+      "split": "reserve"
+    },
+    {
+      "category": "intermediate / small animal",
+      "family": "intermediate",
+      "id": "t600-451",
+      "reference": "prompts/t600-451.txt",
+      "reference_kind": "text",
+      "reference_sha256": "826a58a4bcc7da7a50c6fbe07a65888577a88e449346f16934e1afaa75753ad7",
+      "source_group": "t600-451",
+      "split": "reserve"
+    }
+  ],
+  "schema": "painter-text-pairwise-pool-v1",
+  "selection_seed": 20260928,
+  "source_audit_sha256": "ea018fce4336c6c3de2dc0ee496b141f45162dc5f3e7428294ea6398b8c2f8f8"
+}

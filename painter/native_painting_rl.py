@@ -20,6 +20,7 @@ import importlib
 import inspect
 import json
 import math
+import os
 import sys
 import time
 import uuid
@@ -38,6 +39,7 @@ try:
         NativePaintingEnvConfig,
         NativePaintingTask,
         _image,
+        _reference_parts,
         _resolve,
         _text,
     )
@@ -49,6 +51,7 @@ except ImportError:
         NativePaintingEnvConfig,
         NativePaintingTask,
         _image,
+        _reference_parts,
         _resolve,
         _text,
     )
@@ -389,6 +392,8 @@ class NativePaintingRLTask(vf.Task[NativePaintingRLData, vf.State, vf.TaskConfig
             raise RuntimeError(info["service_failure"])
         opponent_value = self.data.opponent
         opponent: Path | None = Path(opponent_value) if opponent_value else None
+        if self.data.reference_kind == "text" and opponent is None:
+            raise ValueError("text painting requires a pre-rendered fixed SFT opponent")
         opponent_result: OpponentResult | None = None
         if opponent is None:
             if (
@@ -448,6 +453,37 @@ class NativePaintingRLTask(vf.Task[NativePaintingRLData, vf.State, vf.TaskConfig
             raise ValueError("reference, opponent, or final canvas image is missing; reward is unavailable")
         if reference == opponent or sha(reference) == sha(opponent):
             raise ValueError("reference cannot be used as the RL opponent")
+
+        if self.data.reference_kind == "text":
+            try:
+                from painter.text_pairwise_judge import judge_pair
+            except ImportError:
+                from text_pairwise_judge import judge_pair
+            try:
+                result = await judge_pair(
+                    brief=reference, anchor=opponent, candidate=candidate,
+                    key_file=Path(os.environ["PAINTER_GATEWAY_ENV_FILE"]),
+                )
+            except Exception as exc:
+                info["service_failure"] = f"text judge service failure: {type(exc).__name__}: {exc}"
+                raise
+            trace_id = str(getattr(trace, "id", self.data.task_id))
+            receipt_path = root / str(self.data.output_root) / trace_id / "text-judge.json"
+            _atomic(receipt_path, result)
+            info.update(
+                final_canvas_score=float(result["score"]),
+                reward_status="scored",
+                score_evidence={"status": "scored", "receipt_path": str(receipt_path),
+                                "receipt_sha256": sha(receipt_path),
+                                "protocol_version": result["protocol"]},
+                comparison_images={
+                    "reference": str(reference), "anchor": str(opponent),
+                    "candidate": str(candidate),
+                    "image_sha256": {"reference": sha(reference),
+                                     "anchor": sha(opponent), "candidate": sha(candidate)},
+                },
+            )
+            return float(result["score"])
 
         contract = _QueueContract(
             root,
@@ -592,6 +628,9 @@ class NativePaintingRLTaskset(vf.Taskset[NativePaintingRLTask, NativePaintingRLC
             source_group = raw.get("source_group") or raw.get("group")
             family = raw.get("family") or source_group
             reference_value = raw.get("reference_png") or raw.get("reference")
+            reference_kind = str(raw.get("reference_kind", "image"))
+            if reference_kind not in {"image", "text"}:
+                raise ValueError(f"unsupported reference kind for {task_id}: {reference_kind}")
             if not all(isinstance(value, str) and value for value in (task_id, source_group, family)):
                 raise ValueError(f"scaled row {index} needs id/task_id, source_group, and family")
             task_id = str(task_id)
@@ -605,6 +644,7 @@ class NativePaintingRLTaskset(vf.Taskset[NativePaintingRLTask, NativePaintingRLC
                 raise ValueError(f"duplicate scaled task id: {task_id}")
             seen_ids.add(task_id)
             reference = _resolve_asset(root, manifest_path, reference_value, role="reference")
+            _reference_parts(reference, reference_kind)
             reference_digest = sha(reference)
             expected_reference = _hash_from_row(raw, "reference", reference_value)
             if expected_reference and expected_reference != reference_digest:
@@ -622,6 +662,8 @@ class NativePaintingRLTaskset(vf.Taskset[NativePaintingRLTask, NativePaintingRLC
             opponent_digest: str | None = None
             lazy_fields: dict[str, Any] = {}
             if opponent_value is None:
+                if reference_kind == "text":
+                    raise ValueError(f"text row {task_id} requires a pre-rendered fixed opponent")
                 if not lazy_enabled:
                     raise ValueError(
                         f"scaled row {task_id} has no fixed opponent; materialize a distinct same-source_group canvas"
@@ -751,6 +793,7 @@ class NativePaintingRLTaskset(vf.Taskset[NativePaintingRLTask, NativePaintingRLC
                 "family": family,
                 "reference": str(reference),
                 "reference_sha256": reference_digest,
+                "reference_kind": reference_kind,
                 "opponent": str(opponent) if opponent else None,
                 "opponent_sha256": opponent_digest,
                 "opponent_source_group": source_group,
@@ -770,7 +813,7 @@ class NativePaintingRLTaskset(vf.Taskset[NativePaintingRLTask, NativePaintingRLC
         ordered = normalized if self.config.preserve_manifest_order else _interleave(normalized)
         tasks: list[NativePaintingRLTask] = []
         for index, row in enumerate(ordered):
-            prompt_parts: list[Any] = [_text("REFERENCE"), _image(Path(row["reference"]))]
+            prompt_parts: list[Any] = _reference_parts(Path(row["reference"]), row["reference_kind"])
             if row["mode"] == "correction":
                 prompt_parts.extend(
                     [
@@ -791,6 +834,7 @@ class NativePaintingRLTaskset(vf.Taskset[NativePaintingRLTask, NativePaintingRLC
                 family=row["family"],
                 reference=row["reference"],
                 reference_sha256=row["reference_sha256"],
+                reference_kind=row["reference_kind"],
                 policy_label=self.config.policy_label,
                 output_root=self.config.output_root,
                 max_turns=row["max_turns"],

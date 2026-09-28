@@ -44,6 +44,31 @@ class _Trace:
 
 
 class NativePaintingRLTests(unittest.TestCase):
+    def test_text_loader_requires_matching_fixed_sft_canvas(self):
+        module = _load_rl_module()
+        with TemporaryDirectory() as temp:
+            root = Path(temp)
+            (root / "brief.txt").write_text("Paint one pear beside a cup.\n")
+            (root / "sft.png").write_bytes(b"sft canvas")
+            row = {"id": "text-1", "source_group": "text-1", "family": "simple",
+                   "split": "train", "reference_kind": "text", "reference": "brief.txt",
+                   "reference_sha256": _digest(root / "brief.txt"), "opponent": "sft.png",
+                   "opponent_sha256": _digest(root / "sft.png")}
+            manifest = root / "train.json"
+            manifest.write_text(json.dumps({"rows": [row]}))
+            task = list(module.NativePaintingRLTaskset(module.NativePaintingRLConfig(
+                root=str(root), manifest=manifest.name,
+            )).load())[0]
+            self.assertEqual(task.data.reference_kind, "text")
+            self.assertTrue(all(not hasattr(part, "image_url")
+                                for part in task.data.prompt[0].content))
+            manifest.write_text(json.dumps({"rows": [{k: v for k, v in row.items()
+                                                     if not k.startswith("opponent") }]}))
+            with self.assertRaisesRegex(ValueError, "pre-rendered fixed opponent"):
+                list(module.NativePaintingRLTaskset(module.NativePaintingRLConfig(
+                    root=str(root), manifest=manifest.name, lazy_opponent=True,
+                )).load())
+
     def test_rl_task_declares_rl_wire_data_type(self):
         module = _load_rl_module()
         self.assertIs(module.NativePaintingRLTask.data_type(), module.NativePaintingRLData)
