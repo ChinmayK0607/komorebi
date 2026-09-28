@@ -94,6 +94,35 @@ preflight must show a simple brief first. Validate on the full frozen 16
 after an informative checkpoint and report all attempts, including this
 stopped one. No corrected checkpoint has been promoted.
 
+The third attempt was also stopped before an optimizer update: after eight
+finalized rollout units Prime reported no admitted training payload, because
+the pairwise win/tie/loss reward was uniformly zero within early groups.
+This is a reward-resolution failure, not a compute or optimizer failure.
+The [margin protocol](../../text_pairwise_margin_judge.py) retains the same
+two-order comparison to the frozen SFT painting and the same visual rubric,
+but asks for one seven-level overall preference strength rather than only
+win/tie/loss. It is not a sum of aesthetic or structure subrewards. In a
+12-pair calibration, the two visually inspected improvements scored 0.667
+and 0.833, an inspected stapler regression scored 0.250, and eight candidates
+that the old judge had scored zero took four distinct values from 0.083 to
+0.500. The maximum difference between reversed views was 0.500; this remains
+a noise limitation. Identity scored 0.500 and an all-white blank scored 0.000
+with both orientations in agreement. The same saved step-0 SFT validation
+canvases were rescored under the margin protocol: mean 0.393 on 14 comparable
+cases, 13 valid candidates, 2 censored. A fourth attempt, named
+`text-pairwise-margin-20260928`, passed preflight from the original step-512
+adapter with simple briefs first and started when GPU rental spend was $9.88.
+Its reward and checkpoint evaluations must use the margin protocol; old
+binary-judge validation scores are not comparable to it.
+Gateway usage reported $0.007977 for the 24 calibration image-order calls,
+$0.000351 for the two blank-control calls, and $0.008493 for 26 margin
+step-0 rescoring calls. These are receipt totals only; any failed/retried
+requests without usage receipts are not included. Vercel spend is separate
+from the $25 GPU rental cap.
+The 12-pair calibration, blank control, image inputs, and raw judge receipts
+are in a [public, anonymously hash-verified evidence archive](https://huggingface.co/datasets/CK0607/komorebi-painter-experiments/blob/f24a696d9a6cbe060b88faffc0f3cc034d876201/runs/text-pairwise-rl-20260928/margin-calibration.tar.gz)
+with SHA-256 `b0fbd04e54fb69222ec273ee432e2db7b24081b0551694b71eb42ce3610deda9`.
+
 Data scaling has been staged independently of this live 40-brief run. A
 deterministic expansion of the same audited source contains all 290 distinct
 text briefs: it preserves all 72 original assignments and prompt hashes,
