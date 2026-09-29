@@ -25,12 +25,15 @@ older validation scores cannot be spliced into the learning curve.
   This preserves 40 original train, 16 original validation, 16 original
   reserve; adds 186 complex train and 32 complex validation prompts. No new
   validation or reserve prompt may enter training or prompt tuning.
-- This rental pre-renders a deterministic **184-brief subset** to reserve GPU
+- This rental pre-renders a deterministic [**184-brief subset**](https://huggingface.co/datasets/CK0607/komorebi-painter-teachers/blob/e2a3aa2a3d9f9ecbddd67f7c5b356b5096c1a8bc/pools/text-paint-run184-20260929.tar.gz) to reserve GPU
   time for gradients: all 72 original foundation/validation/reserve briefs,
   all 32 complex validation briefs, and 80 of the 186 complex training briefs
   ranked by SHA-256 of `scaled-text-baseline-20260929:<id>`. The run-pool
   manifest SHA-256 is
   `494e4d9d76313faaae12fc7676d355c5041d138886d9ae1375f8f537fb8bcea6`.
+  The public run-pool archive SHA-256 is
+  `18a6bfd0cf38c0bb7b02625282220702ae8e7a45ec417c7c63a119d0bcad08ec`,
+  verified by anonymous download.
   This selection is independent of model outputs; 106 other complex training
   briefs remain in the public inventory for later runs.
 - Frozen opponent: first valid step-512 SFT painting for each brief sampled
