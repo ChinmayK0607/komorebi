@@ -111,3 +111,7 @@ canvases. A live two-order MiMo Flash judge canary preferred one valid SFT
 painting over a same-size white blank with score 1.0 and order gap 0.0;
 this checks transport/orientation only, not reliability on close pairs.
 There is **no RL optimizer update or scored RL result** yet.
+During an approximately 10-minute baseline window ending 01:23:39 UTC,
+`nvidia-smi dmon` collected 60 samples per GPU at 10-second spacing: both
+inference GPUs had 100% mean SM utilization and 60/60 samples at or above
+90%. This is a sampled baseline interval, not a whole-run utilization claim.
