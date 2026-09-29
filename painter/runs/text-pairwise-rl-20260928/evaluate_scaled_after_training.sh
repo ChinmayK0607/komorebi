@@ -69,6 +69,15 @@ else
 fi
 "$PY" "$RUN/analyze_scaled.py" --baseline "$baseline" \
   --candidate "$out/comparison/summary.json" --output "$out/analysis.json"
+case_count="$($PY - "$manifest" <<'PY'
+import json,sys
+print(len(json.load(open(sys.argv[1]))['cases']))
+PY
+)"
+"$PY" "$RUN/score_direct_validation.py" --manifest "$manifest" \
+  --sft-root "$RUN/validation/scaled-sft-control/eval" \
+  --rl-root "$out/eval" --output "$out/direct-sft-versus-rl" \
+  --key-file /root/painter/private/gateway.env --expected-count "$case_count"
 "$PY" "$RUN/build_checkpoint_gallery.py" --manifest "$manifest" \
   --eval "SFT:$RUN/validation/scaled-sft-control/eval" \
   --eval "RL-step-$step:$out/eval" \
