@@ -144,3 +144,18 @@ rollout was sampled in that failed preparation. The repair resolves and
 hash-checks each prompt against the original pool before writing an absolute
 path into the retry manifest; a relocation regression test covers it. The
 failed log and manifest remain distinct from the corrected retry.
+The corrected retry completed all 11 selected episodes. The immutable anchor
+audit admits 68 training cases (12 simple, 8 intermediate, 48 complex), 47
+usable held-out validation cases, and 16 reserve cases. Two prompts still
+lack a valid SFT canvas after both fixed-seed attempts: `t600-308` (train)
+and `t600-566` (validation). They are excluded from visual-anchor comparisons,
+not recast as losses. Train manifest SHA-256:
+`9a4cd3795cf3cf1e22d1d00eda8399e50bb699ecaaae683edb0d0b1262fa896d`;
+validation manifest SHA-256:
+`3ea6a74d10e921321671accb8d6aa0532da0b2cbfbced28add6e1d3ce753f14c`;
+reserve manifest SHA-256:
+`6fdf75f95f0ae7da202957357adf5e261366f8004c05cb1e8a6537ce93fcca39`.
+The fixed eight-case train-probe manifest SHA-256 is
+`ad927e7cf36952b36e9325cf6db5001a625be8915cc45d458f4a79702a72ab5b`.
+The independent step-0 control now samples all 47 usable validation cases
+plus that eight-case probe. Node source at this transition is `9d5c0c5`.
