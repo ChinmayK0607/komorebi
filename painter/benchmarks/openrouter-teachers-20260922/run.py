@@ -222,7 +222,7 @@ def image_data_uri(path: Path) -> str:
 @dataclass(frozen=True)
 class Reference:
     id: str
-    image: Path
+    image: Path | None
     sha256: str
     metadata: Mapping[str, Any]
 
@@ -304,21 +304,30 @@ def load_inputs(root: Path, *, model_ids: Sequence[str] | None = None, fetch_unk
             raise BenchmarkError(f"duplicate reference id: {ref_id}")
         seen.add(ref_id)
         image_value = item.get("image")
-        if not isinstance(image_value, str) or not image_value:
-            raise BenchmarkError(f"reference {ref_id} needs an image path")
-        image = Path(image_value)
-        if image.is_absolute():
-            raise BenchmarkError(f"reference image must be relative: {ref_id}")
-        image = (root / image).resolve()
-        if root not in image.parents and image != root:
-            raise BenchmarkError(f"reference image escapes benchmark directory: {ref_id}")
-        if image.is_symlink() or not image.is_file():
-            raise BenchmarkError(f"reference image is missing or symlinked: {image}")
-        actual = sha_file(image)
-        declared = _validate_hash(item.get("sha256"), f"reference {ref_id}.sha256")
-        if actual != declared:
-            raise BenchmarkError(f"reference hash mismatch for {ref_id}: expected {declared}, found {actual}")
-        image_mime(image)
+        task_text = item.get("task_text")
+        if image_value is None:
+            if item.get("source_kind") != "text_prompt" or not isinstance(task_text, str) or not task_text.strip():
+                raise BenchmarkError(f"text-only reference {ref_id} needs source_kind=text_prompt and task_text")
+            image = None
+            declared = _validate_hash(item.get("sha256"), f"reference {ref_id}.sha256")
+            if sha_bytes(task_text.encode("utf-8")) != declared:
+                raise BenchmarkError(f"text prompt hash mismatch for {ref_id}")
+        else:
+            if not isinstance(image_value, str) or not image_value:
+                raise BenchmarkError(f"reference {ref_id} needs an image path")
+            image = Path(image_value)
+            if image.is_absolute():
+                raise BenchmarkError(f"reference image must be relative: {ref_id}")
+            image = (root / image).resolve()
+            if root not in image.parents and image != root:
+                raise BenchmarkError(f"reference image escapes benchmark directory: {ref_id}")
+            if image.is_symlink() or not image.is_file():
+                raise BenchmarkError(f"reference image is missing or symlinked: {image}")
+            actual = sha_file(image)
+            declared = _validate_hash(item.get("sha256"), f"reference {ref_id}.sha256")
+            if actual != declared:
+                raise BenchmarkError(f"reference hash mismatch for {ref_id}: expected {declared}, found {actual}")
+            image_mime(image)
         if "task_text" in item and (not isinstance(item["task_text"], str) or len(item["task_text"]) > task_text_max_chars):
             raise BenchmarkError(f"reference {ref_id}.task_text must be text of at most {task_text_max_chars} characters")
         prior_value = item.get("prior_canvas")
@@ -635,17 +644,25 @@ def build_user_message(
     *, inputs: BenchmarkInputs, reference: Reference, current_canvas: Path | None,
     previous_response: str | None, render_feedback: str | None, track: str | None = None,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
-    text = (
-        "Inspect the attached reference image. Return a brief visual plan followed by a complete "
-        "p5.brush JavaScript sketch in a fenced javascript code block."
-        if previous_response is None
-        else (
+    if reference.image is None:
+        text = (
+            "Paint the SCENE BRIEF. Return a brief visual plan followed by a complete p5.brush "
+            "JavaScript sketch in a fenced javascript code block."
+            if previous_response is None else
+            "Inspect the CURRENT CANVAS against the SCENE BRIEF. Revise the complete sketch to "
+            "improve composition, recognizable structure, color, and painterly warmth. Return a brief "
+            "plan and complete fenced javascript sketch, or FINISHED if the painting is already strong."
+        )
+    else:
+        text = (
+            "Inspect the attached reference image. Return a brief visual plan followed by a complete "
+            "p5.brush JavaScript sketch in a fenced javascript code block."
+            if previous_response is None else
             "Inspect the attached REFERENCE and CURRENT CANVAS. Revise the complete sketch to fix "
             "the remaining visual mismatch. Return a brief plan followed by the complete sketch "
             "in a fenced javascript code block. If the current canvas faithfully matches the "
             "reference, respond with a brief reason and FINISHED without a code block."
         )
-    )
     if render_feedback:
         text += "\nRenderer feedback from the submitted program:\n" + render_feedback
     task_text = reference.metadata.get("task_text")
@@ -660,15 +677,15 @@ def build_user_message(
         text += "\nSpeed track: prioritize a usable first valid painting within the turn budget and keep the plan concise."
     elif track == "screen":
         text += "\nScreen track: aim for a strong result in roughly 4–6 turns, with six as the cap. This is a target range, not a minimum; after observing a faithful current canvas, finish immediately with FINISHED."
-    user_parts: list[dict[str, Any]] = [
-        {"type": "text", "text": text},
-        {"type": "image_url", "image_url": {"url": image_data_uri(reference.image)}},
-    ]
+    user_parts: list[dict[str, Any]] = [{"type": "text", "text": text}]
+    safe_parts: list[dict[str, Any]] = [{"type": "text", "text": text}]
+    if reference.image is not None:
+        user_parts.append({"type": "image_url", "image_url": {"url": image_data_uri(reference.image)}})
+        safe_parts.append(sanitized_image_part(reference.image, root=inputs.root))
     if prior is not None and previous_response is None:
         user_parts.append({"type": "image_url", "image_url": {"url": image_data_uri(prior)}})
     if current_canvas is not None:
         user_parts.append({"type": "image_url", "image_url": {"url": image_data_uri(current_canvas)}})
-    safe_parts: list[dict[str, Any]] = [{"type": "text", "text": text}, sanitized_image_part(reference.image, root=inputs.root)]
     if prior is not None and previous_response is None:
         safe_parts.append(sanitized_image_part(prior, root=inputs.root))
     if current_canvas is not None:
@@ -1347,7 +1364,7 @@ def make_episode_record(inputs: BenchmarkInputs, model: str, reference: Referenc
         "job_id": job_id(model, reference.id, sample, str(settings["track"])),
         "model": model,
         "reference_id": reference.id,
-        "reference_image": _relative(reference.image, inputs.root),
+        "reference_image": _relative(reference.image, inputs.root) if reference.image is not None else None,
         "reference_sha256": reference.sha256,
         "sample": sample,
         "inputs": {
@@ -1879,12 +1896,12 @@ def dry_run_report(inputs: BenchmarkInputs, *, track: str = "all", limit: int | 
     }
     def first_turn_bytes(ref: Reference) -> int:
         prior = ref.metadata.get("prior_canvas")
-        return ref.image.stat().st_size + ((inputs.root / prior).stat().st_size if isinstance(prior, str) else 0)
+        return (ref.image.stat().st_size if ref.image is not None else 0) + ((inputs.root / prior).stat().st_size if isinstance(prior, str) else 0)
 
     def first_turn_chars(ref: Reference) -> int:
         prior = ref.metadata.get("prior_canvas")
         return (len(inputs.prompt) + len(str(ref.metadata.get("task_text") or ""))
-                + len(image_data_uri(ref.image))
+                + (len(image_data_uri(ref.image)) if ref.image is not None else 0)
                 + (len(image_data_uri(inputs.root / prior)) if isinstance(prior, str) else 0))
 
     image_bytes = sum(first_turn_bytes(ref) for _, _, ref, _ in selected)

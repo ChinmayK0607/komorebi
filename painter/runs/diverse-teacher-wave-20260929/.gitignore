@@ -1,0 +1,4 @@
+*.png
+source.tar.gz
+available-ids.json
+openverse-*-available.json

@@ -36,6 +36,39 @@ def _fixture(root: Path) -> run.BenchmarkInputs:
 
 
 class RunTests(unittest.TestCase):
+    def test_text_only_brief_never_sends_a_reference_image(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            _fixture(root)
+            brief = "Paint a warm ceramic teapot beside two pears."
+            (root / "refs.json").write_text(json.dumps({"references": [{
+                "id": "text-1", "image": None, "source_kind": "text_prompt",
+                "task_text": brief, "sha256": run.sha_bytes(brief.encode()),
+            }]}))
+            inputs = run.load_inputs(root)
+            reference = inputs.references[0]
+            self.assertIsNone(reference.image)
+            self.assertEqual(run.dry_run_report(inputs, track="quality", limit=1)["reference_bytes_selected"], 0)
+            first, safe = run.build_user_message(inputs=inputs, reference=reference,
+                current_canvas=None, previous_response=None, render_feedback=None)
+            self.assertEqual(len(first["content"]), 1)
+            self.assertEqual(len(safe["content"]), 1)
+            self.assertIn(brief, first["content"][0]["text"])
+            canvas = root / "canvas.png"
+            canvas.write_bytes(b"rendered-png")
+            second, _ = run.build_user_message(inputs=inputs, reference=reference,
+                current_canvas=canvas, previous_response="first program", render_feedback=None)
+            self.assertEqual(len(second["content"]), 2)
+            self.assertIn("CURRENT CANVAS", second["content"][0]["text"])
+            record = run.make_episode_record(inputs, "test/model", reference, 1,
+                run.settings_from_inputs(inputs, "quality"))
+            self.assertIsNone(record["reference_image"])
+            bad = json.loads((root / "refs.json").read_text())
+            bad["references"][0]["sha256"] = "0" * 64
+            (root / "refs.json").write_text(json.dumps(bad))
+            with self.assertRaises(run.BenchmarkError):
+                run.load_inputs(root)
+
     def test_optional_photo_prior_is_hash_pinned_and_visible_on_first_turn(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)

@@ -1,0 +1,21 @@
+{
+  "archive_bytes": 10297320,
+  "archive_sha256": "11dc6f4d819d558a4799594e8b6e636e6bc4027cfbe01c79f44bcb59f1726fcb",
+  "manifest_sha256": "d44cde3a4ddf55a21832c35558055dac2951685bde289ecda6c35993ce7cd9f9",
+  "rows": 120,
+  "schema": "painter.diverse-teacher-source-receipt.v1",
+  "shards": {
+    "photo-flash-00": 12,
+    "photo-flash-01": 12,
+    "photo-flash-02": 10,
+    "photo-pro-00": 12,
+    "photo-pro-01": 12,
+    "photo-pro-02": 2,
+    "text-flash-00": 12,
+    "text-flash-01": 12,
+    "text-flash-02": 12,
+    "text-flash-03": 6,
+    "text-pro-00": 12,
+    "text-pro-01": 6
+  }
+}
