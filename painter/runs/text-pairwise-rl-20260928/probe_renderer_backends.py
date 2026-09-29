@@ -59,7 +59,9 @@ def run(*, sources: Path, renderer: Path, python: Path, browsers: Path,
             folder.mkdir()
             os.chmod(folder, 0o777)
             canvas = folder / "painting.png"
-            command = ["/usr/sbin/runuser", "-u", "painter", "--", str(python.resolve()),
+            # Keep the venv's bin/python path. Resolving its symlink selects
+            # /usr/bin/python and loses the Playwright installation.
+            command = ["/usr/sbin/runuser", "-u", "painter", "--", str(python.absolute()),
                        str(renderer.resolve()), str(source.resolve()), "--output",
                        str(canvas), "--timeout", str(timeout), "--backend", backend]
             started = time.monotonic()
