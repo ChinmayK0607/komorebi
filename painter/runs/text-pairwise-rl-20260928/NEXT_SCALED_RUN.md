@@ -288,3 +288,18 @@ shortcut and failed before starting inference. Commit `d6d1851` fixes this
 so `all` always honors the full supplied manifest. The worker was restarted
 with eight unique frozen probe IDs. This is evaluation of the same step-16
 adapter, not another training run.
+
+The fixed train probe completed while the held-out render was still running.
+Step 16 had 7/8 valid canvases. Across seven paired judge-comparable cases,
+the step-zero SFT mean was 0.4881 and RL mean 0.4405 against their frozen
+anchors, a paired delta of -0.0476 (bootstrap 95% interval
+[-0.2024, +0.1071]; 1 improved, 3 regressed, 3 tied). The four complex
+probe cases averaged -0.1667; simple cases averaged +0.1111 on three
+comparable pairs. One simple case was invalid at both policies and censored
+on the SFT side. The final generated-trace stream contains four rollout
+samples each for seven of the eight probe IDs; `t600-333` was never generated
+in this 16-step run. These are generated-trace exposure counts, not proof of
+admission into gradients. Excluding the unexposed `t600-333` leaves six
+comparable exposed pairs with a near-zero mean delta (+0.0139). This small
+probe supplies no stable evidence of learning; the held-out comparison
+remains primary.
