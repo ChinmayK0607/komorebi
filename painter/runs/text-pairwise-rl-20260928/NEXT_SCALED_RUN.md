@@ -1,4 +1,4 @@
-# Scaled text-paint RL attempt (planned; no GPU run launched yet)
+# Scaled text-paint RL attempt (step 16 evaluated)
 
 ## Question and matched control
 
@@ -286,8 +286,8 @@ failure before scoring: its first program assigns `i=0` inside a
 The model corrects that assignment on turn two, but turn two also times out
 despite a shorter program. A multi-turn retry can repair a code bug while
 still failing the renderer's work budget. This is a model/program failure,
-not a judge loss or GPU inference stall. Final per-case status remains to
-be recorded.
+not a judge loss or GPU inference stall. The third turn also timed out, so
+the final case is invalid with no canvas.
 
 The step-16 training process exited after a verified public checkpoint.
 For the predeclared eight-case fixed train probe, a second evaluation worker
@@ -316,3 +316,44 @@ admission into gradients. Excluding the unexposed `t600-333` leaves six
 comparable exposed pairs with a near-zero mean delta (+0.0139). This small
 probe supplies no stable evidence of learning; the held-out comparison
 remains primary.
+
+## Step-16 held-out result and decision
+
+All 47 frozen held-out prompts rendered at evaluation seed 918210, with no
+service-censored cases. Fresh SFT and step-16 RL each produced 41/47 valid
+canvases. Against the same frozen SFT anchors, the SFT control mean was
+0.39539 and RL mean was 0.41135: paired delta +0.01596, bootstrap 95%
+interval [-0.08333, +0.11348]. On 37 both-valid cases, delta was +0.04955
+with interval [-0.04505, +0.14865]. By family, the anchor-relative deltas
+were simple +0.08333, intermediate +0.20833, and complex -0.05108.
+
+The predeclared **direct** fresh-SFT-versus-RL judge gave RL 26 wins, 4 ties,
+17 losses across 47 prompts, mean preference 0.53191 (bootstrap 95% interval
+[0.44326, 0.61879]); its both-valid mean was 0.54054 on 37 pairs. Direct
+family means were simple 0.5208 (8), intermediate 0.8021 (8), and complex
+0.4651 (31). The two image orders disagreed on 18/47 prompts, with six
+strong disagreements. The blind sixteen-case human review above found
+several compelling RL gains on simple and intermediate objects but clear
+architectural/complex regressions and three invalid complex canvases. The
+MiMo judge sometimes preferred detail or structured elements where the
+human read favored atmosphere; other disagreements have plausible rubric
+reasons, so neither side is a proven gold standard.
+
+**Decision:** do not promote step 16 as generally better than step-512 SFT
+and do not launch a follow-up training run automatically. The all-case
+uncertainty spans no improvement, the fixed train probe does not rise, and
+complex prompts regress by both anchor-relative and direct family means.
+Retain the public checkpoint and full case evidence for prompt-specific
+analysis. A next experiment should first measure judge agreement with
+human beauty preferences and eliminate invalid/slow brush programs; the
+current relative reward against first-valid SFT anchors is too weak a
+guarantee of attractive paintings.
+
+Operational failure: after the 47th canvas, the evaluation wrapper exited
+with a Bash parse error because `evaluate_checkpoint.sh` was edited while
+that same long-running shell was reading it. This was an experiment-control
+mistake. The completed canvases and checkpoint were preserved; scoring,
+direct comparison, gallery, and evidence packaging were resumed from saved
+outputs without rerendering. The eight-case selector fix itself passed
+`bash -n` and ran on the parallel probe. Future changes to a live run must
+use a versioned copied script and leave the active file untouched.
