@@ -17,6 +17,16 @@ REVISION="$1" PREFIX="$2" ADAPTER_SHA="$3"
   echo 'pinned commit and SHA-256 required' >&2; exit 2;
 }
 bash "$OLD/setup_node.sh"
+# The shared bootstrap stages the renderer under the old run root. Prime's
+# launcher resolves these three paths relative to this pilot root, so expose
+# the already prepared assets here without reinstalling them.
+for item in vendor renderer-env browsers; do
+  [[ -e "$OLD/$item" ]] || { echo "missing prepared render asset: $OLD/$item" >&2; exit 1; }
+  if [[ ! -e "$RUN/$item" ]]; then
+    ln -s "$OLD/$item" "$RUN/$item"
+  fi
+  [[ -e "$RUN/$item" ]] || { echo "pilot render asset is unavailable: $RUN/$item" >&2; exit 1; }
+done
 PY="$PRIME/.venv/bin/python"
 mkdir -p "$ROOT/cache"
 if [[ ! -f "$ARCHIVE" ]]; then
