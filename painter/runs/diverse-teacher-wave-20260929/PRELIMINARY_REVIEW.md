@@ -42,6 +42,19 @@ receipts give no actual `cost` value. Several first turns exhaust the
 spend without adding a useful demonstration. Compare a shorter first-turn
 reasoning ceiling in a future finite canary after this wave finishes.
 
+At the 66-episode public preview, a further source-matched spot check found
+the carousel horse (`fresh-text-060`) has a coherent horse, pole, saddle, and
+canopy arrangement, but remains strongly flat/vector-like. For COCO photo
+`000000162415`, the glove, purple shirt, and pose are identifiable against the
+reference, while the child's face and fingers are simplified into rigid shapes.
+For COCO photo `000000502347`, the airplane, distant hills, marina, and pier
+occupy the correct regions, but the foreground is schematic and the sky takes
+most of the image. These are useful **structural candidates**, not evidence
+that the wave has achieved painterly teacher quality. The 66 published episodes
+contain 65 saved valid canvases, while only 61 have a valid terminal turn;
+the two counts must stay distinct. The 65 complete usage receipts imply about
+$2.08 at published list rates, not a verified provider charge.
+
 Inspecting the **turn sequences**, not just their final images, changes the
 training decision. `fresh-text-001` (kettle) has three distinct valid
 canvases, but turns 3–4 mainly shift marks and highlights without a clear
