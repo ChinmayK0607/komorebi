@@ -36,6 +36,17 @@ unfinished JavaScript, and 180-second render limits. The full profile stores
 the per-class counts and concrete turn receipts; do not explain all failures
 as renderer latency or all losses as judge error.
 
+A later read-only snapshot of the native trace stream through 323 generated
+three-turn trajectories (969 turns, including speculative work) found only
+**7** calls with `finish_reason=length`; all seven used exactly 8,192 output
+tokens and none yielded a valid action. The other **962** calls ended with
+`finish_reason=stop`, yet 199 had a syntax-related error string and only 331
+yielded a valid action. This rules out output-token truncation as the main
+explanation for malformed programs at this snapshot. The three turn positions
+had mean completion lengths of 2,249, 2,186, and 2,099 tokens. These are
+generated-turn counts, not admitted-batch rates; verify the conclusion on the
+final stream before changing the token policy.
+
 The first 27 admitted batches averaged 283 seconds model generation,
 91 seconds harness, and 20 seconds scoring per rollout; phase work overlaps,
 so these are not additive wall-clock timings. Of 270 generated traces,
