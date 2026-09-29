@@ -5,7 +5,8 @@ from pathlib import Path
 from unittest.mock import patch
 
 
-SOURCE = Path(__file__).parent / "vendor/integrations/watercolour/renderer.py"
+SOURCE = (Path(__file__).parent / "runs/text-pairwise-rl-20260928"
+          / "renderer_hardware_probe.py")
 SPEC = importlib.util.spec_from_file_location("painter_watercolour_renderer", SOURCE)
 RENDERER = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(RENDERER)

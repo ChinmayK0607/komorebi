@@ -30,12 +30,10 @@ def sha(path):
 
 def resolve_backend(backend=None):
     value = backend or os.environ.get('BRUSH_RENDER_BACKEND', 'swiftshader')
-    if value not in ('swiftshader', 'metal', 'gl', 'vulkan'):
-        raise ValueError('Renderer backend must be swiftshader, metal, gl, or vulkan')
+    if value not in ('swiftshader', 'metal'):
+        raise ValueError('Renderer backend must be swiftshader or metal')
     if value == 'metal' and sys.platform != 'darwin':
         raise ValueError('Metal rendering requires macOS')
-    if value in ('gl', 'vulkan') and sys.platform != 'linux':
-        raise ValueError('GL/Vulkan render backend requires Linux')
     return value
 
 
@@ -143,10 +141,8 @@ for(const key of ['RTCPeerConnection','webkitRTCPeerConnection']){Object.defineP
     errors = []
     blocked = []
     with sync_playwright() as p:
-        browser_started = time.monotonic()
         browser = p.chromium.launch(headless=True, chromium_sandbox=True,
             args=browser_args(backend))
-        browser_launch_seconds = time.monotonic() - browser_started
         context = browser.new_context(viewport={'width': 700, 'height': 700},
                                       device_scale_factor=1, accept_downloads=False,
                                       service_workers='block', offline=True)
@@ -158,7 +154,6 @@ for(const key of ['RTCPeerConnection','webkitRTCPeerConnection']){Object.defineP
         page.on('dialog', lambda dialog: dialog.dismiss())
         painting_started = time.monotonic()
         page.set_content(html, wait_until='commit', timeout=max(1000, (timeout - 2) * 1000))
-        page_load_seconds = time.monotonic() - painting_started
         telemetry_handle = None
         if telemetry_enabled:
             telemetry_handle = page.evaluate_handle(TELEMETRY_INSTALL)
@@ -178,10 +173,7 @@ for(const key of ['RTCPeerConnection','webkitRTCPeerConnection']){Object.defineP
             if errors or page.evaluate('(window.__errors || []).length>0'):
                 break
             time.sleep(.04)
-        draw_wait_seconds = time.monotonic() - painting_started - page_load_seconds
-        capture_started = time.monotonic()
         payload = page.evaluate("({png:document.querySelector('canvas')?.toDataURL('image/png'), errors:window.__errors})")
-        capture_seconds = time.monotonic() - capture_started
         painting_seconds = time.monotonic() - painting_started
         gpu = page.evaluate("""() => {
             const canvas = document.querySelector('canvas');
@@ -194,18 +186,10 @@ for(const key of ['RTCPeerConnection','webkitRTCPeerConnection']){Object.defineP
         }""")
         if backend == 'metal' and 'metal' not in str(gpu.get('unmasked_renderer', '')).lower():
             errors.append('Requested Metal backend was not confirmed; refusing a silent software fallback')
-        if backend in ('gl', 'vulkan'):
-            renderer_name = str(gpu.get('unmasked_renderer', '')).lower()
-            if not renderer_name or 'swiftshader' in renderer_name or 'llvmpipe' in renderer_name:
-                errors.append('Requested hardware GL/Vulkan backend was not confirmed; refusing software fallback')
         errors.extend(page_errors(payload))
         result = {'finished': finished, 'errors': errors, 'blocked_requests': blocked, 'valid': False, 'chromium_version': browser.version,
                   'requested_angle_backend': backend, 'gpu': gpu, 'browser_args': browser_args(backend),
                   'painting_seconds': painting_seconds,
-                  'phase_seconds': {'browser_launch': browser_launch_seconds,
-                                    'page_load': page_load_seconds,
-                                    'draw_wait': draw_wait_seconds,
-                                    'capture': capture_seconds},
                   'brush_telemetry': telemetry_handle.evaluate('(controller) => controller.snapshot()') if telemetry_handle else None}
         if payload.get('png'):
             png = base64.b64decode(payload['png'].split(',', 1)[1])
@@ -229,7 +213,7 @@ def main():
     parser.add_argument('--timeout', type=float, default=90)
     parser.add_argument('--workers', type=int, default=2)
     parser.add_argument('--telemetry', action='store_true', help='Opt in to runtime diagnostics; never enables an efficiency reward')
-    parser.add_argument('--backend', choices=['swiftshader', 'metal', 'gl', 'vulkan'], help='Explicit ANGLE backend; defaults to BRUSH_RENDER_BACKEND or swiftshader')
+    parser.add_argument('--backend', choices=['swiftshader', 'metal'], help='Explicit ANGLE backend; defaults to BRUSH_RENDER_BACKEND or swiftshader')
     parser.add_argument('--worker', action='store_true', help=argparse.SUPPRESS)
     args = parser.parse_args()
     if args.worker:
