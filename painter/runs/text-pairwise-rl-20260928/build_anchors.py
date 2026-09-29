@@ -18,6 +18,7 @@ from pathlib import Path
 from PIL import Image, ImageStat
 
 ROOT = Path(__file__).resolve().parents[3]
+COMPLEX_ORDER_SEED = "text-scaled-anchor-20260929"
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
@@ -46,6 +47,25 @@ def usable(canvas: Path) -> tuple[bool, str]:
     except (OSError, ValueError):
         return False, "unreadable_canvas"
     return True, "valid"
+
+
+def choose_training_rows(usable_rows: list[dict],
+                         train_counts: tuple[int, int, int]) -> list[dict]:
+    chosen = []
+    for family, needed in zip(("simple", "intermediate", "complex"), train_counts):
+        if not needed:
+            continue
+        initial = [row for row in usable_rows if row["split"] == "train" and row["family"] == family]
+        reserves = [row for row in usable_rows if row["split"] == "reserve" and row["family"] == family]
+        if family == "complex":
+            initial.sort(key=lambda row: hashlib.sha256(
+                f"{COMPLEX_ORDER_SEED}:{row['id']}".encode()).hexdigest())
+        replacements = reserves[:max(0, needed - len(initial))]
+        if len(initial) + len(replacements) < needed:
+            raise ValueError(f"only {len(initial) + len(replacements)}/{needed} usable {family} train anchors")
+        chosen.extend(initial[:needed] + [{**row, "split": "train", "reserve_replacement": True}
+                                          for row in replacements])
+    return chosen
 
 
 def build(*, pool: Path, eval_root: Path, output: Path,
@@ -123,16 +143,7 @@ def build(*, pool: Path, eval_root: Path, output: Path,
                                 "reference": str(brief.resolve()), "mode": "fresh",
                                 "max_turns": 3})
         decisions.append(decision)
-    chosen = []
-    for family, needed in zip(("simple", "intermediate", "complex"), train_counts):
-        if not needed:
-            continue
-        initial = [row for row in usable_rows if row["split"] == "train" and row["family"] == family]
-        reserves = [row for row in usable_rows if row["split"] == "reserve" and row["family"] == family]
-        replacements = reserves[:max(0, needed - len(initial))]
-        chosen.extend(initial + [{**row, "split": "train", "reserve_replacement": True} for row in replacements])
-        if len(initial) + len(replacements) < needed:
-            raise ValueError(f"only {len(initial) + len(replacements)}/{needed} usable {family} train anchors")
+    chosen = choose_training_rows(usable_rows, train_counts)
     validation = [row for row in usable_rows if row["split"] == "validation"]
     reserve = [row for row in usable_rows if row["split"] == "reserve"]
     if sum(row["split"] == "validation" for row in rows) != validation_expected:
@@ -149,6 +160,7 @@ def build(*, pool: Path, eval_root: Path, output: Path,
              "validation_expected": validation_expected, "reserve_usable": len(reserve),
              "decisions": decisions,
              "train_counts_requested": dict(zip(("simple", "intermediate", "complex"), train_counts)),
+             "complex_order_seed": COMPLEX_ORDER_SEED if train_counts[2] else None,
              "train_manifest_sha256": sha(train), "validation_manifest_sha256": sha(val),
              "reserve_manifest_sha256": sha(reserve_path)}
     (output / "anchor-audit.json").write_text(json.dumps(audit, indent=2, sort_keys=True) + "\n")

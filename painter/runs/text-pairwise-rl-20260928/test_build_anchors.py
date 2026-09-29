@@ -17,6 +17,22 @@ SPEC.loader.exec_module(MODULE)
 
 
 class AnchorBuilderTest(unittest.TestCase):
+    def test_scaled_selection_caps_each_family_before_training(self) -> None:
+        rows = ([{"id": f"s{i}", "split": "train", "family": "simple"}
+                 for i in range(24)] +
+                [{"id": f"i{i}", "split": "train", "family": "intermediate"}
+                 for i in range(16)] +
+                [{"id": f"c{i}", "split": "train", "family": "complex"}
+                 for i in range(80)])
+        chosen = MODULE.choose_training_rows(rows, (12, 8, 48))
+        self.assertEqual(len(chosen), 68)
+        self.assertEqual([sum(row["family"] == family for row in chosen)
+                          for family in ("simple", "intermediate", "complex")],
+                         [12, 8, 48])
+        reversed_choice = MODULE.choose_training_rows(list(reversed(rows)), (12, 8, 48))
+        self.assertEqual([row["id"] for row in chosen if row["family"] == "complex"],
+                         [row["id"] for row in reversed_choice if row["family"] == "complex"])
+
     def test_freezes_same_prompt_sft_and_replaces_failed_train_from_reserve(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
