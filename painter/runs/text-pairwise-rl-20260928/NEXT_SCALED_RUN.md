@@ -331,9 +331,10 @@ The predeclared **direct** fresh-SFT-versus-RL judge gave RL 26 wins, 4 ties,
 17 losses across 47 prompts, mean preference 0.53191 (bootstrap 95% interval
 [0.44326, 0.61879]); its both-valid mean was 0.54054 on 37 pairs. Direct
 family means were simple 0.5208 (8), intermediate 0.8021 (8), and complex
-0.4651 (31). The two image orders disagreed on 18/47 prompts, with six
-strong disagreements. The blind sixteen-case human review above found
-several compelling RL gains on simple and intermediate objects but clear
+0.4651 (31). The two image orders gave different preference strengths on
+18/37 both-valid judged pairs, with six strong gaps. The blind sixteen-case
+human review above found several compelling RL gains on simple and
+intermediate objects but clear
 architectural/complex regressions and three invalid complex canvases. The
 MiMo judge sometimes preferred detail or structured elements where the
 human read favored atmosphere; other disagreements have plausible rubric
@@ -357,3 +358,25 @@ direct comparison, gallery, and evidence packaging were resumed from saved
 outputs without rerendering. The eight-case selector fix itself passed
 `bash -n` and ran on the parallel probe. Future changes to a live run must
 use a versioned copied script and leave the active file untouched.
+
+## Public evidence, utilization, and cost
+
+The [public step-16 adapter](https://huggingface.co/CK0607/qwen3.8-27b-brush-painting/tree/ac4d3eda8e5925e2d23992cfdc1a63620ebde573/text-pairwise-scaled-20260929/step_16)
+and the [public final evidence archive](https://huggingface.co/datasets/CK0607/komorebi-painter-experiments/blob/e39e6e58fc830eb7be0a77a8bdde7d906943d1d3/runs/text-pairwise-rl-20260928/scaled-final-20260929.tar.gz)
+were hash-verified. The latter has 2,601 screened files, 533,129,801 bytes,
+and SHA-256 `ba4252251a54f9eeab16cff7cbf45939ee37e57730a8fa9191fe9121f235ccd3`.
+The [local 47-case gallery](local-evidence/scaled-step16-public/evidence/gallery/index.html)
+was streamed from that public archive and its full compressed SHA checked
+again without retaining the 533 MB archive on this device.
+
+From 04:35:52 to 07:26:05 UTC, the training telemetry recorded 1,022
+ten-second samples **per GPU**. Inference GPU 0 averaged 96.76% utilization
+and was at least 90% busy for 96.58% of samples. Trainer GPU 1 averaged
+10.92% and was at least 90% busy for 9.78% of samples. This is a measured
+training-window average, not an instantaneous snapshot or a claim that the
+whole pipeline was saturated. The final Lium rental subtotal was $20.43 at
+removal, within the $25 per-run cap, and `lium ps` returned an empty list.
+The 244 archived MiMo Gateway receipts sum to $0.164521, including training,
+control, probe, held-out, direct comparison, and canary judgments; this is
+the recorded amount, not a guarantee about unlogged attempts. No scheduled
+task or recurring watcher was created.
