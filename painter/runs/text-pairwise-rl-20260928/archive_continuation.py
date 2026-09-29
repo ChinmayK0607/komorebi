@@ -41,7 +41,7 @@ def select(run: Path, evaluation: str, step: int) -> dict[str, Path]:
     files: dict[str, Path] = {}
     required = [
         "CONTINUATION_20260929.md", "native-continued.toml",
-        "plot_reward_curve.py",
+        "plot_reward_curve.py", "profile_continuation.py",
         "rl-config-receipt.json", "continued-step16-download.json",
         "continued-anchors/reuse-receipt.json",
         "continued-anchors/train-manifest.json",
@@ -50,6 +50,7 @@ def select(run: Path, evaluation: str, step: int) -> dict[str, Path]:
         "evidence/continued-stream.jsonl",
         "evidence/continued-evaluated-step.txt",
         "evidence/continued-evaluation-scope.txt",
+        "evidence/profile-continuation.json",
         "validation/scaled-sft-control/validation-summary.json",
         "prior-step16/validation/scaled-step-16-all/comparison/summary.json",
         f"async-output/{RUN_NAME}/monitors/file/metrics.jsonl",

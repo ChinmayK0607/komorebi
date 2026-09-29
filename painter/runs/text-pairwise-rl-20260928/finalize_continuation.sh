@@ -35,6 +35,12 @@ PY
 "$PY" "$RUN/plot_reward_curve.py" \
   --metrics "$RUN/async-output/$NAME/monitors/file/metrics.jsonl" \
   --traces "$STREAM" --output "$RUN/evidence/reward-curve"
+"$PY" "$RUN/profile_continuation.py" \
+  --metrics "$RUN/async-output/$NAME/monitors/file/metrics.jsonl" \
+  --traces "$STREAM" --judges "$RUN/rl-rollouts-continued" \
+  --trainer-log "$RUN/async-output/$NAME/logs/attempt_1/trainer.log" \
+  --gpu-csv "$RUN/logs/gpu-telemetry-20260929T163811Z.csv" \
+  --output "$RUN/evidence/profile-continuation.json"
 if [[ "$SCOPE" == all ]]; then
   MANIFEST="$ANCHORS"
   BASELINE="$CONTROL/validation-summary.json"

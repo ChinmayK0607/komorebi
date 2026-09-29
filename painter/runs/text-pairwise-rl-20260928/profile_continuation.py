@@ -43,6 +43,13 @@ def mean(values: list[float]) -> float | None:
     return statistics.mean(values) if values else None
 
 
+def percentile(values: list[float], fraction: float) -> float | None:
+    if not values:
+        return None
+    ordered = sorted(values)
+    return ordered[min(len(ordered) - 1, math.ceil(fraction * len(ordered)) - 1)]
+
+
 def finite(value: object) -> float | None:
     if isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(value):
         return float(value)
@@ -103,12 +110,17 @@ def metrics_profile(path: Path) -> dict:
     }
 
 
-def traces_profile(path: Path) -> dict:
+def traces_profile(path: Path, judge_root: Path) -> dict:
     families: dict[str, Counter] = defaultdict(Counter)
     failures = Counter()
     turn_failures = Counter()
     error_classes = Counter()
     dispatch_steps = Counter()
+    judge_scores: dict[str, list[float]] = defaultdict(list)
+    judge_order_gap: dict[str, list[float]] = defaultdict(list)
+    large_order_gap_cases: list[dict] = []
+    valid_render_seconds: list[float] = []
+    painting_seconds: list[float] = []
     all_count = valid_count = turn_count = 0
     for line in path.read_text().splitlines():
         if not line:
@@ -124,11 +136,35 @@ def traces_profile(path: Path) -> dict:
             family = str(info.get("family") or "unknown")
             families[family]["generated"] += 1
             families[family]["valid_final"] += valid
+            if valid:
+                score = finite(info.get("final_canvas_score"))
+                if score is not None:
+                    judge_scores[family].append(score)
+                evidence = info.get("score_evidence") or {}
+                receipt = evidence.get("receipt_path") if isinstance(evidence, dict) else None
+                receipt_path = Path(receipt).resolve() if isinstance(receipt, str) else None
+                if (receipt_path is not None and receipt_path.is_relative_to(judge_root.resolve())
+                        and receipt_path.is_file()):
+                    judged = json.loads(receipt_path.read_text())
+                    if (gap := finite(judged.get("order_gap"))) is not None:
+                        judge_order_gap[family].append(gap)
+                        if gap >= 1 / 3:
+                            large_order_gap_cases.append({"task_id": str(info.get("task_id")),
+                                                          "family": family, "order_gap": gap})
             if not valid:
                 failures[str(info.get("failure_kind") or "unknown")] += 1
             dispatch_steps[str((info.get("dispatch") or {}).get("step") or "unknown")] += 1
             for turn in turns:
                 turn_count += 1
+                canvas = turn.get("canvas")
+                canvas_path = Path(canvas).resolve() if isinstance(canvas, str) else None
+                if (canvas_path is not None and canvas_path.is_relative_to(judge_root.resolve())
+                        and (receipt_path := canvas_path.with_suffix(".json")).is_file()):
+                    render = json.loads(receipt_path.read_text())
+                    if (v := finite(render.get("elapsed_seconds"))) is not None:
+                        valid_render_seconds.append(v)
+                    if (v := finite(render.get("painting_seconds"))) is not None:
+                        painting_seconds.append(v)
                 if turn.get("valid") is not True:
                     turn_failures[str(turn.get("failure_kind") or "unknown")] += 1
                     error_classes[classify_turn_error(turn)] += 1
@@ -136,11 +172,21 @@ def traces_profile(path: Path) -> dict:
         "denominator": "saved generated traces with turns, possibly speculative or stale",
         "generated": all_count, "valid_final": valid_count,
         "valid_final_fraction": valid_count / all_count if all_count else None,
-        "turns": turn_count, "family_counts": {k: dict(v) for k, v in sorted(families.items())},
+        "turns": turn_count, "family_counts": {
+            k: dict(v) | {"valid_canvas_mean_judge_score": mean(judge_scores[k]),
+                          "mean_judge_order_gap": mean(judge_order_gap[k]),
+                          "large_judge_order_gaps": sum(g >= 1 / 3 for g in judge_order_gap[k])}
+            for k, v in sorted(families.items())},
         "final_failure_kinds": dict(failures.most_common()),
         "invalid_turn_failure_kinds": dict(turn_failures.most_common()),
         "invalid_turn_error_classes": dict(error_classes.most_common()),
+        "valid_render_receipt_count": len(valid_render_seconds),
+        "valid_render_elapsed_seconds_mean": mean(valid_render_seconds),
+        "valid_render_elapsed_seconds_p50": percentile(valid_render_seconds, .5),
+        "valid_render_elapsed_seconds_p90": percentile(valid_render_seconds, .9),
+        "valid_render_painting_seconds_mean": mean(painting_seconds),
         "dispatch_steps": dict(dispatch_steps), "source_sha256": sha(path),
+        "large_order_gap_cases": large_order_gap_cases,
     }
 
 
@@ -262,7 +308,7 @@ def trainer_log_profile(path: Path) -> dict:
 def build(args: argparse.Namespace) -> dict:
     return {"schema": "painter.continuation-profile.v1",
             "metrics": metrics_profile(args.metrics),
-            "generated_traces": traces_profile(args.traces),
+            "generated_traces": traces_profile(args.traces, args.judges),
             "judges": judge_profile(args.judges),
             "gpu": gpu_profile(args.gpu_csv),
             "trainer_log": trainer_log_profile(args.trainer_log),
