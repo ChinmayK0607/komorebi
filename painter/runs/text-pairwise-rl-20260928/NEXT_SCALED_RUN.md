@@ -243,3 +243,12 @@ shortens the planned 24-step run because the live reward audit shows an
 aesthetic misalignment; it does not choose a checkpoint based on validation
 scores. Do not launch an automatic rerun. The untouched reserve remains
 reserved for positive validation only.
+
+The manual postrun visual audit is fixed before looking at the step-16
+validation: inspect the first four simple, first four intermediate, and
+first eight complex cases in frozen validation-manifest order, with the
+painting brief and both fresh SFT and RL canvases visible. Judge overall
+recognizability, spatial correctness, natural brushwork, and appeal; record
+both wins and regressions. Report all invalid and censored cases separately.
+This visual sample supplements, rather than replaces, the all-case paired
+evaluation.
