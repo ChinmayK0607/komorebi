@@ -173,6 +173,7 @@ def build(output: Path) -> dict:
                                       "api_seconds": response.get("latency_seconds"),
                                       "render_valid": (turn.get("render") or {}).get("valid") is True,
                                       "api_status": turn.get("api_status"),
+                                      "prompt_tokens": usage.get("prompt_tokens"),
                                       "completion_tokens": usage.get("completion_tokens"),
                                       "cost_usd": usage.get("cost")})
                 final_name = episode.get("final_valid_canvas")
@@ -186,11 +187,19 @@ def build(output: Path) -> dict:
                 reference_image = None
                 if row["mode"] == "image_to_paint":
                     reference_image = asset(photos[task_id], ".jpg", output, "assets")
+                valid_turns = [turn for turn in turn_rows if turn["render_valid"] and turn["canvas"]]
                 candidates[task_id] = {"id": task_id, "shard": shard, "mode": row["mode"],
                                        "tier": row["tier"], "category": row["category"],
                                        "brief": row.get("task_text"), "reference_image": reference_image,
                                        "source_sha256": row["sha256"], "status": episode.get("status"),
                                        "final_canvas": final_canvas, "turns": turn_rows,
+                                       "terminal_turn_valid": bool(turn_rows and turn_rows[-1]["render_valid"]
+                                                                   and turn_rows[-1]["canvas"]),
+                                       "first_valid_turn": valid_turns[0]["turn"] if valid_turns else None,
+                                       "valid_turn_count": len(valid_turns),
+                                       "distinct_valid_canvases": len({turn["canvas"] for turn in valid_turns}),
+                                       "prompt_tokens": sum(turn["prompt_tokens"] or 0 for turn in turn_rows),
+                                       "completion_tokens": sum(turn["completion_tokens"] or 0 for turn in turn_rows),
                                        "total_tokens": episode.get("total_tokens"),
                                        "cost_complete": episode.get("cost_complete") is True,
                                        "known_cost_usd": episode.get("known_cost"),
@@ -202,16 +211,20 @@ def build(output: Path) -> dict:
     for case in candidates.values():
         key = str(case["status"])
         by_status[key] = by_status.get(key, 0) + 1
-    report = {"schema": "painter.diverse-teacher-review.v1",
+    report = {"schema": "painter.diverse-teacher-review.v2",
               "source_archive_sha256": json.loads((HERE / "source-receipt.json").read_text())["archive_sha256"],
               "source_rows": len(rows), "published_candidates": len(candidates),
-              "valid_final": sum(bool(case["final_canvas"]) for case in candidates.values()),
+              "saved_valid_canvas": sum(bool(case["final_canvas"]) for case in candidates.values()),
+              "terminal_turn_valid": sum(case["terminal_turn_valid"] for case in candidates.values()),
+              "valid_first_turn": sum(case["first_valid_turn"] == 1 for case in candidates.values()),
+              "revised_after_first_valid": sum(case["distinct_valid_canvases"] > 1 for case in candidates.values()),
               "missing_shards": missing, "selected_public_archives": receipts,
               "statuses": by_status, "cost_note": "Missing provider cost fields are unknown, not zero.",
               "candidates": [candidates[key] for key in sorted(candidates)]}
     (output / "candidates.json").write_text(json.dumps(report, indent=2, sort_keys=True) + "\n")
     (output / "index.html").write_text(page(report))
-    return {key: report[key] for key in ("source_rows", "published_candidates", "valid_final", "missing_shards", "statuses")}
+    return {key: report[key] for key in ("source_rows", "published_candidates", "saved_valid_canvas",
+                                          "terminal_turn_valid", "missing_shards", "statuses")}
 
 
 def page(report: dict) -> str:
@@ -219,7 +232,7 @@ def page(report: dict) -> str:
     for case in report["candidates"]:
         ref = (f'<img loading="lazy" src="{case["reference_image"]}" alt="Reference">'
                if case["reference_image"] else f'<p class="brief">{html.escape(case["brief"] or "")}</p>')
-        final = (f'<img loading="lazy" src="{case["final_canvas"]}" alt="Final candidate">'
+        final = (f'<img loading="lazy" src="{case["final_canvas"]}" alt="Last saved valid canvas">'
                  if case["final_canvas"] else '<p>No valid canvas</p>')
         turns = "".join(
             f'<div class="turn"><strong>Turn {turn["turn"]}</strong><br>'
@@ -236,7 +249,7 @@ def page(report: dict) -> str:
         cards.append(f'<article data-mode="{case["mode"]}" data-tier="{case["tier"]}" data-search="{title.lower()}">'
                      f'<h2>{title}</h2><p>{html.escape(str(case["status"]))} · {len(case["turns"])} turns · '
                      f'{case["total_tokens"]} tokens · admission unreviewed</p>'
-                     f'<div class="pair"><section><h3>Source</h3>{ref}</section><section><h3>Final</h3>{final}</section></div>'
+                     f'<div class="pair"><section><h3>Source</h3>{ref}</section><section><h3>Last saved valid canvas</h3>{final}</section></div>'
                      f'<details><summary>Inspect every turn</summary><div class="turns">{turns}</div></details></article>')
     return ("<!doctype html><html lang='en'><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'>"
             "<title>Diverse painting teacher candidates</title><style>body{font:15px system-ui;background:#f4f0e9;color:#242322;margin:0}"
@@ -247,7 +260,8 @@ def page(report: dict) -> str:
             ".turn img{width:100%}select,input{font:inherit;padding:5px;margin-right:10px}summary{cursor:pointer;padding:10px}"
             "@media(max-width:700px){.pair{grid-template-columns:1fr}.pair img{height:320px}}</style>"
             f'<header><h1>Teacher candidates · {report["published_candidates"]}/{report["source_rows"]} published, '
-            f'{report["valid_final"]} valid finals</h1><p>All turns are preserved. No candidate has been admitted to training by this gallery.</p>'
+            f'{report["saved_valid_canvas"]} saved canvases, {report["terminal_turn_valid"]} valid terminal turns</h1>'
+            '<p>All turns are preserved. An invalid terminal turn may retain an earlier canvas. No candidate is admitted to training by this gallery.</p>'
             '<label>Mode <select id="mode"><option value="all">All</option><option value="text_to_paint">Text</option><option value="image_to_paint">Photo</option></select></label>'
             '<label>Tier <select id="tier"><option value="all">All</option><option value="flash">Flash</option><option value="pro">Pro</option></select></label>'
             '<label>Find <input id="search" type="search"></label></header><main>' + "".join(cards)
