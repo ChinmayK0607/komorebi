@@ -39,6 +39,24 @@ renderer now rejects a hardware backend without a live nonsoftware WebGL
 identity, with a regression check for the null-identity case. Neither the
 temporary ICD setup nor its canvas will be used for evaluation.
 
+Likely container-level cause: the pod exposed CUDA devices but no NVIDIA EGL
+vendor or Vulkan ICD JSON. NVIDIA's [container runtime documentation](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/docker-specialized.html#driver-capabilities)
+states that `graphics` must be requested for OpenGL/EGL/Vulkan; its unset
+default is only `utility,compute`. Chromium's [headless GPU note](https://chromium.googlesource.com/chromium/src/+/HEAD/docs/gpu/using-gpu-hardware-in-headless-chrome.md)
+also warns that Linux headless GPU detection may need explicit backend flags.
+This is a diagnosis to test on a freshly provisioned graphics-capable
+container, not a demonstrated speed fix on this node.
+
+A second, low-cost RTX4090 pod was provisioned with the CLI's
+`NVIDIA_DRIVER_CAPABILITIES=compute,utility,graphics` request. Its running
+container still reported the variable unset and lacked the NVIDIA EGL/Vulkan
+ICD files. The backend prerequisite was therefore not met, no paintings
+were benchmarked there, and the pod was removed promptly at approximately
+$0.01. A successful provider/image-level graphics configuration is needed
+before retesting hardware acceleration; setting an env var *inside* an
+already running compute-only container is insufficient to mount missing
+driver components.
+
 Four concurrent copies of p060, rendered with the locked renderer and
 identical source/seed, all succeeded in 117.7–125.1 s. Four sequential
 renderings at the measured 62.8 s each would take about 251 s, so the
