@@ -32,11 +32,13 @@ def compare(a: Path, b: Path) -> dict:
 
 
 def run(*, sources: Path, renderer: Path, python: Path, browsers: Path,
-        output: Path, timeout: int = 180) -> dict:
+        output: Path, timeout: int = 180, capture_mode: str = "data_url") -> dict:
     if output.exists():
         raise FileExistsError(output)
     if not 1 <= timeout <= 180:
         raise ValueError("timeout must be between 1 and 180 seconds")
+    if capture_mode not in {"data_url", "to_blob", "screenshot"}:
+        raise ValueError("unsupported capture mode")
     rows = json.loads((sources / "manifest.json").read_text())["rows"]
     if not rows:
         raise ValueError("no input programs")
@@ -63,7 +65,8 @@ def run(*, sources: Path, renderer: Path, python: Path, browsers: Path,
             # /usr/bin/python and loses the Playwright installation.
             command = ["/usr/sbin/runuser", "-u", "painter", "--", str(python.absolute()),
                        str(renderer.resolve()), str(source.resolve()), "--output",
-                       str(canvas), "--timeout", str(timeout), "--backend", backend]
+                       str(canvas), "--timeout", str(timeout), "--backend", backend,
+                       "--capture", capture_mode]
             started = time.monotonic()
             result = subprocess.run(command, capture_output=True, text=True,
                                     timeout=timeout + 25, env=env, check=False)
@@ -77,6 +80,7 @@ def run(*, sources: Path, renderer: Path, python: Path, browsers: Path,
             if index == 0 and backend != "swiftshader" and not valid:
                 backend_available[backend] = False
             record = {"name": row["name"], "backend": backend,
+                      "capture_mode": capture_mode,
                       "source_sha256": row["sha256"], "valid": valid,
                       "elapsed_seconds": elapsed,
                       "painting_seconds": receipt.get("painting_seconds"),
@@ -95,7 +99,8 @@ def run(*, sources: Path, renderer: Path, python: Path, browsers: Path,
                     record["pixel_comparison_to_swiftshader"] = compare(
                         canvases["swiftshader"], canvases[record["backend"]])
     summary = {"schema": "watercolour-backend-probe-v1", "source_count": len(rows),
-               "timeout_seconds": timeout, "results": results}
+               "timeout_seconds": timeout, "capture_mode": capture_mode,
+               "results": results}
     (output / "summary.json").write_text(json.dumps(summary, indent=2) + "\n")
     return summary
 
@@ -108,6 +113,8 @@ def main() -> None:
     parser.add_argument("--browsers", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--timeout", type=int, default=180)
+    parser.add_argument("--capture-mode", choices=["data_url", "to_blob", "screenshot"],
+                        default="data_url")
     args = parser.parse_args()
     summary = run(**vars(args))
     print(json.dumps({"source_count": summary["source_count"],

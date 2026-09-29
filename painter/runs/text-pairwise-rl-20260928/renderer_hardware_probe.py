@@ -49,7 +49,8 @@ def browser_args(backend):
     return args + ['--disable-background-networking', '--disable-component-update']
 
 
-def render(source, output, seed=0, timeout=90, telemetry=False, backend=None):
+def render(source, output, seed=0, timeout=90, telemetry=False, backend=None,
+           capture='data_url'):
     backend = resolve_backend(backend)
     source, output = Path(source).resolve(), Path(output).resolve()
     if source.stat().st_size > 100_000:
@@ -63,6 +64,7 @@ def render(source, output, seed=0, timeout=90, telemetry=False, backend=None):
               'assets': {p.name: sha(p) for p in ASSETS.glob('*.js')},
               'renderer_sha256': sha(Path(__file__)),
               'telemetry_enabled': telemetry, 'requested_angle_backend': backend,
+              'capture_method': capture,
               'telemetry_sha256': sha(HERE / 'telemetry.py') if telemetry else None,
               'network_enabled': False, 'browser_sandbox_enabled': True}
     with tempfile.TemporaryDirectory(prefix='painting-render-') as folder:
@@ -76,7 +78,8 @@ def render(source, output, seed=0, timeout=90, telemetry=False, backend=None):
         elif bundled.exists():
             env['PLAYWRIGHT_BROWSERS_PATH'] = str(bundled)
         command = [sys.executable, str(Path(__file__).resolve()), '--worker', str(source),
-                   '--output', str(scratch / 'image.png'), '--seed', str(seed), '--timeout', str(timeout), '--backend', backend]
+                   '--output', str(scratch / 'image.png'), '--seed', str(seed), '--timeout', str(timeout), '--backend', backend,
+                   '--capture', capture]
         if telemetry:
             command.append('--telemetry')
         with (scratch / 'worker.log').open('wb') as log:
@@ -113,7 +116,8 @@ def page_errors(payload):
     return [str(value) for value in values] if isinstance(values, list) else [str(values)]
 
 
-def worker(source, output, seed, timeout=90, telemetry_enabled=False, backend=None):
+def worker(source, output, seed, timeout=90, telemetry_enabled=False, backend=None,
+           capture='data_url'):
     backend = resolve_backend(backend)
     from playwright.sync_api import sync_playwright
     if telemetry_enabled:
@@ -183,7 +187,30 @@ for(const key of ['RTCPeerConnection','webkitRTCPeerConnection']){Object.defineP
             time.sleep(.04)
         draw_wait_seconds = time.monotonic() - painting_started - page_load_seconds
         capture_started = time.monotonic()
-        payload = page.evaluate("({png:document.querySelector('canvas')?.toDataURL('image/png'), errors:window.__errors})")
+        if capture == 'data_url':
+            payload = page.evaluate("({png:document.querySelector('canvas')?.toDataURL('image/png'), errors:window.__errors})")
+            png = base64.b64decode(payload['png'].split(',', 1)[1]) if payload.get('png') else None
+        elif capture == 'to_blob':
+            payload = page.evaluate('''async () => {
+                const canvas = document.querySelector('canvas');
+                if (!canvas) return {png:null,errors:window.__errors};
+                const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+                if (!blob) return {png:null,errors:window.__errors};
+                const png = await new Promise((resolve,reject) => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve(reader.result);
+                    reader.onerror = () => reject(reader.error);
+                    reader.readAsDataURL(blob);
+                });
+                return {png,errors:window.__errors};
+            }''')
+            png = base64.b64decode(payload['png'].split(',', 1)[1]) if payload.get('png') else None
+        elif capture == 'screenshot':
+            canvas = page.locator('canvas')
+            png = canvas.screenshot(type='png') if canvas.count() else None
+            payload = {'errors': page.evaluate('window.__errors')}
+        else:
+            raise ValueError('unsupported capture method')
         capture_seconds = time.monotonic() - capture_started
         painting_seconds = time.monotonic() - painting_started
         gpu = page.evaluate("""() => {
@@ -204,14 +231,14 @@ for(const key of ['RTCPeerConnection','webkitRTCPeerConnection']){Object.defineP
         errors.extend(page_errors(payload))
         result = {'finished': finished, 'errors': errors, 'blocked_requests': blocked, 'valid': False, 'chromium_version': browser.version,
                   'requested_angle_backend': backend, 'gpu': gpu, 'browser_args': browser_args(backend),
+                  'capture_method': capture,
                   'painting_seconds': painting_seconds,
                   'phase_seconds': {'browser_launch': browser_launch_seconds,
                                     'page_load': page_load_seconds,
                                     'draw_wait': draw_wait_seconds,
                                     'capture': capture_seconds},
                   'brush_telemetry': telemetry_handle.evaluate('(controller) => controller.snapshot()') if telemetry_handle else None}
-        if payload.get('png'):
-            png = base64.b64decode(payload['png'].split(',', 1)[1])
+        if png:
             image = Image.open(io.BytesIO(png))
             result['dimensions'] = list(image.size)
             result['valid'] = finished and not errors and not blocked and image.size == (600, 600)
@@ -233,11 +260,12 @@ def main():
     parser.add_argument('--workers', type=int, default=2)
     parser.add_argument('--telemetry', action='store_true', help='Opt in to runtime diagnostics; never enables an efficiency reward')
     parser.add_argument('--backend', choices=['swiftshader', 'metal', 'gl', 'vulkan'], help='Explicit ANGLE backend; defaults to BRUSH_RENDER_BACKEND or swiftshader')
+    parser.add_argument('--capture', choices=['data_url', 'to_blob', 'screenshot'], default='data_url')
     parser.add_argument('--worker', action='store_true', help=argparse.SUPPRESS)
     args = parser.parse_args()
     if args.worker:
         try:
-            worker(args.sources[0], args.output, args.seed, args.timeout, args.telemetry, args.backend)
+            worker(args.sources[0], args.output, args.seed, args.timeout, args.telemetry, args.backend, args.capture)
         except Exception as error:
             from playwright.sync_api import TimeoutError as BrowserTimeout
             timed_out = isinstance(error, BrowserTimeout)
@@ -254,7 +282,7 @@ def main():
     if len(set(outputs)) != len(outputs):
         parser.error('Batch source names must be unique')
     with ThreadPoolExecutor(max_workers=args.workers) as pool:
-        results = list(pool.map(lambda pair: render(*pair, args.seed, args.timeout, args.telemetry, args.backend), zip(args.sources, outputs)))
+        results = list(pool.map(lambda pair: render(*pair, args.seed, args.timeout, args.telemetry, args.backend, args.capture), zip(args.sources, outputs)))
     print(json.dumps(results, indent=2))
     if not all(r['valid'] for r in results):
         sys.exit(1)
