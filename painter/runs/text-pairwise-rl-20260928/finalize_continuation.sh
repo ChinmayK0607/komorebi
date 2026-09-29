@@ -12,19 +12,27 @@ NAME=text-pairwise-continue-20260929
 PY=/root/painter/prime/.venv/bin/python
 ANCHORS="$RUN/continued-anchors/validation-manifest.json"
 CONTROL="$RUN/validation/scaled-sft-control"
+PRIOR="$RUN/prior-step16"
+PRIOR_SUMMARY="$PRIOR/validation/scaled-step-16-all/comparison/summary.json"
+PRIOR_IMAGES="$PRIOR/evidence/gallery/images"
 KEY="${PAINTER_GATEWAY_ENV_FILE:-/root/painter/private/gateway.env}"
 ADAPTER="$RUN/async-output/$NAME/artifacts/adapters/step_$STEP"
 [[ -f "$ADAPTER/hf-upload.json" ]] || { echo 'public checkpoint receipt missing' >&2; exit 1; }
 [[ -f "$CONTROL/validation-summary.json" && -d "$CONTROL/eval" ]] || {
   echo 'matched SFT control is not restored' >&2; exit 1;
 }
+[[ -f "$PRIOR_SUMMARY" && -d "$PRIOR_IMAGES" ]] || {
+  echo 'public step-16 control is not restored' >&2; exit 1;
+}
 if [[ "$SCOPE" == all ]]; then
   MANIFEST="$ANCHORS"
   BASELINE="$CONTROL/validation-summary.json"
+  PRIOR_BASELINE="$PRIOR_SUMMARY"
   EXPECTED=47
 else
   MANIFEST="$RUN/prepared/continued-validation-balanced16.json"
   BASELINE="$RUN/validation/$NAME-step-$STEP-balanced16/baseline-subset.json"
+  PRIOR_BASELINE="$RUN/validation/$NAME-step-$STEP-balanced16/prior-subset.json"
   mkdir -p "$(dirname "$MANIFEST")" "$(dirname "$BASELINE")"
   "$PY" - "$ANCHORS" "$MANIFEST" <<'PY'
 import json,sys
@@ -42,6 +50,9 @@ PY
   "$PY" "$RUN/control_sets.py" subset \
     --summary "$CONTROL/validation-summary.json" \
     --manifest "$MANIFEST" --output "$BASELINE"
+  "$PY" "$RUN/control_sets.py" subset \
+    --summary "$PRIOR_SUMMARY" \
+    --manifest "$MANIFEST" --output "$PRIOR_BASELINE"
   EXPECTED=16
 fi
 OUT="$RUN/validation/$NAME-step-$STEP-$SCOPE"
@@ -52,13 +63,21 @@ env PAINTER_RL_RUN_NAME="$NAME" PAINTER_VALIDATION_MANIFEST="$MANIFEST" \
     bash "$RUN/evaluate_checkpoint.sh" "$STEP" all
 "$PY" "$RUN/analyze_scaled.py" --baseline "$BASELINE" \
   --candidate "$OUT/comparison/summary.json" --output "$OUT/analysis.json"
+"$PY" "$RUN/analyze_scaled.py" --baseline "$PRIOR_BASELINE" \
+  --candidate "$OUT/comparison/summary.json" --output "$OUT/analysis-vs-step16.json"
 "$PY" "$RUN/score_direct_validation.py" --manifest "$MANIFEST" \
   --sft-root "$CONTROL/eval" --rl-root "$OUT/eval" \
   --output "$OUT/direct-sft-versus-rl" --key-file "$KEY" \
   --expected-count "$EXPECTED"
+if [[ "$SCOPE" == all ]]; then
+  "$PY" "$RUN/score_direct_step16.py" --manifest "$MANIFEST" \
+    --prior-summary "$PRIOR_SUMMARY" --prior-images "$PRIOR_IMAGES" \
+    --final-root "$OUT/eval" --output "$OUT/direct-step16-versus-final" \
+    --key-file "$KEY"
+fi
 "$PY" "$RUN/build_checkpoint_gallery.py" --manifest "$MANIFEST" \
-  --eval "SFT:$CONTROL/eval" --eval "RL-step-$STEP:$OUT/eval" \
-  --summary "SFT:$BASELINE" \
+  --static "RL-step-16:$PRIOR_IMAGES" --eval "RL-step-$STEP:$OUT/eval" \
+  --summary "RL-step-16:$PRIOR_BASELINE" \
   --summary "RL-step-$STEP:$OUT/comparison/summary.json" \
   --output "$RUN/evidence/continued-gallery"
 "$PY" "$RUN/collect_eval_canvases.py" --eval-root "$OUT/eval" \

@@ -41,12 +41,14 @@ def _eval_rows(root: Path, ids: set[str]) -> dict[str, dict]:
 
 
 def build(manifest: Path, evaluations: list[tuple[str, Path]],
-          summaries: dict[str, Path], output: Path) -> dict:
+          summaries: dict[str, Path], output: Path,
+          static: list[tuple[str, Path]] | None = None) -> dict:
+    static = static or []
     cases = json.loads(manifest.read_text())["cases"]
     ids = {row["id"] for row in cases}
     if len(ids) != len(cases):
         raise ValueError("duplicate validation ID")
-    if len({label for label, _ in evaluations}) != len(evaluations):
+    if len({label for label, _ in evaluations + static}) != len(evaluations + static):
         raise ValueError("duplicate policy label")
     info = {label: _eval_rows(root, ids) for label, root in evaluations}
     grades = {}
@@ -76,6 +78,16 @@ def build(manifest: Path, evaluations: list[tuple[str, Path]],
         ident = row["id"]
         brief = Path(row["reference"]).read_text().strip()
         cells = [image_cell("frozen SFT", ident, Path(row["opponent"]), "fixed anchor")]
+        for label, folder in static:
+            grade = grades.get(label, {}).get(ident)
+            if grade is None:
+                raise ValueError(f"missing static control grade for {label}/{ident}")
+            status = "valid" if grade["status"] == "scored" else "invalid"
+            source = folder / f"{ident}-{label}.png"
+            if status == "valid" and not source.is_file():
+                raise FileNotFoundError(source)
+            cells.append(image_cell(label, ident, source if status == "valid" else None,
+                                    status, grade.get("score")))
         for label, _ in evaluations:
             result = info[label].get(ident, {})
             value = result.get("final_canvas")
@@ -102,7 +114,7 @@ img,.missing{width:290px;height:290px;object-fit:contain;background:#fff}
 Scores are pairwise preferences against the fixed SFT anchor, when available.</p>
 """ + "\n".join(cards) + "</body></html>"
     (output / "index.html").write_text(page)
-    receipt = {"cases": len(cases), "policies": [label for label, _ in evaluations],
+    receipt = {"cases": len(cases), "policies": [label for label, _ in static + evaluations],
                "output": str(output / "index.html")}
     (output / "manifest.json").write_text(json.dumps(receipt, indent=2) + "\n")
     return receipt
@@ -112,10 +124,13 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--manifest", type=Path, required=True)
     parser.add_argument("--eval", action="append", required=True, type=_parse_named)
+    parser.add_argument("--static", action="append", default=[], type=_parse_named,
+                        help="LABEL:PATH to already verified public gallery images")
     parser.add_argument("--summary", action="append", default=[], type=_parse_named)
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
-    print(json.dumps(build(args.manifest, args.eval, dict(args.summary), args.output)))
+    print(json.dumps(build(args.manifest, args.eval, dict(args.summary),
+                           args.output, static=args.static)))
 
 
 if __name__ == "__main__":

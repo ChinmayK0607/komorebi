@@ -50,6 +50,7 @@ def select(run: Path, evaluation: str, step: int) -> dict[str, Path]:
         "evidence/continued-evaluated-step.txt",
         "evidence/continued-evaluation-scope.txt",
         "validation/scaled-sft-control/validation-summary.json",
+        "prior-step16/validation/scaled-step-16-all/comparison/summary.json",
         f"async-output/{RUN_NAME}/monitors/file/metrics.jsonl",
         f"async-output/{RUN_NAME}/logs/attempt_1/orchestrator.log",
         f"async-output/{RUN_NAME}/logs/attempt_1/trainer.log",
