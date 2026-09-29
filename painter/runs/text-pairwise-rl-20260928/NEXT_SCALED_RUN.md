@@ -119,3 +119,11 @@ During an approximately 10-minute baseline window ending 01:23:39 UTC,
 `nvidia-smi dmon` collected 60 samples per GPU at 10-second spacing: both
 inference GPUs had 100% mean SM utilization and 60/60 samples at or above
 90%. This is a sampled baseline interval, not a whole-run utilization claim.
+At 01:40 UTC, 55 completed episodes contained 165 render turns. The native
+trace timings summed to 16,374 seconds of model work and 4,410 seconds of
+harness work across both parallel shards. Among 82 completed valid render
+turns with a numeric duration, the median was 23.29 seconds, the 90th
+percentile 128.79 seconds, and the maximum 161.58 seconds. These are
+cumulative, overlapping task timings, not elapsed wall time. The renderer is
+a meaningful contributor with a long tail even though model generation is
+larger; the current matched comparison keeps its implementation fixed.
