@@ -32,8 +32,10 @@ TEXT_SYSTEM = (SYSTEM
     .replace("Inspect the reference and current canvas", "Inspect the PAINTING BRIEF and current canvas")
     .replace("faithfully matches the reference", "faithfully depicts the PAINTING BRIEF")
     .replace("matches the reference", "satisfies the PAINTING BRIEF")
+    .replace("Return a brief visual plan followed by a complete sketch inside a javascript code block.",
+             "For a paint action, return one complete sketch inside a javascript code block and no prose plan.")
     + "\nThe renderer has already loaded p5.js and p5.brush and exposes `brush` as a global. "
-      "Output only JavaScript in a ```javascript code block; never output HTML, CSS, <script> tags, imports, or CDN URLs. "
+      "For a paint action, output only JavaScript in a ```javascript code block; never output HTML, CSS, <script> tags, imports, or CDN URLs. "
       "Do not declare, construct, or reassign `brush`; `new p5.brush(...)`, `p5.brush(...)`, and `brush.create(...)` are invalid here. "
       "Do not redefine p5 globals such as translate or use brush.rect/brush.ellipse. Use brush.polygon for filled shapes and brush.line for strokes. "
       "A valid skeleton is `function setup(){createCanvas(600,600,WEBGL);} "
@@ -49,7 +51,7 @@ except ImportError:
     from native_painting_renderer import render_action
 
 
-PROTOCOL_VERSION = "native-painting-eval-v2"
+PROTOCOL_VERSION = "native-painting-eval-v3"
 DEFAULT_SEED = 918200
 DEFAULT_MAX_TURNS = 6
 DEFAULT_MAX_OUTPUT_TOKENS = 8192
@@ -152,7 +154,8 @@ def _program_failure_feedback(errors: Any) -> str:
     lower = detail.lower()
     guidance = "Return a complete, readable JavaScript sketch in one code block; do not repeat the failed sketch."
     if "no complete javascript code block" in lower:
-        guidance = ("Return only a complete ```javascript code block with setup() and draw(); "
+        guidance = ("Your reply had no executable sketch. Begin the next reply with ```javascript "
+                    "and return a complete setup() and draw() sketch, not a prose plan; "
                     "do not return HTML, <script> tags, imports, or CDN URLs. "
                     "The renderer exposes global brush; do not construct or reassign it.")
     elif "syntaxerror" in lower or any(word in lower for word in ("unexpected token", "missing )", "unexpected end")):
@@ -161,6 +164,9 @@ def _program_failure_feedback(errors: Any) -> str:
         guidance = "Do not redefine p5 globals such as ellipse, line, fill, or background; rename your helper and return a complete sketch."
     elif "brush.ellipse" in lower and "not a function" in lower:
         guidance = "p5.brush has no brush.ellipse() method. Approximate the ellipse with perimeter points passed to brush.polygon([...]); return a complete sketch."
+    elif any(name + " is not a function" in lower for name in ("scale", "translate", "background", "noloop")):
+        guidance = ("Do not shadow p5 global functions with variables or helpers of the same name. "
+                    "Rename the conflicting variable and return a corrected complete sketch, not the same program.")
     elif "is not defined" in lower:
         guidance = "Define every variable and helper before use, then return a complete sketch."
     elif "not iterable" in lower:

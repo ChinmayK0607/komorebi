@@ -85,7 +85,7 @@ except ImportError:
     )
 
 
-RL_PROTOCOL_VERSION = "native-painting-rl-v1"
+RL_PROTOCOL_VERSION = "native-painting-rl-v2"
 DEFAULT_JUDGE_TIMEOUT_SECONDS = 1800.0
 DEFAULT_MANIFEST = "scaled-training-manifest.json"
 

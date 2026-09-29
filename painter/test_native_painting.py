@@ -197,6 +197,8 @@ class NativePaintingTests(unittest.TestCase):
             self.assertIn("PAINTING BRIEF", task.data.system_prompt)
             self.assertNotIn("reference", task.data.system_prompt.lower())
             self.assertIn("exposes `brush` as a global", task.data.system_prompt)
+            self.assertNotIn("brief visual plan", task.data.system_prompt)
+            self.assertIn("no prose plan", task.data.system_prompt)
             self.assertTrue(all(not hasattr(part, "image_url")
                                 for part in task.data.prompt[0].content))
             agents = _Agents(["FINISHED", "FINISHED"])
@@ -211,6 +213,8 @@ class NativePaintingTests(unittest.TestCase):
             (["SyntaxError: unexpected token ')'"], "Fix the JavaScript syntax"),
             (["TypeError: Cannot redefine property: ellipse"], "Do not redefine p5 globals"),
             (["TypeError: brush.ellipse is not a function"], "has no brush.ellipse() method"),
+            (["TypeError: scale is not a function"], "Do not shadow p5 global functions"),
+            (["No complete JavaScript code block"], "Begin the next reply"),
             (["ReferenceError: v is not defined"], "Define every variable"),
             (["TypeError: a is not iterable"], "brush.polygon point list"),
         )

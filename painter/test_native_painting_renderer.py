@@ -14,6 +14,14 @@ from painter import native_painting_renderer as renderer_module
 
 
 class NativePaintingRendererTests(unittest.TestCase):
+    def test_code_only_unfenced_sketch_is_accepted_but_plan_is_not(self):
+        code = "function setup(){createCanvas(600,600,WEBGL);}\nfunction draw(){noLoop();}"
+        self.assertEqual(renderer_module.extract_sketch(code), code + "\n")
+        with self.assertRaisesRegex(ValueError, "No complete JavaScript code block"):
+            renderer_module.extract_sketch("Visual plan: paint a blue cup.")
+        with self.assertRaisesRegex(ValueError, "No complete JavaScript code block"):
+            renderer_module.extract_sketch("<script>" + code + "</script>")
+
     def test_configured_deadline_is_forwarded_and_recorded(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)

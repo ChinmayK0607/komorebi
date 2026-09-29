@@ -291,6 +291,17 @@ complex briefs out of training, match the SFT initializer and validation
 settings, and respect the $25 GPU cap per run. More inference workers should
 take priority over more trainer GPUs given the measured imbalance.
 
+After node release, an offline code review found that the text system prompt
+inherited an instruction to return a visual plan while also appending an
+instruction to output only JavaScript. The next text-paint protocol removes
+that contradiction, accepts a complete code-only unfenced sketch, and gives
+specific feedback when a sketch shadows a p5 function such as `scale`.
+The identifiers were bumped to `native-painting-eval-v3` and
+`native-painting-rl-v2`; 31 focused local tests pass. These changes have **not**
+been evaluated on a GPU and are not part of the completed run or its public
+evidence archive. The next run must regenerate its matched SFT control under
+the new protocol before attributing any gain to RL.
+
 ## Hypothesis and matched baseline
 
 On text painting briefs, Qwen3.8-27B initialized from the photo-curriculum

@@ -27,9 +27,18 @@ def extract_sketch(reply: str) -> str:
     blocks = re.findall(
         r"```[ \t]*(?:javascript|js)?[ \t]*\r?\n(.*?)```", reply, re.DOTALL | re.IGNORECASE
     )
-    if not blocks:
-        raise ValueError("No complete JavaScript code block")
-    return blocks[-1].strip() + "\n"
+    if blocks:
+        return blocks[-1].strip() + "\n"
+    # The model sometimes emits a complete sketch without fences. Accept only
+    # an unambiguously code-only reply; prose plans still receive feedback.
+    candidate = reply.strip()
+    if ("```" not in candidate
+            and candidate.startswith(("function ", "const ", "let ", "var ", "//", "/*"))
+            and re.search(r"\bfunction\s+setup\s*\(", candidate)
+            and re.search(r"\bfunction\s+draw\s*\(", candidate)
+            and not re.search(r"<\s*/?\s*(?:script|html)\b", candidate, re.IGNORECASE)):
+        return candidate + "\n"
+    raise ValueError("No complete JavaScript code block")
 
 
 def _sha(path: Path) -> str:
