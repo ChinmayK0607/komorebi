@@ -124,8 +124,10 @@ def main() -> None:
         raise ValueError("public evidence hash mismatch")
     receipt = {**report, "repo_id": REPO_ID, "path": args.remote_path,
                "commit": commit.oid, "public_hash_verified": True}
-    args.output.with_suffix(".upload.json").write_text(
-        json.dumps(receipt, indent=2, sort_keys=True) + "\n")
+    receipt_path = args.output.with_suffix(".upload.json")
+    pending = receipt_path.with_suffix(receipt_path.suffix + ".tmp")
+    pending.write_text(json.dumps(receipt, indent=2, sort_keys=True) + "\n")
+    pending.replace(receipt_path)
     print(json.dumps(receipt, sort_keys=True))
 
 
