@@ -24,6 +24,17 @@ ADAPTER="$RUN/async-output/$NAME/artifacts/adapters/step_$STEP"
 [[ -f "$PRIOR_SUMMARY" && -d "$PRIOR_IMAGES" ]] || {
   echo 'public step-16 control is not restored' >&2; exit 1;
 }
+STREAM="$($PY - "$RUN" <<'PY'
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(sys.argv[1])))
+from archive_continuation import ensure_stream
+print(ensure_stream(Path(sys.argv[1])))
+PY
+)"
+"$PY" "$RUN/plot_reward_curve.py" \
+  --metrics "$RUN/async-output/$NAME/monitors/file/metrics.jsonl" \
+  --traces "$STREAM" --output "$RUN/evidence/reward-curve"
 if [[ "$SCOPE" == all ]]; then
   MANIFEST="$ANCHORS"
   BASELINE="$CONTROL/validation-summary.json"

@@ -41,6 +41,7 @@ def select(run: Path, evaluation: str, step: int) -> dict[str, Path]:
     files: dict[str, Path] = {}
     required = [
         "CONTINUATION_20260929.md", "native-continued.toml",
+        "plot_reward_curve.py",
         "rl-config-receipt.json", "continued-step16-download.json",
         "continued-anchors/reuse-receipt.json",
         "continued-anchors/train-manifest.json",
@@ -68,7 +69,8 @@ def select(run: Path, evaluation: str, step: int) -> dict[str, Path]:
         "continued-anchors/prompts", "rl-rollouts-continued",
         f"validation/{evaluation}", f"async-output/{RUN_NAME}/monitors",
         f"async-output/{RUN_NAME}/logs", "evidence/continued-gallery",
-        "evidence/continued-canvases",
+        "evidence/continued-canvases", "evidence/reward-curve",
+        "evidence/live-step16-curve",
     ):
         _add_dir(files, run, folder)
     for path in sorted((run / "logs").glob("gpu-telemetry*.csv")):
