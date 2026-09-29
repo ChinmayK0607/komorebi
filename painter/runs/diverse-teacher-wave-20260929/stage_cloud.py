@@ -10,7 +10,11 @@ import json
 from pathlib import Path
 import shutil
 import tarfile
+import time
+from urllib.error import HTTPError
 from urllib.request import urlopen
+
+from huggingface_hub import hf_hub_download
 
 ROOT = Path(__file__).resolve().parents[3]
 HERE = Path(__file__).resolve().parent
@@ -32,8 +36,21 @@ def load_archive(local: bool) -> bytes:
     else:
         public = json.loads((HERE / "source-public.json").read_text())
         url = f"https://huggingface.co/datasets/{DATASET}/resolve/{public['revision']}/{public['path']}?download=true"
-        with urlopen(url, timeout=180) as response:
-            raw = response.read(receipt["archive_bytes"] + 1)
+        for attempt in range(3):
+            try:
+                with urlopen(url, timeout=180) as response:
+                    raw = response.read(receipt["archive_bytes"] + 1)
+                break
+            except HTTPError as error:
+                if error.code != 429 or attempt == 2:
+                    if error.code != 429:
+                        raise
+                    cached = hf_hub_download(DATASET, public["path"], repo_type="dataset",
+                        revision=public["revision"], token=False,
+                        cache_dir=OUT / ".hf-public-cache")
+                    raw = Path(cached).read_bytes()
+                    break
+                time.sleep(2 ** attempt)
         if public["archive_sha256"] != receipt["archive_sha256"]:
             raise ValueError("public source pointer and local receipt disagree")
     if len(raw) != receipt["archive_bytes"] or sha(raw) != receipt["archive_sha256"]:
