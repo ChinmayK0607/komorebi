@@ -127,3 +127,10 @@ percentile 128.79 seconds, and the maximum 161.58 seconds. These are
 cumulative, overlapping task timings, not elapsed wall time. The renderer is
 a meaningful contributor with a long tail even though model generation is
 larger; the current matched comparison keeps its implementation fixed.
+One additional live same-brief SFT-versus-SFT canary used training brief
+`t600-310` (tea pickers on a misty hillside) from two independently sampled
+canvases. MiMo Flash scored the newer canvas 0.667 with zero order gap. Visual
+inspection found more legible curved tea rows and distributed pickers in
+that canvas, versus a more abstract hillside in the other.
+This single close-pair check supports image delivery and a plausible ordinal
+signal; it does not establish judge accuracy across the curriculum.
