@@ -40,7 +40,7 @@ PY
   echo 'Gateway key file must have mode 600' >&2; exit 1;
 }
 if [[ "${1:-}" == '--preflight' ]]; then
-  PAINTER_RL_PREFLIGHT_ONLY=1 bash "$RUN/launch_rl.sh" "$RUN"
+  PAINTER_RL_PREFLIGHT_ONLY=1 bash "$RUN/../photo-curriculum-rl-20260922/launch_rl.sh" "$RUN"
   exit
 fi
 [[ $# == 0 ]] || { echo 'usage: run.sh [--preflight]' >&2; exit 2; }
@@ -54,4 +54,5 @@ fi
 }
 remaining=$((PAINTER_GPU_DEADLINE_UTC-$(date -u +%s)-5400))
 (( remaining > 600 )) || { echo 'insufficient rental budget for RL plus evidence upload' >&2; exit 1; }
-timeout --signal=INT --kill-after=90 "${remaining}s" bash "$RUN/launch_rl.sh" "$RUN"
+timeout --signal=INT --kill-after=90 "${remaining}s" \
+  bash "$RUN/../photo-curriculum-rl-20260922/launch_rl.sh" "$RUN"
