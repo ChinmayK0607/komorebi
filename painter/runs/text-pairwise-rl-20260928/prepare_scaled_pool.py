@@ -1,4 +1,4 @@
-"""Fetch and verify the public, immutable 290-brief v2 curriculum."""
+"""Fetch and verify the public, immutable 290-brief v3 curriculum."""
 
 from __future__ import annotations
 
@@ -11,11 +11,11 @@ import urllib.request
 from pathlib import Path
 
 
-REVISION = "07b5852217f40aef7ee6dd165c5187b6c50c3663"
-ARCHIVE_SHA256 = "532602ac8ecce253499cc6e556b90966db5d7a9d4401303d4d788a8532ad08a4"
-POOL_SHA256 = "87ed249fa39277da0649e695a682701af13f2a96906017c1c9478983a6c57489"
+REVISION = "ff7f9877379cb538557911ffe7496830ca9391c3"
+ARCHIVE_SHA256 = "482aa0d700ba42d5ae6b4dd8f09c4836863d38ccd24c4a287bbbb753c0c05c92"
+POOL_SHA256 = "712349be327ca2f5cc800aa42eb5529d0d9b9d54a3508a3aa3ed8c8c9c26b12d"
 URL = ("https://huggingface.co/datasets/CK0607/komorebi-painter-teachers/resolve/"
-       f"{REVISION}/pools/text-paint-expanded-v2-20260929.tar.gz")
+       f"{REVISION}/pools/text-paint-expanded-v3-20260929.tar.gz")
 
 
 def sha(data: bytes) -> str:
@@ -49,9 +49,11 @@ def prepare(output: Path) -> dict:
         raise ValueError("pool manifest hash mismatch")
     pool = json.loads(manifest.read_text())
     rows = pool["cases"]
-    if pool.get("schema") != "painter-expanded-text-pool-v2" or len(rows) != 290:
+    if pool.get("schema") != "painter-expanded-text-pool-v3" or len(rows) != 290:
         raise ValueError("unexpected curriculum schema or size")
     for row in rows:
+        if row.get("mode") != "fresh" or row.get("reference_kind") != "text":
+            raise ValueError(f"unsupported native task contract: {row['id']}")
         prompt = output / row["reference"]
         if not prompt.is_file() or sha(prompt.read_bytes()) != row["reference_sha256"]:
             raise ValueError(f"prompt mismatch: {row['id']}")

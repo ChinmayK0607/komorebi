@@ -62,7 +62,7 @@ def build(source: Path, original: Path, output: Path) -> dict:
         prompt_path.parent.mkdir(exist_ok=True)
         prompt_path.write_text(row["prompt"].strip() + "\n")
         cases.append({
-            "id": ident, "source_group": ident, "mode": "text_to_image",
+            "id": ident, "source_group": ident, "mode": "fresh",
             "phase": phase, "family": old_by_id[ident]["family"] if ident in old_by_id else "complex",
             "split": split, "category": row.get("category"),
             "reference_kind": "text",
@@ -70,7 +70,7 @@ def build(source: Path, original: Path, output: Path) -> dict:
             "reference_sha256": sha256(prompt_path),
         })
     manifest = {
-        "schema": "painter-expanded-text-pool-v2",
+        "schema": "painter-expanded-text-pool-v3",
         "source_audit_sha256": sha256(source),
         "original_pool_sha256": sha256(original),
         "split_seed": SPLIT_SEED,

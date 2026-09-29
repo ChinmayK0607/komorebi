@@ -19,9 +19,9 @@ older validation scores cannot be spliced into the learning curve.
 - Initial adapter: public step-512 SFT, revision
   `adf687e5b321514eda7be6eab050434fdc8e44ff`, weight SHA-256
   `bea72b066986faa1b92b9dc539c710093181ee916b99323e2b2498f318ac1740`.
-- Prompt pool: [public expanded v2 archive](https://huggingface.co/datasets/CK0607/komorebi-painter-teachers/blob/07b5852217f40aef7ee6dd165c5187b6c50c3663/pools/text-paint-expanded-v2-20260929.tar.gz),
-  archive SHA-256 `532602ac8ecce253499cc6e556b90966db5d7a9d4401303d4d788a8532ad08a4`,
-  manifest SHA-256 `87ed249fa39277da0649e695a682701af13f2a96906017c1c9478983a6c57489`.
+- Prompt pool: [public expanded v3 archive](https://huggingface.co/datasets/CK0607/komorebi-painter-teachers/blob/ff7f9877379cb538557911ffe7496830ca9391c3/pools/text-paint-expanded-v3-20260929.tar.gz),
+  archive SHA-256 `482aa0d700ba42d5ae6b4dd8f09c4836863d38ccd24c4a287bbbb753c0c05c92`,
+  manifest SHA-256 `712349be327ca2f5cc800aa42eb5529d0d9b9d54a3508a3aa3ed8c8c9c26b12d`.
   This preserves 40 original train, 16 original validation, 16 original
   reserve; adds 186 complex train and 32 complex validation prompts. No new
   validation or reserve prompt may enter training or prompt tuning.
@@ -81,7 +81,16 @@ without buying another automatic rerun.
 
 ## Status
 
-Pool v2 was uploaded and anonymously hash-verified. The schema repair and
-generalized anchor/config builders are locally tested, but the new action
-contract has **not yet been tested on GPU**. No node is currently rented and
-no optimizer update in this planned attempt has occurred.
+Pool v2 was uploaded and anonymously hash-verified, but its rows mistakenly
+declared `mode=text_to_image`, which the native environment rejects. The first
+two-GPU baseline process failed immediately when both task shards loaded;
+no student response was sampled and no optimizer update occurred. The cause
+was a pool-mode mismatch, not a model failure. Pool v3 changes only the task
+mode to `fresh` (and adds immutable parent/schema metadata); all prompt bytes,
+splits, IDs, and hashes remain unchanged. It was anonymously hash-verified,
+and all 290 rows loaded through `NativePaintingTaskset` in the pinned node
+runtime before restarting baseline rendering. The 2×96-GB rental began at
+2026-09-29 00:28:34 UTC at $2.38/hour with automatic removal at
+10:28:22 UTC, a quoted $23.80 maximum. At 15 minutes, the provider reported
+$0.59 GPU rental. Baseline v3 is in progress; the corrected action contract
+has **not yet produced a scored painting or an RL optimizer update**.
