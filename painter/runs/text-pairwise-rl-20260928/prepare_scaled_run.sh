@@ -61,14 +61,14 @@ printf '%s\n' "$ANCHORS" > "$RUN/prepared/scaled-anchors-path.txt"
   --model /root/painter/model-cache/qwen/1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0 \
   --run-root "$RUN" --manifest "$ANCHORS/train-manifest.json" \
   --output "$RUN/native-scaled.toml" --prime-root "$PRIME_ROOT" \
-  --expected-count 68 --max-steps 32 --checkpoint-interval 8 \
+  --expected-count 68 --max-steps 24 --checkpoint-interval 8 \
   --run-name text-pairwise-scaled-20260929 \
   --output-root rl-rollouts-scaled \
   --judge-protocol text-paint-sft-pairwise-margin-v1
 PAINTER_RL_CONFIG="$RUN/native-scaled.toml" \
   PAINTER_RL_MANIFEST="$ANCHORS/train-manifest.json" \
   PAINTER_RL_RUN_NAME=text-pairwise-scaled-20260929 \
-  PAINTER_RL_MAX_STEPS=32 \
+  PAINTER_RL_MAX_STEPS=24 \
   PAINTER_JUDGE_PROTOCOL=text-paint-sft-pairwise-margin-v1 \
   bash "$RUN/run.sh" --preflight
 echo "SCALED_RUN_PREPARED anchors=$ANCHORS config=$RUN/native-scaled.toml"

@@ -53,11 +53,15 @@ mean utilization 99.82% and trainer mean 11.65% across 998 ten-second
 samples per GPU. Extra trainer GPUs therefore have no demonstrated value.
 Admit 12 simple, 8 intermediate, and 48 complex **training anchors** from
 the frozen pool; keep their order simple → intermediate → complex. Target
-32 updates, batch eight, group four, three turns, 8192 output tokens per
+24 updates, batch eight, group four, three turns, 8192 output tokens per
 turn, LoRA LR `1e-6`, and checkpoints every eight updates. This exposes at
-most 64 distinct prompt groups if the loader traverses once in order; the
+most 48 distinct prompt groups if the loader traverses once in order; the
 68 admitted anchors are a reusable inventory, not a claim that every one
 receives gradients in this short run.
+The 24-update target was fixed before optimizer launch from the measured
+approximately one completed baseline brief per minute: 32 updates projected
+too close to the hard 10-hour rental expiry to leave a credible held-out
+evaluation, evidence upload, and node-removal window.
 
 One rented node may cost **at most $25 in GPU charges**. Quote the actual
 whole-node hourly price before rental, set a TTL whose quoted maximum is
