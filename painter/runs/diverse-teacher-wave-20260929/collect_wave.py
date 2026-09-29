@@ -16,13 +16,15 @@ from pathlib import Path
 import sys
 import tarfile
 import time
+from urllib.error import HTTPError
+from urllib.request import urlopen
 
 from huggingface_hub import HfApi
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[2]
 sys.path.insert(0, str(ROOT / "painter/benchmarks/openrouter-teachers-20260922/cloud"))
-from fetch_results import download  # noqa: E402
+from fetch_results import download, public_url  # noqa: E402
 from stage_cloud import load_archive  # noqa: E402
 
 DATASET = "CK0607/komorebi-painter-teachers"
@@ -58,7 +60,16 @@ def source() -> tuple[dict, dict[str, bytes]]:
 
 
 def published_prefixes(manifest: dict) -> tuple[dict[str, tuple[str, int]], list[str]]:
-    files = set(HfApi(token=False).list_repo_files(DATASET, repo_type="dataset"))
+    for attempt in range(6):
+        try:
+            files = set(HfApi(token=False).list_repo_files(DATASET, repo_type="dataset"))
+            break
+        except Exception as exc:
+            response = getattr(exc, "response", None)
+            status = getattr(response, "status_code", None)
+            if status != 429 or attempt == 5:
+                raise
+            time.sleep(min(60, 2 ** (attempt + 2)))
     sizes = {row["shard"] for row in manifest["rows"]}
     selected = {}
     missing = []
@@ -79,14 +90,32 @@ def published_prefixes(manifest: dict) -> tuple[dict[str, tuple[str, int]], list
 def verified_bundle(run_id: str, cache: Path) -> tuple[dict, tarfile.TarFile]:
     cache.mkdir(parents=True, exist_ok=True)
     archive_path = cache / f"{run_id}.tar.gz"
-    for attempt in range(3):
+    for attempt in range(6):
         try:
-            report = download(run_id, archive_path)
+            with urlopen(public_url("main", f"runs/{run_id}/receipt.json"), timeout=60) as response:
+                receipt = json.load(response)
+            if (receipt.get("run_id") != run_id or receipt.get("dataset_repo") != DATASET
+                    or receipt.get("public_hash_verified") is not True):
+                raise ValueError(f"public receipt mismatch: {run_id}")
+            if (archive_path.is_file()
+                    and archive_path.stat().st_size == receipt.get("bundle_bytes")
+                    and hashlib.sha256(archive_path.read_bytes()).hexdigest() == receipt.get("bundle_sha256")):
+                report = {"bytes": archive_path.stat().st_size,
+                          "sha256": receipt["bundle_sha256"],
+                          "public_hash_verified": True, "cache_hit": True}
+            else:
+                report = download(run_id, archive_path)
             break
-        except Exception:
-            if attempt == 2:
+        except Exception as exc:
+            if attempt == 5:
                 raise
-            time.sleep(2 ** attempt)
+            delay = min(30, 2 ** (attempt + 1))
+            if isinstance(exc, HTTPError) and exc.code == 429:
+                try:
+                    delay = max(delay, min(60, int(exc.headers.get("Retry-After", "0"))))
+                except ValueError:
+                    pass
+            time.sleep(delay)
     bundle = tarfile.open(archive_path, mode="r:gz")
     members = bundle.getmembers()
     if not members or any(not member.isfile() or member.issym() or member.islnk()
