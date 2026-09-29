@@ -273,3 +273,21 @@ after held-out comparison. The preflight used the already installed renderer
 runtime and started no training, telemetry or GPU server. The live package
 install was restored to the old repository afterward; the active held-out
 evaluation uses its own pinned process and remains unchanged.
+
+## Partial matched visual inspection (not a final result)
+
+While the frozen step-30 evaluation was still rendering, 28 of the 47
+predeclared cases had completed. On those *same* case IDs, step 30 produced
+25 valid canvases, versus 22 for SFT step 512 and 23 for RL step 16. These
+are partial validity counts, not a preference or quality comparison; the
+remaining 19 cases and the blinded scoring may change the conclusion.
+
+The saved `t600-332` cuttlefish is more coherent at step 30 than at SFT or
+step 16, but still reads as a spotted jellyfish because its fin, eye, and
+overall anatomy are missing. On `t600-309` red combine harvester, step 16
+has a legible machine and cleaner composition, whereas step 30 is diffuse
+and muddy. SFT is coarser but also recognizable. These two inspected cases
+show why higher program validity cannot be promoted as visual improvement;
+the full 47-case comparison must govern checkpoint selection. The local
+render evidence is under the ignored `local-evidence/continued-live/partial-step30-spotcheck/`
+directory; the public archive will carry the underlying matched renders.
