@@ -47,6 +47,9 @@ def select(run: Path, evaluation: str, step: int) -> dict[str, Path]:
         "continued-anchors/validation-manifest.json",
         "continued-anchors/reserve-manifest.json",
         "evidence/continued-stream.jsonl",
+        "evidence/continued-evaluated-step.txt",
+        "evidence/continued-evaluation-scope.txt",
+        "validation/scaled-sft-control/validation-summary.json",
         f"async-output/{RUN_NAME}/monitors/file/metrics.jsonl",
         f"async-output/{RUN_NAME}/logs/attempt_1/orchestrator.log",
         f"async-output/{RUN_NAME}/logs/attempt_1/trainer.log",
@@ -64,6 +67,7 @@ def select(run: Path, evaluation: str, step: int) -> dict[str, Path]:
         "continued-anchors/prompts", "rl-rollouts-continued",
         f"validation/{evaluation}", f"async-output/{RUN_NAME}/monitors",
         f"async-output/{RUN_NAME}/logs", "evidence/continued-gallery",
+        "evidence/continued-canvases",
     ):
         _add_dir(files, run, folder)
     for path in sorted((run / "logs").glob("gpu-telemetry*.csv")):
