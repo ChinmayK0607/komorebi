@@ -210,3 +210,14 @@ uses the same images and judge model, so it adds no model-generation GPU
 work. It is intended to make an apparent anchor-relative improvement easier
 to confirm or reject; it does not license selecting a different checkpoint
 after looking at the held-out results.
+
+The independent control completed all 55 episodes: 49 had valid final
+canvases. On the frozen 47-case held-out set, 41 canvases were valid, all
+47 cases comparable, none censored; mean preference against the fixed SFT
+anchor was 0.395390. Its fixed eight-case train probe had seven comparable
+cases, one censored judge case, and mean 0.488095 over those seven. Across
+the control's 48 saved two-order judge receipts, 24 had no orientation gap,
+18 had gap 1/6, and six had gap 1/3. These are step-zero/control statistics,
+not learned performance. Prime preflight passed with `t600-509` first, and
+the finite RL launcher began at 2026-09-29 04:35:55 UTC. The first optimizer
+update and any RL checkpoint are still pending at this record point.
