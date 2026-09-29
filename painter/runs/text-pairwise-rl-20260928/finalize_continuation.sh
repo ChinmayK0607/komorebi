@@ -41,6 +41,8 @@ PY
   --trainer-log "$RUN/async-output/$NAME/logs/attempt_1/trainer.log" \
   --gpu-csv "$RUN/logs/gpu-telemetry-20260929T163811Z.csv" \
   --output "$RUN/evidence/profile-continuation.json"
+"$PY" "$RUN/profile_completion_failures.py" \
+  --stream "$STREAM" --output "$RUN/evidence/completion-failure-profile.json"
 START_ADAPTER="$($PY - "$RUN/continued-step16-download.json" <<'PY'
 import json,sys
 print(json.load(open(sys.argv[1]))['adapter_path'])
