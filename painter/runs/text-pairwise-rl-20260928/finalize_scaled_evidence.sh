@@ -21,6 +21,30 @@ eval_dir="scaled-step-$step-$scope"
 [[ -f "$RUN/validation/$eval_dir/direct-sft-versus-rl/summary.json" ]] || {
   echo 'direct matched visual comparison missing' >&2; exit 1;
 }
+# Measure the predeclared fixed train probe when the rental still has room;
+# this is read-only evaluation of the same verified checkpoint. Keep enough
+# time for publication and deletion even if an episode stalls.
+probe_dir="scaled-step-$step-probe8"
+eval_dirs=(--eval-dir "$eval_dir")
+remaining=$((1790677701-$(date -u +%s)))
+if (( remaining >= 2400 )) && [[ ! -e "$RUN/validation/$probe_dir/comparison/summary.json" ]]; then
+  if timeout --signal=INT --kill-after=60 1200s \
+      env PAINTER_RL_RUN_NAME=text-pairwise-scaled-20260929 \
+          PAINTER_VALIDATION_MANIFEST="$RUN/anchors-scaled/train-probe-manifest.json" \
+          PAINTER_CHECKPOINT_OUT="$RUN/validation/$probe_dir" \
+          PAINTER_JUDGE_PROTOCOL=text-paint-sft-pairwise-margin-v1 \
+      bash "$RUN/evaluate_checkpoint.sh" "$step" all; then
+    if ! "$PY" "$RUN/analyze_scaled.py" \
+      --baseline "$RUN/validation/scaled-sft-control/probe-summary.json" \
+      --candidate "$RUN/validation/$probe_dir/comparison/summary.json" \
+      --output "$RUN/validation/$probe_dir/analysis.json"; then
+      echo 'fixed train-probe comparison failed; preserving raw probe results' >&2
+    fi
+  fi
+fi
+if [[ -f "$RUN/validation/$probe_dir/comparison/summary.json" ]]; then
+  eval_dirs+=(--eval-dir "$probe_dir")
+fi
 # A live diagnostic may have copied a partial stream. Recopy only after the
 # finite training/evaluation chain has finished so the published audit is final.
 rm -f "$RUN/evidence/stream-final.jsonl"
@@ -35,7 +59,7 @@ PY
   --judge-root "$RUN/rl-rollouts-scaled" \
   --output "$RUN/evidence/rollout-audit.json"
 "$PY" "$RUN/archive_scaled_evidence.py" \
-  --run-root "$RUN" --eval-dir "$eval_dir" \
+  --run-root "$RUN" "${eval_dirs[@]}" \
   --output "$RUN/evidence/scaled-final-20260929.tar.gz" \
   --remote-path runs/text-pairwise-rl-20260928/scaled-final-20260929.tar.gz \
   --token-file "$TOKEN"
