@@ -65,15 +65,21 @@ respectively. The comparison is selected development data, not held-out
 validation, and no judge score is promoted from the current calibration.
 
 [Review the per-turn gallery](local-evidence/merge-canary-20260929/gallery/index.html).
-On visual inspection, SFT keeps the cleaner hand-fan fan-edge and a legible
-table lamp; the 25% blend gives the lamp a rounder shade but loses the second
-turn there. The 50% blend yields a more recognizable octopus with distinct
-arms, yet its yarn needles are scattered and it loses the drill's coherent
-mechanism. The RL drill has a clearer large gear than either blend. The
-potter scene is dark in all four outputs; none demonstrates a clean solution
-to the user's muddy-wash concern. These are qualitative observations on a
-known-failure set, not preference labels. **Retain SFT step 512 as the
-default.** Neither blend is promoted or used as a new RL initializer.
+On initial visual inspection, the 25% blend gives the table lamp a rounder
+shade but loses the second turn there. The 50% blend yields a more
+recognizable octopus with distinct arms, yet its yarn needles are scattered
+and it loses the drill's coherent mechanism. The potter scene is dark in all
+four outputs; none demonstrates a clean solution to the user's muddy-wash
+concern. On subsequent review of **this canary gallery**, the user **liked
+the unmixed RL hand fan** and felt the hand-crank drill had regressed a
+little; this supersedes my initial impression of these new outputs. The
+user also found mixing unconvincing. The canary images have different hashes
+from the earlier step-16 gallery used to calibrate v4, so this feedback does
+not relabel those earlier judge cases. These are qualitative observations on
+a known-failure set, not a scored or blinded preference evaluation.
+**Retain SFT step 512 as the default pending broader review, while
+preserving the unmixed RL step-16 checkpoint as a distinct candidate.**
+Neither blend is promoted or used as a new RL initializer.
 
 The [screened 297-file public archive](https://huggingface.co/datasets/CK0607/komorebi-painter-experiments/blob/2cb11d47c68312740ff046fae2d83d7e66f106ca/runs/text-pairwise-rl-20260928/merge-canary-20260929.tar.gz)
 contains the per-turn gallery, programs, traces, manifests, and failures.
