@@ -252,3 +252,22 @@ recognizability, spatial correctness, natural brushwork, and appeal; record
 both wins and regressions. Report all invalid and censored cases separately.
 This visual sample supplements, rather than replaces, the all-case paired
 evaluation.
+
+Blind manual review in progress, before reading any step-16 held-out judge
+scores (fresh SFT step512 versus RL step16; same prompts and evaluation
+settings):
+
+| Case | Visual read | Decisive observation |
+| --- | --- | --- |
+| `t600-309` combine harvester | mixed; SFT on appeal | RL adds cabin, header, and mechanical details, but reads as a boxy diagram. SFT has softer sunset and a more coherent simple silhouette. |
+| `t600-316` dancing cranes | SFT slight or tie | Neither painting convincingly depicts two birds; RL is sparser. This remains a structural failure. |
+| `t600-332` cuttlefish | RL on structure; appeal unclear | RL gives an eye and grouped arms. SFT reads more like a jellyfish or balloon. Both are faint and incomplete. |
+| `t600-339` concrete library | SFT clearly | SFT depicts a building, recessed entrance, stepped plaza, and tree. RL dissolves the building and steps into repeated gray bands. |
+| `t600-342` beach changing cabin | SFT slight | Both show a stilt cabin, mint door, water, and violet shadow. SFT's mass and roof are more coherent; RL shows steps more clearly but has loose, disconnected supports. |
+| `t600-341` | RL invalid | All three turns hit the same JavaScript runtime `Symbol(instance)` error involving numeric `16`; no canvas. |
+| `t600-349` | RL invalid | All three turns hit `Invalid color string`; no canvas. |
+| `t600-323` | RL timeout | All three turns exceeded the 180-second render limit; no canvas. |
+
+These are provisional human observations on eight of the predeclared sixteen
+cases, not a measured win rate. Invalid and censored cases will be reported
+separately after the full render and comparison finish.
