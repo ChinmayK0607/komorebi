@@ -46,11 +46,16 @@ PYTHONPATH="$REPO/painter" "$PY" "$REPO/painter/native_painting_eval.py" \
   --rollout-timeout 1800 >"$OUT/logs/config.json"
 "$PY" - "$OUT/eval.toml" <<'PY'
 from pathlib import Path
-import sys
+import os,sys
 path=Path(sys.argv[1]);text=path.read_text()
 old='base_url = "http://127.0.0.1:8000/v1"'
 if text.count(old)!=1:raise SystemExit('unexpected eval endpoint')
-path.write_text(text.replace(old,'base_url = "http://127.0.0.1:8100/v1"'))
+seed='seed = 918200'
+if text.count(seed)!=1:raise SystemExit('unexpected eval seed')
+value=os.environ.get('PAINTER_EVAL_SEED','918210')
+if not value.isdigit():raise SystemExit('PAINTER_EVAL_SEED must be numeric')
+path.write_text(text.replace(old,'base_url = "http://127.0.0.1:8100/v1"')
+                    .replace(seed,f'seed = {value}'))
 PY
 if [[ "${3:-}" == '--preflight' ]]; then echo 'VALIDATION_PREFLIGHT_READY'; exit 0; fi
 [[ $# -le 2 ]] || { echo 'usage: evaluate_checkpoint.sh STEP [8|16|all]' >&2; exit 2; }

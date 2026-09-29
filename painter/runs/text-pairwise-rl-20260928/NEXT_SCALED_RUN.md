@@ -59,7 +59,8 @@ fails, fix the observed fault on the same rental and record spent time.
 ## Evaluation and decision
 
 Before optimizer updates, independently sample the fixed step-0 SFT policy
-on the **same frozen validation anchors**. Freeze a small fixed train probe
+on the **same frozen validation anchors**, with evaluation seed `918210` for
+both policies at every checkpoint. Freeze a small fixed train probe
 for a comparable training-signal curve; log per-brief scores rather than
 comparing changing online batch means. Score step 0, 16, and final on the
 same prompt IDs and seeds when the budget permits. Evaluate the full usable
