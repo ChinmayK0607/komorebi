@@ -107,4 +107,7 @@ $0.59 GPU rental. The initial 290-brief v3 baseline was stopped after early
 valid canvases showed throughput that projected beyond the time needed for
 RL on this rental. The 184-brief run subset loaded through the native taskset
 and is now rendering. The corrected action contract has produced valid SFT
-canvases but **no RL optimizer update or scored RL result** yet.
+canvases. A live two-order MiMo Flash judge canary preferred one valid SFT
+painting over a same-size white blank with score 1.0 and order gap 0.0;
+this checks transport/orientation only, not reliability on close pairs.
+There is **no RL optimizer update or scored RL result** yet.
