@@ -1,7 +1,9 @@
 # Text painting: fixed-SFT pairwise RL
 
-Status: fixed anchors and independent step-0 control complete; RL training
-active. No held-out RL improvement result claimed.
+Status: the finite 20-update graded-margin run and all predeclared held-out
+checkpoint evaluations are complete. Step 20 had a small positive result on
+the original validation set, but an independent reserve check tied SFT. No
+confirmed visual-quality improvement is claimed or promoted.
 
 Rental update (2026-09-28 15:04 UTC): a two-96-GB-GPU node was rented at
 **$2.38/hour total** with a ten-hour automatic rental expiry (maximum quoted
@@ -189,6 +191,105 @@ inclusion in a later RL run requires separately frozen, hash-verified SFT
 opponents and a same-protocol step-0 control; the 32 new validation prompts
 must remain blind to training. This staging makes the scaling option concrete
 without changing the current experiment's baseline or splits mid-run.
+
+## Independent reserve confirmation (specified before its results)
+
+The step-20 checkpoint has a small positive paired signal on the original
+16-case validation set. Check it on all **14 original reserve briefs unused by
+training or that validation set**, without selecting cases by SFT or RL
+quality. The fixed reserve pool SHA-256 is
+`032dc136011d357414b9004b5240da183543b17239c5a6e644094ec401d0d791`.
+Sample the same pinned step-512 SFT adapter and the public step-20 RL adapter
+once each, on the same brief and three-turn/8192-token settings, with seed
+`918220`. Record invalid canvases and operational failures separately.
+
+For each case with two valid canvases, judge the fresh pair with the same
+two-order MiMo margin protocol. Count RL-valid/SFT-invalid as 1.0,
+RL-invalid/SFT-valid as 0.0, and both invalid as a 0.5 pairwise tie while
+reporting both validity rates. Service or judge failures are censored.
+Report the all-comparable mean, the visual-only mean, and a deterministic
+case-bootstrap 95% interval; do not call the checkpoint a confirmed win if
+the interval includes 0.5 or visual review contradicts it. This is a
+confirmatory comparison, not another training or checkpoint-selection set.
+
+### Observed outcome
+
+The fifth attempt completed all 20 optimizer updates from the pinned
+step-512 SFT adapter. Each update admitted eight trainable rollouts, and
+trainer gradient norms were nonzero, including 0.0337 at step 20. The
+public, hash-verified [step-20 adapter](https://huggingface.co/CK0607/qwen3.8-27b-brush-painting/tree/7da0d70bc595625375f6912ea64c7fda90ee6f67/text-pairwise-margin-workerfix-20260928/step_20)
+has weight SHA-256
+`37fcfc2cae2c226b9e757ad3191148cdbc3a7dc279f4fda9ff2ddb2b3ccfe4ad`.
+The training batch rewards cannot serve as a learning curve: their briefs
+change through the curriculum, and speculative prefetch sometimes cancels
+stale rollouts.
+
+Under the **same margin judge and on the 14 cases comparable with the
+independent step-0 SFT sample**, SFT averaged 0.393. RL step 4 averaged
+0.345 (paired difference -0.048; 12/16 valid), step 12 averaged 0.357
+(-0.036; 14/16 valid), and step 20 averaged 0.429 (+0.036; 15/16 valid).
+The step-20 paired case-bootstrap 95% interval for its difference from SFT
+was [-0.167, +0.226]; two SFT service/judge failures were censored, not
+visual losses. All three RL evaluations covered the full 16 prompts and had
+zero censored cases. Step 4 and step 12 are regressions, and step 20 is only
+a weak positive signal. The complete visual comparison is in
+`validation/checkpoint-gallery/index.html`.
+
+The separate 14-reserve comparison was sampled once per policy at seed
+918220, after excluding reserve IDs used as train replacements. The SFT
+first-sample anchor manifest SHA-256 is
+`b35c19a9f4e3a6f02cbdc0ea934c2e7f9350b8fe21299eef21fb205c537243ee`.
+Both SFT and RL yielded 13/14 usable canvases; 12 cases had two valid
+canvases and their mean visual score was exactly 0.500. Including the two
+one-sided invalid cases as predeclared, the all-14 pairwise mean remained
+0.500 (six RL wins, two ties, six losses; bootstrap 95% interval
+[0.363, 0.643]). There were no censored reserve cases. Summary SHA-256 is
+`00cd3ce165eb8d475a26961be9545389ef5f414cebc14340d706296269191747`.
+The reserve visual comparison is in
+`validation/independent-reserve-14/gallery/index.html`; its 13 cards cover
+the SFT-valid subset, and `anchors/audit.json` retains the one SFT-invalid
+case. This independent tie does **not** confirm the step-20 gain.
+
+Visual inspection supports the mixed result: the RL chalk-sticks painting
+is more legible than its fresh SFT counterpart, while its pinecone loses
+the overlapping-scale structure. On the original validation set, some RL
+paintings improved when valid, but step-4 plan-only responses ended normally
+after about 60 tokens with no JavaScript block despite an 8192-token cap.
+Another invalid response repeated the same `scale is not a function` error
+on all three turns. Action validity and effective correction remain live
+failure modes, not token-budget truncation.
+
+From 19:34 to 22:20:18 UTC during this fifth training attempt, 998
+ten-second samples **per GPU** gave inference GPU 0 mean utilization
+99.82% (99.8% of samples at least 90%) and trainer GPU 1 mean utilization
+11.65% (10.7% at least 90%). This is a near-full training-window sample,
+not an instantaneous reading: the pipeline was strongly inference-bound.
+MiMo Gateway receipts total $0.068924 for 110 training judgments,
+$0.028694 for 41 original-validation judgments, and $0.008098 for 12
+reserve judgments ($0.105716 combined); failed calls without usage receipts
+are excluded. GPU rental was **$21.53 at the final pre-removal snapshot**,
+below the $25 per-run cap and $23.80 automatic whole-node maximum. The
+node was removed afterward; `lium ps` returned no active pods.
+
+The complete [public evidence archive](https://huggingface.co/datasets/CK0607/komorebi-painter-experiments/blob/180ea85f472f39dd7506adff4c764a7e5fc6053f/runs/text-pairwise-rl-20260928/margin-final-20260929.tar.gz)
+contains 2,083 screened files (147,628,262 bytes): training traces and
+metrics, rollouts, GPU telemetry, exact scoring receipts, all three held-out
+evaluations, reserve samples, audit and both visual galleries. An anonymous
+download at immutable revision
+`180ea85f472f39dd7506adff4c764a7e5fc6053f` matched SHA-256
+`de7a74c8a3c08096f7dec6b8942cde9c14c2c34b4ad70e88d248692e7746aee3`.
+The post-run Prime stream was decompressed from `.jsonl.zst` and screened
+as JSONL before packaging; model weights remain in the separately verified
+public checkpoint repository.
+
+Decision: preserve step 20 as a research checkpoint, but do not promote it
+as a demonstrated improvement. For the next bounded run, first repair the
+action/correction scaffold and establish code-output validity on a small
+fixed set, then freeze SFT opponents for a substantially broader training
+curriculum from the already published 290-brief pool. Keep its 32 new blind
+complex briefs out of training, match the SFT initializer and validation
+settings, and respect the $25 GPU cap per run. More inference workers should
+take priority over more trainer GPUs given the measured imbalance.
 
 ## Hypothesis and matched baseline
 

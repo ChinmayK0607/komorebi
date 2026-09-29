@@ -18,9 +18,13 @@ def select(run: Path, eval_dirs: list[str]) -> dict[str, Path]:
     files: dict[str, Path] = {}
     fixed = [
         "EXPERIMENT.md", "native-rl-margin-workerfix.toml",
+        "render_step20_reserve.sh", "freeze_confirmatory_reserve.py",
+        "score_confirmatory_reserve.py",
         "rl-config-receipt.json", "anchors-frozen/train-manifest.json",
         "anchors-frozen/validation-manifest.json", "prepared/pool.json",
-        f"async-output/{RUN_NAME}/monitors/file/traces/stream/00000.jsonl",
+        # Prime compresses the stream to .jsonl.zst after shutdown. Expand it
+        # to this screened JSONL file before publishing the evidence archive.
+        "evidence/stream-final.jsonl",
         f"async-output/{RUN_NAME}/monitors/file/metrics.jsonl",
         f"async-output/{RUN_NAME}/logs/attempt_1/orchestrator.log",
         f"async-output/{RUN_NAME}/logs/attempt_1/trainer.log",
@@ -41,8 +45,15 @@ def select(run: Path, eval_dirs: list[str]) -> dict[str, Path]:
         "rl-rollouts-margin-workerfix",
         "validation/sft-step512-control/comparison-margin",
         "validation/checkpoint-gallery",
+        "validation/independent-reserve-14/sft",
+        "validation/independent-reserve-14/rl",
+        "validation/independent-reserve-14/anchors",
+        "validation/independent-reserve-14/comparison",
+        "validation/independent-reserve-14/gallery",
     ):
         _add_dir(files, run, folder)
+    reserve_pool = "validation/independent-reserve-14/pool.json"
+    files[reserve_pool] = run / reserve_pool
     for eval_dir in eval_dirs:
         if not eval_dir.startswith(f"{RUN_NAME}-step-") or "/" in eval_dir:
             raise ValueError(f"unexpected evaluation directory: {eval_dir}")
