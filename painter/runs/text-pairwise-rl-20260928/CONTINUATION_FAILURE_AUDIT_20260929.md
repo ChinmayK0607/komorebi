@@ -18,6 +18,11 @@ The almost-blank baker anchor `t600-412` lets a visibly weak RL patchwork
 score 0.917; its rationale actually notices missing hands and dough. This is
 a concrete *relative-anchor* failure. Hold visual promotion for a direct
 matched comparison and stronger-anchor calibration.
+The saved valid-trace mean relative score rises from 0.327 on 64 simple
+canvases to 0.399 on 72 complex canvases even though the complex prompts
+are harder; this is consistent with unequal opponent quality and task mix,
+not evidence that the model became better over time. These are generated
+trace subsets, not a matched per-prompt learning curve.
 
 The saved generated-trace stream at the same snapshot contained 270
 trajectories, including speculative or stale work. Only 88/270 had a valid
