@@ -8,7 +8,7 @@ import json
 from pathlib import Path
 
 
-SEED = "text-scaled-probe-20260929"
+SELECTION = "curriculum-first-four-per-family-20260929"
 
 
 def freeze(train: Path, output: Path) -> dict:
@@ -20,14 +20,15 @@ def freeze(train: Path, output: Path) -> dict:
         eligible = [row for row in rows if row["family"] == family]
         if len(eligible) < 4:
             raise ValueError(f"too few {family} anchors")
-        ranked = sorted(eligible, key=lambda row: hashlib.sha256(
-            f"{SEED}:{row['id']}".encode()).hexdigest())
-        chosen.extend(ranked[:4])
+        # The short run visits the manifest in curriculum order. Sampling
+        # arbitrary later complex rows could label unseen prompts a train
+        # probe, so freeze the first four from each observed family.
+        chosen.extend(eligible[:4])
     if output.exists():
         raise FileExistsError(output)
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps({"schema": "painter-scaled-train-probe-v1",
-                                  "seed": SEED, "cases": chosen}, indent=2,
+                                  "selection": SELECTION, "cases": chosen}, indent=2,
                                  sort_keys=True) + "\n")
     return {"ids": [row["id"] for row in chosen],
             "sha256": hashlib.sha256(output.read_bytes()).hexdigest()}
