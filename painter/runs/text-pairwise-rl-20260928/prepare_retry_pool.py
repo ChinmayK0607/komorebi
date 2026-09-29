@@ -20,7 +20,8 @@ from painter.native_painting_report import _trace_data, read_traces  # noqa: E40
 from build_anchors import usable  # noqa: E402
 
 
-def prepare(pool: Path, sources: list[Path], output: Path) -> dict:
+def prepare(pool: Path, sources: list[Path], output: Path,
+            allow_fewer: bool = False) -> dict:
     if not sources:
         raise ValueError("at least one prior evaluation root is required")
     rows = json.loads(pool.read_text())["cases"]
@@ -45,7 +46,7 @@ def prepare(pool: Path, sources: list[Path], output: Path) -> dict:
                 break
         if not valid:
             pending.append(row)
-    if len(pending) < 2:
+    if len(pending) < 2 and not allow_fewer:
         raise ValueError(f"only {len(pending)} briefs need retry; two-GPU shard runner needs at least two")
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps({"cases": pending, "source_pool": str(pool),
@@ -62,6 +63,8 @@ def main() -> None:
     parser.add_argument("--pool", type=Path, required=True)
     parser.add_argument("--source", type=Path, action="append", required=True)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--allow-fewer", action="store_true",
+                        help="write an audit even when fewer than two cases need retry")
     args = parser.parse_args()
     print(json.dumps(prepare(args.pool, args.source, args.output), sort_keys=True))
 

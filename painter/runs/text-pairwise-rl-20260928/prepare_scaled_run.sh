@@ -24,17 +24,23 @@ ANCHORS="$RUN/anchors-scaled"
 args=(--pool "$POOL" --eval-root "$BASELINE" --expected-count 184
       --validation-expected 48 --train-simple 12 --train-intermediate 8
       --train-complex 48)
-if "$PY" "$RUN/build_anchors.py" "${args[@]}" --output "$RUN/anchors-scaled-first"; then
-  ANCHORS="$RUN/anchors-scaled-first"
-else
-  "$PY" "$RUN/prepare_retry_pool.py" --pool "$POOL" --source "$BASELINE" \
-    --output "$RUN/prepared/scaled-retry-1.json"
+"$PY" "$RUN/prepare_retry_pool.py" --pool "$POOL" --source "$BASELINE" \
+  --output "$RUN/prepared/scaled-retry-1.json" --allow-fewer
+retry_count="$("$PY" - "$RUN/prepared/scaled-retry-1.json" <<'PY'
+import json,sys
+print(len(json.load(open(sys.argv[1]))['cases']))
+PY
+)"
+if (( retry_count >= 2 )); then
   PAINTER_POOL_PATH="$RUN/prepared/scaled-retry-1.json" \
     PAINTER_EVAL_OUT="$RUN/baseline-scaled-retry-1" \
     PAINTER_EVAL_SEED=918201 PAINTER_BUILD_ANCHORS=0 \
     bash "$RUN/render_baseline.sh"
   "$PY" "$RUN/build_anchors.py" "${args[@]}" \
     --retry-root "$RUN/baseline-scaled-retry-1" --output "$ANCHORS"
+else
+  "$PY" "$RUN/build_anchors.py" "${args[@]}" --output "$RUN/anchors-scaled-first"
+  ANCHORS="$RUN/anchors-scaled-first"
 fi
 "$PY" "$RUN/freeze_scaled_probe.py" --train "$ANCHORS/train-manifest.json" \
   --output "$ANCHORS/train-probe-manifest.json"
