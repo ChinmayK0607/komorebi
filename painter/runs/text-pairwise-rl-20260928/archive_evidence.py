@@ -14,7 +14,7 @@ from huggingface_hub import HfApi, hf_hub_download
 
 
 REPO_ID = "CK0607/komorebi-painter-experiments"
-TEXT_EXT = {".json", ".jsonl", ".js", ".py", ".sh", ".txt", ".toml", ".log", ".csv", ".md", ".html"}
+TEXT_EXT = {".json", ".jsonl", ".js", ".py", ".sh", ".txt", ".toml", ".log", ".csv", ".md", ".html", ".svg"}
 IMAGE_EXT = {".png", ".jpg", ".jpeg"}
 SECRET_PATTERNS = (
     re.compile(rb"AI_GATEWAY_API_KEY"),
@@ -22,6 +22,12 @@ SECRET_PATTERNS = (
     re.compile(rb"sk-or-v1-[A-Za-z0-9]{20,}"),
     re.compile(rb"vck_[A-Za-z0-9]{20,}"),
     re.compile(rb"hf_[A-Za-z0-9]{20,}"),
+)
+SVG_FORBIDDEN = (
+    re.compile(rb"<!\s*(?:DOCTYPE|ENTITY)\b", re.I),
+    re.compile(rb"<\s*(?:script|foreignObject|iframe|object|embed)\b", re.I),
+    re.compile(rb"\bon[a-z]+\s*=", re.I),
+    re.compile(rb"\b(?:href|xlink:href)\s*=", re.I),
 )
 
 
@@ -89,6 +95,10 @@ def package(files: dict[str, Path], output: Path) -> dict:
                 content = path.read_bytes()
                 if any(pattern.search(content) for pattern in SECRET_PATTERNS):
                     raise ValueError(f"credential-like text in evidence: {name}")
+                if path.suffix.lower() == ".svg" and any(
+                    pattern.search(content) for pattern in SVG_FORBIDDEN
+                ):
+                    raise ValueError(f"active or externally linked SVG in evidence: {name}")
             rows.append({"path": name, "sha256": digest(path),
                          "bytes": path.stat().st_size})
             archive.add(path, arcname=name, recursive=False)
