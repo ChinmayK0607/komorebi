@@ -20,10 +20,11 @@ bash "$OLD/setup_node.sh"
 # The native launcher executes these wrappers from the supplied run root.
 # Copy them instead of symlinking: run_from_sft.py resolves its own location
 # to locate the trainer wrapper, logs and run-scoped settings.
-for item in run_from_sft.py train_from_sft.py prepare_rl_config.py; do
+for item in run_from_sft.py train_from_sft.py; do
   [[ -f "$OLD/$item" ]] || { echo "missing shared RL wrapper: $OLD/$item" >&2; exit 1; }
   cp "$OLD/$item" "$RUN/$item"
 done
+cp "$RUN/../photo-curriculum-rl-20260922/prepare_rl_config.py" "$RUN/prepare_rl_config.py"
 # The shared bootstrap stages the renderer under the old run root. Prime's
 # launcher resolves these three paths relative to this pilot root, so expose
 # the already prepared assets here without reinstalling them.
