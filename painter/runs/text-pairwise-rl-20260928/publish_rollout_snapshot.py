@@ -9,15 +9,57 @@ from __future__ import annotations
 
 import argparse
 from datetime import datetime, timezone
+import hashlib
 import json
 from pathlib import Path
 import shutil
+import tarfile
 import tempfile
 import time
 
-from huggingface_hub import HfApi, hf_hub_download
+from huggingface_hub import HfApi, hf_hub_url
+import requests
 
 from archive_evidence import IMAGE_EXT, REPO_ID, TEXT_EXT, digest, package
+
+
+def verify_public_archive(output: Path, remote_path: str, step: int) -> dict:
+    """Verify a committed archive by anonymous streaming; safe to retry."""
+    with tarfile.open(output, "r:gz") as archive:
+        member = archive.extractfile("snapshot.json")
+        if member is None:
+            raise ValueError("snapshot metadata missing")
+        meta = json.load(member)
+    if meta.get("step_checkpoint") != step:
+        raise ValueError("snapshot step differs from requested checkpoint")
+    local_hash = digest(output)
+    local_bytes = output.stat().st_size
+    public_info = HfApi(token=False).repo_info(REPO_ID, repo_type="dataset",
+                                                 files_metadata=True)
+    if public_info.private:
+        raise ValueError("public dataset required")
+    existing = next((item for item in public_info.siblings
+                     if item.rfilename == remote_path), None)
+    if existing is None or existing.lfs is None or existing.lfs.sha256 != local_hash:
+        raise ValueError("public archive missing or repository hash differs")
+    url = hf_hub_url(REPO_ID, filename=remote_path, repo_type="dataset",
+                     revision=public_info.sha)
+    remote_hash = hashlib.sha256()
+    remote_bytes = 0
+    with requests.get(url, stream=True, timeout=60) as response:
+        response.raise_for_status()
+        for block in response.iter_content(1024 * 1024):
+            remote_hash.update(block)
+            remote_bytes += len(block)
+    if remote_hash.hexdigest() != local_hash or remote_bytes != local_bytes:
+        raise ValueError("anonymous public hash mismatch")
+    result = {**meta, "files": meta["selected_files"] + 1,
+              "bytes": local_bytes, "sha256": local_hash,
+              "repo_id": REPO_ID, "path": remote_path,
+              "commit": public_info.sha, "public_hash_verified": True}
+    output.with_suffix(".upload.json").write_text(
+        json.dumps(result, indent=2, sort_keys=True) + "\n")
+    return result
 
 
 def snapshot(run: Path, step: int, output: Path, remote_path: str,
@@ -88,21 +130,19 @@ def snapshot(run: Path, step: int, output: Path, remote_path: str,
     if dry_run:
         return {**report, **meta, "public_hash_verified": False}
     assert token_file is not None
-    api = HfApi(token=token_file.read_text().strip())
-    if api.repo_info(REPO_ID, repo_type="dataset").private:
+    public_info = HfApi(token=False).repo_info(REPO_ID, repo_type="dataset", files_metadata=True)
+    if public_info.private:
         raise ValueError("public dataset required")
-    commit = api.upload_file(path_or_fileobj=str(output), path_in_repo=remote_path,
-                             repo_id=REPO_ID, repo_type="dataset",
-                             commit_message=f"Preserve text-paint rollout snapshot through step {step}")
-    public = Path(hf_hub_download(REPO_ID, filename=remote_path, repo_type="dataset",
-                                  revision=commit.oid, token=False, force_download=True,
-                                  local_dir=output.parent / "public-snapshot-verify"))
-    if digest(public) != report["sha256"]:
-        raise ValueError("anonymous public hash mismatch")
-    result = {**report, **meta, "repo_id": REPO_ID, "path": remote_path,
-              "commit": commit.oid, "public_hash_verified": True}
-    output.with_suffix(".upload.json").write_text(json.dumps(result, indent=2, sort_keys=True) + "\n")
-    return result
+    existing = next((item for item in public_info.siblings
+                     if item.rfilename == remote_path), None)
+    if existing is not None and (existing.lfs is None or existing.lfs.sha256 != report["sha256"]):
+        raise ValueError("remote path already contains a different archive")
+    if existing is None:
+        api = HfApi(token=token_file.read_text().strip())
+        api.upload_file(path_or_fileobj=str(output), path_in_repo=remote_path,
+                        repo_id=REPO_ID, repo_type="dataset",
+                        commit_message=f"Preserve text-paint rollout snapshot through step {step}")
+    return {**report, **verify_public_archive(output, remote_path, step)}
 
 
 def main() -> None:
@@ -114,10 +154,17 @@ def main() -> None:
     parser.add_argument("--token-file", type=Path)
     parser.add_argument("--min-age-seconds", type=float, default=120)
     parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument("--verify-only", action="store_true")
     args = parser.parse_args()
+    if args.remote_path.startswith("/") or ".." in Path(args.remote_path).parts:
+        parser.error("unsafe remote path")
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    result = snapshot(args.run_root, args.step, args.output, args.remote_path,
-                      args.token_file, args.min_age_seconds, args.dry_run)
+    if args.dry_run and args.verify_only:
+        parser.error("--dry-run and --verify-only are mutually exclusive")
+    result = (verify_public_archive(args.output, args.remote_path, args.step)
+              if args.verify_only else
+              snapshot(args.run_root, args.step, args.output, args.remote_path,
+                       args.token_file, args.min_age_seconds, args.dry_run))
     summary_keys = ("files", "bytes", "sha256", "selected_files",
                     "unstable_or_invalid_files_skipped", "public_hash_verified")
     print(json.dumps({**{key: result[key] for key in summary_keys},
