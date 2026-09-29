@@ -3,16 +3,62 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import shutil
 from pathlib import Path
+import time
 
-from huggingface_hub import HfApi, hf_hub_download
+from huggingface_hub import HfApi, hf_hub_url
+import requests
 
 from archive_evidence import REPO_ID, _add_dir, digest, package
 
 
 RUN_NAME = "text-pairwise-continue-20260929"
+
+
+def retry_rate_limit(action):
+    for attempt in range(6):
+        try:
+            return action()
+        except Exception as exc:
+            response = getattr(exc, "response", None)
+            if getattr(response, "status_code", None) != 429 or attempt == 5:
+                raise
+            time.sleep(min(60, 2 ** (attempt + 2)))
+
+
+def public_file_info(remote_path: str):
+    info = retry_rate_limit(lambda: HfApi(token=False).repo_info(
+        REPO_ID, repo_type="dataset", files_metadata=True))
+    if info.private:
+        raise ValueError("public evidence repository required")
+    existing = next((item for item in info.siblings
+                     if item.rfilename == remote_path), None)
+    return info, existing
+
+
+def verify_anonymous(remote_path: str, revision: str, expected_sha: str,
+                     expected_bytes: int) -> None:
+    url = hf_hub_url(REPO_ID, filename=remote_path, repo_type="dataset",
+                     revision=revision)
+    for attempt in range(3):
+        try:
+            remote_hash = hashlib.sha256()
+            remote_bytes = 0
+            with requests.get(url, stream=True, timeout=60) as response:
+                response.raise_for_status()
+                for block in response.iter_content(1024 * 1024):
+                    remote_hash.update(block)
+                    remote_bytes += len(block)
+            if remote_bytes != expected_bytes or remote_hash.hexdigest() != expected_sha:
+                raise ValueError("anonymous public archive hash mismatch")
+            return
+        except (requests.RequestException, ValueError):
+            if attempt == 2:
+                raise
+            time.sleep(2 ** (attempt + 1))
 
 
 def ensure_stream(run: Path) -> Path:
@@ -95,19 +141,21 @@ def publish(run: Path, evaluation: str, step: int, output: Path,
         raise PermissionError("token file must be an owner-only regular file")
     ensure_stream(run)
     report = package(select(run, evaluation, step), output)
-    api = HfApi(token=token_file.read_text().strip())
-    if api.repo_info(REPO_ID, repo_type="dataset").private:
-        raise ValueError("public evidence repository required")
-    commit = api.upload_file(path_or_fileobj=str(output), path_in_repo=remote_path,
-                             repo_id=REPO_ID, repo_type="dataset",
-                             commit_message=f"Add text-paint continuation step {step} evidence")
-    public = Path(hf_hub_download(REPO_ID, filename=remote_path, repo_type="dataset",
-                                  revision=commit.oid, token=False, force_download=True,
-                                  local_dir=output.parent / "public-verify"))
-    if digest(public) != report["sha256"]:
-        raise ValueError("anonymous public archive hash mismatch")
+    public_info, existing = public_file_info(remote_path)
+    if existing is not None and (existing.lfs is None or existing.lfs.sha256 != report["sha256"]):
+        raise ValueError("remote evidence path already contains a different archive")
+    if existing is None:
+        api = HfApi(token=token_file.read_text().strip())
+        commit = retry_rate_limit(lambda: api.upload_file(
+            path_or_fileobj=str(output), path_in_repo=remote_path,
+            repo_id=REPO_ID, repo_type="dataset",
+            commit_message=f"Add text-paint continuation step {step} evidence"))
+        revision = commit.oid
+    else:
+        revision = public_info.sha
+    verify_anonymous(remote_path, revision, report["sha256"], report["bytes"])
     receipt = {**report, "repo_id": REPO_ID, "path": remote_path,
-               "commit": commit.oid, "step": step, "public_hash_verified": True}
+               "commit": revision, "step": step, "public_hash_verified": True}
     output.with_suffix(".upload.json").write_text(json.dumps(receipt, indent=2, sort_keys=True) + "\n")
     return receipt
 
