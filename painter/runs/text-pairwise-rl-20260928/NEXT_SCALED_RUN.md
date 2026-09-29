@@ -221,3 +221,25 @@ the control's 48 saved two-order judge receipts, 24 had no orientation gap,
 not learned performance. Prime preflight passed with `t600-509` first, and
 the finite RL launcher began at 2026-09-29 04:35:55 UTC. The first optimizer
 update and any RL checkpoint are still pending at this record point.
+
+At 2026-09-29 06:19 UTC, before inspecting any scaled held-out RL result,
+the trainer had reached step 11 and the step-8 adapter was public and
+hash-verified. Live generated-trace audit showed 34/47 valid simple,
+18/27 valid intermediate, and 18/38 valid complex canvases; these are all
+saved generated traces, including possible speculative work, not admitted
+gradient examples. A manual inspection of four highly rewarded complex
+training pairs (`t600-586`, `t600-580`, `t600-554`, `t600-473`) found clearer
+object layouts than their fixed SFT opponents but conspicuously mechanical
+linework or missing requested texture. For `t600-586`, the 0.667 judge
+receipt itself called the preferred RL web diagrammatic and noted its absent
+frost beads. The fixed opponents on the tidepool and fisherman prompts were
+also very weak, so a relative win did not establish an attractive painting.
+
+**Outcome-blind stop amendment:** finish and publicly verify the already
+scheduled step-16 checkpoint, then stop further optimizer steps. Evaluate
+that checkpoint on the frozen held-out set and fixed train probe, with the
+predeclared direct fresh-SFT comparison, before releasing the node. This
+shortens the planned 24-step run because the live reward audit shows an
+aesthetic misalignment; it does not choose a checkpoint based on validation
+scores. Do not launch an automatic rerun. The untouched reserve remains
+reserved for positive validation only.
