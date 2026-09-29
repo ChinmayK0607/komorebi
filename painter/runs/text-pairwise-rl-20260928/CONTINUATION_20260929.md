@@ -137,6 +137,38 @@ Lium reported $6.23 accrued GPU rental near this snapshot. Keep the finite
 run going; compare a final checkpoint with both frozen controls on the same
 47 held-out briefs before claiming visual improvement.
 
+### Live phase/failure profile, 2026-09-29 19:47 UTC
+
+The reusable [profile script](profile_continuation.py) read native Prime
+metrics, the saved trace stream, two-order judge receipts, the trainer log,
+and 1,125 ten-second GPU samples per card spanning 16:38:11–19:45:35 UTC.
+At 21 completed optimizer steps, the admitted-batch reward mean was 0.231
+(first 10: 0.215; next 11: 0.245; latest five: 0.208). All 21 steps had
+nonzero recorded gradient norms, mean 0.0159, at LR `1e-6`; mismatch KL mean
+was 0.000286. This remains noisy online training feedback, not held-out
+evidence. Ten off-policy rollouts were dropped by this point.
+
+The admitted-batch mean rollout durations were 269 seconds in model generation,
+84 seconds in harness work, and 20 seconds in scoring, with 373 seconds total
+per rollout. Phase means can overlap in pipeline execution; they are not an
+additive wall-clock budget. The optimizer-step mean was 507 seconds, and 19
+trainer wait warnings averaged 425 seconds each. GPU 0 inference averaged
+96.77% utilization and 96.62% of samples at or above 90%; GPU 1 trainer
+averaged 13.30% and 11.82% at or above 90%. The run is decisively
+inference-bound despite a temporarily busy trainer during active updates.
+
+Separate **saved generated** traces, including speculative work, numbered
+210 at the snapshot; 134 ended with a valid canvas. Invalid-turn primary
+classes included 120 syntax errors, 67 undefined symbols, 58 unknown brush
+names, 41 type errors, 37 render timeouts, 23 unsupported brush methods,
+10 invalid colors, plus other errors. Those counts are per failed turn and
+cannot be read as failed optimizer rollouts. The 134 saved two-order visual
+judge receipts had 22 order gaps of at least one-third, a reliability concern
+that the matched final evaluation must expose. The root causes to test after
+the run are generation/contract failures, expensive per-turn rendering,
+inference/trainer imbalance, and judgment disagreement; do not alter the
+active run to patch these midstream.
+
 ## Evaluation and next decision
 
 Read the run-level reward, gradient, invalid/censored, rendering-time,
