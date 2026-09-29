@@ -121,6 +121,7 @@ def select(run: Path, evaluation: str, step: int) -> dict[str, Path]:
         files[path.relative_to(run).as_posix()] = path
     for name in (
         "evidence/grounded-calibration.json",
+        "evidence/grounded-positive-control.json",
         "continued-anchors/grounded-pilot-train-manifest.json",
         "continued-anchors/grounded-pilot-train-manifest-audit.json",
         "build_anchor_contact.py", "calibrate_grounded_judge.py",

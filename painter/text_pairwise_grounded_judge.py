@@ -83,8 +83,14 @@ def cap_candidate_margin(result: dict) -> dict:
 
 async def judge_pair(*, brief: Path, anchor: Path, candidate: Path,
                      key_file: Path) -> dict:
-    result = await margin.judge_pair(
-        brief=brief, anchor=anchor, candidate=candidate, key_file=key_file,
-        system_prompt=PROMPT, protocol=PROTOCOL,
-    )
-    return cap_candidate_margin(result)
+    for attempt in range(2):
+        result = await margin.judge_pair(
+            brief=brief, anchor=anchor, candidate=candidate, key_file=key_file,
+            system_prompt=PROMPT, protocol=PROTOCOL,
+        )
+        try:
+            return cap_candidate_margin(result)
+        except ValueError:
+            if attempt:
+                raise
+    raise AssertionError("unreachable grounded judge retry state")
