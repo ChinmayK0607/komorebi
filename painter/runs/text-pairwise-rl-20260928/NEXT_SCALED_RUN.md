@@ -25,6 +25,14 @@ older validation scores cannot be spliced into the learning curve.
   This preserves 40 original train, 16 original validation, 16 original
   reserve; adds 186 complex train and 32 complex validation prompts. No new
   validation or reserve prompt may enter training or prompt tuning.
+- This rental pre-renders a deterministic **184-brief subset** to reserve GPU
+  time for gradients: all 72 original foundation/validation/reserve briefs,
+  all 32 complex validation briefs, and 80 of the 186 complex training briefs
+  ranked by SHA-256 of `scaled-text-baseline-20260929:<id>`. The run-pool
+  manifest SHA-256 is
+  `494e4d9d76313faaae12fc7676d355c5041d138886d9ae1375f8f537fb8bcea6`.
+  This selection is independent of model outputs; 106 other complex training
+  briefs remain in the public inventory for later runs.
 - Frozen opponent: first valid step-512 SFT painting for each brief sampled
   at seed 918200, then one retry at 918201 for missing/invalid canvases.
   Freeze canvas hashes and exclusions before training. Invalid SFT outputs
@@ -40,12 +48,12 @@ Use two 96-GB GPUs: both for baseline rendering; then one for 27B inference
 and one for training. The prior 19:34–22:20 UTC training window had inference
 mean utilization 99.82% and trainer mean 11.65% across 998 ten-second
 samples per GPU. Extra trainer GPUs therefore have no demonstrated value.
-Admit 24 simple, 16 intermediate, and 64 complex **training anchors** from
+Admit 12 simple, 8 intermediate, and 48 complex **training anchors** from
 the frozen pool; keep their order simple → intermediate → complex. Target
 32 updates, batch eight, group four, three turns, 8192 output tokens per
 turn, LoRA LR `1e-6`, and checkpoints every eight updates. This exposes at
 most 64 distinct prompt groups if the loader traverses once in order; the
-104 admitted anchors are a reusable inventory, not a claim that every one
+68 admitted anchors are a reusable inventory, not a claim that every one
 receives gradients in this short run.
 
 One rented node may cost **at most $25 in GPU charges**. Quote the actual
@@ -92,5 +100,8 @@ and all 290 rows loaded through `NativePaintingTaskset` in the pinned node
 runtime before restarting baseline rendering. The 2×96-GB rental began at
 2026-09-29 00:28:34 UTC at $2.38/hour with automatic removal at
 10:28:22 UTC, a quoted $23.80 maximum. At 15 minutes, the provider reported
-$0.59 GPU rental. Baseline v3 is in progress; the corrected action contract
-has **not yet produced a scored painting or an RL optimizer update**.
+$0.59 GPU rental. The initial 290-brief v3 baseline was stopped after early
+valid canvases showed throughput that projected beyond the time needed for
+RL on this rental. The 184-brief run subset loaded through the native taskset
+and is now rendering. The corrected action contract has produced valid SFT
+canvases but **no RL optimizer update or scored RL result** yet.

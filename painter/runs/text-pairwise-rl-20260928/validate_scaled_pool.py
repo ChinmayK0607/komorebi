@@ -17,14 +17,15 @@ from painter.native_painting import NativePaintingConfig, NativePaintingTaskset 
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--pool", type=Path, required=True)
+    parser.add_argument("--expected-count", type=int, default=290)
     args = parser.parse_args()
     pool = args.pool.resolve(strict=True)
     rows = json.loads(pool.read_text())["cases"]
     tasks = list(NativePaintingTaskset(NativePaintingConfig(
         root=str(pool.parent), manifest=str(pool), expected_count=len(rows),
         max_turns=3)).load())
-    if len(tasks) != 290:
-        raise ValueError(f"expected 290 native tasks, got {len(tasks)}")
+    if len(tasks) != args.expected_count:
+        raise ValueError(f"expected {args.expected_count} native tasks, got {len(tasks)}")
     print(json.dumps({"native_tasks_loaded": len(tasks)}))
 
 
