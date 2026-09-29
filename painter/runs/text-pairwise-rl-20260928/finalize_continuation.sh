@@ -41,6 +41,14 @@ PY
   --trainer-log "$RUN/async-output/$NAME/logs/attempt_1/trainer.log" \
   --gpu-csv "$RUN/logs/gpu-telemetry-20260929T163811Z.csv" \
   --output "$RUN/evidence/profile-continuation.json"
+START_ADAPTER="$($PY - "$RUN/continued-step16-download.json" <<'PY'
+import json,sys
+print(json.load(open(sys.argv[1]))['adapter_path'])
+PY
+)"
+env OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 "$PY" "$RUN/verify_adapter_delta.py" \
+  --start "$START_ADAPTER" --end "$ADAPTER" \
+  --output "$RUN/evidence/adapter-delta.json"
 "$PY" "$RUN/build_rollout_audit.py" \
   --stream "$STREAM" --run-root "$RUN" \
   --output "$RUN/evidence/rollout-audit"

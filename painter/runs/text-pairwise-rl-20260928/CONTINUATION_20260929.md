@@ -195,6 +195,22 @@ estimate. It warrants a post-run review of anchor quality and a stronger
 reference comparison before another RL campaign. The active reward and
 trainer stay unchanged for the frozen 50-step protocol.
 
+### Step-25 weight-movement probe, 2026-09-29 20:32 UTC
+
+The public, anonymously verified step-25 checkpoint is revision
+`708950957513bfa9985c11319f020d0bcd48d7ff`; its adapter tensor SHA-256
+is `c77383202d975d0c7b99ce84b8f394be5e477eaf3e5fd739a846da1278399129`.
+The [repeatable delta probe](verify_adapter_delta.py) compared it with the
+frozen public step-16 initializer. All 992 BF16 adapter tensors contain at
+least one changed value; 35,968,283 of 116,727,808 elements (30.8%) changed.
+The aggregate parameter L2 difference is 0.02839, or 0.000549 of the
+starting norm, with maximum absolute element change `2.86e-5`. This confirms
+nonzero checkpoint movement as well as nonzero logged gradients, but it does
+not establish an effective painting improvement. The first probe accidentally
+used unrestricted Torch CPU threads for about three minutes and was stopped;
+the verified result used one CPU thread and finished in under ten seconds.
+The finalizer will repeat the bounded probe for the final adapter.
+
 ## Evaluation and next decision
 
 Read the run-level reward, gradient, invalid/censored, rendering-time,
