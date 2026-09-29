@@ -9,7 +9,10 @@ MANIFEST="$RUN/anchors-all/grounded-pilot-train-manifest.json"
 RECEIPT="$RUN/init-adapter.json"
 SFT_PATH_FILE="$RUN/../photo-curriculum-rl-20260922/initial-adapter-path.txt"
 [[ "$(uname -s)" == Linux ]] || { echo 'Linux node required' >&2; exit 1; }
-for required in "$CONFIG" "$MANIFEST" "$RECEIPT" "$SFT_PATH_FILE"; do
+for required in "$CONFIG" "$MANIFEST" "$RECEIPT" "$SFT_PATH_FILE" \
+  "$RUN/run_from_sft.py" "$RUN/train_from_sft.py" \
+  "$RUN/vendor/integrations/watercolour/renderer.py" \
+  "$RUN/renderer-env/bin/python"; do
   [[ -f "$required" ]] || { echo "missing prepared input: $required" >&2; exit 1; }
 done
 [[ "${PAINTER_GPU_DEADLINE_UTC:-}" =~ ^[0-9]+$ ]] || {
