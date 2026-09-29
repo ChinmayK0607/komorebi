@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-STEP="${1:?usage: evaluate_checkpoint.sh STEP [8|16]}"
+STEP="${1:?usage: evaluate_checkpoint.sh STEP [8|16|all]}"
 COUNT="${2:-8}"
-[[ "$STEP" =~ ^[1-9][0-9]*$ && ( "$COUNT" == 8 || "$COUNT" == 16 ) ]] || {
-  echo 'step must be positive; count must be 8 or 16' >&2; exit 2;
+[[ "$STEP" =~ ^[1-9][0-9]*$ && ( "$COUNT" == 8 || "$COUNT" == 16 || "$COUNT" == all ) ]] || {
+  echo 'step must be positive; count must be 8, 16 or all' >&2; exit 2;
 }
 RUN="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
 REPO="$(cd "$RUN/../../.." && pwd -P)"
@@ -16,7 +16,8 @@ EVAL="$PRIME_ROOT/.venv/bin/eval"
 RUN_NAME="${PAINTER_RL_RUN_NAME:-text-pairwise-rl-20260928}"
 ADAPTER="$RUN/async-output/$RUN_NAME/artifacts/adapters/step_$STEP"
 KEY="${PAINTER_GATEWAY_ENV_FILE:-/root/painter/private/gateway.env}"
-OUT="$RUN/validation/$RUN_NAME-step-$STEP-n$COUNT"
+OUT="${PAINTER_CHECKPOINT_OUT:-$RUN/validation/$RUN_NAME-step-$STEP-n$COUNT}"
+MANIFEST="${PAINTER_VALIDATION_MANIFEST:-$RUN/anchors-frozen/validation-manifest.json}"
 [[ -f "$ADAPTER/adapter_model.safetensors" ]] || { echo 'checkpoint adapter missing' >&2; exit 1; }
 [[ -f "$ADAPTER/hf-upload.json" ]] || { echo 'checkpoint upload verification missing' >&2; exit 1; }
 [[ -r "$KEY" && ! -L "$KEY" && "$(stat -c %a "$KEY")" == 600 ]] || {
@@ -24,10 +25,11 @@ OUT="$RUN/validation/$RUN_NAME-step-$STEP-n$COUNT"
 }
 [[ ! -e "$OUT/comparison/summary.json" ]] || { echo 'validation already scored' >&2; exit 1; }
 mkdir -p "$OUT/logs"
-"$PY" - "$RUN/anchors-frozen/validation-manifest.json" "$OUT/cases.json" "$COUNT" <<'PY'
+"$PY" - "$MANIFEST" "$OUT/cases.json" "$COUNT" <<'PY'
 import json,sys
 from pathlib import Path
-source,target=map(Path,sys.argv[1:3]);count=int(sys.argv[3]);rows=json.loads(source.read_text())['cases']
+source,target=map(Path,sys.argv[1:3]);requested=sys.argv[3];rows=json.loads(source.read_text())['cases']
+count=len(rows) if requested=='all' else int(requested)
 if count==8:
     simple=[r for r in rows if r['family']=='simple'][:4]
     intermediate=[r for r in rows if r['family']=='intermediate'][:4]
@@ -40,7 +42,7 @@ PYTHONPATH="$REPO/painter" "$PY" "$REPO/painter/native_painting_eval.py" \
   --root "$REPO/painter" --manifest "$OUT/cases.json" \
   --policy-label "rl-step-$STEP" --model "rl-step-$STEP" \
   --output-dir "$OUT/eval" --config "$OUT/eval.toml" \
-  --expected-count "$COUNT" --max-turns 3 --max-tokens 8192 \
+  --expected-count "$(python3 -c 'import json,sys;print(len(json.load(open(sys.argv[1]))["cases"]))' "$OUT/cases.json")" --max-turns 3 --max-tokens 8192 \
   --rollout-timeout 1800 >"$OUT/logs/config.json"
 "$PY" - "$OUT/eval.toml" <<'PY'
 from pathlib import Path
@@ -51,7 +53,7 @@ if text.count(old)!=1:raise SystemExit('unexpected eval endpoint')
 path.write_text(text.replace(old,'base_url = "http://127.0.0.1:8100/v1"'))
 PY
 if [[ "${3:-}" == '--preflight' ]]; then echo 'VALIDATION_PREFLIGHT_READY'; exit 0; fi
-[[ $# -le 2 ]] || { echo 'usage: evaluate_checkpoint.sh STEP [8|16]' >&2; exit 2; }
+[[ $# -le 2 ]] || { echo 'usage: evaluate_checkpoint.sh STEP [8|16|all]' >&2; exit 2; }
 
 CUDA_HOME="$($PY -c 'import sysconfig; print(sysconfig.get_paths()["purelib"] + "/nvidia/cu13")')"
 export CUDA_HOME PATH="$PRIME_ROOT/.venv/bin:$CUDA_HOME/bin:$PATH"
