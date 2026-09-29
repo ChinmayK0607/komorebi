@@ -235,8 +235,13 @@ This is a small, selected calibration set, **not** a measured judge accuracy
 rate. It demonstrates that the cap catches two failures and misses one; the
 remaining ambiguity must not be hidden. The next pilot excludes the known
 weak `t600-333`, `t600-412`, `t600-576`, and `t600-580` opponents instead of
-assuming the new prompt alone cures them. The manually reviewed 40-case
-pilot pool has 12 simple, 10 intermediate and 18 complex briefs interleaved
+assuming the new prompt alone cures them. A positive-control swap on
+`t600-510`, putting the recognizable SFT acorn/leaf
+painting in the candidate position, scored **0.833** with both order views
+calling it `clear`; the cap therefore does not suppress this good example.
+The full receipt is in ignored
+`local-evidence/continued-live/grounded-positive-control.json`. The manually
+reviewed pilot pool has 12 simple, 10 intermediate and 18 complex briefs interleaved
 in a fixed order. The [source generator](curate_grounded_pool.py) verifies
 every brief and anchor hash; its path-independent content SHA-256 is
 `13ac0eebb3595fbd931ee7864e69101abdc8b7c9c1faccf11dfcd9bd495c6501`.
@@ -246,3 +251,25 @@ and the 119-case parent SHA-256 was
 `f32ac68bb524321d8f96271c28ef8fc227630276d56c49d594bf62417ab73923`.
 These are visual-review selections, not gold-standard paintings. A pilot
 must still report individual failures and same-seed held-out quality.
+
+The source 509 MB gzip evidence archive also exposed a setup bottleneck:
+the old rehydrator repeatedly sought into a compressed tar while verifying
+182 canvases, consuming over three minutes of one CPU and remaining
+unfinished. The [single-pass rehydrator](rehydrate_scaled_anchors.py) streams
+the pinned archive once, still checks the archive digest and every extracted
+brief/canvas digest, and completed a fresh Linux-node rehydration. Its output
+contained the expected 182 valid anchors, 119 train, 47 validation and 16
+reserve cases; the curated 40 content hash matched the value above. This
+changes setup time, not the old run's data or reward.
+
+The corrective-run Git bundle SHA-256
+`50b2a3d74355fac916b4ed5f5621a839fed9c0d9c70c36f544558aa6a73c2e1c`
+was transferred and independently verified on the old Linux node. A
+**non-training** preflight built the grounded config with pinned Prime,
+verified two GPU roles, and round-tripped the first RL task through the
+installed Verifiers serializer (`t600-510`, 31 wire fields). The tested
+initializer was public RL step 16; the actual pilot initializer is selected
+after held-out comparison. The preflight used the already installed renderer
+runtime and started no training, telemetry or GPU server. The live package
+install was restored to the old repository afterward; the active held-out
+evaluation uses its own pinned process and remains unchanged.

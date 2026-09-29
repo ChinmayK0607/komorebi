@@ -29,14 +29,32 @@ def sha(path: Path) -> str:
     return h.hexdigest()
 
 
-def member_bytes(archive: tarfile.TarFile, name: str) -> bytes:
-    member = archive.getmember(name)
-    if not member.isfile() or member.name != name:
-        raise ValueError(f"unsafe evidence member: {name}")
-    stream = archive.extractfile(member)
-    if stream is None:
-        raise ValueError(f"missing evidence member: {name}")
-    return stream.read()
+def member_bytes(members: dict[str, bytes], name: str) -> bytes:
+    try:
+        return members[name]
+    except KeyError:
+        raise FileNotFoundError(f"missing evidence member: {name}") from None
+
+
+def source_members(archive_path: Path) -> dict[str, bytes]:
+    """Read the pinned gzip archive once, avoiding repeated random decompression."""
+    selected: dict[str, bytes] = {}
+    metadata = {f"{POOL_ROOT}/pool.json", f"{ANCHOR_ROOT}/anchor-audit.json",
+                f"{ANCHOR_ROOT}/train-manifest.json"}
+    with tarfile.open(archive_path, "r|gz") as archive:
+        for member in archive:
+            name = member.name
+            if (name not in metadata
+                    and not name.startswith(f"{POOL_ROOT}/prompts/")
+                    and not name.startswith(f"{ANCHOR_ROOT}/anchors/")):
+                continue
+            if not member.isfile() or name in selected:
+                raise ValueError(f"unsafe or duplicate evidence member: {name}")
+            stream = archive.extractfile(member)
+            if stream is None:
+                raise ValueError(f"missing evidence member: {name}")
+            selected[name] = stream.read()
+    return selected
 
 
 def rehydrate(archive_path: Path, output: Path) -> dict:
@@ -46,50 +64,50 @@ def rehydrate(archive_path: Path, output: Path) -> dict:
         raise ValueError("source evidence archive hash mismatch")
     output.mkdir(parents=True)
     try:
-        with tarfile.open(archive_path, "r:gz") as archive:
-            pool_raw = member_bytes(archive, f"{POOL_ROOT}/pool.json")
-            if hashlib.sha256(pool_raw).hexdigest() != POOL_SHA256:
-                raise ValueError("184-brief pool manifest hash mismatch")
-            pool = json.loads(pool_raw)
-            audit = json.loads(member_bytes(archive, f"{ANCHOR_ROOT}/anchor-audit.json"))
-            old_raw = member_bytes(archive, f"{ANCHOR_ROOT}/train-manifest.json")
-            if hashlib.sha256(old_raw).hexdigest() != OLD_TRAIN_SHA256:
-                raise ValueError("old 68-row train manifest hash mismatch")
-            old_ids = {row["id"] for row in json.loads(old_raw)["rows"]}
-            decisions = {row["id"]: row for row in audit["decisions"]}
-            cases = pool["cases"]
-            if len(cases) != 184 or len(decisions) != 184 or len(old_ids) != 68:
-                raise ValueError("source curriculum count mismatch")
-            prompt_dir, anchor_dir = output / "prompts", output / "anchors"
-            prompt_dir.mkdir()
-            anchor_dir.mkdir()
-            valid: list[dict] = []
-            excluded: list[dict] = []
-            for case in cases:
-                ident = case["id"]
-                if ident not in decisions or not ident.startswith("t600-"):
-                    raise ValueError(f"case/audit mismatch: {ident}")
-                prompt = member_bytes(archive, f"{POOL_ROOT}/{case['reference']}")
-                if hashlib.sha256(prompt).hexdigest() != case["reference_sha256"]:
-                    raise ValueError(f"brief hash mismatch: {ident}")
-                prompt_path = prompt_dir / f"{ident}.txt"
-                prompt_path.write_bytes(prompt)
-                decision = decisions[ident]
-                if decision["reason"] != "valid":
-                    excluded.append({"id": ident, "split": case["split"],
-                                     "reason": decision["reason"]})
-                    continue
-                canvas = member_bytes(archive, f"{ANCHOR_ROOT}/anchors/{ident}.png")
-                expected = decision["anchor_sha256"]
-                if hashlib.sha256(canvas).hexdigest() != expected:
-                    raise ValueError(f"SFT anchor hash mismatch: {ident}")
-                canvas_path = anchor_dir / f"{ident}.png"
-                canvas_path.write_bytes(canvas)
-                valid.append({**case, "reference": str(prompt_path.resolve()),
-                              "opponent": str(canvas_path.resolve()),
-                              "opponent_sha256": expected,
-                              "opponent_source_group": case["source_group"],
-                              "mode": "fresh", "max_turns": 3})
+        members = source_members(archive_path)
+        pool_raw = member_bytes(members, f"{POOL_ROOT}/pool.json")
+        if hashlib.sha256(pool_raw).hexdigest() != POOL_SHA256:
+            raise ValueError("184-brief pool manifest hash mismatch")
+        pool = json.loads(pool_raw)
+        audit = json.loads(member_bytes(members, f"{ANCHOR_ROOT}/anchor-audit.json"))
+        old_raw = member_bytes(members, f"{ANCHOR_ROOT}/train-manifest.json")
+        if hashlib.sha256(old_raw).hexdigest() != OLD_TRAIN_SHA256:
+            raise ValueError("old 68-row train manifest hash mismatch")
+        old_ids = {row["id"] for row in json.loads(old_raw)["rows"]}
+        decisions = {row["id"]: row for row in audit["decisions"]}
+        cases = pool["cases"]
+        if len(cases) != 184 or len(decisions) != 184 or len(old_ids) != 68:
+            raise ValueError("source curriculum count mismatch")
+        prompt_dir, anchor_dir = output / "prompts", output / "anchors"
+        prompt_dir.mkdir()
+        anchor_dir.mkdir()
+        valid: list[dict] = []
+        excluded: list[dict] = []
+        for case in cases:
+            ident = case["id"]
+            if ident not in decisions or not ident.startswith("t600-"):
+                raise ValueError(f"case/audit mismatch: {ident}")
+            prompt = member_bytes(members, f"{POOL_ROOT}/{case['reference']}")
+            if hashlib.sha256(prompt).hexdigest() != case["reference_sha256"]:
+                raise ValueError(f"brief hash mismatch: {ident}")
+            prompt_path = prompt_dir / f"{ident}.txt"
+            prompt_path.write_bytes(prompt)
+            decision = decisions[ident]
+            if decision["reason"] != "valid":
+                excluded.append({"id": ident, "split": case["split"],
+                                 "reason": decision["reason"]})
+                continue
+            canvas = member_bytes(members, f"{ANCHOR_ROOT}/anchors/{ident}.png")
+            expected = decision["anchor_sha256"]
+            if hashlib.sha256(canvas).hexdigest() != expected:
+                raise ValueError(f"SFT anchor hash mismatch: {ident}")
+            canvas_path = anchor_dir / f"{ident}.png"
+            canvas_path.write_bytes(canvas)
+            valid.append({**case, "reference": str(prompt_path.resolve()),
+                          "opponent": str(canvas_path.resolve()),
+                          "opponent_sha256": expected,
+                          "opponent_source_group": case["source_group"],
+                          "mode": "fresh", "max_turns": 3})
         train = [row for row in valid if row["split"] == "train"]
         simple = [row for row in train if row["family"] == "simple"]
         intermediate = [row for row in train if row["family"] == "intermediate"]
