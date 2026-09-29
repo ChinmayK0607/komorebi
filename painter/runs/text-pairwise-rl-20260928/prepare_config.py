@@ -21,7 +21,8 @@ RUN_NAME = "text-pairwise-rl-20260928"
 def prepare(*, output: Path, model: Path, run_root: Path, manifest: Path,
             prime_root: Path | None = None, max_steps: int = 20,
             run_name: str = RUN_NAME, output_root: str = "rl-rollouts",
-            judge_protocol: str = "text-paint-sft-pairwise-v1") -> dict:
+            judge_protocol: str = "text-paint-sft-pairwise-v1",
+            expected_count: int = 40) -> dict:
     if not run_name or "/" in run_name or "\\" in run_name:
         raise ValueError("run_name must be a simple non-empty name")
     if not output_root or "/" in output_root or "\\" in output_root:
@@ -30,15 +31,15 @@ def prepare(*, output: Path, model: Path, run_root: Path, manifest: Path,
                               "text-paint-sft-pairwise-margin-v1"}:
         raise ValueError("unsupported text judge protocol")
     rows = json.loads(manifest.read_text())["rows"]
-    if len(rows) != 40 or len({row["id"] for row in rows}) != 40:
-        raise ValueError("expected 40 unique fixed-anchor training rows")
+    if len(rows) != expected_count or len({row["id"] for row in rows}) != expected_count:
+        raise ValueError(f"expected {expected_count} unique fixed-anchor training rows")
     if any(row.get("reference_kind") != "text" or not row.get("opponent_sha256") for row in rows):
         raise ValueError("every row must have a text brief and hashed fixed opponent")
     relative = str(manifest.resolve().relative_to(run_root.resolve()))
     config = photo.build_config(
         model=str(model), run_root=run_root, manifest=relative,
         max_steps=max_steps, checkpoint_interval=4, run_name=run_name,
-        expected_count=40, batch_size=8, group_size=4, max_turns=3,
+        expected_count=expected_count, batch_size=8, group_size=4, max_turns=3,
         max_completion_tokens=8192, learning_rate=1e-6,
         initial_inflight=8, max_inflight=8,
         adapter_revision="adf687e5b321514eda7be6eab050434fdc8e44ff",
@@ -83,6 +84,7 @@ def main() -> None:
     parser.add_argument("--run-name", default=RUN_NAME)
     parser.add_argument("--output-root", default="rl-rollouts")
     parser.add_argument("--judge-protocol", default="text-paint-sft-pairwise-v1")
+    parser.add_argument("--expected-count", type=int, default=40)
     args = parser.parse_args()
     print(json.dumps(prepare(**vars(args)), sort_keys=True))
 

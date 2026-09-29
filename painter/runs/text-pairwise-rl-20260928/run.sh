@@ -11,7 +11,7 @@ export PAINTER_GATEWAY_ENV_FILE="${PAINTER_GATEWAY_ENV_FILE:-/root/painter/priva
 export WATERCOLOUR_INIT_ADAPTER="$(tr -d '\r\n' < "$RUN/../photo-curriculum-rl-20260922/initial-adapter-path.txt")"
 export PAINTER_RL_RUN_NAME="${PAINTER_RL_RUN_NAME:-text-pairwise-rl-20260928}"
 export PAINTER_RL_CONFIG="${PAINTER_RL_CONFIG:-$RUN/native-rl.toml}"
-export PAINTER_RL_MANIFEST="$RUN/anchors-frozen/train-manifest.json"
+export PAINTER_RL_MANIFEST="${PAINTER_RL_MANIFEST:-$RUN/anchors-frozen/train-manifest.json}"
 export PAINTER_RL_MAX_STEPS="${PAINTER_RL_MAX_STEPS:-20}"
 export PAINTER_GPUS_PER_NODE=2 PAINTER_NUM_TRAIN_GPUS=1 PAINTER_NUM_INFER_GPUS=1
 export PAINTER_RL_ADAPTER_REVISION=adf687e5b321514eda7be6eab050434fdc8e44ff

@@ -49,11 +49,14 @@ def usable(canvas: Path) -> tuple[bool, str]:
 
 
 def build(*, pool: Path, eval_root: Path, output: Path,
-          retry_roots: tuple[Path, ...] = ()) -> dict:
+          retry_roots: tuple[Path, ...] = (),
+          train_counts: tuple[int, int, int] = (24, 16, 0),
+          expected_count: int = 72,
+          validation_expected: int = 16) -> dict:
     source = json.loads(pool.read_text())
     rows = source["cases"]
-    if len(rows) != 72 or len({row["id"] for row in rows}) != 72:
-        raise ValueError("expected the frozen 72-brief pool")
+    if len(rows) != expected_count or len({row["id"] for row in rows}) != expected_count:
+        raise ValueError(f"expected {expected_count} distinct briefs")
     files = []
     by_id: dict[str, dict[int, list[dict]]] = defaultdict(lambda: defaultdict(list))
     for attempt, source_root in enumerate((eval_root, *retry_roots)):
@@ -121,7 +124,9 @@ def build(*, pool: Path, eval_root: Path, output: Path,
                                 "max_turns": 3})
         decisions.append(decision)
     chosen = []
-    for family, needed in (("simple", 24), ("intermediate", 16)):
+    for family, needed in zip(("simple", "intermediate", "complex"), train_counts):
+        if not needed:
+            continue
         initial = [row for row in usable_rows if row["split"] == "train" and row["family"] == family]
         reserves = [row for row in usable_rows if row["split"] == "reserve" and row["family"] == family]
         replacements = reserves[:max(0, needed - len(initial))]
@@ -129,6 +134,8 @@ def build(*, pool: Path, eval_root: Path, output: Path,
         if len(initial) + len(replacements) < needed:
             raise ValueError(f"only {len(initial) + len(replacements)}/{needed} usable {family} train anchors")
     validation = [row for row in usable_rows if row["split"] == "validation"]
+    if sum(row["split"] == "validation" for row in rows) != validation_expected:
+        raise ValueError("unexpected validation split size")
     train = output / "train-manifest.json"
     val = output / "validation-manifest.json"
     train.write_text(json.dumps({"rows": chosen}, indent=2, sort_keys=True) + "\n")
@@ -136,7 +143,8 @@ def build(*, pool: Path, eval_root: Path, output: Path,
     audit = {"schema": "painter-text-anchor-freeze-v1", "pool_sha256": sha(pool),
              "eval_trace_files": [str(path) for path in files],
              "train_count": len(chosen), "validation_usable": len(validation),
-             "validation_expected": 16, "decisions": decisions,
+             "validation_expected": validation_expected, "decisions": decisions,
+             "train_counts_requested": dict(zip(("simple", "intermediate", "complex"), train_counts)),
              "train_manifest_sha256": sha(train), "validation_manifest_sha256": sha(val)}
     (output / "anchor-audit.json").write_text(json.dumps(audit, indent=2, sort_keys=True) + "\n")
     return audit
@@ -148,9 +156,17 @@ def main() -> None:
     parser.add_argument("--eval-root", type=Path, required=True)
     parser.add_argument("--retry-root", action="append", type=Path, default=[])
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--train-simple", type=int, default=24)
+    parser.add_argument("--train-intermediate", type=int, default=16)
+    parser.add_argument("--train-complex", type=int, default=0)
+    parser.add_argument("--expected-count", type=int, default=72)
+    parser.add_argument("--validation-expected", type=int, default=16)
     args = parser.parse_args()
     result = build(pool=args.pool, eval_root=args.eval_root, output=args.output,
-                   retry_roots=tuple(args.retry_root))
+                   retry_roots=tuple(args.retry_root),
+                   train_counts=(args.train_simple, args.train_intermediate,
+                                 args.train_complex), expected_count=args.expected_count,
+                   validation_expected=args.validation_expected)
     print(json.dumps({key: value for key, value in result.items() if key != "decisions"}, sort_keys=True))
 
 
