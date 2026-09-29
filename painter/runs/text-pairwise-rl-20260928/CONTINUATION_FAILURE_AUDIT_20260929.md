@@ -291,3 +291,68 @@ show why higher program validity cannot be promoted as visual improvement;
 the full 47-case comparison must govern checkpoint selection. The local
 render evidence is under the ignored `local-evidence/continued-live/partial-step30-spotcheck/`
 directory; the public archive will carry the underlying matched renders.
+
+## Final matched evaluation, publication, and release (2026-09-29 23:40 UTC)
+
+All **47 predeclared text-to-paint held-out briefs** completed under the
+same three-turn, 8,192-output-token, seed-918210, 600×600 p5.brush
+contract. There were **zero censored cases**. Frozen SFT step 512 and RL
+step 16 each rendered 41/47 valid canvases; step 30 rendered 43/47. In the
+original SFT-anchored two-order MiMo Flash protocol, step 30 scored a mean
+0.461 (18 wins, 20 losses, 9 ties against the SFT anchor). The paired
+step-30 minus step-16 anchor-score delta was +0.0496 across all 47, with
+a bootstrap 95% interval of **[-0.0443, +0.1436]**. On the **38 both-valid**
+step-16/step-30 cases, the delta was **-0.0022**, with interval
+[-0.0877, +0.0811]. Thus the anchor-score increase is principally a
+validity/recovery gain, not demonstrated quality gain among paintings that
+both policies could render. Compared with SFT anchor scores, the all-case
+step-30 delta was +0.0656, interval [-0.0337, +0.1596].
+
+Fresh *direct* candidate-vs-control paintings were also judged in both
+image orders, with invalid outputs counted instead of dropped. Step 30
+beat SFT in 28 cases, lost 16, tied 3: mean 0.5798, bootstrap interval
+[0.4929, 0.6649], 15/47 material order disagreements. Against RL step 16,
+it won 25, lost 15, tied 7: mean 0.5496, interval [0.4663, 0.6294],
+21/47 material order disagreements. Both intervals include an effective
+tie at 0.5. The direct results are suggestive, **not a conclusive visual
+promotion**, especially given the previously demonstrated judge hallucination
+and order sensitivity.
+
+Manual inspection of the saved 43 valid triplets found real gains and
+regressions. The step-30 octopus (`t600-377`) has more legible tentacles and
+underwater setting than SFT, though its limbs are segmented and mechanical.
+The twin-bell clock (`t600-439`) is much more recognizable than SFT. By
+contrast, the red combine harvester (`t600-309`) loses the step-16 machine's
+silhouette in a muddy wash. The table lamp (`t600-422`) becomes a broad,
+less coherent block than the SFT shade and base; the hand fan (`t600-516`)
+spills spokes and decorative triangles outside its intended arc; the
+sailboat (`t600-560`) weakens the SFT's clear hull and sail relationship.
+These are selected visible examples, not a new numerical human score. The
+[local full gallery](local-evidence/continued-live/continued-gallery/index.html)
+has all 47 cases, including invalid-output placeholders; its source tar was
+copied locally with SHA-256
+`f965f697a6e7f45ed75596bb257e5a7c29e0a23135826d265735dc5be9f40c9b`.
+
+The [public, anonymously hash-verified evidence archive](https://huggingface.co/datasets/CK0607/komorebi-painter-experiments/blob/1cc58226c67fee23542a427d4ec937b3df1012c2/runs/text-pairwise-rl-20260928/continued-step-30-all-20260929.tar.gz)
+is 651,541,297 bytes; its LFS SHA-256 is
+`4bd5365d3123f53d02862b61b899ead9bcea157df77b93c22cfe4e59d359f801`.
+It contains the frozen native metrics, raw rollout and judge receipts,
+completion/GPU profiles, matched scores and renders, and gallery. The
+[step-30 public adapter](https://huggingface.co/CK0607/qwen3.8-27b-brush-painting/tree/103663c9d0fa61cf1476435116966a2c9e68dcb4/text-pairwise-continue-20260929/step_30)
+has adapter-model LFS SHA-256
+`4e89d6165227f189f196134d3ce4286ea9ec60b24e6fd0ca28e47357eecb12a9`.
+The old run's preparation source commit was
+`ed234af61fd475c5bbef849fe90bd068fa7b820e`; its immutable config and
+curriculum files are in the evidence archive. The last Lium spend read was
+**$17.31** at $2.38/hour, below the $25 GPU ceiling; the final invoice is
+not available. Saved judge receipts report $0.13965 for 424 training-order
+views, not total provider billing. The exact old pod was deleted after
+public verification, and Lium returned an empty active-pod list.
+
+**Next decision:** use public RL step 16 as the corrective pilot initializer,
+because step 30 improves validity without a demonstrated both-valid quality
+gain and visibly regresses on several structural briefs. Freeze step 16,
+step 30, and SFT as matched controls. Test the reviewed 40-opponent pool and
+grounded margin protocol in a separate finite run; do not claim that the
+protocol is reliable until intermediate and final same-seed held-out
+paintings improve without new boundary or muddling failures.

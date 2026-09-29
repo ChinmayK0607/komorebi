@@ -21,6 +21,17 @@ validation. The old run's 47-case output and the new pilot's 16/47-case
 outputs must be compared validity-inclusively and visually, with censored
 renders reported, not dropped.
 
+The completed 47-case comparison selected **RL step 16** as initializer:
+`CK0607/qwen3.8-27b-brush-painting@ac4d3eda8e5925e2d23992cfdc1a63620ebde573`,
+prefix `text-pairwise-scaled-20260929/step_16`, adapter LFS SHA-256
+`e5211706a23b46354aa269f2b9cfaaaad1b64eef1012b433b1887c149f5a927c`.
+Step 30 improved valid-canvas count from 41/47 to 43/47 but did not improve
+the 38 both-valid paintings' SFT-anchored scores (paired delta −0.0022);
+direct step-30 versus step-16 preference had a 95% bootstrap interval
+crossing 0.5 and conspicuous muddy/structural regressions. The [final old-run
+audit](../text-pairwise-rl-20260928/CONTINUATION_FAILURE_AUDIT_20260929.md)
+records the full metrics, public hashes and visual examples.
+
 ## Immutable preparation
 
 - Base `Qwen/Qwen3.8-27B@1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0`.
