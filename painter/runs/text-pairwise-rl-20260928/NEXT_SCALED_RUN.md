@@ -271,3 +271,16 @@ settings):
 These are provisional human observations on eight of the predeclared sixteen
 cases, not a measured win rate. Invalid and censored cases will be reported
 separately after the full render and comparison finish.
+
+The step-16 training process exited after a verified public checkpoint.
+For the predeclared eight-case fixed train probe, a second evaluation worker
+was launched on the idle GPU 1 while the 47-case held-out worker continued
+on GPU 0. Its temporary node script differs from `evaluate_checkpoint.sh`
+only in `CUDA_VISIBLE_DEVICES=1` and endpoint port 8101; final SHA-256
+`7d3c5de76ce64412601cf98a7ee0ad41bb0d311fce4fbb66bd006775fde08737`.
+The selector initially
+mistook an explicit eight-case `all` manifest for the old balanced-subset
+shortcut and failed before starting inference. Commit `d6d1851` fixes this
+so `all` always honors the full supplied manifest. The worker was restarted
+with eight unique frozen probe IDs. This is evaluation of the same step-16
+adapter, not another training run.
