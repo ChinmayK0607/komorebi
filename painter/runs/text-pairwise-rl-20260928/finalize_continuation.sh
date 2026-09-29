@@ -41,6 +41,9 @@ PY
   --trainer-log "$RUN/async-output/$NAME/logs/attempt_1/trainer.log" \
   --gpu-csv "$RUN/logs/gpu-telemetry-20260929T163811Z.csv" \
   --output "$RUN/evidence/profile-continuation.json"
+"$PY" "$RUN/build_rollout_audit.py" \
+  --stream "$STREAM" --run-root "$RUN" \
+  --output "$RUN/evidence/rollout-audit"
 if [[ "$SCOPE" == all ]]; then
   MANIFEST="$ANCHORS"
   BASELINE="$CONTROL/validation-summary.json"
