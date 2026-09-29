@@ -16,10 +16,11 @@ def add_tree(files: dict[str, Path], root: Path, prefix: str) -> None:
     if not root.is_dir():
         raise FileNotFoundError(root)
     for path in root.rglob("*"):
+        relative = path.relative_to(root)
+        if any(part.startswith(".") or part in {"cache", "private", "credentials"}
+               for part in relative.parts):
+            continue
         if path.is_file() and path.suffix.lower() in TEXT_EXT | IMAGE_EXT:
-            relative = path.relative_to(root)
-            if any(part in {"cache", "private", "credentials"} for part in relative.parts):
-                continue
             files[f"{prefix}/{relative.as_posix()}"] = path
 
 
