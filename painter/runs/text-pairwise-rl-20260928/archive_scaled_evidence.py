@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import shutil
 from pathlib import Path
 
 from huggingface_hub import HfApi, hf_hub_download
@@ -12,6 +13,25 @@ from archive_evidence import REPO_ID, _add_dir, digest, package
 
 
 RUN_NAME = "text-pairwise-scaled-20260929"
+
+
+def ensure_screenable_stream(run: Path) -> None:
+    target = run / "evidence/stream-final.jsonl"
+    if target.is_file():
+        return
+    source = run / f"async-output/{RUN_NAME}/monitors/file/traces/stream/00000.jsonl"
+    compressed = source.with_suffix(source.suffix + ".zst")
+    if not source.is_file() and not compressed.is_file():
+        raise FileNotFoundError("Prime trace stream is absent")
+    target.parent.mkdir(parents=True, exist_ok=True)
+    if source.is_file():
+        shutil.copyfile(source, target)
+    else:
+        import zstandard  # type: ignore[import-not-found]
+        with compressed.open("rb") as stream, target.open("wb") as plain:
+            zstandard.ZstdDecompressor().copy_stream(stream, plain)
+    if not target.stat().st_size:
+        raise ValueError("empty Prime trace stream")
 
 
 def select(run: Path, eval_dirs: list[str]) -> dict[str, Path]:
@@ -87,6 +107,7 @@ def main() -> None:
     token = args.token_file
     if token.is_symlink() or not token.is_file() or token.stat().st_mode & 0o077:
         raise PermissionError("HF token file must be owner-only and not a symlink")
+    ensure_screenable_stream(args.run_root)
     report = package(select(args.run_root, args.eval_dir), args.output)
     api = HfApi(token=token.read_text().strip())
     if api.repo_info(REPO_ID, repo_type="dataset").private:
