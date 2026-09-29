@@ -41,3 +41,12 @@ receipts give no actual `cost` value. Several first turns exhaust the
 32,768-output-token ceiling without a valid canvas, which raises latency and
 spend without adding a useful demonstration. Compare a shorter first-turn
 reasoning ceiling in a future finite canary after this wave finishes.
+
+Inspecting the **turn sequences**, not just their final images, changes the
+training decision. `fresh-text-001` (kettle) has three distinct valid
+canvases, but turns 3–4 mainly shift marks and highlights without a clear
+quality gain over turn 2. `fresh-text-043` (baker) changes the oven/flame and
+peel placement, yet the requested two-hand grip remains unclear. Distinct
+canvases prove revision, not improvement. A multi-turn SFT set should include
+only visually positive transitions as positive correction targets; failed or
+neutral revisions remain labeled evidence rather than automatic targets.
