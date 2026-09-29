@@ -35,7 +35,8 @@ def prepare(*, output: Path, model: Path, run_root: Path, manifest: Path,
     if not output_root or "/" in output_root or "\\" in output_root:
         raise ValueError("output_root must be a simple non-empty name")
     if judge_protocol not in {"text-paint-sft-pairwise-v1",
-                              "text-paint-sft-pairwise-margin-v1"}:
+                              "text-paint-sft-pairwise-margin-v1",
+                              "text-paint-sft-pairwise-grounded-v1"}:
         raise ValueError("unsupported text judge protocol")
     if mode not in {"fresh", "recovered_policy"}:
         raise ValueError("unsupported policy initialization mode")

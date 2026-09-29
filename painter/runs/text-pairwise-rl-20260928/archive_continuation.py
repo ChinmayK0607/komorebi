@@ -119,6 +119,16 @@ def select(run: Path, evaluation: str, step: int) -> dict[str, Path]:
         files[name] = path
     for path in sorted((run / f"async-output/{RUN_NAME}/artifacts/adapters").glob("step_*/hf-upload.json")):
         files[path.relative_to(run).as_posix()] = path
+    for name in (
+        "evidence/grounded-calibration.json",
+        "continued-anchors/grounded-pilot-train-manifest.json",
+        "continued-anchors/grounded-pilot-train-manifest-audit.json",
+        "build_anchor_contact.py", "calibrate_grounded_judge.py",
+        "curate_grounded_pool.py", "download_public_adapter.py",
+    ):
+        path = run / name
+        if path.is_file():
+            files[name] = path
     for folder in (
         "continued-anchors/prompts", "continued-anchors/anchors",
         "rl-rollouts-continued",

@@ -135,5 +135,114 @@ excluded, with their exact IDs and hashes frozen before training.
    family before deciding whether to promote the new adapter or run more RL.
    Online reward alone cannot make this decision.
 
-No new training run is authorized by this audit. The current finite run
-continues unchanged while data generation on Codex Cloud CPU progresses.
+At the time of this live audit, no separate training run was authorized;
+the later user request stopped this run and authorized a corrective run.
+
+## Final frozen training trace and root-cause assessment
+
+The user stopped training after 33 admitted optimizer updates on 2026-09-29
+22:02 UTC. The statements in the preceding pre-stop section are historical;
+the new request authorizes a separate, finite corrective run after evaluation
+and pod release. The full frozen profile is
+`evidence/profile-continuation.json`; the generated-completion audit is
+`evidence/completion-failure-profile.json`. Both are preserved for the public
+evidence archive. The step-30 checkpoint is the latest completed public
+adapter; steps 31–33 changed the live optimizer but have no promoted adapter.
+
+All 33 admitted batches had nonzero gradient norms (mean 0.01482) at fixed
+LoRA LR 1e-6; mean mismatch KL was 0.000276 and 16 off-policy rollouts were
+dropped. Mean admitted-batch reward was 0.23643; the first 16 averaged
+0.23763 and the next 17 averaged 0.23529. The last five averaged 0.22708.
+This supplies no upward online trend. The model is being updated, so the
+failure is not a missing-gradient bug. The sequential curriculum changes
+from simple to complex, so these means are not a matched generalization test.
+
+The native saved stream includes 339 generated trajectories and 1,017 turns,
+including speculative/stale work. Only 107/339 first turns and 212/339 final
+canvases were valid. Invalid-turn error categories are **not mutually
+exclusive**: 209 syntax, 97 undefined symbol, 87 unknown brush name, 70
+render timeout, 53 type, 43 unsupported brush API, 14 invalid color, 7 blank
+or no canvas, and 3 premature finishes were counted. Only 7/1,017 generation
+calls stopped at the 8,192-token ceiling; the other 1,010 stopped normally.
+Thus simply raising max output tokens would address very few failures.
+Multi-turn revision recovers some invalid first attempts, but it spends
+inference time and rendering on a high rate of malformed programs.
+
+The 212 saved two-order judge receipts, again including speculative work,
+have a mean score of 0.35653 and mean order gap of 0.125; 39/212 have an
+order gap of at least one-third. Their provider-reported cost is $0.13965
+across 424 views, mean view latency 24.23 seconds. This is the recorded
+judge cost for saved receipts, not an independent billing statement and not
+the full cost of all provider attempts. The manual four-pair probe above
+shows that high scores can be awarded for weak paintings when their SFT
+opponent is still worse. The direction of the acorn/leaf low-score example
+was sensible; this is a calibration and anchor-selection failure, not proof
+that every judgment is inverted.
+
+The full 10-second GPU telemetry window covers 1,948 samples per card from
+2026-09-29 16:38:11 to 22:02:47 UTC (19,476 seconds). Inference GPU 0
+averaged **98.04%** utilization, with 97.95% of samples at or above 90%; the
+trainer GPU 1 averaged **12.37%**, with only 11.55% of samples at or above
+90%. Thirty-one trainer wait warnings averaged 482.6 seconds. Admitted-batch
+phase means were 300.2 seconds model generation, 96.2 seconds harness, and
+19.6 seconds scoring; phases overlap and should not be summed into wall time.
+The optimizer step mean was 565.4 seconds. The pipeline is inference-bound,
+not saturated as a two-GPU training system. Larger trainer GPUs or just more
+in-flight requests on that saturated inference card would not fix this.
+
+The low changed-pixel-coverage screen found seven suspicious frozen training
+anchors below 5% of their background color. All seven were visually checked:
+`t600-412` (baker) is nearly blank and `t600-580` (tidepool) lacks the
+requested coherent subject; both are unfit opponents. `t600-529` (padlock and
+key), `t600-442` (mantis), `t600-429` (deck chair), `t600-540`
+(shuttlecock), and `t600-541` (pencil/eraser) remain at least identifiable
+despite sparse or faint marks. Automatic coverage exclusion would therefore
+reject some usable simple paintings. The red-panda and snowy-crossroads
+anchors in the four-pair probe are further weak opponents that require
+manual curation or replacement before reuse.
+
+The leading failure modes are (1) unreliable JavaScript/brush API generation,
+causing expensive unproductive turns; (2) relative reward against uneven
+frozen SFT opponents, compounded by subject hallucination and judge order
+variance; and (3) inference/render latency leaving the trainer idle. The
+fixed 47-case held-out comparison is still needed to establish whether the
+step-30 paintings improved despite these flaws. The follow-up should freeze
+a manually curated opponent set, make visible subject/action fidelity an
+explicit condition for a *large* pairwise margin, and test a short stable
+curriculum against the same held-out cases at multiple checkpoints.
+
+### Grounded-margin calibration and curated opponent pool
+
+The proposed [grounded pairwise protocol](../../text_pairwise_grounded_judge.py)
+was tested on the **same four frozen saved pairs**, before using it for any
+training. It still makes two image-order calls to MiMo-v2.6-Flash. Each call
+must describe visible evidence and mark the candidate's defining-content
+fidelity as `clear`, `partial`, or `missing`. A partial candidate's single
+pairwise score is capped at 2/3; a missing candidate is capped at 1/2. This
+is a cap on preference strength, not another additive quality metric. The
+full model responses and image/prompt hashes are retained in ignored
+`local-evidence/continued-live/grounded-calibration.json` for publication
+with the corrective-run evidence.
+
+| Saved pair | Old score | Grounded raw | Grounded after cap | Manual interpretation |
+| --- | ---: | ---: | ---: | --- |
+| red panda `t600-333` | 1.000 | 0.750 | 0.667 | Both views called the candidate partial; high margin was reduced. |
+| baker `t600-412` | 0.917 | 0.833 | 0.667 | Both views called the candidate partial; high margin was reduced. |
+| snowy crossroads `t600-576` | 0.917 | 0.833 | 0.833 | **Still overconfident:** both views called it clear despite ambiguous buses/pedestrians. |
+| acorn/leaf `t600-510` | 0.250 | 0.167 | 0.167 | Lower candidate score agrees with manual preference for SFT. |
+
+This is a small, selected calibration set, **not** a measured judge accuracy
+rate. It demonstrates that the cap catches two failures and misses one; the
+remaining ambiguity must not be hidden. The next pilot excludes the known
+weak `t600-333`, `t600-412`, `t600-576`, and `t600-580` opponents instead of
+assuming the new prompt alone cures them. The manually reviewed 40-case
+pilot pool has 12 simple, 10 intermediate and 18 complex briefs interleaved
+in a fixed order. The [source generator](curate_grounded_pool.py) verifies
+every brief and anchor hash; its path-independent content SHA-256 is
+`13ac0eebb3595fbd931ee7864e69101abdc8b7c9c1faccf11dfcd9bd495c6501`.
+On the source node its path-dependent manifest SHA-256 was
+`d005b1d86277c1db92107f555c6ff143710501c72bea5adaf8668f7f4b704693`
+and the 119-case parent SHA-256 was
+`f32ac68bb524321d8f96271c28ef8fc227630276d56c49d594bf62417ab73923`.
+These are visual-review selections, not gold-standard paintings. A pilot
+must still report individual failures and same-seed held-out quality.

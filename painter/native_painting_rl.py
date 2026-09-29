@@ -464,6 +464,8 @@ class NativePaintingRLTask(vf.Task[NativePaintingRLData, vf.State, vf.TaskConfig
             try:
                 if text_protocol == "text-paint-sft-pairwise-margin-v1":
                     from painter.text_pairwise_margin_judge import judge_pair
+                elif text_protocol == "text-paint-sft-pairwise-grounded-v1":
+                    from painter.text_pairwise_grounded_judge import judge_pair
                 elif text_protocol == "text-paint-sft-pairwise-v1":
                     from painter.text_pairwise_judge import judge_pair
                 else:
@@ -471,6 +473,8 @@ class NativePaintingRLTask(vf.Task[NativePaintingRLData, vf.State, vf.TaskConfig
             except ImportError:
                 if text_protocol == "text-paint-sft-pairwise-margin-v1":
                     from text_pairwise_margin_judge import judge_pair
+                elif text_protocol == "text-paint-sft-pairwise-grounded-v1":
+                    from text_pairwise_grounded_judge import judge_pair
                 elif text_protocol == "text-paint-sft-pairwise-v1":
                     from text_pairwise_judge import judge_pair
                 else:

@@ -15,12 +15,14 @@ if str(ROOT) not in sys.path:
 from painter.native_painting_report import _trace_data, read_traces  # noqa: E402
 from painter.text_pairwise_judge import judge_pair as binary_judge_pair  # noqa: E402
 from painter.text_pairwise_margin_judge import judge_pair as margin_judge_pair  # noqa: E402
+from painter.text_pairwise_grounded_judge import judge_pair as grounded_judge_pair  # noqa: E402
 
 
 async def score(manifest: Path, eval_root: Path, output: Path, key_file: Path,
                 protocol: str = "text-paint-sft-pairwise-v1") -> dict:
     judges = {"text-paint-sft-pairwise-v1": binary_judge_pair,
-              "text-paint-sft-pairwise-margin-v1": margin_judge_pair}
+              "text-paint-sft-pairwise-margin-v1": margin_judge_pair,
+              "text-paint-sft-pairwise-grounded-v1": grounded_judge_pair}
     if protocol not in judges:
         raise ValueError(f"unsupported judge protocol: {protocol}")
     judge_pair = judges[protocol]
