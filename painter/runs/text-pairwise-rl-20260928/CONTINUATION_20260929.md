@@ -106,6 +106,37 @@ status summaries. A gallery-only dry run found all 41 expected images for
 each control. This fixes evaluation preparation only; it does not alter the
 active trainer, rollout reward, or data split.
 
+### Step-16 reward-curve snapshot, 2026-09-29 19:01 UTC
+
+The first 16 admitted optimizer-batch means average **0.238**. Steps 1–8
+average **0.230**; steps 9–16 average **0.245**, a 0.014 difference amid
+single-step values from 0.083 to 0.365. This is **not a clear upward trend**,
+and curriculum composition changes across steps. The latest five-step trailing
+mean was 0.271, while step 16 itself was 0.229. Across 173 saved generated
+traces dispatched through step 16, 113 (65.3%) ended with a valid canvas;
+those traces include speculative or stale work and are not the optimizer's
+batch denominator. Their family counts are 89 simple, 59 intermediate and 25
+complex. All 16 updates had nonzero gradient norms; no held-out evaluation
+has yet run.
+
+The [local curve](local-evidence/continued-live/live-step16-curve/index.html)
+plots the admitted-batch reward and a separate generation-dispatch validity
+series. The [public, anonymously hash-verified snapshot](https://huggingface.co/datasets/CK0607/komorebi-painter-experiments/blob/4417b6a47d4f861ddf43fd01b7333bb407d36287/runs/text-pairwise-rl-20260928/continued-live-step16-curve-20260929.tar.gz)
+contains the 1,758-line raw metrics snapshot, CSV, JSON, HTML, SVG and source
+script. Its archive SHA-256 is
+`c3ca4add03458b20ce1e6b2337c5b636fccff57d4fb628d885120974369c141a`;
+the metric-file SHA-256 is
+`34f39c3c6dd84109045e972bdbea1211879af3fcaa579a95dc4506baace91c31`.
+The saved-trace snapshot used to calculate the separate validity series has
+SHA-256 `822fb363b6f214afe8a9cbb37d1c27954bde43129b5216a6743250d585c2fa41`;
+the full native stream is reserved for the final screened archive. The step-15
+adapter is public and anonymously verified at revision
+`2da88c7eac37156f56d9f2b47e3ab2823349485a`, SHA-256
+`6d5a3d2f1fd58b32853fc6c6501751dbfb7e8c1c878d04a621defe09d4fd3d19`.
+Lium reported $6.23 accrued GPU rental near this snapshot. Keep the finite
+run going; compare a final checkpoint with both frozen controls on the same
+47 held-out briefs before claiming visual improvement.
+
 ## Evaluation and next decision
 
 Read the run-level reward, gradient, invalid/censored, rendering-time,
