@@ -57,6 +57,27 @@ before retesting hardware acceleration; setting an env var *inside* an
 already running compute-only container is insufficient to mount missing
 driver components.
 
+Reading the installed Lium CLI showed that `--env` is applied to the
+image-based template creation path, not to the default-template path. A
+third short RTX4090 rental used the same image via that path and did receive
+the requested variable. With a temporary EGL vendor JSON, `eglinfo` reported
+the NVIDIA 4090 on the surfaceless platform. However, sandboxed Chromium
+could not launch on that host because the unprivileged browser account could
+not create a user namespace. Browser-only, no-sandbox identity probes were
+also rejected: ANGLE fell back to SwiftShader, while full Chromium with
+direct EGL/ANGLE flags failed to create a WebGL context. No accelerated
+p5.brush output was produced, and the diagnostic browser without a sandbox
+was never connected to training or evaluation. The graphics pod was removed
+at approximately $0.05. Its local ignored diagnostic archive SHA-256 is
+`460a8821087ae7fa8e171158d75b04020b8a57b2c9ab70314f82387dcb82a498`.
+
+**Current conclusion:** four concurrent software renders give a measured
+~2× batch-throughput gain, but single-paint latency and 180-second failures
+are unresolved. Hardware acceleration cannot be claimed from `nvidia-smi`
+or `eglinfo` alone; a sandboxed Chromium paint must pass live GPU identity,
+pixel-fidelity, and timing checks before promotion. The pinned renderer
+remains the production path.
+
 Four concurrent copies of p060, rendered with the locked renderer and
 identical source/seed, all succeeded in 117.7–125.1 s. Four sequential
 renderings at the measured 62.8 s each would take about 251 s, so the
