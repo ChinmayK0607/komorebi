@@ -144,12 +144,30 @@ def _chart(rows: list[dict]) -> str:
 
     def poly(field: str, color: str, low: float, high: float,
              *, dash: str = "", width_px: int = 3) -> str:
-        points = " ".join(f"{x(row['step']):.1f},{y(row[field], low, high):.1f}"
-                          for row in rows if row.get(field) is not None)
-        return (f'<polyline points="{points}" fill="none" stroke="{color}" '
-                f'stroke-width="{width_px}" stroke-linejoin="round" '
-                f'stroke-linecap="round"'
-                + (f' stroke-dasharray="{dash}"' if dash else "") + '/>')
+        segments: list[list[tuple[float, float]]] = []
+        current: list[tuple[float, float]] = []
+        for row in rows:
+            value = row.get(field)
+            if value is None:
+                if current:
+                    segments.append(current)
+                    current = []
+            else:
+                current.append((x(row["step"]), y(value, low, high)))
+        if current:
+            segments.append(current)
+        marks = []
+        for segment in segments:
+            if len(segment) == 1:
+                xx, yy = segment[0]
+                marks.append(f'<circle cx="{xx:.1f}" cy="{yy:.1f}" r="4" fill="{color}"/>')
+            else:
+                points = " ".join(f"{xx:.1f},{yy:.1f}" for xx, yy in segment)
+                marks.append(f'<polyline points="{points}" fill="none" stroke="{color}" '
+                             f'stroke-width="{width_px}" stroke-linejoin="round" '
+                             f'stroke-linecap="round"'
+                             + (f' stroke-dasharray="{dash}"' if dash else "") + '/>')
+        return "\n".join(marks)
 
     parts = [f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {width} {height}" '
              'role="img" aria-label="RL reward and generated canvas validity by optimizer step">',
@@ -176,8 +194,8 @@ def _chart(rows: list[dict]) -> str:
     parts.extend([
         '<text x="80" y="405" class="muted">Blue: admitted reward · Orange: trailing 5-step mean '
         '· Dashed: tie</text>',
-        '<text x="80" y="440" class="muted">Purple: final-canvas validity among saved '
-        'generated traces (different denominator)</text>',
+        '<text x="80" y="440" class="muted">Purple: final-canvas validity by generation '
+        'dispatch step (different episodes and denominator)</text>',
     ])
     tick_step = max(1, math.ceil(max_step / 10))
     for step in range(1, max_step + 1):
@@ -186,7 +204,8 @@ def _chart(rows: list[dict]) -> str:
         xx = x(step)
         parts.append(f'<text x="{xx:.1f}" y="{valid_bottom+27}" text-anchor="middle" '
                      f'class="muted">{step}</text>')
-    parts.append('<text x="620" y="682" text-anchor="middle" class="muted">Optimizer step</text>')
+    parts.append('<text x="620" y="682" text-anchor="middle" class="muted">Step index '
+                 '(optimizer above; generation dispatch below)</text>')
     parts.append('</svg>')
     return "\n".join(parts) + "\n"
 
