@@ -1,7 +1,8 @@
 # Text-paint continuation: live failure audit
 
-This is a **live diagnostic**, not a held-out result. The frozen 50-update
-continuation and matched SFT/step-16 controls are in
+This began as a live diagnostic and now records the **user-stopped 33-update**
+continuation, before the held-out evaluation finishes. The frozen 50-update
+plan and matched SFT/step-16 controls are in
 [CONTINUATION_20260929.md](CONTINUATION_20260929.md). The full post-run audit
 must replace the numbers below with final metrics, review the 47 same-seed
 held-out paintings, and record GPU cost and public evidence hashes.
@@ -74,6 +75,43 @@ The two-order MiMo Flash judge disagreed by at least one-third on 32 of 171
 saved valid judged canvases. This is a confidence/reliability warning, not
 a human-validated error rate. Its receipts reported ~$0.114 for the 342
 order views in this snapshot; rental and judge costs must remain separate.
+
+## User-stopped step-33 diagnosis (2026-09-29 22:02 UTC)
+
+The launcher received `SIGINT` and exited with code 130; the trainer and its
+inference workers stopped. The latest completed public, nonprivate,
+hash-verified adapter is step 30. The final 33 admitted optimizer-batch means
+average **0.23643**, with first 16 at **0.23763** and the following 17 at
+**0.23529**; the last batch was **0.17708** and the last-five mean **0.22708**.
+The frozen native-metrics SHA-256 is
+`ec5c3301eb5badb6d6a63607383ff6a1416fe67d05b7b27bd26ebd6283499f95`.
+There is no positive online trend, though changing prompt mix still prevents
+reading this as a matched quality curve. Step-30 versus frozen-control
+evaluation is underway and remains the decisive test.
+
+A manually inspected four-pair probe is preserved under
+`local-evidence/continued-live/live-pair-review/` (source tar SHA-256
+`d641b258cf39e94c5602d1a8adf961dab83a8d4f560d7891564ef9255c06f8a6`).
+These are **saved generated traces, including possible speculative work**,
+not a random sample of admitted updates. Their score and visible result expose
+how the relative reward can fail:
+
+| Brief | Saved candidate score vs SFT | Manual visual finding |
+| --- | ---: | --- |
+| `t600-333`, red panda on bough | 1.000 | The SFT anchor is fragmented; the candidate has more organic washes but the head, masked face, folded paws, and ringed tail remain ambiguous. Both are poor references for a decisive “clearly better” margin. The two-order judge called the candidate a clear, anatomically complete panda, despite noting some blurred features. |
+| `t600-412`, baker shaping dough | 0.917 | The SFT anchor is nearly blank. The candidate adds a torso/workbench but no clearly cupped hands, round loaf, basket, scraper, or baked baguettes. A large relative win does not mean the painting depicts the required action. |
+| `t600-576`, two buses at snowy crossroads | 0.917 | The candidate improves dark street geometry over its faint SFT anchor, but the two separate turning buses and tiny pedestrians remain hard to identify; detail and contrast dominate the impression. |
+| `t600-510`, acorn and oak leaf | 0.250 | The SFT anchor preserves an acorn and lobed leaf more clearly; the lower candidate score is directionally sensible here. |
+
+These observations do not prove the judge is always wrong. They identify a
+specific promotion failure: low-quality opponents plus overconfident
+subject-recognition claims can grant large relative advantages to paintings
+that still omit defining content. The next reward protocol needs an
+**absolute visible-subject check inside the pairwise judgment** (or an
+equivalent margin cap), calibrated on these failure pairs and genuinely good
+counterexamples before any new RL. Avoid adding a pile of independent
+detail, geometry, and style bonuses. Weak opponents should be replaced or
+excluded, with their exact IDs and hashes frozen before training.
 
 ## Changes to test only after the frozen run
 

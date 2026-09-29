@@ -120,7 +120,8 @@ def select(run: Path, evaluation: str, step: int) -> dict[str, Path]:
     for path in sorted((run / f"async-output/{RUN_NAME}/artifacts/adapters").glob("step_*/hf-upload.json")):
         files[path.relative_to(run).as_posix()] = path
     for folder in (
-        "continued-anchors/prompts", "rl-rollouts-continued",
+        "continued-anchors/prompts", "continued-anchors/anchors",
+        "rl-rollouts-continued",
         f"validation/{evaluation}", f"async-output/{RUN_NAME}/monitors",
         f"async-output/{RUN_NAME}/logs", "evidence/continued-gallery",
         "evidence/continued-canvases", "evidence/reward-curve",
