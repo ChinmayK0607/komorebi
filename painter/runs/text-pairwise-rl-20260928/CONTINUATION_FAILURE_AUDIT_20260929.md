@@ -48,6 +48,17 @@ trainer capacity alone would waste rental. [Renderer profiling](RENDER_PROFILE_2
 already found ~2× batch throughput with four software render workers but no
 safe hardware-accelerated p5.brush canvas on the tested provider containers.
 
+An experimental [read-only syntax preflight](profile_js_preflight.py) used
+Playwright's bundled Node parser (`--check`, no sketch execution) on a
+deterministic sample of 16 saved programs while the production renderer was
+untouched. It rejected all three programs whose saved Chromium receipts
+reported syntax errors and rejected none of the valid renders in that small
+sample. The gross renderer work potentially avoided was only **3.8 seconds**
+over those 16 cases, before accounting for parallelism. This is a useful
+fail-fast/feedback improvement, not a solution to model-generation time or
+the 180-second render timeouts. A full saved-program profile and an
+unchanged-pixel integration test remain necessary before adopting it.
+
 The two-order MiMo Flash judge disagreed by at least one-third on 32 of 171
 saved valid judged canvases. This is a confidence/reliability warning, not
 a human-validated error rate. Its receipts reported ~$0.114 for the 342
