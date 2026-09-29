@@ -96,6 +96,16 @@ The step-5 checkpoint is publicly uploaded and anonymously hash-verified at
 HF revision `c3337e02b995f3b97e219232f22f882498a4b55f`; its adapter
 SHA-256 is `f860a7a32ca731a482bc79428477b4d804c5e71704c48c1f646c027b1b87b3b2`.
 
+At 18:08 UTC a post-run evaluation dry run found that the prior public
+archive's native SFT traces retain absolute canvas paths from the released
+node. The files are present in the same archive's portable, hash-verified
+gallery, but following the stale paths would falsely mark 41 valid SFT cases
+invalid. The post-run direct comparison now reads both SFT and step-16
+paintings from those portable gallery images, with the original 47-case
+status summaries. A gallery-only dry run found all 41 expected images for
+each control. This fixes evaluation preparation only; it does not alter the
+active trainer, rollout reward, or data split.
+
 ## Evaluation and next decision
 
 Read the run-level reward, gradient, invalid/censored, rendering-time,

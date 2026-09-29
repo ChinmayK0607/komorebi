@@ -28,7 +28,6 @@ if [[ "$SCOPE" == all ]]; then
   MANIFEST="$ANCHORS"
   BASELINE="$CONTROL/validation-summary.json"
   PRIOR_BASELINE="$PRIOR_SUMMARY"
-  EXPECTED=47
 else
   MANIFEST="$RUN/prepared/continued-validation-balanced16.json"
   BASELINE="$RUN/validation/$NAME-step-$STEP-balanced16/baseline-subset.json"
@@ -53,7 +52,6 @@ PY
   "$PY" "$RUN/control_sets.py" subset \
     --summary "$PRIOR_SUMMARY" \
     --manifest "$MANIFEST" --output "$PRIOR_BASELINE"
-  EXPECTED=16
 fi
 OUT="$RUN/validation/$NAME-step-$STEP-$SCOPE"
 env PAINTER_RL_RUN_NAME="$NAME" PAINTER_VALIDATION_MANIFEST="$MANIFEST" \
@@ -65,18 +63,21 @@ env PAINTER_RL_RUN_NAME="$NAME" PAINTER_VALIDATION_MANIFEST="$MANIFEST" \
   --candidate "$OUT/comparison/summary.json" --output "$OUT/analysis.json"
 "$PY" "$RUN/analyze_scaled.py" --baseline "$PRIOR_BASELINE" \
   --candidate "$OUT/comparison/summary.json" --output "$OUT/analysis-vs-step16.json"
-"$PY" "$RUN/score_direct_validation.py" --manifest "$MANIFEST" \
-  --sft-root "$CONTROL/eval" --rl-root "$OUT/eval" \
-  --output "$OUT/direct-sft-versus-rl" --key-file "$KEY" \
-  --expected-count "$EXPECTED"
 if [[ "$SCOPE" == all ]]; then
-  "$PY" "$RUN/score_direct_step16.py" --manifest "$MANIFEST" \
-    --prior-summary "$PRIOR_SUMMARY" --prior-images "$PRIOR_IMAGES" \
-    --final-root "$OUT/eval" --output "$OUT/direct-step16-versus-final" \
+  "$PY" "$RUN/score_direct_static.py" --manifest "$MANIFEST" \
+    --baseline-label SFT --baseline-summary "$BASELINE" \
+    --baseline-images "$PRIOR_IMAGES" --final-root "$OUT/eval" \
+    --output "$OUT/direct-sft-versus-final" --key-file "$KEY"
+  "$PY" "$RUN/score_direct_static.py" --manifest "$MANIFEST" \
+    --baseline-label RL-step-16 --baseline-summary "$PRIOR_SUMMARY" \
+    --baseline-images "$PRIOR_IMAGES" --final-root "$OUT/eval" \
+    --output "$OUT/direct-step16-versus-final" \
     --key-file "$KEY"
 fi
 "$PY" "$RUN/build_checkpoint_gallery.py" --manifest "$MANIFEST" \
-  --static "RL-step-16:$PRIOR_IMAGES" --eval "RL-step-$STEP:$OUT/eval" \
+  --static "SFT:$PRIOR_IMAGES" --static "RL-step-16:$PRIOR_IMAGES" \
+  --eval "RL-step-$STEP:$OUT/eval" \
+  --summary "SFT:$BASELINE" \
   --summary "RL-step-16:$PRIOR_BASELINE" \
   --summary "RL-step-$STEP:$OUT/comparison/summary.json" \
   --output "$RUN/evidence/continued-gallery"

@@ -1,4 +1,4 @@
-"""Directly compare the prior public step-16 paintings with this continuation."""
+"""Directly compare a public static control with this continuation."""
 
 from __future__ import annotations
 
@@ -16,16 +16,19 @@ except ImportError:
     from text_pairwise_margin_judge import judge_pair
 
 
-async def score(manifest: Path, prior_summary: Path, prior_images: Path,
-                final_root: Path, output: Path, key_file: Path) -> dict:
+async def score(manifest: Path, baseline_label: str, baseline_summary: Path,
+                baseline_images: Path, final_root: Path, output: Path,
+                key_file: Path) -> dict:
+    if baseline_label not in {"SFT", "RL-step-16"}:
+        raise ValueError("unsupported static control label")
     cases = json.loads(manifest.read_text())["cases"]
     ids = {row["id"] for row in cases}
     if len(cases) != 47 or len(ids) != 47:
         raise ValueError("expected 47 distinct frozen validation briefs")
-    prior_rows = json.loads(prior_summary.read_text())["rows"]
-    prior = {row["id"]: row for row in prior_rows}
-    if set(prior) != ids or len(prior_rows) != len(prior):
-        raise ValueError("prior step-16 control IDs differ from frozen validation")
+    baseline_rows = json.loads(baseline_summary.read_text())["rows"]
+    baseline = {row["id"]: row for row in baseline_rows}
+    if set(baseline) != ids or len(baseline_rows) != len(baseline):
+        raise ValueError("static control IDs differ from frozen validation")
     current = policy_traces(final_root, ids)
     output.mkdir(parents=True, exist_ok=False)
     limit = asyncio.Semaphore(8)
@@ -41,19 +44,19 @@ async def score(manifest: Path, prior_summary: Path, prior_images: Path,
         final_trace = current[ident][0]
         if final_trace.get("service_failure"):
             return {**record, "status": "censored", "reason": "service_failure"}
-        old_status = prior[ident]["status"]
+        old_status = baseline[ident]["status"]
         if old_status not in {"scored", "model_invalid"}:
-            return {**record, "status": "censored", "reason": "prior_control_status"}
-        old = (prior_images / f"{ident}-RL-step-16.png"
+            return {**record, "status": "censored", "reason": "baseline_control_status"}
+        old = (baseline_images / f"{ident}-{baseline_label}.png"
                if old_status == "scored" else None)
         if old is not None and (not old.is_file() or old.is_symlink()):
             raise FileNotFoundError(old)
         new = canvas(final_trace)
-        record.update(prior_valid=old is not None, final_valid=new is not None)
+        record.update(baseline_valid=old is not None, final_valid=new is not None)
         if old is None and new is None:
             return {**record, "status": "both_invalid", "score": 0.5}
         if old is None:
-            return {**record, "status": "prior_invalid", "score": 1.0}
+            return {**record, "status": "baseline_invalid", "score": 1.0}
         if new is None:
             return {**record, "status": "final_invalid", "score": 0.0}
         async with limit:
@@ -79,13 +82,14 @@ async def score(manifest: Path, prior_summary: Path, prior_images: Path,
                       for _ in range(10000))
         interval = [boot[250], boot[9749]]
     summary = {
-        "schema": "painter-direct-step16-validation-v1",
+        "schema": "painter-direct-static-validation-v1",
         "protocol": "text-paint-sft-pairwise-margin-v1",
         "manifest_sha256": sha(manifest),
-        "prior_summary_sha256": sha(prior_summary),
+        "baseline_label": baseline_label,
+        "baseline_summary_sha256": sha(baseline_summary),
         "expected": 47, "comparable": len(comparable),
         "censored": 47 - len(comparable),
-        "prior_valid": sum(row.get("prior_valid", False) for row in rows),
+        "baseline_valid": sum(row.get("baseline_valid", False) for row in rows),
         "final_valid": sum(row.get("final_valid", False) for row in rows),
         "both_valid": len(visual),
         "mean_pairwise_score": sum(scores) / len(scores) if scores else None,
@@ -107,8 +111,10 @@ async def score(manifest: Path, prior_summary: Path, prior_images: Path,
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--manifest", type=Path, required=True)
-    parser.add_argument("--prior-summary", type=Path, required=True)
-    parser.add_argument("--prior-images", type=Path, required=True)
+    parser.add_argument("--baseline-label", required=True,
+                        choices=("SFT", "RL-step-16"))
+    parser.add_argument("--baseline-summary", type=Path, required=True)
+    parser.add_argument("--baseline-images", type=Path, required=True)
     parser.add_argument("--final-root", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--key-file", type=Path, required=True)
