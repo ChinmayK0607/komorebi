@@ -47,6 +47,7 @@ def select(run: Path, eval_dirs: list[str]) -> dict[str, Path]:
         "prepared/scaled-run-pool/pool.json", "prepared/scaled-control-cases.json",
         "prepared/scaled-anchors-path.txt", "judge-canary-scaled/summary.json",
         "judge-canary-scaled/receipt.json", "evidence/stream-final.jsonl",
+        "evidence/rollout-audit.json",
         f"{anchors.name}/train-manifest.json",
         f"{anchors.name}/validation-manifest.json",
         f"{anchors.name}/reserve-manifest.json",
