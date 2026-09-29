@@ -200,3 +200,13 @@ confirmation. After the finite training/evaluation and public hash-verified
 uploads, release the rental rather than leave GPU compute running. If the
 result is still mixed, do a deeper failure analysis from the complete new
 rollouts before buying another run.
+
+Before seeing a scaled RL checkpoint, the final evaluation was extended to
+judge the *fresh SFT canvas directly against the RL canvas* for every case
+rendered by both policies, in both image orders. This is separate from the
+frozen-anchor reward and will report validity, visual-only preference,
+order disagreement, and a prompt-bootstrap interval. The direct comparison
+uses the same images and judge model, so it adds no model-generation GPU
+work. It is intended to make an apparent anchor-relative improvement easier
+to confirm or reject; it does not license selecting a different checkpoint
+after looking at the held-out results.
