@@ -267,8 +267,12 @@ settings):
 | `t600-341` | RL invalid | All three turns hit the same JavaScript runtime `Symbol(instance)` error involving numeric `16`; no canvas. |
 | `t600-349` | RL invalid | All three turns hit `Invalid color string`; no canvas. |
 | `t600-323` | RL timeout | All three turns exceeded the 180-second render limit; no canvas. |
+| `t600-423` veiled chameleon | weak tie | Both barely convey the anatomy and omit a convincing curled tail and gripping feet; RL changes pose without clear improvement. |
+| `t600-425` golden seahorse | RL valid; SFT invalid | The fresh SFT produced no canvas. RL draws a recognizable curled seahorse but it is greenish rather than gold and lacks much of the requested texture. |
+| `t600-426` yellow stapler | SFT clearly | SFT shows the raised curved top, dark jaw, base, papers and lavender desk. RL flattens the stapler and weakens the three-quarter view. |
+| `t600-433` hand-crank drill | RL clearly | RL organizes the wooden body, red gear, crank and bit into an identifiable diagonal mechanism. SFT is largely a floating red wheel and lines. |
 
-These are provisional human observations on eight of the predeclared sixteen
+These are provisional human observations on twelve of the predeclared sixteen
 cases, not a measured win rate. Invalid and censored cases will be reported
 separately after the full render and comparison finish.
 
