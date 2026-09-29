@@ -62,6 +62,14 @@ Only technical launch failures, an exhausted budget, or clear inability to
 admit nonzero-gradient batches should interrupt training; a noisy reward
 dip alone is not an automatic stop.
 
+The committed preparation source is `ed234af61fd475c5bbef849fe90bd068fa7b820e`;
+the transferred Git bundle SHA-256 is
+`32f28182f34cb502a5a516dbffdf65ea3e8d655238e9a5e1a178c4e1efe3515d`.
+Lium provisioned the quoted two-card 96GB node at **$2.38/hour**, created
+2026-09-29 16:24:00 UTC with finite removal set for 2026-09-30 02:23:51 UTC.
+The quoted maximum is $23.80. No optimizer update had started when this
+provisioning entry was recorded.
+
 ## Evaluation and next decision
 
 Read the run-level reward, gradient, invalid/censored, rendering-time,

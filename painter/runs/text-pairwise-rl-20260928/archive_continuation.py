@@ -1,0 +1,113 @@
+"""Screen, publish, and anonymously verify the finite RL-continuation evidence."""
+
+from __future__ import annotations
+
+import argparse
+import json
+import shutil
+from pathlib import Path
+
+from huggingface_hub import HfApi, hf_hub_download
+
+from archive_evidence import REPO_ID, _add_dir, digest, package
+
+
+RUN_NAME = "text-pairwise-continue-20260929"
+
+
+def ensure_stream(run: Path) -> Path:
+    target = run / "evidence/continued-stream.jsonl"
+    if target.is_file():
+        return target
+    source = run / f"async-output/{RUN_NAME}/monitors/file/traces/stream/00000.jsonl"
+    compressed = source.with_suffix(source.suffix + ".zst")
+    if not source.is_file() and not compressed.is_file():
+        raise FileNotFoundError("native Prime trace stream missing")
+    target.parent.mkdir(parents=True, exist_ok=True)
+    if source.is_file():
+        shutil.copyfile(source, target)
+    else:
+        import zstandard  # type: ignore[import-not-found]
+        with compressed.open("rb") as source_file, target.open("wb") as out:
+            zstandard.ZstdDecompressor().copy_stream(source_file, out)
+    if not target.stat().st_size:
+        raise ValueError("native Prime trace stream is empty")
+    return target
+
+
+def select(run: Path, evaluation: str, step: int) -> dict[str, Path]:
+    if not evaluation.startswith("text-pairwise-continue-") or "/" in evaluation or ".." in evaluation:
+        raise ValueError("unsafe evaluation name")
+    files: dict[str, Path] = {}
+    required = [
+        "CONTINUATION_20260929.md", "native-continued.toml",
+        "rl-config-receipt.json", "continued-step16-download.json",
+        "continued-anchors/reuse-receipt.json",
+        "continued-anchors/train-manifest.json",
+        "continued-anchors/validation-manifest.json",
+        "continued-anchors/reserve-manifest.json",
+        "evidence/continued-stream.jsonl",
+        f"async-output/{RUN_NAME}/monitors/file/metrics.jsonl",
+        f"async-output/{RUN_NAME}/logs/attempt_1/orchestrator.log",
+        f"async-output/{RUN_NAME}/logs/attempt_1/trainer.log",
+        f"async-output/{RUN_NAME}/artifacts/adapters/step_{step}/hf-upload.json",
+        f"validation/{evaluation}/comparison/summary.json",
+    ]
+    for name in required:
+        path = run / name
+        if not path.is_file():
+            raise FileNotFoundError(name)
+        files[name] = path
+    for path in sorted((run / f"async-output/{RUN_NAME}/artifacts/adapters").glob("step_*/hf-upload.json")):
+        files[path.relative_to(run).as_posix()] = path
+    for folder in (
+        "continued-anchors/prompts", "rl-rollouts-continued",
+        f"validation/{evaluation}", f"async-output/{RUN_NAME}/monitors",
+        f"async-output/{RUN_NAME}/logs", "evidence/continued-gallery",
+    ):
+        _add_dir(files, run, folder)
+    for path in sorted((run / "logs").glob("gpu-telemetry*.csv")):
+        files[path.relative_to(run).as_posix()] = path
+    return {name: path for name, path in files.items() if "cache" not in Path(name).parts}
+
+
+def publish(run: Path, evaluation: str, step: int, output: Path,
+            remote_path: str, token_file: Path) -> dict:
+    if remote_path.startswith("/") or ".." in Path(remote_path).parts:
+        raise ValueError("unsafe public repository path")
+    if token_file.is_symlink() or not token_file.is_file() or token_file.stat().st_mode & 0o077:
+        raise PermissionError("token file must be an owner-only regular file")
+    ensure_stream(run)
+    report = package(select(run, evaluation, step), output)
+    api = HfApi(token=token_file.read_text().strip())
+    if api.repo_info(REPO_ID, repo_type="dataset").private:
+        raise ValueError("public evidence repository required")
+    commit = api.upload_file(path_or_fileobj=str(output), path_in_repo=remote_path,
+                             repo_id=REPO_ID, repo_type="dataset",
+                             commit_message=f"Add text-paint continuation step {step} evidence")
+    public = Path(hf_hub_download(REPO_ID, filename=remote_path, repo_type="dataset",
+                                  revision=commit.oid, token=False, force_download=True,
+                                  local_dir=output.parent / "public-verify"))
+    if digest(public) != report["sha256"]:
+        raise ValueError("anonymous public archive hash mismatch")
+    receipt = {**report, "repo_id": REPO_ID, "path": remote_path,
+               "commit": commit.oid, "step": step, "public_hash_verified": True}
+    output.with_suffix(".upload.json").write_text(json.dumps(receipt, indent=2, sort_keys=True) + "\n")
+    return receipt
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--run-root", type=Path, required=True)
+    parser.add_argument("--evaluation", required=True)
+    parser.add_argument("--step", type=int, required=True)
+    parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--remote-path", required=True)
+    parser.add_argument("--token-file", type=Path, required=True)
+    args = parser.parse_args()
+    print(json.dumps(publish(args.run_root, args.evaluation, args.step, args.output,
+                             args.remote_path, args.token_file), sort_keys=True))
+
+
+if __name__ == "__main__":
+    main()
