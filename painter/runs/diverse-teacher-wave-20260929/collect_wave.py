@@ -172,6 +172,7 @@ def build(output: Path) -> dict:
                                       "render_seconds": (turn.get("render") or {}).get("render_seconds"),
                                       "api_seconds": response.get("latency_seconds"),
                                       "render_valid": (turn.get("render") or {}).get("valid") is True,
+                                      "finished_without_code": (turn.get("render") or {}).get("finished_without_code") is True,
                                       "api_status": turn.get("api_status"),
                                       "prompt_tokens": usage.get("prompt_tokens"),
                                       "completion_tokens": usage.get("completion_tokens"),
@@ -193,8 +194,9 @@ def build(output: Path) -> dict:
                                        "brief": row.get("task_text"), "reference_image": reference_image,
                                        "source_sha256": row["sha256"], "status": episode.get("status"),
                                        "final_canvas": final_canvas, "turns": turn_rows,
-                                       "terminal_turn_valid": bool(turn_rows and turn_rows[-1]["render_valid"]
-                                                                   and turn_rows[-1]["canvas"]),
+                                       "terminal_turn_valid": bool(turn_rows and turn_rows[-1]["render_valid"]),
+                                       "terminal_action": ("finish" if turn_rows and turn_rows[-1]["finished_without_code"]
+                                                           else "paint" if turn_rows else None),
                                        "first_valid_turn": valid_turns[0]["turn"] if valid_turns else None,
                                        "valid_turn_count": len(valid_turns),
                                        "distinct_valid_canvases": len({turn["canvas"] for turn in valid_turns}),
@@ -236,7 +238,9 @@ def page(report: dict) -> str:
                  if case["final_canvas"] else '<p>No valid canvas</p>')
         turns = "".join(
             f'<div class="turn"><strong>Turn {turn["turn"]}</strong><br>'
-            + (f'<img loading="lazy" src="{turn["canvas"]}" alt="Turn {turn["turn"]}">' if turn["canvas"] else '<em>No canvas</em>')
+            + (f'<img loading="lazy" src="{turn["canvas"]}" alt="Turn {turn["turn"]}">' if turn["canvas"]
+               else '<em>Finish; retained prior valid canvas</em>' if turn["finished_without_code"]
+               else '<em>No canvas</em>')
             + (f'<p><a href="{turn["program"]}">Code</a> · ' if turn["program"] else '<p>')
             + f'<a href="{turn["transcript"]}">Full turn receipt</a></p>'
             + f'<small>{html.escape(str(turn["api_status"]))} · {turn["completion_tokens"] or "?"} tokens · '
