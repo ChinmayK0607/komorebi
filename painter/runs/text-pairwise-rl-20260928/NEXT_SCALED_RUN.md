@@ -159,3 +159,44 @@ The fixed eight-case train-probe manifest SHA-256 is
 `ad927e7cf36952b36e9325cf6db5001a625be8915cc45d458f4a79702a72ab5b`.
 The independent step-0 control now samples all 47 usable validation cases
 plus that eight-case probe. Node source at this transition is `9d5c0c5`.
+
+## Rollout diagnosis before optimizer launch (2026-09-29)
+
+The previous margin-run evidence archive at revision
+`180ea85f472f39dd7506adff4c764a7e5fc6053f` was downloaded again and
+matched its recorded SHA-256 before this audit. Its Prime stream contains
+226 complete training traces: 115 (50.9%) ended without a valid canvas and
+110 reached a scored visual comparison (one remaining valid trace was not
+scored). At turn 1, only 40/226 programs rendered; 47/226 rendered at turn 2
+and 79/226 at turn 3. Among final-invalid cases, repeated missing JavaScript
+blocks, syntax errors, nonexistent brush methods, and renderer timeouts are
+visible in the turn receipts. This is an action-contract/programmability
+failure, not proof that the visual comparator cannot distinguish paintings.
+The old prompt explicitly requested a visual plan as well as JavaScript;
+the new `native-painting-eval-v3`/`native-painting-rl-v2` contract removes
+that contradiction and accepts a complete unfenced JavaScript sketch.
+
+The same archive has 110 two-order judge receipts. In 15, the judge picked
+the same *screen position* in both A/B orders (order gap 1/3) rather than the
+same physical painting; their averaged scores became 0.5. Another 36
+receipts had smaller nonzero order gaps. Averaging limits this position bias
+but loses preference resolution; order disagreement must be reported in the
+new run and a close mean win cannot alone establish visual improvement.
+The saved validation/reserve evidence still shows a weak step-20 original
+validation gain and a 6-win/2-tie/6-loss reserve tie. Visual spot checks
+agree with the mixed outcome: the open pocket compass (`t600-450`) gained a
+legible lid and dial, while the pinecone (`t600-532`) lost its layered scale
+structure. The two chalk sticks (`t600-513`) were clearer in RL but remained
+mechanical. These are selected examples, not a substitute for paired scores.
+
+Decision: finish the already-running independent SFT control and run the
+predeclared 24-update scaled text-only experiment under the corrected
+contract, with no reward or curriculum change after seeing validation.
+The first 30 new control traces had 25 valid final canvases; this is an
+interim observation, not the final validity rate. Compare the fixed probe
+and all usable held-out prompts against this fresh control, report invalid
+and judge-order failure rates, and keep the original reserve untouched for
+confirmation. After the finite training/evaluation and public hash-verified
+uploads, release the rental rather than leave GPU compute running. If the
+result is still mixed, do a deeper failure analysis from the complete new
+rollouts before buying another run.
