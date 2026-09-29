@@ -22,7 +22,7 @@ def prepare(*, output: Path, model: Path, run_root: Path, manifest: Path,
             prime_root: Path | None = None, max_steps: int = 20,
             run_name: str = RUN_NAME, output_root: str = "rl-rollouts",
             judge_protocol: str = "text-paint-sft-pairwise-v1",
-            expected_count: int = 40) -> dict:
+            expected_count: int = 40, checkpoint_interval: int = 4) -> dict:
     if not run_name or "/" in run_name or "\\" in run_name:
         raise ValueError("run_name must be a simple non-empty name")
     if not output_root or "/" in output_root or "\\" in output_root:
@@ -38,7 +38,7 @@ def prepare(*, output: Path, model: Path, run_root: Path, manifest: Path,
     relative = str(manifest.resolve().relative_to(run_root.resolve()))
     config = photo.build_config(
         model=str(model), run_root=run_root, manifest=relative,
-        max_steps=max_steps, checkpoint_interval=4, run_name=run_name,
+        max_steps=max_steps, checkpoint_interval=checkpoint_interval, run_name=run_name,
         expected_count=expected_count, batch_size=8, group_size=4, max_turns=3,
         max_completion_tokens=8192, learning_rate=1e-6,
         initial_inflight=8, max_inflight=8,
@@ -85,6 +85,7 @@ def main() -> None:
     parser.add_argument("--output-root", default="rl-rollouts")
     parser.add_argument("--judge-protocol", default="text-paint-sft-pairwise-v1")
     parser.add_argument("--expected-count", type=int, default=40)
+    parser.add_argument("--checkpoint-interval", type=int, default=4)
     args = parser.parse_args()
     print(json.dumps(prepare(**vars(args)), sort_keys=True))
 
