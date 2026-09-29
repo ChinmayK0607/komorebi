@@ -127,6 +127,8 @@ def traces_profile(path: Path, judge_root: Path) -> dict:
     failures = Counter()
     turn_failures = Counter()
     error_classes = Counter()
+    error_subtypes = Counter()
+    invalid_reply_chars: dict[str, list[int]] = defaultdict(list)
     dispatch_steps = Counter()
     judge_scores: dict[str, list[float]] = defaultdict(list)
     judge_order_gap: dict[str, list[float]] = defaultdict(list)
@@ -179,7 +181,10 @@ def traces_profile(path: Path, judge_root: Path) -> dict:
                         painting_seconds.append(v)
                 if turn.get("valid") is not True:
                     turn_failures[str(turn.get("failure_kind") or "unknown")] += 1
-                    error_classes[classify_turn_error(turn)] += 1
+                    category = classify_turn_error(turn)
+                    error_classes[category] += 1
+                    error_subtypes[turn_error_subtype(turn, category)] += 1
+                    invalid_reply_chars[category].append(len(str(turn.get("reply") or "")))
     return {
         "denominator": "saved generated traces with turns, possibly speculative or stale",
         "generated": all_count, "valid_final": valid_count,
@@ -192,6 +197,11 @@ def traces_profile(path: Path, judge_root: Path) -> dict:
         "final_failure_kinds": dict(failures.most_common()),
         "invalid_turn_failure_kinds": dict(turn_failures.most_common()),
         "invalid_turn_error_classes": dict(error_classes.most_common()),
+        "invalid_turn_error_subtypes": dict(error_subtypes.most_common()),
+        "invalid_reply_chars_by_class": {
+            key: {"count": len(values), "mean": mean(values),
+                  "p90": percentile(values, .9)}
+            for key, values in sorted(invalid_reply_chars.items())},
         "valid_render_receipt_count": len(valid_render_seconds),
         "valid_render_elapsed_seconds_mean": mean(valid_render_seconds),
         "valid_render_elapsed_seconds_p50": percentile(valid_render_seconds, .5),
@@ -202,15 +212,19 @@ def traces_profile(path: Path, judge_root: Path) -> dict:
     }
 
 
-def classify_turn_error(turn: dict) -> str:
-    """One primary class per invalid turn; preserve broad source kind separately."""
+def turn_error_text(turn: dict) -> str:
     raw = turn.get("error") or []
     if not isinstance(raw, list):
         raw = [str(raw)]
     other = turn.get("renderer_errors") or []
     if not isinstance(other, list):
         other = [str(other)]
-    message = " ".join(str(item) for item in raw + other).lower()
+    return " ".join(str(item) for item in raw + other).lower()
+
+
+def classify_turn_error(turn: dict) -> str:
+    """One primary class per invalid turn; preserve broad source kind separately."""
+    message = turn_error_text(turn)
     kind = str(turn.get("failure_kind") or "")
     if kind == "program_timeout" or "render limit" in message or "timed out" in message:
         return "render_timeout"
@@ -231,6 +245,26 @@ def classify_turn_error(turn: dict) -> str:
     if kind == "blank_canvas" or "no canvas" in message:
         return "blank_or_no_canvas"
     return "other_program_error"
+
+
+def turn_error_subtype(turn: dict, category: str) -> str:
+    message = turn_error_text(turn)
+    if category == "syntax_error":
+        for term, label in (("unexpected end", "unexpected_end"),
+                            ("already been declared", "redeclaration"),
+                            ("missing )", "missing_parenthesis"),
+                            ("unexpected token", "unexpected_token"),
+                            ("lexical declaration", "lexical_declaration")):
+            if term in message:
+                return f"syntax:{label}"
+        return "syntax:other"
+    if category == "unknown_brush_name":
+        match = re.search(r'brush "([^"\\]{1,40})" not found', message)
+        return "brush_name:" + (match.group(1) if match else "other")
+    if category == "unsupported_brush_api":
+        match = re.search(r'brush\.([a-z][a-z0-9_]{0,40})[^.]{0,100}not a function', message)
+        return "brush_method:" + (match.group(1) if match else "other")
+    return category
 
 
 def judge_profile(root: Path) -> dict:
