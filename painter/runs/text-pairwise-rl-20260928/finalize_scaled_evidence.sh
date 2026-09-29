@@ -21,6 +21,9 @@ eval_dir="scaled-step-$step-$scope"
 [[ -f "$RUN/validation/$eval_dir/direct-sft-versus-rl/summary.json" ]] || {
   echo 'direct matched visual comparison missing' >&2; exit 1;
 }
+# A live diagnostic may have copied a partial stream. Recopy only after the
+# finite training/evaluation chain has finished so the published audit is final.
+rm -f "$RUN/evidence/stream-final.jsonl"
 PYTHONPATH="$RUN" "$PY" - "$RUN" <<'PY'
 import sys
 from pathlib import Path
