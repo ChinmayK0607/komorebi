@@ -14,12 +14,17 @@ First see whether each painting communicates the main subject and scene:
 recognizable shapes, the requested number of subjects, believable proportions,
 placement, pose, overlap, and spatial relationships. Then judge the whole
 picture: composition, intentional negative space, color and light, coherent
-shape boundaries, and expressive, natural brushwork. A pleasing painting can
-simplify details. Counted details are useful only when they improve the image.
+shape boundaries, and expressive, natural brushwork. Look for precision with
+warmth: deliberate, clear placement and contours that still feel alive and
+hand-painted. Warmth without spatial precision is not enough, and precision
+without pictorial life is not enough. A pleasing painting can simplify
+details. Counted details are useful only when they improve the image.
 
 Watch for objects or strokes that accidentally cross the canvas edge or
 invade another object's boundary; cramped margins, misplaced parts, muddy
-color/shape overlaps, floating fragments, and confused depth. Notice when
+dark washes that swallow forms, overblended or dirty color, color/shape
+overlaps that erase separation, floating fragments, and confused depth.
+Notice when
 every contour is ruler-straight, perfectly regular, or diagrammatic even
 though the subject should feel rounded, lived-in, or hand-painted. Do not
 penalize an intentional crop, a truly straight architectural/mechanical edge,
@@ -46,7 +51,8 @@ for 4, B for 5–7.
 
 Calibration examples to include, without telling the judge which model made
 which image: hand-crank drill and octopus (RL gains); sailboat, yarn ball,
-hand fan, observatory, twin-bell clock, seahorse, and table lamp (possible
+hand fan, observatory, twin-bell clock, seahorse, table lamp, spinning top,
+and the dark potter-unloading scene (possible
 detail-versus-appeal failures); plus clear ties, invalid/censored cases, and
 simple geometric objects where clean straight edges are appropriate.
 

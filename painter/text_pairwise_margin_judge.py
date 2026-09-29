@@ -62,13 +62,14 @@ def _label(raw: str) -> dict:
     return value
 
 
-def _view(*, key: str, brief: str, a: Path, b: Path) -> dict:
+def _view(*, key: str, brief: str, a: Path, b: Path,
+          system_prompt: str = PROMPT) -> dict:
     composite, sheet_sha = _sheet(a, b)
     payload = {
         "model": MODEL, "temperature": 0, "max_tokens": 4096,
         "response_format": {"type": "json_object"}, "stream": False,
         "messages": [
-            {"role": "system", "content": PROMPT},
+            {"role": "system", "content": system_prompt},
             {"role": "user", "content": [
                 {"type": "text", "text": "PAINTING BRIEF:\n" + brief + "\nCompare A and B."},
                 {"type": "image_url", "image_url": {"url": composite}},
@@ -93,22 +94,26 @@ def _view(*, key: str, brief: str, a: Path, b: Path) -> dict:
         "label": _label(raw), "raw_response": raw,
         "image_sha256": {"A": digest(a), "B": digest(b)},
         "sheet_sha256": sheet_sha,
-        "prompt_sha256": hashlib.sha256(PROMPT.encode()).hexdigest(),
+        "prompt_sha256": hashlib.sha256(system_prompt.encode()).hexdigest(),
         "elapsed_seconds": time.monotonic() - start,
         "usage": body.get("usage"), "finish_reason": choice.get("finish_reason"),
         "model": body.get("model", MODEL),
     }
 
 
-async def _retry_view(*, key: str, brief: str, a: Path, b: Path) -> dict:
+async def _retry_view(*, key: str, brief: str, a: Path, b: Path,
+                      system_prompt: str = PROMPT) -> dict:
     try:
-        return await asyncio.to_thread(_view, key=key, brief=brief, a=a, b=b)
+        return await asyncio.to_thread(_view, key=key, brief=brief, a=a, b=b,
+                                       system_prompt=system_prompt)
     except ValueError:
-        return await asyncio.to_thread(_view, key=key, brief=brief, a=a, b=b)
+        return await asyncio.to_thread(_view, key=key, brief=brief, a=a, b=b,
+                                       system_prompt=system_prompt)
 
 
 async def judge_pair(*, brief: Path, anchor: Path, candidate: Path,
-                     key_file: Path) -> dict:
+                     key_file: Path, system_prompt: str = PROMPT,
+                     protocol: str = PROTOCOL) -> dict:
     for path in (brief, anchor, candidate):
         if path.is_symlink() or not path.is_file():
             raise FileNotFoundError(path)
@@ -116,19 +121,21 @@ async def judge_pair(*, brief: Path, anchor: Path, candidate: Path,
     if not text or len(text) > 4000:
         raise ValueError("invalid painting brief")
     if digest(anchor) == digest(candidate):
-        return {"protocol": PROTOCOL, "score": 0.5,
+        return {"protocol": protocol, "score": 0.5,
                 "status": "identical_canvases", "views": [],
                 "brief_sha256": digest(brief), "anchor_sha256": digest(anchor),
                 "candidate_sha256": digest(candidate)}
     key = load_key(key_file)
     first, second = await asyncio.gather(
-        _retry_view(key=key, brief=text, a=anchor, b=candidate),
-        _retry_view(key=key, brief=text, a=candidate, b=anchor),
+        _retry_view(key=key, brief=text, a=anchor, b=candidate,
+                    system_prompt=system_prompt),
+        _retry_view(key=key, brief=text, a=candidate, b=anchor,
+                    system_prompt=system_prompt),
     )
     forward = (first["label"]["strength"] - 1) / 6
     reversed_score = (7 - second["label"]["strength"]) / 6
     score = (forward + reversed_score) / 2
-    return {"protocol": PROTOCOL, "score": score, "status": "scored",
+    return {"protocol": protocol, "score": score, "status": "scored",
             "order_gap": abs(forward - reversed_score),
             "brief_sha256": digest(brief), "anchor_sha256": digest(anchor),
             "candidate_sha256": digest(candidate), "views": [first, second]}
