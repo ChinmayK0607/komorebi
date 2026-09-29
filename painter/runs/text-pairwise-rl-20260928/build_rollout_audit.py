@@ -37,10 +37,11 @@ def evenly_spaced(items: list, limit: int) -> list:
     return [items[i] for i in sorted(indices)]
 
 
-def collect(stream: Path, per_class: int) -> tuple[list[dict], dict]:
+def collect(stream: Path, root: Path, per_class: int) -> tuple[list[dict], dict]:
     records: list[dict] = []
     failure_buckets: dict[str, list[int]] = defaultdict(list)
     valid_buckets: dict[str, list[tuple[float, int]]] = defaultdict(list)
+    judge_disagreements: list[tuple[float, int]] = []
     counts: dict[str, int] = defaultdict(int)
     for line in stream.read_text().splitlines():
         if not line:
@@ -57,7 +58,12 @@ def collect(stream: Path, per_class: int) -> tuple[list[dict], dict]:
                       "dispatch_step": step if isinstance(step, int) else None,
                       "valid_final": info.get("final_canvas_valid") is True,
                       "score": finite(info.get("final_canvas_score")),
+                      "judge_order_gap": None,
                       "reference": info.get("reference"), "turns": turns}
+            evidence = info.get("score_evidence") or {}
+            receipt = safe_source(evidence.get("receipt_path"), root) if isinstance(evidence, dict) else None
+            if receipt and receipt.suffix == ".json":
+                record["judge_order_gap"] = finite(json.loads(receipt.read_text()).get("order_gap"))
             index = len(records)
             records.append(record)
             counts["generated_traces"] += 1
@@ -73,6 +79,8 @@ def collect(stream: Path, per_class: int) -> tuple[list[dict], dict]:
                     seen.add(category)
             if record["valid_final"] and record["score"] is not None:
                 valid_buckets[record["family"]].append((record["score"], index))
+            if record["judge_order_gap"] is not None and record["judge_order_gap"] >= 1 / 3:
+                judge_disagreements.append((record["judge_order_gap"], index))
     selected: dict[int, set[str]] = defaultdict(set)
     for category, indices in sorted(failure_buckets.items()):
         ordered = sorted(indices, key=lambda i: (records[i]["dispatch_step"] or 0, i))
@@ -84,6 +92,8 @@ def collect(stream: Path, per_class: int) -> tuple[list[dict], dict]:
             selected[index].add("valid-low:" + family)
         for score, index in ordered[-2:]:
             selected[index].add("valid-high:" + family)
+    for gap, index in sorted(judge_disagreements, reverse=True)[:8]:
+        selected[index].add("judge-order-disagreement")
     chosen = []
     for index in sorted(selected, key=lambda i: (records[i]["dispatch_step"] or 0, i)):
         record = dict(records[index])
@@ -96,7 +106,7 @@ def collect(stream: Path, per_class: int) -> tuple[list[dict], dict]:
 
 
 def build(stream: Path, root: Path, output: Path, per_class: int) -> dict:
-    chosen, summary = collect(stream, per_class)
+    chosen, summary = collect(stream, root, per_class)
     if output.exists():
         prior = output / "summary.json"
         if prior.is_file() and (output / "index.html").is_file():
@@ -130,13 +140,15 @@ def build(stream: Path, root: Path, output: Path, per_class: int) -> dict:
                 f'<details><summary>Generated reply</summary><pre>{html.escape(str(turn.get("reply") or ""))}</pre></details></section>')
         score = record["score"]
         score_text = "unknown" if score is None else f"{score:.3f}"
+        gap = record["judge_order_gap"]
+        gap_text = "unknown" if gap is None else f"{gap:.3f}"
         heading = (f'#{position} · {record["task_id"]} · {record["family"]} · '
-                   f'dispatch step {record["dispatch_step"]} · score {score_text}')
+                   f'dispatch step {record["dispatch_step"]} · score {score_text} · order gap {gap_text}')
         cards.append(f'<article id="case-{position}"><h3>{html.escape(heading)}</h3>'
                      f'<p>Selected for: {html.escape(", ".join(record["selection"]))}</p>'
                      f'<p class="brief">{html.escape(brief)}</p>' + "".join(turns_html) + "</article>")
         index_rows.append({k: record[k] for k in ("task_id", "trace_id", "family", "dispatch_step",
-                                                   "valid_final", "score", "selection")})
+                                                   "valid_final", "score", "judge_order_gap", "selection")})
     page = ("<!doctype html><meta charset='utf-8'><title>RL rollout audit</title>"
             "<style>body{font:16px system-ui;background:#191a1d;color:#eee;max-width:1400px;margin:auto;padding:2rem}"
             "article{background:#282a30;border:1px solid #555;border-radius:12px;margin:2rem 0;padding:1rem}"
