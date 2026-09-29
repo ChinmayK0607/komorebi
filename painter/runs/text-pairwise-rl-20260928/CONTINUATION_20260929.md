@@ -70,6 +70,32 @@ Lium provisioned the quoted two-card 96GB node at **$2.38/hour**, created
 The quoted maximum is $23.80. No optimizer update had started when this
 provisioning entry was recorded.
 
+### Early live audit, 2026-09-29 17:44 UTC
+
+Seven CUDA optimizer updates completed, each with nonzero gradient norm. The
+first six admitted-batch mean rewards were 0.156, 0.344, 0.260, 0.146, 0.240,
+and 0.302. These are comparisons with a strong, frozen SFT canvas, not an
+absolute quality scale; 0.5 is an effective tie. The first 67 saved generated
+traces (including speculative or stale traces, **not** the admitted gradient
+denominator) all belong to the simple family: 49 finished with valid canvases
+and 18 did not. Their aggregate mean was 0.240, while valid canvases averaged
+0.328; 22 traces scored zero, including four valid canvases. Final-invalid
+traces had syntax, JavaScript runtime, brush API, and render-time failures.
+Among 49 visual receipts, 27 had nonzero two-order score disagreement, with
+10 gaps of at least 0.333. The run therefore has both a model-validity problem
+and a judge-preference/reliability limitation; the early reward is not evidence
+of held-out improvement. Keep the finite run active while gradients and public
+checkpoints continue, then decide from matched validation and actual paintings.
+
+GPU telemetry over 80 ten-second samples per GPU, 16:43:20–16:56:40 UTC,
+showed inference GPU 0 mean utilization 94.97% and busy fraction 95% at the
+90%-utilization threshold; trainer GPU 1 mean utilization 10.21% and busy
+fraction 8.7% at that threshold. This is an inference-bound, not saturated
+two-GPU pipeline. At about 17:44 UTC, Lium reported $3.22 accrued rental.
+The step-5 checkpoint is publicly uploaded and anonymously hash-verified at
+HF revision `c3337e02b995f3b97e219232f22f882498a4b55f`; its adapter
+SHA-256 is `f860a7a32ca731a482bc79428477b4d804c5e71704c48c1f646c027b1b87b3b2`.
+
 ## Evaluation and next decision
 
 Read the run-level reward, gradient, invalid/censored, rendering-time,
