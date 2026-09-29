@@ -40,7 +40,8 @@ def select(run: Path, evaluation: str, step: int) -> dict[str, Path]:
         raise ValueError("unsafe evaluation name")
     files: dict[str, Path] = {}
     required = [
-        "CONTINUATION_20260929.md", "native-continued.toml",
+        "CONTINUATION_20260929.md", "CONTINUATION_FAILURE_AUDIT_20260929.md",
+        "native-continued.toml",
         "plot_reward_curve.py", "profile_continuation.py", "build_rollout_audit.py",
         "verify_adapter_delta.py",
         "rl-config-receipt.json", "continued-step16-download.json",
