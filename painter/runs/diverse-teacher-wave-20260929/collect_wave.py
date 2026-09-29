@@ -147,6 +147,10 @@ def build(output: Path) -> dict:
                     turn_json = f"{folder}/turn-{number:02d}.json"
                     if turn_json not in members:
                         raise ValueError(f"missing turn receipt: {task_id}/{number}")
+                    receipt_raw = bundle.extractfile(members[turn_json]).read()
+                    if json.loads(receipt_raw).get("turn") != number:
+                        raise ValueError(f"turn receipt mismatch: {task_id}/{number}")
+                    transcript = asset(receipt_raw, ".json", output, "transcripts")
                     canvas_name = f"{folder}/turn-{number:02d}.png"
                     program_name = f"{folder}/turn-{number:02d}.program.js"
                     image = None
@@ -162,6 +166,11 @@ def build(output: Path) -> dict:
                     response = turn.get("response") or {}
                     usage = response.get("usage") or {}
                     turn_rows.append({"turn": number, "canvas": image, "program": program,
+                                      "transcript": transcript,
+                                      "plan": turn.get("plan"),
+                                      "render_feedback": turn.get("render_feedback"),
+                                      "render_seconds": (turn.get("render") or {}).get("render_seconds"),
+                                      "api_seconds": response.get("latency_seconds"),
                                       "render_valid": (turn.get("render") or {}).get("valid") is True,
                                       "api_status": turn.get("api_status"),
                                       "completion_tokens": usage.get("completion_tokens"),
@@ -215,8 +224,13 @@ def page(report: dict) -> str:
         turns = "".join(
             f'<div class="turn"><strong>Turn {turn["turn"]}</strong><br>'
             + (f'<img loading="lazy" src="{turn["canvas"]}" alt="Turn {turn["turn"]}">' if turn["canvas"] else '<em>No canvas</em>')
-            + (f'<p><a href="{turn["program"]}">Code</a></p>' if turn["program"] else "")
-            + f'<small>{html.escape(str(turn["api_status"]))} · {turn["completion_tokens"] or "?"} tokens</small></div>'
+            + (f'<p><a href="{turn["program"]}">Code</a> · ' if turn["program"] else '<p>')
+            + f'<a href="{turn["transcript"]}">Full turn receipt</a></p>'
+            + f'<small>{html.escape(str(turn["api_status"]))} · {turn["completion_tokens"] or "?"} tokens · '
+            + f'{turn["api_seconds"] if turn["api_seconds"] is not None else "?"}s API · '
+            + f'{turn["render_seconds"] if turn["render_seconds"] is not None else "?"}s render</small>'
+            + f'<p>{html.escape(str(turn["plan"] or ""))}</p>'
+            + f'<p>{html.escape(str(turn["render_feedback"] or ""))}</p></div>'
             for turn in case["turns"])
         title = html.escape(f'{case["id"]} · {case["category"]} · {case["tier"]}')
         cards.append(f'<article data-mode="{case["mode"]}" data-tier="{case["tier"]}" data-search="{title.lower()}">'
