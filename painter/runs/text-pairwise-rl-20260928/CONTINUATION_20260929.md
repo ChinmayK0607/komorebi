@@ -169,6 +169,32 @@ the run are generation/contract failures, expensive per-turn rendering,
 inference/trainer imbalance, and judgment disagreement; do not alter the
 active run to patch these midstream.
 
+### Preliminary anchor-quality failure, 2026-09-29 20:18 UTC
+
+A [sampled turn-by-turn rollout audit](build_rollout_audit.py) found a specific
+reward-calibration failure. The frozen SFT opponent for the complex baker
+brief `t600-412` is almost blank (thin grid/stray strokes). One RL rollout is
+still an abstract blue/cream patchwork without distinguishable hands or dough,
+yet its relative score was **0.917**. Both orderings of the MiMo-Flash judge
+preferred it strongly to the near-empty anchor; the judge's written rationale
+explicitly identified missing hands, basket, scraper and baguettes. This is
+not proof that the judge failed to perceive the flaw: a weak comparison
+anchor allows a high *relative* score for a poor absolute painting. The
+snowy-crossroads case `t600-576` likewise scored 0.917 while its buses were
+not clearly legible; its SFT anchor was also weak. These are generated-trace
+examples, not matched held-out results.
+
+A rough coverage scan against each image's corner background flagged 7 of
+the 119 training anchors below 5% changed pixels and 28 below 10%; this is
+only a near-empty-image heuristic, **not** a visual quality grade (dark or
+minimalist canvases can score low). Among saved valid generated rollouts at
+this snapshot, twelve against the below-5% anchors averaged 0.493 relative
+reward, while 51 against 10–25%-coverage anchors averaged 0.307. The
+families and prompts differ, so this is diagnostic correlation, not a causal
+estimate. It warrants a post-run review of anchor quality and a stronger
+reference comparison before another RL campaign. The active reward and
+trainer stay unchanged for the frozen 50-step protocol.
+
 ## Evaluation and next decision
 
 Read the run-level reward, gradient, invalid/censored, rendering-time,
