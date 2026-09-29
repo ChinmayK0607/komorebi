@@ -116,6 +116,21 @@ def page_errors(payload):
     return [str(value) for value in values] if isinstance(values, list) else [str(values)]
 
 
+def hardware_backend_errors(gpu, backend):
+    if backend not in ('gl', 'vulkan'):
+        return []
+    renderer_name = gpu.get('unmasked_renderer')
+    errors = []
+    if not isinstance(renderer_name, str) or not renderer_name.strip():
+        errors.append('Requested hardware GL/Vulkan backend has no live renderer identity')
+    elif any(software in renderer_name.lower() for software in ('swiftshader', 'llvmpipe', 'softpipe')):
+        errors.append('Requested hardware GL/Vulkan backend was not confirmed; refusing software fallback')
+    if not all(isinstance(gpu.get(field), str) and gpu[field].strip()
+               for field in ('vendor', 'renderer', 'version')):
+        errors.append('WebGL context did not report live vendor/renderer/version')
+    return errors
+
+
 def worker(source, output, seed, timeout=90, telemetry_enabled=False, backend=None,
            capture='data_url'):
     backend = resolve_backend(backend)
@@ -224,10 +239,7 @@ for(const key of ['RTCPeerConnection','webkitRTCPeerConnection']){Object.defineP
         }""")
         if backend == 'metal' and 'metal' not in str(gpu.get('unmasked_renderer', '')).lower():
             errors.append('Requested Metal backend was not confirmed; refusing a silent software fallback')
-        if backend in ('gl', 'vulkan'):
-            renderer_name = str(gpu.get('unmasked_renderer', '')).lower()
-            if not renderer_name or 'swiftshader' in renderer_name or 'llvmpipe' in renderer_name:
-                errors.append('Requested hardware GL/Vulkan backend was not confirmed; refusing software fallback')
+        errors.extend(hardware_backend_errors(gpu, backend))
         errors.extend(page_errors(payload))
         result = {'finished': finished, 'errors': errors, 'blocked_requests': blocked, 'valid': False, 'chromium_version': browser.version,
                   'requested_angle_backend': backend, 'gpu': gpu, 'browser_args': browser_args(backend),

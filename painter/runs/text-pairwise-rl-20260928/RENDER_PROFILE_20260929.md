@@ -31,6 +31,14 @@ them. This container has NVIDIA device nodes and EGL libraries but no NVIDIA
 EGL vendor or Vulkan ICD configuration; GPU visibility to PyTorch alone does
 not prove Chromium WebGL acceleration. No hardware-backed image passed.
 
+A follow-up with a temporary NVIDIA Vulkan ICD JSON produced a **black
+600×600 canvas** and null WebGL vendor/renderer/version, even though the
+experimental backend probe initially marked it valid. This was a probe-only
+false positive, not a production render or training result. The experimental
+renderer now rejects a hardware backend without a live nonsoftware WebGL
+identity, with a regression check for the null-identity case. Neither the
+temporary ICD setup nor its canvas will be used for evaluation.
+
 Four concurrent copies of p060, rendered with the locked renderer and
 identical source/seed, all succeeded in 117.7–125.1 s. Four sequential
 renderings at the measured 62.8 s each would take about 251 s, so the

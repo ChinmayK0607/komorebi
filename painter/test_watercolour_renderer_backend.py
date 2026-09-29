@@ -13,6 +13,17 @@ SPEC.loader.exec_module(RENDERER)
 
 
 class RendererBackendTests(unittest.TestCase):
+    def test_missing_context_identity_rejects_black_canvas_false_positive(self):
+        lost = {"vendor": None, "renderer": None, "version": None,
+                "unmasked_renderer": None}
+        self.assertTrue(RENDERER.hardware_backend_errors(lost, "vulkan"))
+        software = {"vendor": "WebKit", "renderer": "WebKit WebGL",
+                    "version": "WebGL 2.0", "unmasked_renderer": "SwiftShader Device"}
+        self.assertTrue(RENDERER.hardware_backend_errors(software, "vulkan"))
+        hardware = {"vendor": "WebKit", "renderer": "WebKit WebGL",
+                    "version": "WebGL 2.0", "unmasked_renderer": "NVIDIA RTX PRO 6000"}
+        self.assertEqual(RENDERER.hardware_backend_errors(hardware, "vulkan"), [])
+
     def test_hardware_backends_are_opt_in_and_linux_only(self):
         with patch.object(sys, "platform", "linux"):
             self.assertEqual(RENDERER.resolve_backend("gl"), "gl")
