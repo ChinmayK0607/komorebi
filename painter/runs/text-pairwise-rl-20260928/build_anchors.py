@@ -134,18 +134,23 @@ def build(*, pool: Path, eval_root: Path, output: Path,
         if len(initial) + len(replacements) < needed:
             raise ValueError(f"only {len(initial) + len(replacements)}/{needed} usable {family} train anchors")
     validation = [row for row in usable_rows if row["split"] == "validation"]
+    reserve = [row for row in usable_rows if row["split"] == "reserve"]
     if sum(row["split"] == "validation" for row in rows) != validation_expected:
         raise ValueError("unexpected validation split size")
     train = output / "train-manifest.json"
     val = output / "validation-manifest.json"
+    reserve_path = output / "reserve-manifest.json"
     train.write_text(json.dumps({"rows": chosen}, indent=2, sort_keys=True) + "\n")
     val.write_text(json.dumps({"cases": validation}, indent=2, sort_keys=True) + "\n")
+    reserve_path.write_text(json.dumps({"cases": reserve}, indent=2, sort_keys=True) + "\n")
     audit = {"schema": "painter-text-anchor-freeze-v1", "pool_sha256": sha(pool),
              "eval_trace_files": [str(path) for path in files],
              "train_count": len(chosen), "validation_usable": len(validation),
-             "validation_expected": validation_expected, "decisions": decisions,
+             "validation_expected": validation_expected, "reserve_usable": len(reserve),
+             "decisions": decisions,
              "train_counts_requested": dict(zip(("simple", "intermediate", "complex"), train_counts)),
-             "train_manifest_sha256": sha(train), "validation_manifest_sha256": sha(val)}
+             "train_manifest_sha256": sha(train), "validation_manifest_sha256": sha(val),
+             "reserve_manifest_sha256": sha(reserve_path)}
     (output / "anchor-audit.json").write_text(json.dumps(audit, indent=2, sort_keys=True) + "\n")
     return audit
 
