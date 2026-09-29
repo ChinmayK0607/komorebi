@@ -136,6 +136,8 @@ def traces_profile(path: Path, judge_root: Path) -> dict:
     valid_render_seconds: list[float] = []
     painting_seconds: list[float] = []
     all_count = valid_count = turn_count = 0
+    first_turn_valid = recovered_after_invalid = valid_then_invalid = 0
+    no_change_turns = valid_turns = 0
     for line in path.read_text().splitlines():
         if not line:
             continue
@@ -147,6 +149,12 @@ def traces_profile(path: Path, judge_root: Path) -> dict:
             all_count += 1
             valid = info.get("final_canvas_valid") is True
             valid_count += valid
+            turn_validity = [turn.get("valid") is True for turn in turns]
+            first_turn_valid += turn_validity[0]
+            recovered_after_invalid += any(not before and any(turn_validity[index + 1:])
+                                           for index, before in enumerate(turn_validity[:-1]))
+            valid_then_invalid += any(before and any(not later for later in turn_validity[index + 1:])
+                                      for index, before in enumerate(turn_validity[:-1]))
             family = str(info.get("family") or "unknown")
             families[family]["generated"] += 1
             families[family]["valid_final"] += valid
@@ -170,6 +178,8 @@ def traces_profile(path: Path, judge_root: Path) -> dict:
             dispatch_steps[str((info.get("dispatch") or {}).get("step") or "unknown")] += 1
             for turn in turns:
                 turn_count += 1
+                valid_turns += turn.get("valid") is True
+                no_change_turns += turn.get("no_change") is True
                 canvas = turn.get("canvas")
                 canvas_path = Path(canvas).resolve() if isinstance(canvas, str) else None
                 if (canvas_path is not None and canvas_path.is_relative_to(judge_root.resolve())
@@ -189,7 +199,11 @@ def traces_profile(path: Path, judge_root: Path) -> dict:
         "denominator": "saved generated traces with turns, possibly speculative or stale",
         "generated": all_count, "valid_final": valid_count,
         "valid_final_fraction": valid_count / all_count if all_count else None,
-        "turns": turn_count, "family_counts": {
+        "turns": turn_count, "valid_turns": valid_turns,
+        "first_turn_valid_traces": first_turn_valid,
+        "recovered_after_invalid_traces": recovered_after_invalid,
+        "valid_then_invalid_traces": valid_then_invalid,
+        "no_change_turns": no_change_turns, "family_counts": {
             k: dict(v) | {"valid_canvas_mean_judge_score": mean(judge_scores[k]),
                           "mean_judge_order_gap": mean(judge_order_gap[k]),
                           "large_judge_order_gaps": sum(g >= 1 / 3 for g in judge_order_gap[k])}
