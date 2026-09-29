@@ -280,6 +280,15 @@ These are provisional human observations on all sixteen predeclared
 cases, not a measured win rate. Invalid and censored cases will be reported
 separately after the full render and comparison finish.
 
+One later held-out snowplow (`t600-569`) exposed a separate action/render
+failure before scoring: its first program assigns `i=0` inside a
+`for(let i=0;i<xs.length;i++)` loop and hits the 180-second render deadline.
+The model corrects that assignment on turn two, but turn two also times out
+despite a shorter program. A multi-turn retry can repair a code bug while
+still failing the renderer's work budget. This is a model/program failure,
+not a judge loss or GPU inference stall. Final per-case status remains to
+be recorded.
+
 The step-16 training process exited after a verified public checkpoint.
 For the predeclared eight-case fixed train probe, a second evaluation worker
 was launched on the idle GPU 1 while the 47-case held-out worker continued
