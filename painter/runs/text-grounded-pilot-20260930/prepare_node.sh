@@ -49,10 +49,12 @@ cp "$OLD/score_validation.py" "$RUN/score_validation.py"
 "$PY" "$OLD/download_public_adapter.py" \
   --revision "$REVISION" --prefix "$PREFIX" --expected-sha256 "$ADAPTER_SHA" \
   --receipt "$RUN/init-adapter.json"
+PROPOSED_CONFIG="$RUN/native.toml.proposed.$$"
+trap 'rm -f "$PROPOSED_CONFIG"' EXIT
 "$PY" "$OLD/prepare_config.py" \
   --model "$ROOT/model-cache/qwen/1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0" \
   --run-root "$RUN" --manifest "$ALL/grounded-pilot-train-manifest.json" \
-  --output "$RUN/native.toml" --prime-root "$PRIME" \
+  --output "$PROPOSED_CONFIG" --prime-root "$PRIME" \
   --expected-count 40 --max-steps 24 --checkpoint-interval 4 \
   --run-name text-grounded-pilot-20260930 \
   --output-root rl-rollouts-grounded \
@@ -60,6 +62,15 @@ cp "$OLD/score_validation.py" "$RUN/score_validation.py"
   --mode recovered_policy --adapter-revision "$REVISION" \
   --adapter-prefix "$PREFIX" --adapter-sha256 "$ADAPTER_SHA" \
   --learning-rate 1e-6
+if [[ -e "$RUN/native.toml" ]]; then
+  cmp -s "$PROPOSED_CONFIG" "$RUN/native.toml" || {
+    echo 'existing pilot config differs from the pinned proposal' >&2; exit 1;
+  }
+else
+  mv "$PROPOSED_CONFIG" "$RUN/native.toml"
+fi
+rm -f "$PROPOSED_CONFIG"
+trap - EXIT
 PAINTER_GPU_DEADLINE_UTC="${PAINTER_GPU_DEADLINE_UTC:-$(($(date -u +%s)+7200))}" \
   bash "$RUN/run.sh" --preflight
 echo 'GROUNDED_PILOT_PREPARED: 40 anchors, 24-step finite config; launch pending'
