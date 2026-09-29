@@ -26,6 +26,15 @@ PHASES = {
     "total_rollout": "train/agg/effective/agent/timing/total/mean",
     "optimizer_step": "time/step",
 }
+ROLL_OUT_METRICS = {
+    "input_tokens_mean": "train/agg/effective/agent/num_input_tokens/mean",
+    "output_tokens_mean": "train/agg/effective/agent/num_output_tokens/mean",
+    "output_tokens_p90": "train/agg/effective/agent/num_output_tokens/p90",
+    "turns_mean": "train/agg/effective/agent/num_turns/mean",
+    "generation_truncated_fraction": "train/agg/effective/agent/stop_condition/generation_truncated",
+    "trainable_fraction": "train/agg/effective/agent/is_trainable/mean",
+    "policy_wait_seconds": "time/wait_for_policy",
+}
 ANSI = re.compile(r"\x1b\[[0-9;]*m")
 STEP = re.compile(r"Step\s+(\d+)\s*\|\s*(?:(\d+)m\s*)?([\d.]+)s")
 WAIT = re.compile(r"Trainer waited\s*(?:(\d+)m\s*)?([\d.]+)s for a batch")
@@ -80,6 +89,8 @@ def metrics_profile(path: Path) -> dict:
     half = len(rewards) // 2
     phases = {name: mean([v for row in ordered if (v := finite(row.get(key))) is not None])
               for name, key in PHASES.items()}
+    rollout_details = {name: mean([v for row in ordered if (v := finite(row.get(key))) is not None])
+                       for name, key in ROLL_OUT_METRICS.items()}
     gradient_norms = [trainer_updates[step]["optim/grad_norm"] for step in sorted(batches)
                       if "optim/grad_norm" in trainer_updates[step]]
     kl = [trainer_updates[step]["mismatch_kl/all/mean"] for step in sorted(batches)
@@ -94,6 +105,7 @@ def metrics_profile(path: Path) -> dict:
         "last_five_reward_mean": mean(rewards[-5:]),
         "reward_min": min(rewards), "reward_max": max(rewards),
         "phase_seconds_mean_per_admitted_batch": phases,
+        "rollout_details_mean_per_admitted_batch": rollout_details,
         "gradient_norm_steps": len(gradient_norms),
         "nonzero_gradient_norm_steps": sum(v > 0 for v in gradient_norms),
         "gradient_norm_mean": mean(gradient_norms),
