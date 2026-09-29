@@ -92,7 +92,10 @@ def select(run: Path, eval_dirs: list[str]) -> dict[str, Path]:
     telemetry = run / "evidence/gpu-telemetry.csv"
     if telemetry.is_file():
         files[telemetry.relative_to(run).as_posix()] = telemetry
-    return files
+    # Evaluation vLLM creates large compilation caches under its output
+    # directory. They are neither evidence nor safe to publish.
+    return {name: path for name, path in files.items()
+            if "cache" not in Path(name).parts}
 
 
 def main() -> None:
