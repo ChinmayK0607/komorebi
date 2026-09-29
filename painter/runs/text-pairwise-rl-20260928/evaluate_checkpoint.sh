@@ -30,7 +30,7 @@ import json,sys
 from pathlib import Path
 source,target=map(Path,sys.argv[1:3]);requested=sys.argv[3];rows=json.loads(source.read_text())['cases']
 count=len(rows) if requested=='all' else int(requested)
-if count==8:
+if count==8 and requested!='all':
     simple=[r for r in rows if r['family']=='simple'][:4]
     intermediate=[r for r in rows if r['family']=='intermediate'][:4]
     rows=simple+intermediate
