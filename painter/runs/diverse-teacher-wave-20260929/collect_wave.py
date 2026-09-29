@@ -17,9 +17,7 @@ import sys
 import tarfile
 import time
 from urllib.error import HTTPError
-from urllib.request import urlopen
-
-from huggingface_hub import HfApi
+from urllib.request import Request, urlopen
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[2]
@@ -60,16 +58,20 @@ def source() -> tuple[dict, dict[str, bytes]]:
 
 
 def published_prefixes(manifest: dict) -> tuple[dict[str, tuple[str, int]], list[str]]:
-    for attempt in range(6):
-        try:
-            files = set(HfApi(token=False).list_repo_files(DATASET, repo_type="dataset"))
-            break
-        except Exception as exc:
-            response = getattr(exc, "response", None)
-            status = getattr(response, "status_code", None)
-            if status != 429 or attempt == 5:
-                raise
-            time.sleep(min(60, 2 ** (attempt + 2)))
+    def receipt_exists(run_id: str) -> bool:
+        url = public_url("main", f"runs/{run_id}/receipt.json")
+        for attempt in range(6):
+            try:
+                with urlopen(Request(url, method="HEAD"), timeout=30) as response:
+                    return response.status == 200
+            except HTTPError as exc:
+                if exc.code == 404:
+                    return False
+                if exc.code != 429 or attempt == 5:
+                    raise
+                time.sleep(min(60, 2 ** (attempt + 2)))
+        raise AssertionError("unreachable receipt retry state")
+
     sizes = {row["shard"] for row in manifest["rows"]}
     selected = {}
     missing = []
@@ -79,7 +81,7 @@ def published_prefixes(manifest: dict) -> tuple[dict[str, tuple[str, int]], list
             if prefix > count:
                 continue
             run_id = f"diverse-teacher-20260929-{shard}-n{prefix}"
-            if f"runs/{run_id}/receipt.json" in files:
+            if receipt_exists(run_id):
                 selected[shard] = (run_id, prefix)
                 break
         else:
