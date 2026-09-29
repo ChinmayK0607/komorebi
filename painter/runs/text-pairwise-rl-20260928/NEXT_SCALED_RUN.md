@@ -136,3 +136,11 @@ inspection found more legible curved tea rows and distributed pickers in
 that canvas, versus a more abstract hillside in the other.
 This single close-pair check supports image delivery and a plausible ordinal
 signal; it does not establish judge accuracy across the curriculum.
+The complete 184-case first SFT pass exited successfully. Before any
+optimizer update, the automatic retry preparation failed because its new
+manifest was placed in `prepared/` while its relative prompt paths still
+pointed into `prepared/scaled-run-pool/prompts/`. No retry painting or RL
+rollout was sampled in that failed preparation. The repair resolves and
+hash-checks each prompt against the original pool before writing an absolute
+path into the retry manifest; a relocation regression test covers it. The
+failed log and manifest remain distinct from the corrected retry.

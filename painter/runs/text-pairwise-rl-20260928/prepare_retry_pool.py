@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import sys
 from collections import defaultdict
@@ -45,7 +46,10 @@ def prepare(pool: Path, sources: list[Path], output: Path,
             if valid:
                 break
         if not valid:
-            pending.append(row)
+            reference = (pool.parent / row["reference"]).resolve()
+            if not reference.is_file() or hashlib.sha256(reference.read_bytes()).hexdigest() != row["reference_sha256"]:
+                raise ValueError(f"retry prompt is missing or changed: {row['id']}")
+            pending.append({**row, "reference": str(reference)})
     if len(pending) < 2 and not allow_fewer:
         raise ValueError(f"only {len(pending)} briefs need retry; two-GPU shard runner needs at least two")
     output.parent.mkdir(parents=True, exist_ok=True)
