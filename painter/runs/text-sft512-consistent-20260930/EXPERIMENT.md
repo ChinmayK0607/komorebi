@@ -32,7 +32,7 @@ are reused with their bytes/hashes, not regenerated as a moving opponent.
 ## Finite execution limits
 
 Maximum 50 optimizer updates, LoRA LR `1e-6`, three visual-feedback turns,
-8,192 completion tokens per trajectory, group eight and batch sixteen
+8,192 completion tokens per turn, group eight and batch sixteen
 (two briefs per admitted optimizer update). GPU topology is selected after
 availability, memory and whole-node price checks; do not assume inexpensive
 24/32/48-GB cards fit independent BF16 trainer and inference roles. Public
@@ -270,3 +270,70 @@ fresh-node interpreter transition without a rental, then repeat the same
 registered run with at most $18.00 additional GPU spend. The combined ceiling
 is $19.958576. The same data, SFT initializer, side-keyed judge, gradient
 settings, 50-update maximum and 15/20/every-five reward stop policy apply.
+
+## Interpreter-corrected launch
+
+Reviewed source `0772bb60baa524616e25aa6fd439b740d63004cc` refreshes the
+Prime interpreter after preparation. The executable shell regression and
+embedded-Python compilation checks passed as part of 38 focused run tests.
+The real Linux preparation then completed, the orchestrator guard activation
+receipt was written, and Prime accepted the roles and native multimodal task
+serialization. The finite supervisor started at 2026-09-30 13:31:16 UTC.
+This records launch only; no optimizer update or visual gain is established
+by these checks.
+
+Rental started 13:26:43 UTC at $2.38/hour, with $18 additional GPU allowance.
+Including the prior $1.958576 estimate, the combined ceiling is $19.958576.
+Training deadline is 20:15:30 UTC, retaining 45 minutes for evaluation and
+preservation; parent release deadline is 20:57:30 UTC. The earlier 50-update
+and frozen reward-trend policy still controls earlier stopping. A finite
+ten-minute GPU utilization capture was started during model loading; its
+measurement window includes startup and must not be called run-wide
+saturation. The archive destination is the public dataset path
+`runs/text-sft512-consistent-20260930/interpreter-retry/evidence.tar.gz`.
+
+Live source inspection corrected a documentation error: pinned Prime's
+`SamplingConfig.max_completion_tokens` is a per-turn limit, not a total
+trajectory cap. The actual configuration has always allowed up to 8,192
+output tokens per turn across at most three turns (up to 24,576 output tokens,
+subject to context and stopping). No sampling configuration was changed.
+This affects latency and token accounting; do not attribute a long trajectory
+to a violated 8,192-token total cap.
+
+## First optimizer update: live verification
+
+The first admitted batch dispatched at 2026-09-30 13:50:21 UTC with mean
+reward 0.1458333333, 16/16 trainable trajectories, zero recorded rollout
+errors/cancellations and zero output truncation. Trainer update 1 completed
+at 13:55:28 UTC with gradient norm 0.01019287109375, LR 1e-6 and finite
+weights. Dispatch and optimizer completion are distinct timestamps in this
+asynchronous pipeline; reward-trend checks use admitted batch reward steps.
+Completed optimizer counts must come from trainer records, not dispatch alone.
+
+CPU comparison against the pinned SFT-512 adapter found all 992 tensor keys
+retained, 992 tensors changed and 37,205,002 changed values. All updated values
+are finite. Step-1 broadcast weight SHA-256 is
+`f1f056435ef0968f77389b94fa1115436a3d679e742ac855f3c50177bba88970`;
+the [small weight audit](first-update-audit.json) records the immutable baseline
+hash. Inference logged a successful step-1 LoRA reload at 13:55:28 UTC.
+One update verifies the learning path, not visual improvement or reward scaling.
+
+At 13:59 UTC, 30 saved live judge comparisons contain 29 scored decisions
+and one unresolved three-of-four vote, which remains censored. Twenty-eight
+agreed initially; one resolved after balanced rechecks. These are transport
+and consensus counts, not measured visual accuracy. No rubric was weakened.
+
+A completed five-minute capture covers 13:53:42–13:58:32 UTC, 30 ten-second
+samples per card. Inference GPU 0 averaged 100% reported utilization, 30/30
+nonzero samples; trainer GPU 1 averaged 17.33%, 8/30 nonzero samples. The
+window includes the end of update 1 and later batch waiting; it is not
+run-wide utilization and the full pipeline is not saturated. The earlier
+startup window (13:31:50–13:41:40, 60 samples per card) averaged 46.13% on
+inference with 31/60 nonzero samples, versus 0.117% on trainer with 2/60
+nonzero samples. Do not report Prime's 37.6% MFU as measured hardware
+utilization: its log explicitly substituted A100 peak FLOPS for this GPU.
+
+Next decision remains the registered finite reward checks and matched 47-case
+evaluation. Current evidence supports continuing the bounded run, not
+promoting the model. Public checkpoint and screened evidence verification
+precede the exact-pod release. No scheduled task or recurring watcher exists.
