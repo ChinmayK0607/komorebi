@@ -216,3 +216,21 @@ losses against frozen SFT opponents under the grounded two-order protocol
 complex briefs, no simple briefs. The result is an early warning, not a
 step-24 comparison or a general-population estimate. The same 16 prompts
 must be scored at step 24 before judging a training trajectory.
+
+A direct ID comparison of the frozen manifests confirmed 40 distinct
+training briefs, 47 distinct held-out briefs, and zero overlapping IDs.
+
+I visually inspected five selected midpoint pairs against the exact anchor
+images used by this judge, including three losses and two wins. The losses
+are substantive: `t600-423` loses the chameleon's curled tail and connected
+head/crest; `t600-425` breaks the seahorse's upright S silhouette into
+separate pieces and omits the curled tail; `t600-426` enlarges the stapler but
+muddies its jaw and collapses the two offset paper sheets into ragged white
+shapes. The ocarina win `t600-445` is also concrete: the new painting joins
+the open mouthpiece to the body and shows the edge hole that the anchor lacks.
+The library win `t600-339` adds a more legible building and cantilevered
+slabs, while retaining rather mechanical horizontal edges. This selected
+spot-check supports some midpoint judge directions but is not a measured
+judge accuracy rate or a substitute for reviewing step 24. The five source
+canvases and two-order receipts are retained in the node evidence archive;
+local spot-check copies are ignored by Git.
