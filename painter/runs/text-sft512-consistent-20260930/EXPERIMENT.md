@@ -392,3 +392,55 @@ for earlier attempts: $7.121 total, not an invoice. Registered reward checks,
 the combined under-$20 GPU ceiling, public preservation and exact-pod release
 remain active. No additional machine, scheduling action or hyperparameter
 change occurred in this status check.
+
+## Throughput diagnosis: 2026-09-30 15:58 UTC
+
+Ten optimizer updates have completed. Update 10 took 13m37s: 10m46s waiting
+for its batch versus 2m50s active training. Other recent waits range from
+8m42s to 16m50s, with roughly 2–3 minutes of active training. This is an
+inference/environment supply imbalance, not a slow optimizer alone.
+
+The latest admitted batch contains 96,387 generated tokens across 16
+trajectories, averaging 6,024 output tokens per trajectory and three turns.
+The last 30 ten-second inference log reports ending 15:57:51 UTC average
+236.3 aggregate output tokens/s (median 243.05). At that observed rate, the
+latest batch's tokens alone imply approximately 6.8 minutes of decode time;
+this is an indicative calculation, not a measured matched batch breakdown.
+Rendering, sequential inspection, judgment, group stragglers and discarded
+work add latency. The same batch reports packing 0.082 seconds and explicit
+policy-barrier waiting 0.0 seconds, so neither explains its collection time.
+These throughput logs are not a new GPU utilization measurement.
+
+A live census of 960 render receipts finds median 8.64s, p90 84.25s and
+maximum 180.03s; 57 attempts exceed 170s. Valid attempts have median 20.38s;
+invalid attempts median 2.339s. In a following census, 55 of the near-timeout
+attempts are invalid and two valid. The render errors include syntax failures,
+undefined helper variables, missing brush/color setup, and no canvas. Error
+messages may occur twice per receipt; their raw counts are not distinct
+failure counts. Intermediate-turn invalidity is not terminal-episode failure:
+an episode may retain a valid earlier canvas, and in-flight episodes are
+included in this census. The 622 invalid receipts in the first census must
+not be described as 622 failed trajectories.
+
+There are 203 saved judge comparisons: 189 scored and 14 uncertain. Across
+473 saved API-call receipts, median latency is 22.10s, p90 45.97s and maximum
+240.12s. Order views run in parallel; adding their times is not episode wall
+time. Rendering and provider tails still matter despite reasonable medians.
+The orchestrator recorded one 14:19:22 UTC collection window discarding
+40/56 episodes: stale=16, errored=3, no_signal=21. This is that window only,
+not the run-wide discard rate. Whole-group guard counters were not visible
+in the inspected logs; no rejection percentage is inferred from uncertain
+judge counts.
+
+The immediate conclusion is that useful rollouts per dollar, rather than
+raw trainer speed or larger batches alone, needs improvement. Before scaling
+the next run: measure cumulative admission/discard reasons, distinguish model
+syntax errors from renderer timeouts, make deterministic syntax/runtime
+failures return promptly, and benchmark inference-heavy allocation against
+the present one-inference/one-trainer layout. Raising off-policy allowance or
+changing reward admission solely to increase throughput could change the
+learning algorithm and needs a separate comparison. Do not silently shorten
+quality budgets or alter the current registered judge/stopping rule. The
+current finite run remains under its existing combined $20 cap; no additional
+rental, hyperparameter change or recurring automation was made during this
+inspection. Update-10 reward is 0.1979167; no matched visual gain is established.
