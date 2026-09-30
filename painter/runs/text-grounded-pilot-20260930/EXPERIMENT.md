@@ -216,6 +216,11 @@ losses against frozen SFT opponents under the grounded two-order protocol
 complex briefs, no simple briefs. The result is an early warning, not a
 step-24 comparison or a general-population estimate. The same 16 prompts
 must be scored at step 24 before judging a training trajectory.
+Of the 15 actual midpoint image-pair receipts, 13 capped the candidate for
+`partial` or `missing` defining content, and one had an image-order score
+gap of at least one third. The sixteenth scene was model-invalid and scored
+zero without an image-pair call. These are the held-out midpoint denominators,
+distinct from the speculative training receipt counts above.
 
 A direct ID comparison of the frozen manifests confirmed 40 distinct
 training briefs, 47 distinct held-out briefs, and zero overlapping IDs.
@@ -234,3 +239,15 @@ spot-check supports some midpoint judge directions but is not a measured
 judge accuracy rate or a substitute for reviewing step 24. The five source
 canvases and two-order receipts are retained in the node evidence archive;
 local spot-check copies are ignored by Git.
+
+The complete training-only GPU telemetry file ends at 03:39:11 UTC, before
+held-out evaluation. It contains 1,325 ten-second samples **per card** from
+2026-09-29 23:58:27 to 2026-09-30 03:39:11 UTC: inference GPU 0 averaged
+97.01% utilization and was at least 90% busy on 96.83% of samples; trainer
+GPU 1 averaged 12.57% and was at least 90% busy on 11.40%. Restricting to
+the active 00:04:07–03:38:41 UTC window (1,288 samples per card) yields
+99.60% / 12.92% mean utilization and 99.46% / 11.72% of samples at or above
+90%, inference/trainer respectively. These are device utilization samples,
+not delivered training throughput; the inference card was saturated while
+the trainer waited for admissible rollouts. The evaluator is a separate
+later period and is excluded from both windows.
