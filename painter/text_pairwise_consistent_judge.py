@@ -69,10 +69,75 @@ def _response_format(ids: tuple[str, str]) -> dict[str, Any]:
     }}
 
 
+def _known_key_map(value: dict[str, Any], known: set[str], *, aliases: set[str] = set(), allow_unknown: bool = False) -> tuple[dict[str, Any], list[str], list[str]]:
+    """Conservatively normalize known key whitespace and one explicit alias."""
+
+    result: dict[str, Any] = {}
+    transformations: list[str] = []
+    ignored: list[str] = []
+    for key, item in value.items():
+        if not isinstance(key, str):
+            raise ValueError("non-string JSON key")
+        canonical = key if key in known or key in aliases else None
+        if canonical is None and key.strip() in known:
+            canonical = key.strip()
+            transformations.append(f"trimmed_key:{key!r}->{canonical}")
+        if canonical in aliases:
+            canonical = "preference"
+            transformations.append("alias:_preference->preference")
+        if canonical is None:
+            if allow_unknown:
+                ignored.append(key)
+                transformations.append(f"ignored_top_key:{key}")
+                continue
+            raise ValueError(f"unknown nested key:{key}")
+        if canonical in result:
+            raise ValueError(f"conflicting key alias:{canonical}")
+        result[canonical] = item
+    return result, transformations, ignored
+
+
+def _normalize_response(raw: str, ids: tuple[str, str]) -> tuple[dict[str, Any], dict[str, list[str]]]:
+    value = json.loads(raw.strip())
+    if not isinstance(value, dict):
+        raise ValueError("identity judge response is not an object")
+    normalized, transformations, ignored = _known_key_map(value, {"assessments", "reason", "winner_id", "preference"}, aliases={"_preference"}, allow_unknown=True)
+    required = {"assessments", "reason", "winner_id", "preference"}
+    if set(normalized) != required:
+        raise ValueError("identity judge omitted exact top-level fields")
+    assessments = normalized["assessments"]
+    if not isinstance(assessments, dict) or set(assessments) != set(ids):
+        raise ValueError("identity judge assessment IDs do not match images")
+    checked: dict[str, Any] = {}
+    for ident in ids:
+        assessment = assessments[ident]
+        if not isinstance(assessment, dict):
+            raise ValueError("identity judge assessment is not an object")
+        checked_assessment, changes, _ = _known_key_map(assessment, {"brief_fidelity", "visible_evidence", "weaknesses"})
+        transformations.extend(changes)
+        if set(checked_assessment) != {"brief_fidelity", "visible_evidence", "weaknesses"}:
+            raise ValueError("identity judge omitted exact assessment fields")
+        if checked_assessment["brief_fidelity"] not in {"clear", "partial", "missing"}:
+            raise ValueError("identity judge omitted valid fidelity")
+        if not isinstance(checked_assessment["visible_evidence"], str) or not checked_assessment["visible_evidence"].strip():
+            raise ValueError("identity judge omitted visible evidence")
+        weaknesses = checked_assessment["weaknesses"]
+        if not isinstance(weaknesses, list) or not weaknesses or not all(isinstance(item, str) and item.strip() for item in weaknesses):
+            raise ValueError("identity judge omitted weaknesses")
+        checked[ident] = checked_assessment
+    if not isinstance(normalized["reason"], str) or not normalized["reason"].strip():
+        raise ValueError("identity judge omitted comparison reason")
+    if normalized["winner_id"] not in (*ids, "tie"):
+        raise ValueError("identity judge winner ID is invalid")
+    if normalized["preference"] not in MAGNITUDES:
+        raise ValueError("identity judge preference magnitude is invalid")
+    if (normalized["winner_id"] == "tie") != (normalized["preference"] == "tied"):
+        raise ValueError("identity judge winner and preference disagree")
+    return ({"assessments": checked, "reason": normalized["reason"], "winner_id": normalized["winner_id"], "preference": normalized["preference"]}, {"transformations": transformations, "ignored_top_keys": ignored})
+
+
 def _parse(raw: str, ids: tuple[str, str]) -> dict[str, Any]:
-    # Keep the frozen identity validator as the semantic contract after the
-    # gateway has enforced the structural schema.
-    return base._parse(raw, ids)
+    return _normalize_response(raw, ids)[0]
 
 
 def _error_name(exc: BaseException) -> str:
@@ -106,6 +171,7 @@ def _view(*, key: str, brief: str, a: Path, b: Path, a_id: str, b_id: str) -> di
         "format_version": FORMAT_VERSION, "source_format_sha256": SOURCE_FORMAT_SHA256,
         "response_schema": "painting_comparison", "elapsed_seconds": 0.0,
         "usage": None, "finish_reason": None, "model": MODEL,
+        "normalization": {"transformations": [], "ignored_top_keys": []},
     }
     try:
         with urllib.request.urlopen(request, timeout=240) as response:
@@ -144,7 +210,7 @@ def _view(*, key: str, brief: str, a: Path, b: Path, a_id: str, b_id: str) -> di
         call["parse_error"] = "truncated"
         return call
     try:
-        call["assessment"] = _parse(raw, ids)
+        call["assessment"], call["normalization"] = _normalize_response(raw, ids)
     except (TypeError, ValueError, json.JSONDecodeError) as exc:
         call["parse_error"] = type(exc).__name__
     return call

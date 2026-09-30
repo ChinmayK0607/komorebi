@@ -396,3 +396,33 @@ preferences and separate controls, latency and all reported API cost. The
 new `text_pairwise_consistent_judge.py` is isolated from the frozen identity
 pass and is not installed into training merely because its local tests pass.
 No GPU rental or scheduled task is authorized by this repair.
+
+
+## Live format tolerance amendment — before the next full-panel calls
+
+Both two-pair schema support canaries returned HTTP 200 but some replies
+violated the requested schema (a leading space on `preference`, irrelevant
+extra fields, and one incomplete reply). Thus schema enforcement is not
+confirmed; no full-panel strict-schema pass was launched. The seven original
+API attempt receipts remain unchanged in `local-evidence/consistent-pass1`.
+Offline lossless normalization recovers both initial views of both pairs,
+with agreement for each, using the first semantically valid saved response.
+
+Use the previously registered conservative normalization in the live scorer:
+trim whitespace on known keys, accept the explicit `_preference` alias, and
+ignore irrelevant extra top-level fields only when all required fields are
+valid. Reject alias collisions, arbitrary spelling repairs, unknown IDs,
+incomplete evidence, and contradictory winner/preference. Preserve raw
+responses and record transformations. This is tolerant parsing of observed
+responses, not proof of provider schema enforcement or a change of verdict.
+The same schema request, Flash model, prompt, joint sheet, and balanced
+three-of-four conflict rule remain.
+
+A new immutable manifest in `local-evidence/consistent-normalized-pass1`
+binds the reviewed amended source and the same 36 frozen pairs. Reuse the
+two saved support pairs after conservative replay, retain all seven paid
+attempts and their original provenance, and call only the remaining 34 pairs
+with six concurrent pairs. No human labels enter requests. Separate
+recovered format problems, remaining parser failures, initial disagreements,
+accepted balanced rechecks, and unresolved uncertainty. No GPU or training
+launch is part of this experiment.

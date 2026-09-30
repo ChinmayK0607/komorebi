@@ -62,7 +62,9 @@ class ConsistentJudgeTests(unittest.TestCase):
 
     def test_payload_uses_strict_dynamic_schema_and_ids(self):
         ids = (self.left_id, self.right_id)
-        raw = json.dumps(_assessment(ids, ids[0]))
+        value = _assessment(ids, ids[0])
+        value["_preference_note"] = "harmless provider metadata"
+        raw = json.dumps(value)
         body = json.dumps({"choices": [{"message": {"content": raw}, "finish_reason": "stop"}], "usage": {"total_tokens": 9}}).encode()
         captured = {}
 
@@ -85,6 +87,7 @@ class ConsistentJudgeTests(unittest.TestCase):
         self.assertFalse(assessments["properties"][ids[0]]["additionalProperties"])
         self.assertTrue(call.get("assessment"))
         self.assertEqual(call["usage"]["total_tokens"], 9)
+        self.assertIn("_preference_note", call["normalization"]["ignored_top_keys"])
 
     def test_role_flip_keeps_canonical_requests_and_reverses_oriented_score(self):
         seen = []
@@ -142,10 +145,28 @@ class ConsistentJudgeTests(unittest.TestCase):
         self.assertEqual(call["raw_response"], "")
         self.assertNotIn("secret", json.dumps(call))
 
-    def test_strict_parser_rejects_extra_fields_and_invalid_winner(self):
+    def test_lossless_normalization_and_conservative_rejections(self):
         ids = (self.left_id, self.right_id)
         value = _assessment(ids, ids[0])
-        value["unexpected"] = 1
+        value["priority"] = "low"
+        self.assertEqual(judge._parse(json.dumps(value), ids)["winner_id"], ids[0])
+        value = _assessment(ids, ids[0])
+        value[" preference"] = value.pop("preference")
+        self.assertEqual(judge._parse(json.dumps(value), ids)["preference"], "slight")
+        value = _assessment(ids, ids[0])
+        value["_preference"] = value.pop("preference")
+        self.assertEqual(judge._parse(json.dumps(value), ids)["preference"], "slight")
+        value = _assessment(ids, ids[0])
+        value["_preference"] = "moderate"
+        with self.assertRaises(ValueError):
+            judge._parse(json.dumps(value), ids)
+        value = _assessment(ids, ids[0])
+        value.pop("preference")
+        value["preferenceslight"] = "slight"
+        with self.assertRaises(ValueError):
+            judge._parse(json.dumps(value), ids)
+        value = _assessment(ids, ids[0])
+        value["assessments"][ids[0] + " "] = value["assessments"].pop(ids[0])
         with self.assertRaises(ValueError):
             judge._parse(json.dumps(value), ids)
         value = _assessment(ids, "img_other")
