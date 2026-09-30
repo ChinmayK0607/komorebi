@@ -49,7 +49,7 @@ def select(run: Path, *, mid_step: int, final_step: int) -> dict[str, Path]:
     files: dict[str, Path] = {}
     required = [
         "EXPERIMENT.md", "prepare_node.sh", "run.sh", "evaluate.sh",
-        "score_direct_pilot.py", "prepare_controls.py", "archive_pilot.py",
+        "score_validation.py", "score_direct_pilot.py", "prepare_controls.py", "archive_pilot.py",
         "finalize_pilot.sh",
         "native.toml", "init-adapter.json", "initial-adapter-receipt.json",
         "rl-config-receipt.json", "balanced16-validation-manifest.json",
@@ -80,6 +80,10 @@ def select(run: Path, *, mid_step: int, final_step: int) -> dict[str, Path]:
         if not path.is_file():
             raise FileNotFoundError(name)
         files[name] = path
+    judge_source = run.parents[1] / "text_pairwise_grounded_judge.py"
+    if not judge_source.is_file():
+        raise FileNotFoundError(judge_source)
+    files["source/text_pairwise_grounded_judge.py"] = judge_source
     for folder in (
         "anchors-all/prompts", "anchors-all/anchors", "rl-rollouts-grounded",
         f"validation/step-{mid_step}-balanced16",
