@@ -137,7 +137,12 @@ so they are not a wall-clock decomposition. This points to model generation
 and invalid-code retries ahead of judging as the main throughput problem.
 The separate **125 saved generated traces** include speculative and stale
 work: 80 had valid final canvases, only 47 had a valid first turn, and 42
-recovered after an invalid turn. Across 375 generated turns, the primary
+recovered after an invalid turn. Another 41 traces had a valid turn followed
+by an invalid turn. Because the current paint action rewrites the complete
+sketch each time, a revision can lose validity even after the model has made
+a renderable painting; this is an observed failure mode, not proof that
+incremental patches would improve visual quality. Across 375 generated turns,
+the primary
 invalid-turn classes were syntax (89), undefined symbol (32), unknown brush
 (27), type error (23), unsupported brush API (18), and render timeout (14).
 Those counts are turn-level and should not be called admitted-batch failures.
