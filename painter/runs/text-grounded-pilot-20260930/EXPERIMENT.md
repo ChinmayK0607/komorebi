@@ -1,4 +1,4 @@
-# Grounded text-paint RL corrective pilot (prelaunch)
+# Grounded text-paint RL corrective pilot
 
 ## Hypothesis and controls
 
@@ -70,3 +70,39 @@ Record the final config hash, source commit, model revision, adapter hash,
 curriculum hash, phase timings, GPU sampling window and denominators,
 provider-reported judge cost, actual GPU rental, failed/censored cases,
 public archive/checkpoint hashes, and next decision after the run.
+
+## Live execution record (not a held-out result)
+
+The old pod was removed after the old-run archive was anonymously hash-verified.
+The new two-card RTX PRO 6000 Blackwell rental began 2026-09-29 23:45 UTC at
+$2.38/hour and has a finite removal deadline of 2026-09-30 09:45:03 UTC.
+The actual training source is `a965832148f6cbbdbd32588a6bbe054b28da64d5`;
+three pre-optimizer setup defects and their source fixes are documented in the
+[research index](../../../RESEARCH_LOG.md). The node's 40-row path-dependent
+manifest SHA-256 is
+`caa4ef000d9fdd514f31b9a1d7f2e741896904a0a6e657d3ece61fe64744dc45`.
+The final Prime config SHA-256 is
+`50ddb71b2947c8941ddbe54f3aea9a80ecdab5173eac62e5562e55c1036902ec`;
+the frozen 16-case subset SHA-256 is
+`0a16138115a44dfa81fd01bfd72e61e6ac5691f6ebecc4aea713c17e0b0bcdb7`.
+
+The first four optimizer updates completed by 00:47:54 UTC with nonzero
+gradient norms 0.0090, 0.0126, 0.0129, 0.0120. The corresponding admitted
+batch reward mean was 0.17969; first two batches averaged 0.26563 and the
+next two 0.09375. This is neither an upward trend nor a matched visual
+result. Trainer logs reported batch waits of 6m03s, 7m12s and 10m54s on
+steps 2–4; the inference card is the throughput bottleneck. An allocator
+mapping warning occurred before step 3 but its update succeeded; a real
+OOM/crash has not been observed. The public step-4 checkpoint was verified at
+HF revision `7bbe79e1945377ccd6ad1cfe38817d21112a6158`, adapter SHA-256
+`1cd51bb44a84d96a3562050a356d854bc71544401d3be0259ea4a84f8401d112`.
+These are interim facts. Preserve the final raw metrics and interval telemetry
+before making any utilization or quality claim.
+
+The frozen prior-control archive SHA-256
+`4bd5365d3123f53d02862b61b899ead9bcea157df77b93c22cfe4e59d359f801`
+was anonymously verified on the new node. It yielded both control summaries
+and 82 valid SFT/step-16 paintings for direct two-order comparison. A finite
+post-training [finalizer](finalize_pilot.sh) is prepared from source commit
+`48606cb6488b7fd909aacae4f46019d83d4b9892` plus verifier-source archive
+fix `71508fbaacd3845a567b810ed1b14effdab80e2d`. It has **not yet** run.
