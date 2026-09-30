@@ -150,14 +150,22 @@ by an invalid turn. Because the current paint action rewrites the complete
 sketch each time, a revision can lose validity even after the model has made
 a renderable painting; this is an observed failure mode, not proof that
 incremental patches would improve visual quality. Across 375 generated turns,
-the primary
-invalid-turn classes were syntax (89), undefined symbol (32), unknown brush
-(27), type error (23), unsupported brush API (18), and render timeout (14).
+the primary invalid-turn classes were syntax (89), undefined symbol (32),
+unknown brush (27), type error (23), unsupported brush API (18), and render
+timeout (14).
 Those counts are turn-level and should not be called admitted-batch failures.
 The valid renders had median elapsed 16.17s and p90 59.89s. This establishes
 that an 8,192-token cap was not the dominant failure cause in this window;
 program validity and inference latency were. The final-run profile must
 repeat these statistics with its complete denominators.
+
+The node's pinned model `config.json` reports `model_type=qwen3_5` and
+`Qwen3_5ForConditionalGeneration`; Prime's resolved orchestrator renderer is
+`qwen3.5`. Saved trace nodes contain the intended p5.brush system prompt and
+the text brief. This rules out an obvious model-family renderer mismatch in
+this run, though it does not prove every chat-template or token-mask detail.
+The observed invalid programs include hallucinated brush names such as
+`cwash`, consistent with code/API errors rather than a missing brief.
 
 An independent CPU read of the published step-12 adapter against its
 hash-verified RL-step-16 initializer found matching shapes and keys for
