@@ -4,10 +4,12 @@ set -Eeuo pipefail
 STEP="${1:?usage: evaluate.sh STEP [all|balanced16] [--preflight]}"
 SCOPE="${2:-all}"
 MODE="${3:-}"
+MAX_CONCURRENT="${PAINTER_EVAL_MAX_CONCURRENT:-16}"
 [[ "$STEP" =~ ^[1-9][0-9]*$ && ( "$SCOPE" == all || "$SCOPE" == balanced16 ) ]] || {
   echo 'STEP must be positive and SCOPE must be all or balanced16' >&2; exit 2;
 }
 [[ -z "$MODE" || "$MODE" == --preflight ]] || { echo 'usage: evaluate.sh STEP [all|balanced16] [--preflight]' >&2; exit 2; }
+[[ "$MAX_CONCURRENT" =~ ^[1-9][0-9]*$ ]] || { echo 'PAINTER_EVAL_MAX_CONCURRENT must be a positive integer' >&2; exit 2; }
 RUN="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
 REPO="$(cd "$RUN/../../.." && pwd -P)"
 NODE_ROOT="${PAINTER_NODE_ROOT:-/root/painter}"
@@ -54,16 +56,20 @@ PYTHONPATH="$REPO/painter" "$PY" "$REPO/painter/native_painting_eval.py" \
   --policy-label "consistent-step-$STEP" --model "consistent-step-$STEP" \
   --output-dir "$OUT/eval" --config "$OUT/eval.toml" \
   --expected-count "$([[ "$SCOPE" == balanced16 ]] && echo 16 || echo 47)" \
-  --max-turns 3 --max-tokens 8192 --rollout-timeout 1800 >"$OUT/logs/config.json"
-"$PY" - "$OUT/eval.toml" <<'PY'
+  --max-turns 3 --max-tokens 8192 --rollout-timeout 1800 \
+  --max-concurrent "$MAX_CONCURRENT" >"$OUT/logs/config.json"
+"$PY" - "$OUT/eval.toml" "$MAX_CONCURRENT" <<'PY'
 from pathlib import Path
 import os, sys
 path = Path(sys.argv[1])
+max_concurrent = int(sys.argv[2])
 text = path.read_text()
 if text.count('base_url = "http://127.0.0.1:8000/v1"') != 1:
     raise SystemExit('unexpected evaluation endpoint')
 if text.count('seed = 918200') != 1:
     raise SystemExit('unexpected evaluation seed')
+if text.count(f'max_concurrent = {max_concurrent}') != 1:
+    raise SystemExit('unexpected evaluation concurrency')
 seed = os.environ.get('PAINTER_EVAL_SEED', '918210')
 if not seed.isdigit():
     raise SystemExit('PAINTER_EVAL_SEED must be numeric')
@@ -117,10 +123,23 @@ env PYTHONPATH="$REPO/painter" PAINTER_LOCAL_API_KEY=local \
   bash -c 'cd "$1"; exec "$2" @ "$3" --no-serve --no-push' \
   _ "$PRIME_ROOT" "$EVAL" "$OUT/eval.toml" >"$OUT/logs/eval.log" 2>&1
 
-"$PY" - "$OUT" "$ADAPTER" "$STEP" "$SCOPE" <<'PY'
+PYTHONPATH="$REPO/painter" "$PY" - "$OUT" "$OUT/eval/evaluation-rollouts" "$ADAPTER" "$STEP" "$SCOPE" "$MAX_CONCURRENT" <<'PY'
 import hashlib, json, sys
 from pathlib import Path
-out, adapter, step, scope = Path(sys.argv[1]), Path(sys.argv[2]), int(sys.argv[3]), sys.argv[4]
+from native_painting_eval import audit_evaluation_artifacts
+
+out = Path(sys.argv[1]).resolve()
+artifact_root = Path(sys.argv[2]).resolve()
+adapter, step, scope, max_concurrent = Path(sys.argv[3]), int(sys.argv[4]), sys.argv[5], int(sys.argv[6])
+
+try:
+    artifact_root_relative = artifact_root.relative_to(out).as_posix()
+except ValueError as exc:
+    raise SystemExit('evaluation artifacts escaped the archived run root') from exc
+artifact_audit = audit_evaluation_artifacts(artifact_root)
+if artifact_audit['valid_receipts_with_png'] < 1:
+    raise SystemExit('evaluation produced no valid PNG-backed painting receipt')
+
 def sha(path):
     h = hashlib.sha256()
     with path.open('rb') as stream:
@@ -132,11 +151,24 @@ expected = upload['files']['adapter_model.safetensors']['sha256']
 actual = sha(adapter / 'adapter_model.safetensors')
 if upload.get('verified') is not True or upload.get('private') is not False or actual != expected:
     raise SystemExit('checkpoint public receipt or local adapter hash failed')
+(out / 'evaluation-artifact-receipt.json').write_text(json.dumps({
+    'schema': 'text-sft512-evaluation-artifacts-v1',
+    'artifact_root': artifact_root_relative,
+    **artifact_audit,
+}, indent=2, sort_keys=True) + '\n')
 (out / 'generation-receipt.json').write_text(json.dumps({
     'schema': 'text-sft512-consistent-generation-v1', 'step': step,
     'scope': scope, 'adapter_sha256': actual, 'public_commit': upload.get('commit'),
     'judge_deferred': True, 'scoring_protocol': 'text-paint-sft-pairwise-consistent-v1',
     'matched_control': 'sft-step512', 'max_turns': 3, 'max_tokens': 8192,
+    'max_concurrent': max_concurrent,
+    'evaluation_artifacts': {
+        'artifact_root': artifact_root_relative,
+        'receipt_count': artifact_audit['receipt_count'],
+        'valid_receipts': artifact_audit['valid_receipts'],
+        'valid_receipts_with_png': artifact_audit['valid_receipts_with_png'],
+        'invalid_receipts': artifact_audit['invalid_receipts'],
+    },
 }, indent=2, sort_keys=True) + '\n')
 PY
 echo "CONSISTENT_GENERATION_COMPLETE: step=$STEP scope=$SCOPE; score locally after node release"

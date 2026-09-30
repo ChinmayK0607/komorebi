@@ -486,3 +486,152 @@ Supervisor is still running; release-ready is absent. Estimated combined
 elapsed-clock GPU spend is $11.40 including prior attempts, not an invoice.
 The combined under-$20 ceiling, finite preservation/release and existing
 reward rules remain unchanged. No new rental or scheduling action occurred.
+
+
+## Reward stop and finite profiling — 2026-09-30 18:24 UTC
+
+The registered batch-20 check stopped training: batches 11–15 averaged
+0.1854167 versus 16–20 at 0.1770833 (delta −0.0083333). The native trainer
+completed **19 optimizer updates**; admitted batch 20 was dispatched but did
+not complete an update. Supervisor field `last_optimizer_step=20` reflects
+its admitted-metric counter, not completed optimizer evidence. Preserve this
+scope distinction in curves and future supervisor naming.
+
+The last completed broadcast adapter (step 19) was separately validated and
+published, with 992 finite tensors and 116,727,808 elements. Public revision
+`d3542ce4ff03f9be0c8bfaf4a25e60ea58b66219`, path
+`text-sft512-consistent-20260930/step_19`, weight SHA-256
+`9481e1aa32e33a9e8eced203656168dcfaabce995bfab337c86f386b7d7d4aa0`,
+233,590,600 bytes. Anonymous parent metadata independently matches that hash.
+This is an adapter-only recovery, without optimizer state, and is **unevaluated**.
+The already-started matched evaluation stays bound to public step 16.
+
+Reviewed profiling separates 19 matched trainer timing rows: wait
+12,140.049 seconds and active training 2,931.4469 seconds, denominator
+15,071.4959 seconds (80.55% waiting). This timing fraction is not GPU
+utilization. The independent 17:41:52–17:44:52 UTC telemetry window contains
+19 ten-second samples per GPU: inference mean 99.95%, 19/19 nonzero;
+trainer mean 0%, 0/19 nonzero. The pipeline is not saturated.
+
+There are 1,773 observed render receipts: 623 valid and 1,150 invalid,
+including intermediate attempts; these are not trajectory success rates.
+Render median 8.86 seconds, p95 180.013 seconds, and 123 timeout receipts.
+Twenty-eight structured failed traces are observed. Repeated syntax, undefined
+helper and brush-method errors are overlapping error mentions, not unique
+failures. The 365 judge receipts contain 337 scored and 28 uncertain outcomes;
+861 actual HTTP attempts have median 21.93 seconds and p95 53.94 seconds.
+Logged discard warnings total stale 40, error 14 and no_signal 90 across four
+threshold-warning windows only; they are not a complete run census. Prime's
+residual no_signal can include guard rejection and is not evidence of equal
+rewards. Guard counters and the generation-token telemetry counter remain
+unavailable; do not infer them.
+
+The matched 47-case evaluation began with a hardcoded concurrency of four,
+despite a 16-sequence inference server. Ten complete, error-free episode
+records existed at 18:21 UTC; visual validity and preference scoring are
+still pending. Its existing finite generation allowance is 30 minutes,
+so missing cases may be censored. Exact verifier resume compares every
+resolved config field, including concurrency. No live config provenance was
+rewritten and no risky parent-process pause/restart was performed. The next
+launch explicitly configures concurrency rather than inheriting this hidden
+four-episode default. It must include a completion-time estimate for the full
+held-out split within the rental allowance; a partial panel cannot be called
+47-case validation.
+
+Profiling source `painter/profile_rl_evidence.py` excludes validation,
+anchors, teacher candidates, credentials and weights. The accepted collected
+profile is `painter/collected/spatial-readability-20260930/profile/profile-final.json`
+and its Markdown companion; earlier live/reviewed drafts contained corrected
+scope/timing errors and are superseded, never results. Raw utilization CSV
+is retained alongside them. Snapshot GPU cost including earlier attempts is
+approximately $13.75 at 18:24 UTC, clock-based rather than an invoice.
+No new rental, training recipe, reward prompt, sampling budget or recurring
+watcher was introduced.
+
+Next decision: finish finite evaluation and evidence preservation, then
+release the node. Do not scale this recipe from online reward alone. Prioritize
+safe fast syntax/API rejection, corrected helper conventions and actual
+inspect–repair demonstrations, followed by measured valid-rollout throughput
+and explicit evaluation concurrency before another paid training run.
+
+
+## Preservation audit and release — 2026-09-30 18:36 UTC
+
+The registered training stop was followed by a **partial evaluation failure**:
+15/47 episode records completed before the finite 30-minute evaluation timeout
+(exit124); the other32 are unobserved/censored, not model failures. All15 completed cases are from the complex family; this non-random prefix
+contains no simple/intermediate validation cases. All15
+completed episode wrappers report ok=true, which is operational completion,
+not visual success. Public step16 remained the evaluation policy; step19 is
+preserved independently and unevaluated.
+
+The screened weight-free evidence archive is public at
+`CK0607/komorebi-painter-experiments@c4f05445e70442dbab465b667c1854e4f9d206bf`,
+path `runs/text-sft512-consistent-20260930/interpreter-retry/evidence.tar.gz`,
+507,241,220 bytes, SHA-256
+`4ca075b3794e2434b8b6eaec0bc2a2884eeaead20bc92d6001466d3ac9cdfbcf`.
+The parent anonymously downloaded and verified the entire archive, then
+retained selected small evidence and deleted its temporary large copy. All
+eight new teachers' selected program/PNG pairs independently match both local
+review hashes and the public archive's member hashes. Training renders,
+raw traces, metrics, judge receipts and teacher trajectories are preserved.
+
+**A backup coverage bug remains material:** evaluation final canvases were
+written by the old native configuration under the repository-level relative
+`evaluation-rollouts` directory, outside the owned run subtree. Consequently
+none of the13 recorded valid final evaluation PNGs entered this archive. Saved assistant programs,
+turn metadata and target canvas hashes remain recoverable from the traces;
+these are not a replacement for the missing pictures. No pairwise visual
+result may be reported until a Linux CPU replay reconstructs and verifies the
+images (or explicitly labels non-identical replays). This failure also
+invalidates any blanket statement that all evaluation renders were backed up.
+The new configuration places evaluation artifacts inside the archived output
+root and adds artifact checks before successful generation receipts. Code
+changes are reviewed/tested separately and were not part of the stopped run.
+
+The finite relay verified public upload before writing its release marker.
+The owned node was released at **18:29:23.703 UTC**; a subsequent provider
+listing confirms zero active pods. Current-node elapsed-clock estimate is
+approximately $12.006, plus $1.9586 earlier failed/setup attempts: **$13.9647
+combined GPU estimate**, below the $20 ceiling. It is not a provider invoice.
+Gateway API charges and account agent usage are separate. No new GPU run or
+scheduled task was started. Source `0772bb6` remains the training identity;
+profiling/completion repairs receive their own reviewed Git commit.
+
+Next decision: recover the saved evaluation programs on CPU before interpreting
+quality, and validate output-root/backup coverage plus explicit concurrency
+before another GPU launch. Do not spend GPU time to recreate deterministic
+render artifacts or count missing files as poor model paintings.
+
+
+## Reviewed repairs and teacher publication — 2026-09-30 18:47 UTC
+
+The native config now writes an absolute evaluation artifact directory beneath
+its archived output, and the launch script explicitly defaults to16 concurrent
+episodes. Successful generation receipts require adjacent hash-matching PNGs
+for valid renderer receipts; symlinks and paths escaping the artifact root
+are rejected. These are output-integrity checks, not new aesthetic reward
+surfaces. Thirty-four focused local tests and shell syntax checks pass; no
+Linux model/render run was launched with this repaired source, so actual
+throughput improvement remains unmeasured.
+
+CPU replay preparation recovered13 source programs corresponding to recorded
+valid final canvas hashes; two of15 trace records had no valid final canvas.
+The other32 cases did not complete. The ignored inputs and manifest are under
+`collected-final-partial/replay-inputs-cpu/`; seed0 and pinned renderer/assets
+are recorded. FINISHED/no-change/failed-last-turn cases resolve the actual
+prior valid painting rather than blindly replaying the last response. Source
+preparation is idempotent and does not render on the Mac. Pixel-hash agreement
+must be checked after Linux CPU replay; reconstruction is not yet complete.
+
+The node archive's snapshot predates the last teacher inspection metadata,
+so complete finalized teacher data was independently screened and published
+from the local authored/render evidence, without another GPU rental. Dataset
+`CK0607/komorebi-painter-teachers@13c5ea1fc9221eaee7eb06d755b218660f26f4e0`,
+path `spatial-readability-20260930/teacher-eight.tar.gz`, has139 files,
+3,049,378 bytes and anonymously verified archive SHA-256
+`f5628221255f51860613555a79a6e80c584f49f47c2766687987c4a2f5011401`.
+It contains the final authored metadata, actual critiques, source programs,
+render receipts/images and side-by-side review. There are no human labels or
+SFT admission/training-benefit claims. This supplemental data upload corrects
+the incomplete metadata snapshot; it does not restore missing RL eval PNGs.
