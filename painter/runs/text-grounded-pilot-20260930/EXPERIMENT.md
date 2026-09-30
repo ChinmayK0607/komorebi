@@ -113,7 +113,9 @@ was anonymously verified on the new node. It yielded both control summaries
 and 82 valid SFT/step-16 paintings for direct two-order comparison. A finite
 post-training [finalizer](finalize_pilot.sh) is prepared from source commit
 `48606cb6488b7fd909aacae4f46019d83d4b9892` plus verifier-source archive
-fix `71508fbaacd3845a567b810ed1b14effdab80e2d`. It has **not yet** run.
+fix `71508fbaacd3845a567b810ed1b14effdab80e2d`. At this preparation
+snapshot it had not yet run; its completed result and packaging repairs are
+recorded below.
 
 At the 01:14 UTC live snapshot, step 7 had completed with nonzero gradient
 norm 0.0073 despite one CUDA allocator *mapping warning* just before it. The
@@ -251,3 +253,120 @@ the active 00:04:07–03:38:41 UTC window (1,288 samples per card) yields
 not delivered training throughput; the inference card was saturated while
 the trainer waited for admissible rollouts. The evaluator is a separate
 later period and is excluded from both windows.
+
+During the final 47-case evaluation, a single `nvidia-smi` snapshot showed
+GPU 0 at 100% and GPU 1 at 0% (the trainer had exited). This is **only a
+snapshot**, not an evaluation-window utilization estimate. The current
+finalizer evaluates midpoint and final checkpoints serially on GPU 0, leaving
+the second rented card unused for most evaluation work. A future run should
+test parallel, nonoverlapping evaluation shards or concurrent checkpoint
+servers on separate cards, with unchanged seeds/render contract and a
+measured cost-per-comparable-painting benefit before adopting the change.
+
+## Final held-out result, failures, cost, and decision
+
+The final fixed 47-case text-only evaluation completed at step 24. The
+grounded SFT-anchor reward had 46 comparable cases, one censored judge
+failure (`t600-309`), 40 valid candidate canvases among those 46, and 20
+wins, 2 ties, 24 losses: mean 0.42391. This is not an improvement over the
+anchor. By family, its 30 comparable complex cases averaged 0.42222 (13
+wins, 1 tie, 16 losses; one further complex case censored); eight
+intermediate averaged 0.39583 (3/1/4); eight simple averaged 0.45833
+(4/0/4). Five complex and one simple case were model-invalid and scored
+zero. The canvas collector found 41/47 valid final canvases because the
+censored case had a canvas but no admissible anchor-judge score. Do not merge
+these denominators.
+
+The separate, two-order, validity-inclusive **direct visual** comparison
+of step 24 against frozen SFT yielded 23 wins, 6 ties, 17 losses over 46
+comparable cases (one censored), mean 0.50543 and 95% bootstrap interval
+[0.42029, 0.59239]. Against its own RL-step-16 initializer it yielded 22
+wins, 7 ties, 18 losses over all 47, mean 0.49113 and interval
+[0.40248, 0.57801]. The prespecified harder 16-case midpoint comparison
+of step 24 versus step 12 gave 7 wins, 3 ties, 6 losses, mean 0.52083 and
+interval [0.40104, 0.64063]. Every interval spans 0.5; no comparison
+establishes a reliable gain. The step-24 versus step-16 direct means were
+0.5242 on 31 complex briefs, 0.3542 on eight intermediate, and 0.5000 on
+eight simple; the intermediate regression is an explicit warning. Family
+counts are small and not independent evidence of generalization.
+
+The effective optimizer-batch reward averaged 0.22005, 0.23958, and
+0.22135 across consecutive eight-update blocks; its last five averaged
+0.19167. All 24 updates had nonzero gradients (mean norm 0.01231), and the
+final adapter changed all 992 LoRA tensors versus the initializer (relative
+Frobenius delta 0.00057235). This excludes a no-op update but cannot turn
+the nonrising online curve into held-out visual progress. The complete
+saved-trace audit has 257 generated trajectories, including speculative or
+stale work: 182/257 valid final canvases (70.8%), only 104/257 valid first
+turns (40.5%), 94 recovered after an invalid turn, and 88 had a valid turn
+followed by an invalid one. Across 770 turns, error-class flags included
+149 syntax, 72 undefined-symbol, 50 unknown-brush, 45 type, 36 unsupported
+brush-API, and 32 render-timeout cases. These overlapping turn flags must
+not be added as distinct failed trajectories. Valid render receipt time was
+median 15.65 seconds and p90 65.91 seconds (426 receipts). Mean model
+inference phase was 265 seconds versus 71 harness and 34 scoring seconds
+per admitted batch; phases overlap. The 23 logged trainer waits averaged
+432 seconds. This identifies generation, program validity, and slow renders
+as throughput bottlenecks ahead of the judge API.
+
+The saved 180 two-order training judge receipts (speculative-inclusive)
+had 35 image-order gaps of at least one third. Their provider-reported
+judge cost was $0.1744 for 360 views; this is **only** the training-receipt
+subset, not the total Vercel bill. The serial held-out judges and parallel
+teacher generation also used Vercel; actual billed totals were not exposed
+by these receipts and are not invented here. The two-GPU Lium rental ran
+from approximately 2026-09-29 23:45 UTC through node deletion on
+2026-09-30, at $2.38/hour for the whole node. Its final displayed subtotal
+was **$14.62**, under the $25 GPU ceiling. About $9.3 accrued before the
+03:39 UTC training exit; about $5.3 more accrued during serial midpoint,
+47-case inference, API comparisons, and archive work. Those phase amounts
+are approximations from clock time, not separately metered charges. The
+training-window telemetry above shows a saturated inference card and a
+lightly used trainer; evaluation then occupied only one rented GPU and
+later performed CPU/API-only judging while both cards were still billed.
+The prior, separately closed 33-update rental was $17.31, so the two recent
+GPU runs alone cost about $31.93, excluding Vercel and earlier runs.
+
+Manual review of selected final cases confirms that the mixed statistics
+hide meaningful regressions and wins. In `t600-342` beach cabin, step 24
+loses the readable cabin and lets the turquoise sea cut across its walls;
+the SFT and RL-step-16 versions preserve more of the building. In
+`t600-423` chameleon, step 24 breaks the head/body/tail into fragments
+and loses the coiled tail, despite a valid canvas. In `t600-466` mountain
+train, step 24 adds a coherent red train, repeated viaduct piers, trees,
+and river where earlier versions were sparse; it still looks fairly
+mechanical. In `t600-323` polar bears, step 24 is preferred to a very weak
+anchor because its aurora and two bear outlines are present, yet the animals
+remain thin wireframes. Thus a relative win against a weak anchor is not
+an absolute-quality pass. These four examples were selected for diagnosis,
+not sampled to estimate an error rate. The complete local
+[47-case gallery](local-evidence/gallery/index.html) and public archive
+allow further review.
+
+Finalization preserved completed scores and **did not repeat paid calls**
+after two packaging faults: missing `zstandard` in the pinned Python
+environment and inclusion of evaluator `cache/` files in the screened
+archive. The dependency was installed on the node; `archive_pilot.py` now
+excludes generated caches, and all Python heredocs in the finalizer compile.
+The 3,421-file, 454,805,809-byte evidence archive was anonymously
+hash-verified at public HF dataset revision
+`ffdcc865cf46495d72ca4215c15866ddb077bebf`, path
+`runs/text-grounded-pilot-20260930/grounded-pilot-step-24-20260930.tar.gz`,
+SHA-256 `e34870e580a74fcf621268e10f5f45c54b0a91060c9b7c74bf4fab8cb23282c4`.
+The step-12 and step-24 adapters remain public at the revisions above.
+The gallery, summary, profile, and curve were also copied to ignored local
+`local-evidence/`. The owned pod was removed and `lium ps` returned an
+empty inventory. No scheduled watcher was created.
+
+**Decision:** do not scale this reward/training recipe yet. Keep the frozen
+SFT and RL-step-16 checkpoints as controls. For the next *proposed* run,
+first make the policy produce valid p5.brush programs more often, avoid
+replacing a valid canvas with an invalid full rewrite, and introduce an
+absolute subject/structure floor so wins over very weak anchors do not
+masquerade as good paintings. Then test a fixed, family-balanced held-out
+trajectory with direct pairwise judgments and manual spot checks before
+buying a longer GPU run. To reduce spend, batch or shard inference
+evaluation across available cards and move post-render API judging and
+archiving to a CPU-only environment; measure cost per comparable valid
+painting, rather than assuming high utilization of one card means an
+efficient two-card rental. This is a research direction, not a launched run.

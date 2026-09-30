@@ -138,7 +138,7 @@ def read(path): return json.loads(path.read_text())
 def small(summary):
     return {k:summary.get(k) for k in ('expected','comparable','censored',
        'valid_candidates','mean_score','wins','ties','losses','both_valid',
-       'mean_score','bootstrap_95pct_interval','order_gap_at_least_third')
+       'bootstrap_95pct_interval','order_gap_at_least_third')}
 report={'schema':'painter-grounded-pilot-final-v1','mid_step':mid,'final_step':final,
   'midpoint_balanced16':small(read(root/f'validation/step-{mid}-balanced16/comparison/summary.json')),
   'final_all47':small(read(root/f'validation/step-{final}-all/comparison/summary.json')),

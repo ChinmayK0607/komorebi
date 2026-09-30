@@ -105,6 +105,13 @@ def select(run: Path, *, mid_step: int, final_step: int) -> dict[str, Path]:
         path = run / name
         if path.is_file():
             files[name] = path
+    # Evaluation saves render/runtime caches alongside its evidence. They are
+    # reproducible, large, and rejected by the evidence packager; retain the
+    # actual traces, judge receipts, canvases, and summaries instead.
+    files = {
+        name: path for name, path in files.items()
+        if "cache" not in Path(name).parts and "__pycache__" not in Path(name).parts
+    }
     return files
 
 
