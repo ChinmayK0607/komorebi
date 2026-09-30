@@ -128,3 +128,134 @@ Do not rewrite the prompt to force the fan or beekeeper result. Report
 explicit agreement and order consistency along with inspection of readable
 subjects, faint workers, extra wool-ball needles and the failed sand yacht.
 The split path remains separate from both frozen v2 and the training judge.
+
+The presentation pass started at 06:40:51 UTC from source commit `a44eb3e`.
+Its manifest SHA-256 is
+`cfd1234885dff6ef0a491562665f256e1c509467364ff4b5628df15dec8e7a2e`.
+Nine focused alignment/presentation tests and five existing margin/grounding
+tests passed before launch. The reviewer corrected an initially permissive
+winner parser to use the margin parser's strict winner/strength validation,
+matched fidelity-validation retries, and exact baseline receipt identities;
+the faulty draft made no API calls. No existing training code was modified.
+
+## Results and decision — 2026-09-30
+
+Both finite passes finished. Their frozen reports are
+[prompt-only](local-evidence/pass1/report.html) and
+[presentation](local-evidence/split-pass1/report.html), with raw view receipts,
+image hashes, normalized order votes and provider usage beside them.
+The generated [analysis](local-evidence/alignment-analysis.json) preserves
+the direct preference constraints, rewards against the common frozen SFT
+opponent, and separate control-scene decisions.
+
+| Metric | Grounded v1, sheet | Grounded v2, sheet | Same v2, separate PNGs |
+| --- | ---: | ---: | ---: |
+| Scored pair receipts | 35/36 | 36/36 | 35/36 |
+| Explicit direct preferences matched by averaged reward | 1/5 | 2/5 | 3/5 |
+| Explicit preferences matched by **both** order votes | 1/5 | 2/5 | 2/5 |
+| Disagreeing order winners, all scored pairs | 9/35 | 11/36 | 11/35 |
+| Order margin gaps at least 1/3 | 9/35 | 12/36 | 11/35 |
+| Disagreeing order winners, feedback panel | 7/27 | 10/28 | 8/27 |
+| Disagreeing order winners, eight controls | 2/8 | 1/8 | 3/8 |
+| Mean / median successful view latency, seconds | 35.28 / 31.08 | 43.97 / 38.83 | 53.72 / 47.02 |
+| Recorded provider cost, USD | 0.03635 | 0.04427 | 0.05014 |
+
+The five preferences are a selected calibration set, including three related
+comparisons of the **same fan**. They are not independent random examples;
+these counts are not estimates of general judge accuracy. No confidence
+claim or trained-model improvement is inferred from them. Each condition
+has one two-order observation, not repeated stochastic evaluation. The
+second pass was sequential in time, so provider load is another limitation
+of its latency comparison. Both passes had at most 16 concurrent view calls.
+
+### What improved and what remains wrong
+
+The new prompt recognizes the wireframe ferret as unfinished rather than
+awarding it a large win for apparent anatomical detail. Its reward against
+the identical frozen SFT opponent falls from 0.667 under fresh v1 to 0.333
+under v2; split presentation gives 0.500 with conflicting votes. These are
+relative margins, not absolute grades. The clean pantry stays at 0.667;
+the mountain train stays a clear win (0.917 → 1.000); and the excellent
+step-24 wool ball goes from 0.750 to 0.833, with both orders agreeing under
+v2. The extra needles do not erase its coherent round form and appealing
+wash. The lost step-24 sand yacht is demoted from 0.250 to 0.083 under v2
+(0.167 with split inputs). The two sand-yacht parser failures are censored,
+not scored as visual losses.
+
+The direct kingfisher comparison changes from preferring step 24 under v1
+to preferring step 16 under both v2 presentations, matching the user. The
+beekeeper remains a failure: v2 sheet votes confidently favor opposite
+images (order gap 0.667), and split votes also oppose one another (gap 0.500)
+with the averaged reward incorrectly favoring step 24. Reasons still claim
+grip or connected sleeves not supported by clearly visible marks. Therefore
+explicit anti-hallucination wording did not solve the perception problem.
+
+Reward ordering against the common SFT opponent also matters. Sheet v2
+gives beekeeper step 16 a higher reward than step 24 (0.667 vs 0.500), but
+split presentation reverses that order (0.333 vs 0.500). For the kingfisher,
+sheet v2 ties the anchored rewards (0.500 each) despite a correct direct
+preference, while split gives 0.583 vs 0.250, matching the user but with
+conflicting votes on the step-16 anchor comparison. These differences show
+why an average alone cannot be treated as reliable supervision.
+
+The fan is not fixed. Step 24 gets 0.667 against the user-preferred frozen
+SFT under fresh v1, 0.750 under v2, and 0.583 under split presentation.
+The latter reduces the overreward but still chooses the wrong winner and
+has a 0.500 order gap. Split presentation's third nominally correct human
+preference is frozen SFT over step 16 (0.417); its two votes disagree, so it
+does not add a third reliable preference. Both v2 presentations correctly
+prefer the frozen fan over the nearly unpainted matched-SFT fan.
+
+For the faint farm worker, sheet v2 raises the step-24 reward from 0.417 to
+0.583, but that average masks a huge 0.833 order gap. Split presentation
+instead gives 0.250. The subject visibility/readability distinction is in
+the rubric, but the judge has not applied it consistently; this is not a
+reason to hard-code a saturation or darkness reward. Pale coherent painting
+remains acceptable. On additional scenes, v2 consistently prefers the more
+coherent chameleon and preserves the mitten shape. It also changes the
+harvester and stapler ranking; those have no user labels and must not be
+counted as additional successful calibration examples. Split inputs increase
+control order disagreement from 1/8 to 3/8, so they are not a general repair.
+
+### Failures, scope, spend and next decision
+
+One v1 direct sand-yacht pair and one split step-16 sand-yacht/anchor pair
+failed validation after bounded retries (`ValueError`). Credential-safe
+receipts retain the exception class but not the provider body, so the exact
+validation subcause is unavailable. No failed judgment became zero reward.
+There are 212 saved successful view receipts across both passes. Their
+reported costs total **$0.130756192**; failed/retried calls with discarded
+responses are outside that total, so it is not a verified complete invoice.
+Saved receipts cover 339,202 completion tokens and 270,308 prompt tokens.
+Model IDs are requested/reported API identifiers; an immutable provider
+weight revision is unavailable. GPU spend and GPU utilization are both
+inapplicable: **no GPU was rented or used**, and no painter generation,
+renderer, optimizer, rollout or training data changed.
+
+**Decision:** retain the general v2 rubric as an evaluated candidate, but do
+not silently replace the training judge with either tested path. The prompt
+helps several clear visual failures; Flash still invents spatial contact and
+can prefer the mechanical fan against the user's taste. Separate-image
+presentation alone does not remove that problem. Before new GPU work, the
+next useful judge experiment is a single stronger-judge comparison on these
+frozen pairs plus independent human-labelled pairs, or grounded visual
+preference examples spanning different subjects. Do not keep tailoring
+instructions to these five preferences or introduce extra additive rewards
+to hide the mismatch. Preserve both the positive RL examples and the
+failure cases. The $20 GPU cap and finite trend-stop policy remain in force
+for the next actual run; their launcher integration is still pending.
+
+### Public preservation
+
+The [169-file calibration archive](https://huggingface.co/datasets/CK0607/komorebi-painter-experiments/blob/69e9abf6d94741da472c31f93260fb3531695e92/runs/judge-alignment-20260930/frozen-judge-calibration-20260930.tar.gz)
+contains both passes' manifests, raw receipts and reports, the tested PNGs,
+analysis and reviewed experiment source. It is 13,852,946 bytes with SHA-256
+`6945eb52b69800087e6cd0c4054ec8f6de86b3fee57e295a912195bb04c75b26`.
+Anonymous streaming download at revision
+`69e9abf6d94741da472c31f93260fb3531695e92` reproduced both the byte count
+and hash. Public images are candidates/evaluation evidence, not newly
+approved training examples. The first upload attempt stopped on a local
+Hugging Face Xet cache-write restriction; HTTP upload with a task-local
+cache succeeded. No GPU, additional judging, or broader filesystem grant
+was needed to repair publication. The artifact was frozen before adding
+this preservation receipt; its copies of this document omit this paragraph.
