@@ -153,3 +153,12 @@ delta was 0.022998 versus initializer norm 51.732831 (relative 0.0004446).
 This rules out a no-op checkpoint, while the small relative movement does
 not itself establish a visually meaningful update. Repeat at the final
 checkpoint and pair with held-out images before judging the learning rate.
+
+The step-16 speculative receipt audit found 9/68 generated judged canvases
+graded `clear` in both image orders for dispatch steps 1–8, versus 8/62
+for dispatch steps 9–16. The other 59/68 and 54/62 had at least one
+`partial` or `missing` view, respectively; large order gaps occurred on
+13/68 and 12/62. This is **not** an admitted-batch or held-out comparison:
+the generated work includes speculation, repeated briefs, and changing task
+mix. It is nevertheless an early warning that the new visible-subject cap
+has not yet increased clear subject depictions among saved judged rollouts.
