@@ -35,3 +35,16 @@ At 21:16 UTC, all 12 shards had published at least a first episode. The [40-cand
 At about 21:34 UTC, [64 published episodes](../../collected/diverse-teacher-wave-20260929/review-preview-20260929-v9/index.html) from all 12 shards were verified; 63 retain a valid canvas and 59 end with a valid action. `fresh-text-059` showed that a valid terminal **finish** action can retain the prior canvas without producing a new PNG. The collector now recognizes this as a successful terminal action, rather than conflating it with a failed render. The remaining statuses are one retryable API error, three invalid final repairs, one renderer error, and 58 four-turn limits. Of 64 episodes, 63 have complete token usage (2,367,375 input and 3,262,876 output), giving about **$2.0395** at dated list rates; actual charges remain unavailable.
 
 At 2026-09-30 01:55 UTC, the `photo-pro-00` Cloud continuation recovered from its four-episode public prefix and published an eight-episode prefix. Its anonymously verified archive is 4,350,542 bytes, SHA-256 `f9b0985d778d917009b39984d036ac627a2d20a32bf524203135b53d2808106c`. The [v15 read-only gallery](../../collected/diverse-teacher-wave-20260929/review-preview-20260930-v15/index.html) now contains **82/120** published candidate episodes, of which 79 retain a valid canvas and 73 have a valid terminal turn. The four newly countable scenes include two full four-turn paintings and two saved valid canvases whose terminal attempt ended in an API error or invalid code. Manual review of the new banana-carrier, glass-office-building, snowboarder, and beach-couple canvases found recognizable broad composition and placement but a hard planar/vector finish; these are useful structural candidates, not automatically approved aesthetic SFT targets. The remaining unverified episodes and actual provider billing are still unknown.
+
+At 2026-09-30 02:45 UTC, the same finite Cloud CPU task published its full
+`photo-pro-00-n12` prefix. The read-only collector independently verified the
+public archive (7,726,657 bytes, SHA-256
+`8a8a8e3cdce1a382cf798f3e07615627ec0f1b8620ff0ad012716a15f2e8b154`)
+and built [v16 review](../../collected/diverse-teacher-wave-20260929/review-preview-20260930-v16/index.html).
+The wave now has **86/120** published episode candidates: 83 retain a valid
+canvas, 78 have a valid terminal turn, 54 have a valid first turn, and 80
+revised after their first valid canvas. The four new photo-interior paintings
+show recognizable layout and many requested objects, but visually remain
+hard-edged/planar; they are not automatically admitted as high-quality SFT
+targets. Actual Gateway cost fields remain missing; no zero-cost claim is
+made. The other 34 unpublished inputs remain outside the candidate count.
