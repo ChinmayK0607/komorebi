@@ -74,6 +74,23 @@ Gateway credential egress was rejected by automatic approval review because
 HF-token authorization did not cover this separate credential. Gateway
 transfer approval is pending, and that key has not been copied.
 
+Preparation completed: Prime accepted the generated config, the pinned
+initializer was verified, and the 40 training/47 held-out fixed anchors were
+verified. Config SHA-256:
+`5b80e84d1cd4f6687b28efa7a13cc91ee3799618b71e219004f57ee4d3648fb9`.
+The nine-file preparation archive is public at dataset revision
+`3ee857f9274da0b20a2320a2da9d825857a8be9d`, path
+`runs/text-sft512-consistent-20260930/preparation-evidence.tar.gz`, anonymously
+verified SHA-256 `22317cc8b8842c83c109a11f3a8d529b7b262656831db787f333ba1fdd3c7343`.
+The temporary node HF token was deleted, and the finite controller verified
+exact-pod removal at 11:20:10 UTC rather than leaving GPUs idle pending
+authorization. `lium ps` showed zero pods. Conservative clock-based GPU spend
+was $0.396 (not an invoice), leaving at most $19.604 of this same run's cap;
+use additional billing margin when relaunching. Judge calls and optimizer
+updates were both zero. Actual Prime-child activation receipt, first real
+scored rollout, gradient verification and visual/reward results remain
+pending; successful configuration preparation is not a training result.
+
 Record reviewed source commit, frozen config/manifest bytes, initializer and
 renderer hashes, actual GPU model/topology/price, rental start/deadlines,
 credential-free launch receipt, and native serializer/scorer/gradient checks.
