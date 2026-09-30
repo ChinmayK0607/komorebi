@@ -48,3 +48,8 @@ show recognizable layout and many requested objects, but visually remain
 hard-edged/planar; they are not automatically admitted as high-quality SFT
 targets. Actual Gateway cost fields remain missing; no zero-cost claim is
 made. The other 34 unpublished inputs remain outside the candidate count.
+At the pinned 2026-09-29 list rates in `estimate_list_cost.py`, 83/86
+episodes have complete token usage (3,161,117 input and 4,372,405 output
+tokens across the collection); the reported-token list estimate is **$2.9761**.
+Three episodes have incomplete usage, and all actual provider-charge fields
+are missing, so the full charge is unknown and the estimate is not an invoice.
