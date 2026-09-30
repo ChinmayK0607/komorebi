@@ -44,3 +44,7 @@ python3 "$RUN/completion_relay.py" \
   --lium-bin lium \
   --completion-commit "$PAINTER_SOURCE_COMMIT"
 ```
+
+When `execute_pipeline.sh` is already running on the node, append
+`--existing-pipeline`; the relay waits for its final terminal receipt and does
+not invoke post-training a second time.

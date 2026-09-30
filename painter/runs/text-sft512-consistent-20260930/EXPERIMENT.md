@@ -236,3 +236,37 @@ limit. Median elapsed time across all recorded attempts was 10.35 seconds;
 p95 reached 180.018 seconds. Syntax/API errors and timeouts are distinct
 from malformed judge responses. The transport retry cannot be claimed to
 fix model-generated invalid programs or all slow renders.
+
+## Corrected-format retry: preparation failure and preservation
+
+Source `8074ba2` prepared the pinned base model, public SFT-512 adapter and
+40/47 fixed-anchor manifests on a fresh two-GPU Linux node. The guard child
+then failed with `ModuleNotFoundError: prime_rl`: the outer pipeline chose
+system Python before preparation created the Prime environment and failed
+to refresh that interpreter afterward. No training process, optimizer update
+or trained adapter resulted. The side-keyed judge was not exercised online.
+
+Rental started 2026-09-30 13:14:51 UTC and ended 13:21:16 UTC (384.776 seconds),
+an estimated $0.254379 at $2.38/hour. All setup/failed attempts together cost
+$1.958576 estimated GPU spend; these are elapsed-clock estimates, not invoices.
+There is no measured utilization interval for this preparation attempt.
+
+The finite pipeline preserved 405 files (61,247,021 bytes) in public dataset
+`CK0607/komorebi-painter-experiments`, commit
+`d26379be261b91e440173afb444a951e0ba8abfd`, path
+`runs/text-sft512-consistent-20260930/side-retry/evidence.tar.gz`.
+SHA-256 `726b44c397ab12109af5fd1741d5ce0a64219b844e1ba5a195327700ae01bcc8`
+matches anonymous downloads on the node and parent. Final upload and terminal
+receipts were retrieved before the parent released the exact pod. Lium then
+reported zero pods. No scheduled task was created.
+
+The CPU/API transport proof is also public at revision
+`faa1a5f4fbff6a2f1a003b4d876b945c8b85ee63`, path
+`runs/text-sft512-consistent-20260930/side-transport-probe.tar.gz`,
+SHA-256 `ad65e55202ff0a3523285fb95ee528eac8d6a30a08cde727717415fcdc30bf06`.
+
+Next decision: refresh the actual Prime Python after preparation, test the
+fresh-node interpreter transition without a rental, then repeat the same
+registered run with at most $18.00 additional GPU spend. The combined ceiling
+is $19.958576. The same data, SFT initializer, side-keyed judge, gradient
+settings, 50-update maximum and 15/20/every-five reward stop policy apply.

@@ -93,6 +93,15 @@ tmp.replace(identity_path)
 PY
 }
 
+refresh_prime_python() {
+  local candidate="$PRIME_ROOT/.venv/bin/python"
+  [[ -x "$candidate" ]] || {
+    echo "pinned Prime Python missing after preparation: $candidate" >&2
+    return 1
+  }
+  PY="$candidate"
+}
+
 record_post_identity() {
   "$PY" - "$RUN" "${PAINTER_SOURCE_COMMIT:-}" <<'PY'
 import json
@@ -245,6 +254,10 @@ else
   # Preparation is finite and idempotently hash-verifies the frozen public
   # anchor archive.  It does not start training.
   if ! bash "$RUN/prepare_node.sh"; then
+    STATUS=1
+    exit 1
+  fi
+  if ! refresh_prime_python; then
     STATUS=1
     exit 1
   fi

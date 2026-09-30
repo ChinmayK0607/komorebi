@@ -32,6 +32,13 @@ class CompletionRelayTests(unittest.TestCase):
         self.assertEqual(relay.parse_state_output(nested_terminal)["status"], "failed")
         self.assertIsNone(relay.parse_state_output("provider warning only"))
 
+    def test_parse_terminal_waits_for_final_archive_code(self):
+        base = {"schema": "text-sft512-consistent-terminal-v1", "status": "failed"}
+        pre = json.dumps({"stdout": json.dumps({**base, "archive_exit_code": None})})
+        final = json.dumps({"stdout": json.dumps({**base, "archive_exit_code": 2})})
+        self.assertIsNone(relay.parse_terminal_output(pre))
+        self.assertEqual(relay.parse_terminal_output(final)["archive_exit_code"], 2)
+
     def test_remote_post_redirects_node_output_and_keeps_commit_explicit(self):
         command = relay._remote_post_command(
             "/root/painter/repo/painter/runs/text-sft512-consistent-20260930",
@@ -102,6 +109,48 @@ class CompletionRelayTests(unittest.TestCase):
             )
             self.assertEqual(result, 1)
             self.assertFalse((private / "release.ready").exists())
+
+    def test_existing_pipeline_waits_for_final_receipt_without_post_retry(self):
+        with tempfile.TemporaryDirectory() as temp:
+            private = Path(temp)
+            (private / "pod-id.txt").write_text("pod-test\n")
+            (private / "start.json").write_text(json.dumps({
+                "rental_start_epoch": 1000, "price_usd_per_hour": 360,
+                "max_gpu_usd": 20, "release_margin_seconds": 180,
+            }))
+            exec_calls = []
+
+            def fake_run(argv, **_kwargs):
+                if argv[:2] == ["lium", "exec"]:
+                    exec_calls.append(argv[-1])
+                    archive_code = None if len(exec_calls) == 1 else 0
+                    status = "complete" if archive_code == 0 else "failed"
+                    return types.SimpleNamespace(returncode=0, stdout=json.dumps({
+                        "stdout": json.dumps({
+                            "schema": "text-sft512-consistent-terminal-v1",
+                            "status": status, "archive_exit_code": archive_code,
+                        }),
+                    }), stderr="")
+                destination = Path(argv[-2])
+                destination.parent.mkdir(parents=True, exist_ok=True)
+                remote = argv[3]
+                if remote.endswith("terminal-receipt.json"):
+                    destination.write_text(json.dumps({
+                        "schema": "text-sft512-consistent-terminal-v1",
+                        "status": "complete", "archive_exit_code": 0,
+                    }))
+                elif remote.endswith("upload.json"):
+                    destination.write_text(json.dumps({"private": False, "public_hash_verified": True}))
+                return types.SimpleNamespace(returncode=0, stdout="", stderr="")
+
+            result = relay.relay(
+                private_dir=private, lium_bin="lium", completion_commit="d" * 40,
+                existing_pipeline=True, run=fake_run, sleep=lambda _seconds: None,
+                now=lambda: 1000.0,
+            )
+            self.assertEqual(result, 0)
+            self.assertEqual(len(exec_calls), 2)
+            self.assertTrue(all("execute_pipeline.sh" not in command for command in exec_calls))
 
 
 if __name__ == "__main__":

@@ -140,6 +140,42 @@ def parse_state_output(raw: str) -> dict[str, Any] | None:
     return find(value)
 
 
+def parse_terminal_output(raw: str) -> dict[str, Any] | None:
+    """Find a final pipeline receipt, ignoring its application exit code."""
+
+    try:
+        value, _ = json.JSONDecoder().raw_decode(raw.lstrip())
+    except json.JSONDecodeError:
+        return None
+
+    def find(candidate: Any, failed: bool = False) -> dict[str, Any] | None:
+        if isinstance(candidate, dict):
+            if not failed and candidate.get("schema") == "text-sft512-consistent-terminal-v1":
+                return candidate if candidate.get("archive_exit_code") is not None else None
+            code = candidate.get("exit_code", candidate.get("returncode"))
+            try:
+                failed = failed or (code is not None and int(code) != 0)
+            except (TypeError, ValueError):
+                failed = True
+            for child in candidate.values():
+                found = find(child, failed)
+                if found is not None:
+                    return found
+        elif isinstance(candidate, list):
+            for child in candidate:
+                found = find(child, failed)
+                if found is not None:
+                    return found
+        elif isinstance(candidate, str):
+            try:
+                return find(json.loads(candidate), failed)
+            except (TypeError, json.JSONDecodeError):
+                return None
+        return None
+
+    return find(value)
+
+
 def provider_success(raw: str) -> bool:
     """Check the top-level lium JSON result without trusting child output."""
 
@@ -169,6 +205,12 @@ def _remote_exec(lium_bin: str, pod_id: str, command: str, *, run: Callable[...,
 
 def _remote_state_command(remote_run: str) -> str:
     path = json.dumps(f"{remote_run}/supervisor-state.json")
+    code = f"from pathlib import Path; p=Path({path}); print(p.read_text() if p.is_file() else {{}})"
+    return f"python3 -c {shlex.quote(code)}"
+
+
+def _remote_terminal_command(remote_run: str) -> str:
+    path = json.dumps(f"{remote_run}/terminal-receipt.json")
     code = f"from pathlib import Path; p=Path({path}); print(p.read_text() if p.is_file() else {{}})"
     return f"python3 -c {shlex.quote(code)}"
 
@@ -254,6 +296,7 @@ def relay(
     lium_bin: str,
     completion_commit: str,
     poll_seconds: float = 20.0,
+    existing_pipeline: bool = False,
     run: Callable[..., Any] = subprocess.run,
     sleep: Callable[[float], None] = time.sleep,
     now: Callable[[], float] = time.time,
@@ -272,19 +315,25 @@ def relay(
     while now() < deadline:
         remaining = max(1.0, deadline - now())
         try:
+            query = (_remote_terminal_command(inputs["remote_run"])
+                     if existing_pipeline else _remote_state_command(inputs["remote_run"]))
             result = _remote_exec(
-                lium_bin, inputs["pod_id"], _remote_state_command(inputs["remote_run"]),
+                lium_bin, inputs["pod_id"], query,
                 run=run, timeout=min(30.0, remaining),
             )
-            terminal = parse_state_output(result.stdout or "")
-            if terminal and terminal.get("status") in {"stopped", "completed", "failed"}:
+            terminal = (parse_terminal_output(result.stdout or "")
+                        if existing_pipeline else parse_state_output(result.stdout or ""))
+            if terminal and (existing_pipeline or terminal.get("status") in {"stopped", "completed", "failed"}):
                 reason = "supervisor_terminal"
                 break
         except (OSError, subprocess.SubprocessError, RelayError):
             pass
         sleep(min(poll_seconds, max(0.0, deadline - now())))
 
-    if terminal is not None and now() < deadline:
+    if existing_pipeline and terminal is not None:
+        status = "complete" if terminal.get("status") == "complete" else "failed"
+        reason = "pipeline_terminal"
+    elif terminal is not None and now() < deadline:
         remaining = max(1.0, deadline - now())
         command = _remote_post_command(
             inputs["remote_run"], commit=completion_commit,
@@ -347,6 +396,7 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--lium-bin", default="lium")
     parser.add_argument("--completion-commit", required=True)
     parser.add_argument("--poll-seconds", type=float, default=20.0)
+    parser.add_argument("--existing-pipeline", action="store_true")
     return parser
 
 
@@ -357,6 +407,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         lium_bin=args.lium_bin,
         completion_commit=args.completion_commit,
         poll_seconds=args.poll_seconds,
+        existing_pipeline=args.existing_pipeline,
     )
 
 
