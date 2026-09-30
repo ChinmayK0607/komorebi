@@ -106,3 +106,24 @@ and 82 valid SFT/step-16 paintings for direct two-order comparison. A finite
 post-training [finalizer](finalize_pilot.sh) is prepared from source commit
 `48606cb6488b7fd909aacae4f46019d83d4b9892` plus verifier-source archive
 fix `71508fbaacd3845a567b810ed1b14effdab80e2d`. It has **not yet** run.
+
+At the 01:14 UTC live snapshot, step 7 had completed with nonzero gradient
+norm 0.0073 despite one CUDA allocator *mapping warning* just before it. The
+warning is not a fatal OOM: step 7 succeeded, and the process and rollout
+coordinator continued. Its batch took 12m07s, including 9m32s waiting for
+rollouts and 2m34s of active update. Seven unpaired online rewards so far are
+0.19444, 0.29167, 0.11111, 0.14063, 0.54167, 0.20139, 0.12500. This is
+high variance and not a general upward trend.
+
+There were 57 saved two-order visual-judge receipts in this speculative
+snapshot, which is **not** the admitted optimizer-batch denominator. The
+candidate subject was graded clear in both orders on 8, partial in both on
+38, and missing in both on 3; the other 8 had mixed category views. The
+curated anchor was clear in both orders on 25, partial in both on 20, and
+mixed on 12. Candidate margin caps were 1.0 on 8 receipts, 2/3 on 44, and
+1/2 on 5. Mean capped receipt score was 0.3304 and 10/57 order gaps were at
+least one third. The cap does visibly restrict many incomplete candidates,
+but manual contact sheets still show some weak anchors (e.g. `t600-429` chair
+frame and `t600-444` T-handle corkscrew), and three early `t600-429` candidate
+canvases do not consistently preserve chair geometry. The 47 held-out cases
+and direct controls remain required before any quality decision.
