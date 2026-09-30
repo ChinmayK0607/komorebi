@@ -13,6 +13,8 @@ import re
 import subprocess
 import tarfile
 import tempfile
+import time
+from urllib.error import HTTPError
 from urllib.request import urlopen
 
 from huggingface_hub import CommitOperationAdd, HfApi
@@ -21,6 +23,27 @@ DATASET = "CK0607/komorebi-painter-teachers"
 TOP_LEVEL = ("progress.json", "events.jsonl", "run-summary.json", "gallery.html", "restored-source.json", "restored-public-shard.json", "renderer-smoke-result.json")
 PART_RAW_BYTES = 384 * 1024
 PARTS_PER_COMMIT = 8
+
+
+def retry_transient(action):
+    """Retry rate limits and transient HF errors without logging signed URLs."""
+    for attempt in range(7):
+        try:
+            return action()
+        except Exception as exc:
+            response = getattr(exc, "response", None)
+            status = getattr(exc, "code", None) if isinstance(exc, HTTPError) else getattr(response, "status_code", None)
+            if status not in {404, 429, 500, 502, 503, 504} or attempt == 6:
+                raise
+            time.sleep(min(45, 2 ** (attempt + 1)))
+    raise AssertionError("unreachable retry state")
+
+
+def public_bytes(url: str) -> bytes:
+    def read() -> bytes:
+        with urlopen(url, timeout=180) as response:
+            return response.read()
+    return retry_transient(read)
 
 
 def sha256_file(path: Path) -> str:
@@ -45,11 +68,7 @@ def pack(root: Path, output: Path) -> int:
 
 
 def public_sha256(url: str) -> str:
-    digest = hashlib.sha256()
-    with urlopen(url, timeout=180) as response:
-        for chunk in iter(lambda: response.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
+    return hashlib.sha256(public_bytes(url)).hexdigest()
 
 
 def public_url(revision: str, path: str) -> str:
@@ -58,11 +77,11 @@ def public_url(revision: str, path: str) -> str:
 
 def publish_archive(api: HfApi, archive: Path, run_id: str, expected: str) -> dict[str, object]:
     remote_path = f"runs/{run_id}/bundle.tar.gz"
-    commit = api.upload_file(
+    commit = retry_transient(lambda: api.upload_file(
         path_or_fileobj=str(archive), path_in_repo=remote_path,
         repo_id=DATASET, repo_type="dataset",
         commit_message=f"Publish painter benchmark {run_id}",
-    )
+    ))
     if public_sha256(public_url(commit.oid, remote_path)) != expected:
         raise RuntimeError("public result archive failed SHA-256 verification")
     return {"dataset_commit": commit.oid, "bundle_path": remote_path, "representation": "archive"}
@@ -86,16 +105,15 @@ def publish_split(api: HfApi, archive: Path, run_id: str, expected: str, temp: P
             CommitOperationAdd(path_in_repo=part_paths[i], path_or_fileobj=str(local_parts[i]))
             for i in range(start, min(start + PARTS_PER_COMMIT, len(part_paths)))
         ]
-        commit = api.create_commit(
+        commit = retry_transient(lambda: api.create_commit(
             repo_id=DATASET, repo_type="dataset", operations=operations,
             commit_message=f"Publish painter benchmark {run_id} text parts",
-        )
+        ))
     assert commit is not None
     digest = hashlib.sha256()
     byte_count = 0
     for path in part_paths:
-        with urlopen(public_url(commit.oid, path), timeout=180) as response:
-            encoded = response.read()
+        encoded = public_bytes(public_url(commit.oid, path))
         raw = base64.b64decode(b"".join(encoded.split()), validate=True)
         digest.update(raw)
         byte_count += len(raw)
@@ -154,12 +172,12 @@ def main() -> int:
         }
         receipt_path = Path(temp) / "receipt.json"
         receipt_path.write_text(json.dumps(receipt, indent=2, sort_keys=True) + "\n")
-        api.upload_file(
+        retry_transient(lambda: api.upload_file(
             path_or_fileobj=str(receipt_path),
             path_in_repo=f"runs/{run_id}/receipt.json",
             repo_id=DATASET, repo_type="dataset",
             commit_message=f"Record verified painter benchmark {run_id}",
-        )
+        ))
         print(json.dumps(receipt, sort_keys=True))
     return 0
 
