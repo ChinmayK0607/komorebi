@@ -444,3 +444,24 @@ quality budgets or alter the current registered judge/stopping rule. The
 current finite run remains under its existing combined $20 cap; no additional
 rental, hyperparameter change or recurring automation was made during this
 inspection. Update-10 reward is 0.1979167; no matched visual gain is established.
+
+## Operational snapshot: 2026-09-30 16:52 UTC
+
+Fourteen optimizer updates have completed. Latest completed gradient norms
+(12–14) are 0.0072, 0.0110 and 0.0120. Admitted rewards 11–14 are 0.25,
+0.0729167, 0.2395833 and 0.1666667. First-five mean is 0.1270833 versus
+steps 6–10 mean 0.1729167; these are different curriculum briefs and not
+matched evidence of a visual-quality gain. The first registered rolling
+five-versus-five decision remains step 15. No rubric or sampling change.
+
+Step 12 is public at revision `57cff68221b225ab448a2fdc5042ba7cc6db5fd2`,
+path `text-sft512-consistent-20260930/step_12`, in
+`CK0607/qwen3.8-27b-brush-painting`. The verified upload receipt reports
+weight SHA-256 `5002613fc1757911e66fad9a2b70bdcb907041609a1f3a4b015abdd6a8db35d8`;
+an anonymous parent HF tree API check independently matches that LFS OID.
+Matched evaluation remains pending. Update 13 took 24m50s, update 14 6m30s;
+rollout supply remains variable and insufficient for continuous training.
+Estimated combined elapsed-clock GPU spend is $10.09 including earlier
+attempts, not an invoice. Supervisor remains running and release-ready is
+absent; the finite cap, reward stopping, preservation and exact-pod release
+continue. No new rental or scheduled task was created.
