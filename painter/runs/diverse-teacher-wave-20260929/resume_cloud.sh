@@ -18,8 +18,16 @@ if [[ ! -x "$RUNTIME/renderer-env/bin/python" || ! -d "$PLAYWRIGHT_BROWSERS_PATH
 fi
 PY="$RUNTIME/renderer-env/bin/python"
 (cd "$BENCH" && env -u AI_GATEWAY_API_KEY -u HF_TOKEN pnpm install --frozen-lockfile --ignore-scripts --silent)
-STAGE="$($PY "$RUN/stage_cloud.py" "$SHARD")"
-ln -s "$BENCH/node_modules" "$STAGE/node_modules"
+STAGE="$ROOT/painter/collected/diverse-teacher-wave-20260929/$SHARD"
+if [[ ! -d "$STAGE" ]]; then
+  STAGE="$($PY "$RUN/stage_cloud.py" "$SHARD")"
+fi
+[[ -f "$STAGE/restored-source.json" && -f "$STAGE/config.json" && -f "$STAGE/refs.json" ]] || {
+  echo 'existing staged shard is incomplete; refusing paid resume' >&2; exit 1;
+}
+if [[ ! -e "$STAGE/node_modules" ]]; then
+  ln -s "$BENCH/node_modules" "$STAGE/node_modules"
+fi
 RESTORE="$($PY "$RUN/resume_public_shard.py" "$SHARD" "$STAGE")"
 read -r PREFIX COUNT < <("$PY" -c 'import json,sys;r=json.load(sys.stdin);print(r["restored_prefix"],r["source_rows"])' <<<"$RESTORE")
 if (( PREFIX == COUNT )); then
