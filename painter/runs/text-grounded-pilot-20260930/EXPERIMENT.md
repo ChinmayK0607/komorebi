@@ -21,6 +21,14 @@ validation. The old run's 47-case output and the new pilot's 16/47-case
 outputs must be compared validity-inclusively and visually, with censored
 renders reported, not dropped.
 
+The prespecified file named `balanced16-validation-manifest.json` contains
+8 intermediate and 8 complex briefs, **no simple briefs**. Its name is
+misleading: use it as a fixed *harder-case* midpoint panel, not as a balanced
+sample of all three training families. The full 47-case validation contains
+8 simple, 8 intermediate, and 31 complex briefs; report final results by
+family before making any generalization claim. The fixed subset hash and
+contents must remain unchanged during this pilot.
+
 The completed 47-case comparison selected **RL step 16** as initializer:
 `CK0607/qwen3.8-27b-brush-painting@ac4d3eda8e5925e2d23992cfdc1a63620ebde573`,
 prefix `text-pairwise-scaled-20260929/step_16`, adapter LFS SHA-256
