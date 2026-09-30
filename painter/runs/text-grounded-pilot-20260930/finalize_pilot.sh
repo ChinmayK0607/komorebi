@@ -25,6 +25,23 @@ mkdir -p "$EVIDENCE"
    -f "$RUN/async-output/$NAME/artifacts/adapters/step_$FINAL/hf-upload.json" ]] || {
   echo 'both public checkpoint receipts are required before evaluation' >&2; exit 1;
 }
+"$PY" - "$RUN" "$NAME" "$MID" "$FINAL" <<'PY'
+import hashlib,json,sys
+from pathlib import Path
+run=Path(sys.argv[1]);name=sys.argv[2]
+for step in map(int,sys.argv[3:]):
+    root=run/f'async-output/{name}/artifacts/adapters/step_{step}'
+    receipt=json.loads((root/'hf-upload.json').read_text())
+    if receipt.get('verified') is not True or receipt.get('private') is not False or not receipt.get('commit'):
+        raise SystemExit(f'step {step} lacks a verified public checkpoint')
+    expected=receipt.get('files',{}).get('adapter_model.safetensors',{}).get('sha256')
+    if not isinstance(expected,str) or len(expected)!=64:
+        raise SystemExit(f'step {step} lacks an adapter digest')
+    with (root/'adapter_model.safetensors').open('rb') as source:
+        digest=hashlib.file_digest(source,'sha256').hexdigest()
+    if digest!=expected:
+        raise SystemExit(f'step {step} local adapter differs from public receipt')
+PY
 if [[ -f /root/painter/pilot.pid ]] && kill -0 "$(cat /root/painter/pilot.pid)" 2>/dev/null; then
   echo 'training is still active; finalization requires its completed or stopped state' >&2
   exit 1
