@@ -140,3 +140,99 @@ The reviewed completion pipeline performs generation-only evaluation on the
 archive bytes and signals the finite parent controller for exact-pod release.
 It reserves bounded evaluation/upload/release windows and still archives
 failure evidence. This is one finite process chain, not a scheduled task.
+
+## Attempt outcome and next decision
+
+Training was stopped by the operator at 13:00:32 UTC, before any optimizer
+update. The supervisor records zero updates and child exit 143. Sixty-two
+training canvases were saved across turns. Nineteen comparisons finished:
+12 scored, five failed initial parsing, and two lacked three-of-four order
+consensus. Complete-group censoring prevented an admitted training batch.
+The reviewed alias fix recovers two of 16 failed calls and one of the five
+failed views; remaining errors involve missing fields, incorrect/truncated
+identities, missing weaknesses or conflicting preferences. They were not
+converted into rewards. This attempt says nothing about achievable RL
+improvement because the optimizer never ran.
+
+The finite completion relay exposed a separate bug: application exit code
+143 inside a valid supervisor payload was mistaken for provider-command
+failure. It has a regression fix. The parent invoked screened archival
+directly, verified public preservation, and signalled exact-pod removal.
+Deletion completed at 13:04:55 UTC; provider inventory returned zero pods.
+Current-rental cost is estimated at $1.308 by clock and listed price. With
+the earlier $0.396 setup, aggregate estimate is $1.704, below the same $20
+ceiling. These are not invoices. Recorded receipts contain 57 judge calls
+with $0.0225593 Gateway cost and median call duration 28.36 seconds; canceled
+or in-flight provider calls may be absent from this tally.
+
+A finite ten-minute utilization capture yielded 55 samples per GPU between
+12:54:25 and 13:03:25 UTC, including time after training stopped. GPU 0
+(inference) averaged 67.27% reported utilization, with 37/55 nonzero samples.
+GPU 1 (trainer) averaged 0%, with 0/55 nonzero samples. This is neither a
+run-wide average nor evidence of trainer saturation.
+
+The 80,639,550-byte, 683-file evidence archive is public in
+`CK0607/komorebi-painter-experiments` at revision
+`00261695802fece720d5bdff470d96053c9d642f`, path
+`runs/text-sft512-consistent-20260930/evidence.tar.gz`. Both node and parent
+anonymous downloads match SHA-256
+`142dfe8d16932d1c1bb50c4f5308c55426f247968cd8ab18a2453120afb0d6b8`.
+It includes the pre-upload terminal receipt; the final successful upload
+receipt remains separately preserved. No trained adapter exists for this
+attempt.
+
+Next decision: replace the requirement to copy long opaque IDs with fixed
+LEFT/RIGHT response fields, mapping sides back to content identities in
+code before balanced consensus. Keep the aesthetic criteria and reward
+scale. Test the actual provider on saved images using CPU/API only. New
+GPU launch remains subject to the original frugal spending and trend policy;
+do not call offline parser tests proof of real provider reliability or
+visual judge accuracy.
+
+## Registered CPU-only transport probe
+
+Hypothesis: using fixed LEFT/RIGHT output fields and mapping them to opaque
+content identities in code avoids malformed dynamic identity keys without
+changing the requested aesthetic judgment. Select four failed-initial pairs
+deterministically from this failed attempt's immutable public archive. Keep
+the same briefs, exact PNG bytes, MiMo Flash model, temperature, token limit
+and joint two-image layout. Send eight initial views, both orders per pair,
+with no retries or rechecks. Preserve all raw outputs, source/prompt/image
+hashes, timing and provider usage. This costs no rented GPU.
+
+Success for this smoke test means every initial view parses conservatively;
+order agreement is reported separately. Four pairs selected because the old
+format failed cannot establish production reliability or visual accuracy.
+No reward is assigned to unknown identities, missing required assessments or
+conflicting output fields. The probe does not train any model.
+
+Probe result: the side-keyed format parsed all 8/8 initial views and produced
+agreement on all 4/4 pair orders at an estimated Gateway cost of $0.002964.
+The next attempt may select it explicitly with
+`PAINTER_JUDGE_FORMAT=identity-joint-side-schema-v1`; the native RL selector
+maps that value to `painter.text_pairwise_consistent_side_judge` and rejects
+unregistered values. The selected source-format SHA-256 is
+`f94cfc9e880c8423f89a091486a0cf174cf1818c13d9acdf18fd21ace79aa069`.
+
+## Registered corrected-format retry
+
+The retry starts fresh from the same pinned SFT-512 adapter, with the same
+40 briefs, group eight, batch 16, three-turn budget, temperature 1.0 and
+learning rate 1e-6. The intended change is the tested side-keyed judge
+transport. The visual rubric, model, balanced consensus and reward scale
+remain fixed. No prior RL adapter or optimizer state is resumed.
+
+The first two setup/failed-attempt rentals used an estimated $1.704. The
+corrected retry's additional whole-node GPU ceiling is $18.20, making the
+combined estimate at most $19.904 plus no added uncontrolled GPU spend.
+The same maximum 50 updates and frozen 15/20/every-five trend checks apply.
+Actual rental identity, clock and source/config hashes will be written
+before launch. Vercel cost remains separate.
+
+Also record that the prior attempt produced 87 renderer receipts, of which
+37 explicitly reported valid rendering; 62 PNG files existed, so PNG file
+count is not validity count. Ten actions reached the 180-second renderer
+limit. Median elapsed time across all recorded attempts was 10.35 seconds;
+p95 reached 180.018 seconds. Syntax/API errors and timeouts are distinct
+from malformed judge responses. The transport retry cannot be claimed to
+fix model-generated invalid programs or all slow renders.

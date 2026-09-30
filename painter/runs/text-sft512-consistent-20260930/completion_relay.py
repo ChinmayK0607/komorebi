@@ -109,13 +109,17 @@ def parse_state_output(raw: str) -> dict[str, Any] | None:
         return None
     def find(candidate: Any, failed: bool = False) -> dict[str, Any] | None:
         if isinstance(candidate, dict):
+            # A supervisor receipt is the application payload. Its own
+            # exit_code (for example 143 after a finite stop) must not be
+            # confused with lium's wrapper exit code.
+            if not failed and candidate.get("schema") == "finite-text-paint-supervisor-v1":
+                return candidate
             code = candidate.get("exit_code", candidate.get("returncode"))
             try:
                 failed = failed or (code is not None and int(code) != 0)
             except (TypeError, ValueError):
                 failed = True
-            if not failed and (candidate.get("schema") == "finite-text-paint-supervisor-v1" or
-                                candidate.get("status") in {"running", "stopped", "completed", "failed"}):
+            if not failed and candidate.get("status") in {"running", "stopped", "completed", "failed"}:
                 return candidate
             for child in candidate.values():
                 found = find(child, failed)

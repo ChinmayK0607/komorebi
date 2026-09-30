@@ -21,6 +21,15 @@ class CompletionRelayTests(unittest.TestCase):
         self.assertEqual(state["status"], "stopped")
         failed = json.dumps({"exit_code": 1, "stdout": json.dumps({"status": "stopped"})})
         self.assertIsNone(relay.parse_state_output(failed))
+        nested_terminal = json.dumps({"results": [{
+            "exit_code": 0,
+            "stdout": json.dumps({
+                "schema": "finite-text-paint-supervisor-v1",
+                "status": "failed",
+                "exit_code": 143,
+            }),
+        }]})
+        self.assertEqual(relay.parse_state_output(nested_terminal)["status"], "failed")
         self.assertIsNone(relay.parse_state_output("provider warning only"))
 
     def test_remote_post_redirects_node_output_and_keeps_commit_explicit(self):

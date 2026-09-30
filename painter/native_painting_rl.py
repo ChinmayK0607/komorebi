@@ -88,6 +88,22 @@ except ImportError:
 RL_PROTOCOL_VERSION = "native-painting-rl-v2"
 DEFAULT_JUDGE_TIMEOUT_SECONDS = 1800.0
 DEFAULT_MANIFEST = "scaled-training-manifest.json"
+CONSISTENT_JUDGE_PROTOCOL = "text-paint-sft-pairwise-consistent-v1"
+DEFAULT_CONSISTENT_JUDGE_FORMAT = "identity-joint-schema-v1"
+SIDE_CONSISTENT_JUDGE_FORMAT = "identity-joint-side-schema-v1"
+
+
+def _consistent_judge_module_name(format_name: str | None = None) -> str:
+    """Map the explicit consistent-judge transport format to its module."""
+
+    selected = format_name or os.environ.get(
+        "PAINTER_JUDGE_FORMAT", DEFAULT_CONSISTENT_JUDGE_FORMAT
+    )
+    if selected == DEFAULT_CONSISTENT_JUDGE_FORMAT:
+        return "painter.text_pairwise_consistent_judge"
+    if selected == SIDE_CONSISTENT_JUDGE_FORMAT:
+        return "painter.text_pairwise_consistent_side_judge"
+    raise ValueError(f"unsupported consistent judge format: {selected}")
 
 
 def sha(path: Path) -> str:
@@ -466,8 +482,10 @@ class NativePaintingRLTask(vf.Task[NativePaintingRLData, vf.State, vf.TaskConfig
                     from painter.text_pairwise_margin_judge import judge_pair
                 elif text_protocol == "text-paint-sft-pairwise-grounded-v1":
                     from painter.text_pairwise_grounded_judge import judge_pair
-                elif text_protocol == "text-paint-sft-pairwise-consistent-v1":
-                    from painter.text_pairwise_consistent_judge import judge_pair
+                elif text_protocol == CONSISTENT_JUDGE_PROTOCOL:
+                    judge_pair = getattr(
+                        importlib.import_module(_consistent_judge_module_name()), "judge_pair"
+                    )
                 elif text_protocol == "text-paint-sft-pairwise-v1":
                     from painter.text_pairwise_judge import judge_pair
                 else:
@@ -477,8 +495,9 @@ class NativePaintingRLTask(vf.Task[NativePaintingRLData, vf.State, vf.TaskConfig
                     from text_pairwise_margin_judge import judge_pair
                 elif text_protocol == "text-paint-sft-pairwise-grounded-v1":
                     from text_pairwise_grounded_judge import judge_pair
-                elif text_protocol == "text-paint-sft-pairwise-consistent-v1":
-                    from text_pairwise_consistent_judge import judge_pair
+                elif text_protocol == CONSISTENT_JUDGE_PROTOCOL:
+                    module_name = _consistent_judge_module_name().split(".")[-1]
+                    judge_pair = getattr(importlib.import_module(module_name), "judge_pair")
                 elif text_protocol == "text-paint-sft-pairwise-v1":
                     from text_pairwise_judge import judge_pair
                 else:

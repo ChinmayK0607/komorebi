@@ -44,6 +44,19 @@ class _Trace:
 
 
 class NativePaintingRLTests(unittest.TestCase):
+    def test_consistent_judge_format_selector_is_explicit_and_fail_closed(self):
+        module = _load_rl_module()
+        self.assertEqual(
+            module._consistent_judge_module_name("identity-joint-schema-v1"),
+            "painter.text_pairwise_consistent_judge",
+        )
+        self.assertEqual(
+            module._consistent_judge_module_name("identity-joint-side-schema-v1"),
+            "painter.text_pairwise_consistent_side_judge",
+        )
+        with self.assertRaises(ValueError):
+            module._consistent_judge_module_name("unregistered-format")
+
     def test_text_reward_uses_fixed_anchor_pairwise_score(self):
         module = _load_rl_module()
         with TemporaryDirectory() as temp:
