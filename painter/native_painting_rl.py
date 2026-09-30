@@ -466,6 +466,8 @@ class NativePaintingRLTask(vf.Task[NativePaintingRLData, vf.State, vf.TaskConfig
                     from painter.text_pairwise_margin_judge import judge_pair
                 elif text_protocol == "text-paint-sft-pairwise-grounded-v1":
                     from painter.text_pairwise_grounded_judge import judge_pair
+                elif text_protocol == "text-paint-sft-pairwise-consistent-v1":
+                    from painter.text_pairwise_consistent_judge import judge_pair
                 elif text_protocol == "text-paint-sft-pairwise-v1":
                     from painter.text_pairwise_judge import judge_pair
                 else:
@@ -475,6 +477,8 @@ class NativePaintingRLTask(vf.Task[NativePaintingRLData, vf.State, vf.TaskConfig
                     from text_pairwise_margin_judge import judge_pair
                 elif text_protocol == "text-paint-sft-pairwise-grounded-v1":
                     from text_pairwise_grounded_judge import judge_pair
+                elif text_protocol == "text-paint-sft-pairwise-consistent-v1":
+                    from text_pairwise_consistent_judge import judge_pair
                 elif text_protocol == "text-paint-sft-pairwise-v1":
                     from text_pairwise_judge import judge_pair
                 else:
@@ -490,20 +494,72 @@ class NativePaintingRLTask(vf.Task[NativePaintingRLData, vf.State, vf.TaskConfig
             trace_id = str(getattr(trace, "id", self.data.task_id))
             receipt_path = root / str(self.data.output_root) / trace_id / "text-judge.json"
             _atomic(receipt_path, result)
-            info.update(
-                final_canvas_score=float(result["score"]),
-                reward_status="scored",
-                score_evidence={"status": "scored", "receipt_path": str(receipt_path),
-                                "receipt_sha256": sha(receipt_path),
-                                "protocol_version": result["protocol"]},
-                comparison_images={
-                    "reference": str(reference), "anchor": str(opponent),
-                    "candidate": str(candidate),
-                    "image_sha256": {"reference": sha(reference),
-                                     "anchor": sha(opponent), "candidate": sha(candidate)},
-                },
+            comparison_images = {
+                "reference": str(reference), "anchor": str(opponent),
+                "candidate": str(candidate),
+                "image_sha256": {"reference": sha(reference),
+                                 "anchor": sha(opponent), "candidate": sha(candidate)},
+            }
+            decision_keys = (
+                "status", "protocol", "winner_id", "preference", "consensus", "acceptance",
+                "initial_conflict", "initial_votes", "recheck_votes", "format_version",
             )
-            return float(result["score"])
+            decision = {
+                key: result.get(key)
+                for key in decision_keys
+                if isinstance(result, dict) and key in result
+            }
+            protocol_matches = isinstance(result, dict) and result.get("protocol") == text_protocol
+            score_evidence = {
+                "status": "scored" if protocol_matches and result.get("status") in {
+                    "scored", "identical_canvases",
+                } and result.get("score") is not None else "uncertain",
+                "receipt_path": str(receipt_path),
+                "receipt_sha256": sha(receipt_path),
+                "protocol_version": result.get("protocol") if isinstance(result, dict) else None,
+                "decision": decision,
+            }
+            if not isinstance(result, dict) or score_evidence["status"] != "scored":
+                info.update(
+                    final_canvas_score=None,
+                    reward_status="judge_uncertain",
+                    score_evidence=score_evidence,
+                    comparison_images=comparison_images,
+                )
+                raise ValueError("text judge judgment is missing or uncertain; reward is unavailable")
+            if isinstance(result.get("score"), bool):
+                info.update(
+                    final_canvas_score=None,
+                    reward_status="judge_uncertain",
+                    score_evidence={**score_evidence, "status": "uncertain"},
+                    comparison_images=comparison_images,
+                )
+                raise ValueError("text judge score is malformed; reward is unavailable")
+            try:
+                score = float(result["score"])
+            except (KeyError, TypeError, ValueError) as exc:
+                info.update(
+                    final_canvas_score=None,
+                    reward_status="judge_uncertain",
+                    score_evidence={**score_evidence, "status": "uncertain"},
+                    comparison_images=comparison_images,
+                )
+                raise ValueError("text judge score is missing or malformed; reward is unavailable") from exc
+            if not math.isfinite(score) or not 0.0 <= score <= 1.0:
+                info.update(
+                    final_canvas_score=None,
+                    reward_status="judge_uncertain",
+                    score_evidence={**score_evidence, "status": "uncertain"},
+                    comparison_images=comparison_images,
+                )
+                raise ValueError("text judge score is outside [0, 1]; reward is unavailable")
+            info.update(
+                final_canvas_score=score,
+                reward_status="scored",
+                score_evidence=score_evidence,
+                comparison_images=comparison_images,
+            )
+            return score
 
         contract = _QueueContract(
             root,
@@ -555,28 +611,62 @@ class NativePaintingRLTask(vf.Task[NativePaintingRLData, vf.State, vf.TaskConfig
             anchor=opponent,
             candidate=candidate,
         )
-        if score is None:
-            raise ValueError("judge judgment is missing or uncertain; reward is unavailable")
-        score = float(score)
-        if not math.isfinite(score) or not 0.0 <= score <= 1.0:
-            raise ValueError(f"aesthetic score outside [0, 1]: {score}")
-
         receipt_path = root / "judge-queue" / request_id / "receipt.json"
         if not receipt_path.is_file():
             raise RuntimeError("judge service failure: receipt evidence is missing")
         receipt_sha256 = sha(receipt_path)
+        queue_evidence = {
+            "status": "scored" if score is not None else "uncertain",
+            "request_id": request_id,
+            "receipt_path": str(receipt_path),
+            "receipt_sha256": receipt_sha256,
+            "protocol_version": getattr(contract.judge, "PROTOCOL_VERSION", None),
+        }
+        if isinstance(score, bool):
+            info.update(
+                judge_receipt_path=str(receipt_path),
+                judge_receipt=receipt,
+                final_canvas_score=None,
+                reward_status="judge_uncertain",
+                score_evidence={**queue_evidence, "status": "uncertain"},
+            )
+            raise ValueError("judge score is malformed; reward is unavailable")
+        if score is None:
+            info.update(
+                judge_receipt_path=str(receipt_path),
+                judge_receipt=receipt,
+                final_canvas_score=None,
+                reward_status="judge_uncertain",
+                score_evidence=queue_evidence,
+            )
+            raise ValueError("judge judgment is missing or uncertain; reward is unavailable")
+        try:
+            score = float(score)
+        except (TypeError, ValueError) as exc:
+            info.update(
+                judge_receipt_path=str(receipt_path),
+                judge_receipt=receipt,
+                final_canvas_score=None,
+                reward_status="judge_uncertain",
+                score_evidence={**queue_evidence, "status": "uncertain"},
+            )
+            raise ValueError("judge score is malformed; reward is unavailable") from exc
+        if not math.isfinite(score) or not 0.0 <= score <= 1.0:
+            info.update(
+                judge_receipt_path=str(receipt_path),
+                judge_receipt=receipt,
+                final_canvas_score=None,
+                reward_status="judge_uncertain",
+                score_evidence={**queue_evidence, "status": "uncertain"},
+            )
+            raise ValueError(f"aesthetic score outside [0, 1]: {score}")
+
         info.update(
             judge_request_path=str(root / "judge-queue" / request_id / "request.json"),
             judge_receipt_path=str(receipt_path),
             judge_receipt=receipt,
             final_canvas_score=score,
-            score_evidence={
-                "status": "scored",
-                "request_id": request_id,
-                "receipt_path": str(receipt_path),
-                "receipt_sha256": receipt_sha256,
-                "protocol_version": getattr(contract.judge, "PROTOCOL_VERSION", None),
-            },
+            score_evidence=queue_evidence,
         )
         _atomic(
             root / str(self.data.output_root) / str(trace_id) / "reward.json",

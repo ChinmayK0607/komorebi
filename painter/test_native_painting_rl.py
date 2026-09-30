@@ -72,6 +72,143 @@ class NativePaintingRLTests(unittest.TestCase):
                              "text-paint-sft-pairwise-v1")
             self.assertTrue((root / "rl-rollouts/trace-test/text-judge.json").is_file())
 
+    def test_text_consistent_protocol_preserves_decision_metadata(self):
+        module = _load_rl_module()
+        with TemporaryDirectory() as temp:
+            root = Path(temp)
+            brief, anchor, canvas = (root / name for name in ("brief.txt", "anchor.png", "canvas.png"))
+            brief.write_text("Paint a pear beside a cup.\n")
+            anchor.write_bytes(b"anchor")
+            canvas.write_bytes(b"candidate")
+            data = module.NativePaintingRLData(
+                root=str(root), task_id="text-consistent", source_group="text-consistent", family="simple",
+                reference=str(brief), reference_sha256=_digest(brief), reference_kind="text",
+                opponent=str(anchor), opponent_sha256=_digest(anchor), output_root="rl-rollouts",
+                mode="fresh",
+            )
+            result = {
+                "protocol": "text-paint-sft-pairwise-consistent-v1",
+                "format_version": "identity-joint-schema-v1",
+                "status": "scored", "score": 5 / 6,
+                "winner_id": "img_candidate", "preference": "clear",
+                "consensus": "initial_agreement", "acceptance": "two_of_two",
+                "initial_conflict": False, "initial_votes": ["img_candidate", "img_candidate"],
+                "recheck_votes": [],
+            }
+            async def fake_judge(**kwargs):
+                self.assertEqual((kwargs["brief"], kwargs["anchor"], kwargs["candidate"]),
+                                 (brief, anchor, canvas))
+                return result
+            trace = _Trace(final_canvas=str(canvas), final_canvas_valid=True)
+            with patch.dict("os.environ", {
+                "PAINTER_GATEWAY_ENV_FILE": str(root / "key"),
+                "PAINTER_JUDGE_PROTOCOL": "text-paint-sft-pairwise-consistent-v1",
+            }), patch("painter.text_pairwise_consistent_judge.judge_pair", fake_judge):
+                score = asyncio.run(module.NativePaintingRLTask(data).final_canvas_aesthetic(trace))
+            self.assertEqual(score, 5 / 6)
+            self.assertEqual(trace.info["reward_status"], "scored")
+            self.assertEqual(trace.info["score_evidence"]["protocol_version"],
+                             "text-paint-sft-pairwise-consistent-v1")
+            self.assertEqual(trace.info["score_evidence"]["decision"]["winner_id"], "img_candidate")
+            self.assertEqual(json.loads((root / "rl-rollouts/trace-test/text-judge.json").read_text()), result)
+
+    def test_text_uncertain_judge_is_not_zero_or_service_failure(self):
+        module = _load_rl_module()
+        with TemporaryDirectory() as temp:
+            root = Path(temp)
+            brief, anchor, canvas = (root / name for name in ("brief.txt", "anchor.png", "canvas.png"))
+            brief.write_text("Paint a pear beside a cup.\n")
+            anchor.write_bytes(b"anchor")
+            canvas.write_bytes(b"candidate")
+            data = module.NativePaintingRLData(
+                root=str(root), task_id="text-uncertain", source_group="text-uncertain", family="simple",
+                reference=str(brief), reference_sha256=_digest(brief), reference_kind="text",
+                opponent=str(anchor), opponent_sha256=_digest(anchor), output_root="rl-rollouts",
+                mode="fresh",
+            )
+            result = {
+                "protocol": "text-paint-sft-pairwise-consistent-v1",
+                "status": "uncertain", "score": None,
+                "consensus": "no_three_of_four", "acceptance": "censored",
+                "initial_conflict": True, "initial_votes": ["img_a", "img_b"],
+                "recheck_votes": ["img_a", "tie"],
+            }
+            async def fake_judge(**_kwargs):
+                return result
+            trace = _Trace(final_canvas=str(canvas), final_canvas_valid=True)
+            with patch.dict("os.environ", {
+                "PAINTER_GATEWAY_ENV_FILE": str(root / "key"),
+                "PAINTER_JUDGE_PROTOCOL": "text-paint-sft-pairwise-consistent-v1",
+            }), patch("painter.text_pairwise_consistent_judge.judge_pair", fake_judge):
+                with self.assertRaisesRegex(ValueError, "missing or uncertain"):
+                    asyncio.run(module.NativePaintingRLTask(data).final_canvas_aesthetic(trace))
+            self.assertIsNone(trace.info["final_canvas_score"])
+            self.assertEqual(trace.info["reward_status"], "judge_uncertain")
+            self.assertNotIn("service_failure", trace.info)
+            evidence = trace.info["score_evidence"]
+            self.assertEqual(evidence["status"], "uncertain")
+            self.assertEqual(evidence["decision"]["consensus"], "no_three_of_four")
+            self.assertEqual(json.loads((root / "rl-rollouts/trace-test/text-judge.json").read_text()), result)
+
+    def test_text_malformed_score_is_uncertain_instead_of_zero(self):
+        module = _load_rl_module()
+        with TemporaryDirectory() as temp:
+            root = Path(temp)
+            brief, anchor, canvas = (root / name for name in ("brief.txt", "anchor.png", "canvas.png"))
+            brief.write_text("Paint a pear beside a cup.\n")
+            anchor.write_bytes(b"anchor")
+            canvas.write_bytes(b"candidate")
+            data = module.NativePaintingRLData(
+                root=str(root), task_id="text-malformed", source_group="text-malformed", family="simple",
+                reference=str(brief), reference_sha256=_digest(brief), reference_kind="text",
+                opponent=str(anchor), opponent_sha256=_digest(anchor), output_root="rl-rollouts",
+                mode="fresh",
+            )
+            async def fake_judge(**_kwargs):
+                return {"protocol": "text-paint-sft-pairwise-consistent-v1", "status": "scored", "score": "bad"}
+            trace = _Trace(final_canvas=str(canvas), final_canvas_valid=True)
+            with patch.dict("os.environ", {
+                "PAINTER_GATEWAY_ENV_FILE": str(root / "key"),
+                "PAINTER_JUDGE_PROTOCOL": "text-paint-sft-pairwise-consistent-v1",
+            }), patch("painter.text_pairwise_consistent_judge.judge_pair", fake_judge):
+                with self.assertRaisesRegex(ValueError, "malformed"):
+                    asyncio.run(module.NativePaintingRLTask(data).final_canvas_aesthetic(trace))
+            self.assertEqual(trace.info["reward_status"], "judge_uncertain")
+            self.assertNotIn("service_failure", trace.info)
+
+    def test_text_protocol_mismatch_and_boolean_score_are_uncertain(self):
+        module = _load_rl_module()
+        with TemporaryDirectory() as temp:
+            root = Path(temp)
+            brief, anchor, canvas = (root / name for name in ("brief.txt", "anchor.png", "canvas.png"))
+            brief.write_text("Paint a pear beside a cup.\n")
+            anchor.write_bytes(b"anchor")
+            canvas.write_bytes(b"candidate")
+            data = module.NativePaintingRLData(
+                root=str(root), task_id="text-strict", source_group="text-strict", family="simple",
+                reference=str(brief), reference_sha256=_digest(brief), reference_kind="text",
+                opponent=str(anchor), opponent_sha256=_digest(anchor), output_root="rl-rollouts",
+                mode="fresh",
+            )
+            cases = [
+                ({"protocol": "text-paint-sft-pairwise-v1", "status": "scored", "score": 0.5},
+                 "missing or uncertain"),
+                ({"protocol": "text-paint-sft-pairwise-consistent-v1", "status": "scored", "score": True},
+                 "malformed"),
+            ]
+            for index, (result, message) in enumerate(cases):
+                async def fake_judge(**_kwargs):
+                    return result
+                trace = _Trace(final_canvas=str(canvas), final_canvas_valid=True)
+                trace.id = f"trace-strict-{index}"
+                with patch.dict("os.environ", {
+                    "PAINTER_GATEWAY_ENV_FILE": str(root / "key"),
+                    "PAINTER_JUDGE_PROTOCOL": "text-paint-sft-pairwise-consistent-v1",
+                }), patch("painter.text_pairwise_consistent_judge.judge_pair", fake_judge):
+                    with self.assertRaisesRegex(ValueError, message):
+                        asyncio.run(module.NativePaintingRLTask(data).final_canvas_aesthetic(trace))
+                self.assertEqual(trace.info["reward_status"], "judge_uncertain")
+
     def test_text_loader_requires_matching_fixed_sft_canvas(self):
         module = _load_rl_module()
         with TemporaryDirectory() as temp:
@@ -302,6 +439,52 @@ class NativePaintingRLTests(unittest.TestCase):
             self.assertEqual(trace.info["comparison_images"]["image_sha256"]["candidate"], _digest(candidate))
             self.assertEqual(trace.info["score_evidence"]["request_id"], "request-1")
             self.assertTrue((root / "rl-rollouts" / "trace-test" / "reward.json").is_file())
+
+    def test_queue_uncertain_receipt_is_masked_with_raw_evidence(self):
+        module = _load_rl_module()
+        with TemporaryDirectory() as temp:
+            root = Path(temp)
+            reference = root / "reference.png"
+            opponent = root / "opponent.png"
+            candidate = root / "candidate.png"
+            reference.write_bytes(b"reference")
+            opponent.write_bytes(b"opponent")
+            candidate.write_bytes(b"candidate")
+            data = module.NativePaintingRLData(
+                root=str(root), task_id="task-uncertain", source_group="group", family="shape",
+                reference=str(reference), reference_sha256=_digest(reference),
+                opponent=str(opponent), opponent_sha256=_digest(opponent),
+                mode="fresh", max_turns=2, output_root="rl-rollouts",
+            )
+
+            class QueueDouble:
+                class Judge:
+                    PROTOCOL_VERSION = "aesthetic-pairwise-v1"
+
+                judge = Judge()
+
+                def enqueue_comparison(self, *, root, trace_id, reference, anchor, candidate):
+                    request = "request-uncertain"
+                    folder = root / "judge-queue" / request
+                    folder.mkdir(parents=True)
+                    (folder / "receipt.json").write_text(json.dumps({"status": "uncertain"}))
+                    return request
+
+                async def await_receipt(self, **_kwargs):
+                    return {"status": "uncertain"}
+
+                def score_receipt(self, **_kwargs):
+                    return None
+
+            trace = _Trace(final_canvas=str(candidate), final_canvas_valid=True)
+            with patch.object(module, "_QueueContract", return_value=QueueDouble()):
+                with self.assertRaisesRegex(ValueError, "missing or uncertain"):
+                    asyncio.run(module.NativePaintingRLTask(data).final_canvas_aesthetic(trace))
+            self.assertIsNone(trace.info["final_canvas_score"])
+            self.assertEqual(trace.info["reward_status"], "judge_uncertain")
+            self.assertEqual(trace.info["score_evidence"]["status"], "uncertain")
+            self.assertEqual(trace.info["score_evidence"]["request_id"], "request-uncertain")
+            self.assertEqual(trace.info["judge_receipt"], {"status": "uncertain"})
 
     def test_reward_scores_model_invalid_canvas_zero_but_masks_service_failure(self):
         module = _load_rl_module()
