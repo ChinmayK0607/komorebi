@@ -355,3 +355,44 @@ stays uncertain without a fourth vote. Source is
 `replay_identity_receipts.py` with its focused tests, separate from frozen
 source commit `92a7756`. Report replay results separately from strict runtime
 results, and preserve failures in the full 36-pair denominator.
+
+
+## Schema and symmetric recheck repair — registered before its API calls
+
+The 36-pair identity pass finished with 123 attempt receipts; 122 include
+provider usage/cost totaling $0.0496900824, and one request failed without
+known usage. Mean/median successful recorded call latency is 34.95/32.26
+seconds. The exact-fields parser censored 20 pairs. Lossless offline replay
+recovers 30 initial pairs, with eight initial winner conflicts, six still
+incomplete, 22 initial agreements, four saved two-of-three choices and four
+conflicts lacking a saved fresh view. These do not demonstrate that stable
+labels removed position bias. The same-order retry replies also show
+response variability, so not every flip can be attributed solely to position.
+
+Next, retain the same Flash model, prompt, frozen image bytes and joint layout,
+but request an explicit dynamic JSON Schema with enum image IDs and typed
+required assessments. [Gateway structured-output documentation](https://vercel.com/docs/ai-gateway/sdks-and-apis/openai-chat-completions/structured-outputs) describes this request format; support by the actual
+Flash backend must be observed rather than assumed. Start with two existing
+pairs for support, retaining and reusing their replies if the full pass runs.
+Do not silently fall back to JSON mode if schema requests are rejected.
+
+The scorer's conflict recheck must also be symmetric: repeat **both** image
+orders in parallel, then require three of four votes for the same image
+identity. A stable preference for a screen position produces two versus two
+and therefore no reward. A failed call or no identity consensus stays
+uncertain with `score=null`, never a fake tie or visual zero. Use the weakest
+supporting magnitude for an accepted preference; genuine agreed ties and
+byte-identical canvases retain 0.5. This prevents contradictory observations
+from producing confident gradient supervision; it does not guarantee that
+agreed judges are aesthetically correct. No new additive reward or human
+preference is added to requests.
+
+If the API support checks pass, test all 36 matched pairs with six concurrent
+pairs and cached support receipts. Initial checks are 72 views plus at most
+72 balanced recheck views, each with at most one malformed-response retry.
+Freeze source/config/manifest before calls. Report initial conflict, final
+accepted/uncertain counts, parser and provider failures, selected human
+preferences and separate controls, latency and all reported API cost. The
+new `text_pairwise_consistent_judge.py` is isolated from the frozen identity
+pass and is not installed into training merely because its local tests pass.
+No GPU rental or scheduled task is authorized by this repair.
