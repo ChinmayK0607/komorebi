@@ -426,3 +426,79 @@ with six concurrent pairs. No human labels enter requests. Separate
 recovered format problems, remaining parser failures, initial disagreements,
 accepted balanced rechecks, and unresolved uncertainty. No GPU or training
 launch is part of this experiment.
+
+
+## Joint-view repair result — completed 2026-09-30
+
+Reviewed scorer source: `1b9ac1f953767417e6be429d9f8e5059b1f37470`.
+Report source: `6a95a1e`. Frozen full-panel manifest content SHA-256:
+`aa82509cbe6a2843caedd412f01d09baa4e352271d8b72970e516b707d469e21`.
+The model alias was `xiaomi/mimo-v2.6-flash`; the provider did not disclose
+an immutable weight revision. The same 36 comparisons and original image
+bytes were retained; original
+pass-1 and separate-input receipts/manifests/summaries were hash-checked
+unchanged. Two support pairs were conservatively replayed without new calls;
+34 remaining pairs received fresh independent calls.
+
+Results in `local-evidence/consistent-normalized-pass1/report.html`:
+
+| Observation | Count |
+| --- | ---: |
+| Both initial replies readable | 33/36 |
+| Initial image-identity disagreements | 9/33 |
+| Accepted with both initial orders agreeing | 24/36 |
+| Accepted after balanced three-of-four recheck | 3/36 |
+| Uncertain, score null | 9/36 |
+
+Uncertainty consists of four fully observed splits, three incomplete initial
+pairs and two incomplete rechecks. The eight unlabelled control comparisons
+had seven readable initial pairs, one initial conflict and six accepted
+final decisions. On the user's five explicit selected preferences the new
+final decisions agree twice, disagree once and remain uncertain twice. Three
+preferences concern the same fan, so this is not a general accuracy estimate.
+The frozen-SFT versus RL-step-16 fan is still wrongly preferred by both
+orders; the beekeeper is now uncertain rather than receiving a confident
+contradictory score. This repair improves safe aggregation, **not established
+visual accuracy**. Previous joint-v2 had 11/36 initial disagreements; this
+small, selected and prompt/format-changed panel does not establish that
+position bias disappeared. Do not promote the judge on consistency alone.
+
+The new full pass records 112 API attempts with 112 usage receipts, including
+all seven reused support attempts once. Provider-reported cost totals
+$0.0349368488; `cost`, `gateway_cost` and `market_cost` are alternative fields,
+not three expenses to add. Mean/median recorded call latency was 35.54/32.45
+seconds over all 112 attempts. There were 25 unsuccessful parsing attempts
+(including bounded retries) and no recorded HTTP/provider errors; 36
+normalization transformations were retained. The earlier strict identity
+pass cost $0.0496900824 with one unknown-usage failure. Thus reported usage
+for these two repair passes totals $0.0846269312, excluding that unknown
+failure and the separately archived prior calibration. **GPU cost: $0.**
+No node, training, recurring automation, or background watcher was launched.
+
+The report uses fixed LEFT/RIGHT positions for every pair, two columns at
+all widths, friendly checkpoint names, and display-only translation of
+opaque image IDs in explanatory prose. Technical data and raw prose are
+preserved. HTML checks found all 36 pair sections and 72 existing image
+links, with no swap script. Browser visual verification was not performed.
+All 36 focused tests passed. Reviewed implementation commits are `1b9ac1f`
+and `6a95a1e`; generated data remain outside Git.
+
+Next decision: retain the joint-sheet identity scorer and balanced conflict
+guard as an isolated candidate; unresolved pairs must be censored rather
+than treated as ties, visual failures, or zero rewards. Integration into a
+future training launcher must explicitly handle null rewards and preserve
+full comparison groups. Do not claim the currently closed training run
+used this candidate. The remaining aesthetic mismatch calls for a broader
+blind human-preference set or judge-capacity comparison, without fitting
+the prompt further to only these five selected choices.
+
+
+Public preservation: [402-file evidence archive](https://huggingface.co/datasets/CK0607/komorebi-painter-experiments/blob/b35a7ec1d8921e145134b4ca16ee38a7f166f48d/runs/judge-alignment-20260930/joint-judge-repair-20260930.tar.gz) at immutable HF
+revision `b35a7ec1d8921e145134b4ca16ee38a7f166f48d`, 55,731,287 bytes, SHA-256
+`b997e1d664479d2a8dbf352a6181a98e896d770ea65e7d2f0d19b9328055ebf9`. Anonymous streamed download matched the
+complete archive hash and byte count. The bundle includes the frozen original
+paintings, original joint calibration receipts, new raw calls, normalized
+replays, report, immutable manifests and reviewed scorer/report sources.
+It contains no credential files. The verification receipt remains in
+`local-evidence/consistent-normalized-pass1/public-upload-verification.json`;
+the transient local archive was deleted after remote verification.
