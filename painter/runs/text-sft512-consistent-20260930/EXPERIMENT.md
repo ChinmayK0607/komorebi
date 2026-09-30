@@ -337,3 +337,30 @@ Next decision remains the registered finite reward checks and matched 47-case
 evaluation. Current evidence supports continuing the bounded run, not
 promoting the model. Public checkpoint and screened evidence verification
 precede the exact-pod release. No scheduled task or recurring watcher exists.
+
+## Operational snapshot: 2026-09-30 14:37 UTC
+
+Trainer updates 1–3 completed, with gradient norms 0.01019287109375,
+0.005523681640625 and 0.013671875. Batch 4 dispatched at 14:36:24 UTC;
+its optimizer completion was not yet present in the subsequent check.
+Admitted-batch rewards are 0.1458333, 0.09375, 0.2395833 and 0.0520833.
+These fluctuate across different curriculum briefs and do not establish an
+upward reward trend, regression, or a held-out visual-quality gain.
+
+Update 2 waited 4m11s for a batch versus 2m51s active training; update 3
+waited 16m50s versus 3m11s active. Rollout collection limits throughput.
+Allocator segment-mapping OOM warnings appeared before completed updates
+2 and 3, and during batch 4. They are not a demonstrated fatal trainer OOM;
+peak memory is near 92.7 GiB and memory pressure remains an unresolved risk.
+
+Eighty-four saved visual comparisons contain 78 scored judgments and six
+censored cases: five unresolved three-of-four consensuses and one failed
+initial call. Seventy-two agreed initially and six resolved on balanced
+rechecks. These are coverage/consensus counts, not judge accuracy. Complete
+groups retain the same admission policy; uncertain judgments are not zeros.
+
+At this inspection no public step-4 checkpoint was yet verified. Current
+rental-clock estimate is $2.78, approximately $4.74 with all prior setup
+and failed attempts; neither is an invoice. The under-$20 combined cap and
+15/20/every-five admitted-batch reward checks remain active. No new node,
+sampling change, or scheduled task was introduced.
