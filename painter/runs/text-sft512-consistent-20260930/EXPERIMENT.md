@@ -63,6 +63,17 @@ fractions; group-eight admission could be inefficient if uncertainty is high.
 
 ## Pending launch evidence
 
+Deployment source: `2ecf9acd2c476b3027a5d57f3ea6fbc81df6ba21`, transferred
+as a complete verified Git bundle. The inspected topology is two RTX PRO
+6000 Blackwell Server Edition GPUs, each reporting 97,887 MiB, at $2.38 per
+whole-node hour. The conservative rental clock began 2026-09-30 11:10:10 UTC;
+training must stop by 18:49:22 UTC, and the finite parent controller begins
+exact-pod removal by 19:31:22 UTC (three minutes before the $20 boundary).
+Linux preparation has started; no optimizer update or judge call has started.
+Gateway credential egress was rejected by automatic approval review because
+HF-token authorization did not cover this separate credential. Gateway
+transfer approval is pending, and that key has not been copied.
+
 Record reviewed source commit, frozen config/manifest bytes, initializer and
 renderer hashes, actual GPU model/topology/price, rental start/deadlines,
 credential-free launch receipt, and native serializer/scorer/gradient checks.
