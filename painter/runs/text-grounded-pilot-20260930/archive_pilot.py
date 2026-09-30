@@ -101,7 +101,7 @@ def select(run: Path, *, mid_step: int, final_step: int) -> dict[str, Path]:
         files[path.relative_to(run).as_posix()] = path
     for path in sorted((run / "logs").glob("gpu-telemetry-*.csv")):
         files[path.relative_to(run).as_posix()] = path
-    for name in ("evidence/run-receipt.json",):
+    for name in ("evidence/run-receipt.json", "evidence/adapter-delta.json"):
         path = run / name
         if path.is_file():
             files[name] = path

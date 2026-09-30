@@ -202,3 +202,17 @@ results, complete-run failure denominators,
 utilization, and release receipts belong below after the evidence archive is
 publicly verified. The rental snapshot at about 03:48 UTC was $9.62; this is
 not the final billed amount.
+
+The public step-24 adapter differs from its hash-verified RL-step-16
+initializer in 992/992 tensors. The relative Frobenius delta is
+0.00057235, measured by `verify_adapter_delta.py` with finite-value and
+shape checks; the full JSON receipt is `evidence/adapter-delta.json` in the
+run archive. This is evidence of nonzero weight updates, not visual progress.
+
+The prespecified harder-case midpoint panel has completed: step 12 produced
+15/16 valid final canvases, zero censored cases, and scored 5 wins and 11
+losses against frozen SFT opponents under the grounded two-order protocol
+(mean candidate score 0.359375). This panel has eight intermediate and eight
+complex briefs, no simple briefs. The result is an early warning, not a
+step-24 comparison or a general-population estimate. The same 16 prompts
+must be scored at step 24 before judging a training trajectory.
