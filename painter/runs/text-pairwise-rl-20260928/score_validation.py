@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import json
+import math
 import sys
 from pathlib import Path
 
@@ -16,13 +17,59 @@ from painter.native_painting_report import _trace_data, read_traces  # noqa: E40
 from painter.text_pairwise_judge import judge_pair as binary_judge_pair  # noqa: E402
 from painter.text_pairwise_margin_judge import judge_pair as margin_judge_pair  # noqa: E402
 from painter.text_pairwise_grounded_judge import judge_pair as grounded_judge_pair  # noqa: E402
+from painter.text_pairwise_consistent_judge import judge_pair as consistent_judge_pair  # noqa: E402
+
+
+def _judgment_error(judgment: object, protocol: str) -> str | None:
+    """Return a stable censoring reason, or ``None`` for a valid score.
+
+    A completed request can still yield an unresolved decision (for example
+    ``status=uncertain`` with ``score=None``).  Keep its raw receipt, but do
+    not let it enter numeric reward or summary calculations.
+    """
+
+    if not isinstance(judgment, dict):
+        return "judge_result_not_object"
+    if judgment.get("protocol") != protocol:
+        return "protocol_mismatch"
+    if judgment.get("status") not in {"scored", "identical_canvases"}:
+        return "judge_status_uncertain"
+    score = judgment.get("score")
+    if score is None:
+        return "score_missing"
+    if isinstance(score, bool):
+        return "score_boolean"
+    if not isinstance(score, (int, float)):
+        return "score_not_numeric"
+    numeric = float(score)
+    if not math.isfinite(numeric):
+        return "score_nonfinite"
+    if not 0.0 <= numeric <= 1.0:
+        return "score_out_of_range"
+    return None
+
+
+def _resolved_judgment(judgment: object, protocol: str | None = None) -> bool:
+    """Return whether a judge result has a usable finite pairwise score.
+
+    ``protocol`` remains optional for compatibility with older local callers;
+    the scoring path always supplies the selected protocol to bind receipts to
+    the requested judge implementation.
+    """
+
+    if protocol is None:
+        if not isinstance(judgment, dict):
+            return False
+        protocol = judgment.get("protocol")
+    return _judgment_error(judgment, protocol) is None
 
 
 async def score(manifest: Path, eval_root: Path, output: Path, key_file: Path,
                 protocol: str = "text-paint-sft-pairwise-v1") -> dict:
     judges = {"text-paint-sft-pairwise-v1": binary_judge_pair,
               "text-paint-sft-pairwise-margin-v1": margin_judge_pair,
-              "text-paint-sft-pairwise-grounded-v1": grounded_judge_pair}
+              "text-paint-sft-pairwise-grounded-v1": grounded_judge_pair,
+              "text-paint-sft-pairwise-consistent-v1": consistent_judge_pair}
     if protocol not in judges:
         raise ValueError(f"unsupported judge protocol: {protocol}")
     judge_pair = judges[protocol]
@@ -64,7 +111,12 @@ async def score(manifest: Path, eval_root: Path, output: Path, key_file: Path,
                         "reason": f"judge_failure_{type(exc).__name__}"}
         receipt = output / (row["id"] + ".json")
         receipt.write_text(json.dumps(judgment, indent=2, sort_keys=True) + "\n")
-        return {**record, "status": "scored", "score": judgment["score"],
+        error = _judgment_error(judgment, protocol)
+        if error is not None:
+            return {**record, "status": "censored", "reason": error,
+                    "judge_status": judgment.get("status") if isinstance(judgment, dict) else None,
+                    "receipt": str(receipt), "canvas": canvas}
+        return {**record, "status": "scored", "score": float(judgment["score"]),
                 "receipt": str(receipt), "canvas": canvas}
 
     rows = await asyncio.gather(*(one(row) for row in cases))
