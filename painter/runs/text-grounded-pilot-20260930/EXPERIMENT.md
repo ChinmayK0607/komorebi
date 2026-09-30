@@ -87,8 +87,8 @@ the frozen 16-case subset SHA-256 is
 `0a16138115a44dfa81fd01bfd72e61e6ac5691f6ebecc4aea713c17e0b0bcdb7`.
 
 The first four optimizer updates completed by 00:47:54 UTC with nonzero
-gradient norms 0.0090, 0.0126, 0.0129, 0.0120. The corresponding admitted
-batch reward mean was 0.17969; first two batches averaged 0.26563 and the
+gradient norms 0.0090, 0.0126, 0.0129, 0.0120. Their **effective-batch**
+reward mean was 0.17969; first two batches averaged 0.26563 and the
 next two 0.09375. This is neither an upward trend nor a matched visual
 result. Trainer logs reported batch waits of 6m03s, 7m12s and 10m54s on
 steps 2–4; the inference card is the throughput bottleneck. An allocator
@@ -111,7 +111,7 @@ At the 01:14 UTC live snapshot, step 7 had completed with nonzero gradient
 norm 0.0073 despite one CUDA allocator *mapping warning* just before it. The
 warning is not a fatal OOM: step 7 succeeded, and the process and rollout
 coordinator continued. Its batch took 12m07s, including 9m32s waiting for
-rollouts and 2m34s of active update. Seven unpaired online rewards so far are
+rollouts and 2m34s of active update. Seven unpaired **all-completed** rewards so far are
 0.19444, 0.29167, 0.11111, 0.14063, 0.54167, 0.20139, 0.12500. This is
 high variance and not a general upward trend.
 
