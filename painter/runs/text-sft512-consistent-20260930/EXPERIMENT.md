@@ -364,3 +364,31 @@ rental-clock estimate is $2.78, approximately $4.74 with all prior setup
 and failed attempts; neither is an invoice. The under-$20 combined cap and
 15/20/every-five admitted-batch reward checks remain active. No new node,
 sampling change, or scheduled task was introduced.
+
+## Operational snapshot: 2026-09-30 15:37 UTC
+
+Nine optimizer updates are complete; every recorded gradient norm is nonzero.
+Rewards for admitted batches 1–9 are 0.1458333, 0.09375, 0.2395833,
+0.0520833, 0.1041667, 0.125, 0.28125, 0.15625 and 0.1041667. Overall mean
+is 0.1446759. First-five mean is 0.1270833 versus latest-four mean 0.1666667;
+these unequal windows contain different curriculum briefs and must not be
+presented as a matched learning result. The first registered check is at 15.
+
+Step 8 is public in `CK0607/qwen3.8-27b-brush-painting`, revision
+`70b9000fcc035e08a540523ee04b3f379f8574c5`, path
+`text-sft512-consistent-20260930/step_8`. The node's public upload receipt
+and local adapter agree; anonymous parent HF metadata independently matches
+weight SHA-256 `00a9416cf7ce019e718595dc753ae0109fba1a21ac467eb3cb79eb78ea50eaa8`.
+Matched painting evaluation has not run, so the checkpoint is not promoted.
+
+There are 168 saved visual comparison receipts: 157 scored and 11 uncertain.
+Update 7 waited 11m15s versus 2m34s active training; update 9 waited 9m09s
+versus 2m18s active. Rollout collection remains the main throughput limit.
+Allocator mapping warnings recur but these updates completed, with peak
+memory near 92.8 GiB. No new interval utilization measurement is claimed.
+
+The elapsed-clock GPU estimate is $5.162 for the current node plus $1.958576
+for earlier attempts: $7.121 total, not an invoice. Registered reward checks,
+the combined under-$20 GPU ceiling, public preservation and exact-pod release
+remain active. No additional machine, scheduling action or hyperparameter
+change occurred in this status check.
