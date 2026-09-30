@@ -183,3 +183,22 @@ for dispatch steps 9–16. The other 59/68 and 54/62 had at least one
 the generated work includes speculation, repeated briefs, and changing task
 mix. It is nevertheless an early warning that the new visible-subject cap
 has not yet increased clear subject depictions among saved judged rollouts.
+
+## Training completion and fixed evaluation
+
+The finite trainer completed all 24 planned optimizer updates normally at
+2026-09-30 03:38:46 UTC. The step-24 adapter is public and hash-verified at
+`CK0607/qwen3.8-27b-brush-painting@7d201165315595f2c611b355e6ba615f1067c75f`,
+prefix `text-grounded-pilot-20260930/step_24`, with LFS SHA-256
+`1397e30d2f2a802640c4aebec110eb657650b430d8591863e4831aa2a65aa5d4`.
+The public step-12 midpoint is revision
+`0c3dd598cf7ae87c0dbfcac2e953883c00f37a61`. The one-shot finalizer
+started at approximately 03:40 UTC and is producing the prespecified
+same-seed held-out 16- and 47-case comparisons. The successive eight-update
+blocks of effective optimizer-batch reward averaged 0.22005, 0.23958, and
+0.22135. The middle bump did not persist; these unpaired training batches
+have different prompt samples and cannot establish improvement. Final matched
+results, complete-run failure denominators,
+utilization, and release receipts belong below after the evidence archive is
+publicly verified. The rental snapshot at about 03:48 UTC was $9.62; this is
+not the final billed amount.
