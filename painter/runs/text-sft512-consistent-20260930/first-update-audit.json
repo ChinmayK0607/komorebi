@@ -1,0 +1,12 @@
+{
+  "schema": "sft512-first-update-comparison-v1",
+  "step": 1,
+  "baseline_sha256": "bea72b066986faa1b92b9dc539c710093181ee916b99323e2b2498f318ac1740",
+  "broadcast_sha256": "f1f056435ef0968f77389b94fa1115436a3d679e742ac855f3c50177bba88970",
+  "shared_tensors": 992,
+  "baseline_tensors": 992,
+  "updated_tensors": 992,
+  "changed_tensors": 992,
+  "changed_values": 37205002,
+  "all_finite": true
+}
