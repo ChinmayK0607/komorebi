@@ -98,3 +98,45 @@ Afterward report matched held-out preferences and visual examples, admitted
 and all-completed reward curves, group losses, turn validity, parser and
 position conflicts, timing/utilization windows and denominators, public
 checkpoint/archive hashes, actual GPU/API cost, and the next decision.
+
+## Approved relaunch and actual startup
+
+The user explicitly approved Gateway-key transfer after the preceding
+preparation-only node had been released. Both credentials were mechanically
+transferred to an owner-only node directory; no values entered source or
+research records. The second rental began at 12:31:56 UTC at $2.38/hour.
+Its finite allowance is $19.50, so the prior $0.396 setup estimate plus this
+allowance remains below the $20 total ceiling. Estimates are clock based,
+not provider invoices. Training launched at 12:39:57 UTC using source
+`877584e2a758b1ba9908f3d8568b0955ca072dba`. Preparation, real installed-Prime
+guard activation and run preflight passed.
+
+The trainer initialization audit reports 992/992 exact adapter tensor
+matches, 496 nonzero B tensors, 116,727,808 adapter parameters and all finite
+values, matching adapter SHA-256
+`bea72b066986faa1b92b9dc539c710093181ee916b99323e2b2498f318ac1740`.
+Optimizer state is fresh; the trainer broadcasts policy v0 and the
+orchestrator waits for that broadcast before issuing training episodes.
+Inference is physical GPU 0 and trainer physical GPU 1. The first 16
+episodes were submitted after synchronization at 12:45:40 UTC. An optimizer
+update, gradient evidence and measured pipeline busy fraction remain pending
+at this startup record.
+
+## Before-first-update parser repair
+
+The live initial judge responses exposed an infrastructure failure: identical
+`preference` and `_preference` fields were rejected as conflicting aliases.
+This is not an aesthetic disagreement. The reviewed parser now deduplicates
+exactly equal values and records the lossless normalization; unequal values,
+missing decisions and truncated/unknown image IDs remain censored. The prompt,
+model, pair presentation, winner mapping and reward scale are unchanged.
+Original raw receipts and censored group accounting remain preserved.
+The parser source SHA-256 after repair is
+`f9089e3e34e89f274d9f1ac0282fd3461997f35a049c6b16bb22e0f0f791a48c`.
+Deployment time and first optimizer evidence will be recorded separately.
+
+The reviewed completion pipeline performs generation-only evaluation on the
+47 held-out cases, screens and uploads evidence publicly, verifies anonymous
+archive bytes and signals the finite parent controller for exact-pod release.
+It reserves bounded evaluation/upload/release windows and still archives
+failure evidence. This is one finite process chain, not a scheduled task.

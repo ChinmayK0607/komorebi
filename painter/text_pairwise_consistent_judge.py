@@ -92,7 +92,14 @@ def _known_key_map(value: dict[str, Any], known: set[str], *, aliases: set[str] 
                 continue
             raise ValueError(f"unknown nested key:{key}")
         if canonical in result:
-            raise ValueError(f"conflicting key alias:{canonical}")
+            # Some gateway responses repeat the canonical field alongside the
+            # explicit ``_preference`` alias.  This is lossless only when the
+            # values are exactly equal; a conflicting duplicate remains
+            # invalid and must stay censored.
+            if result[canonical] != item:
+                raise ValueError(f"conflicting key alias:{canonical}")
+            transformations.append(f"duplicate_equal:{key!r}->{canonical}")
+            continue
         result[canonical] = item
     return result, transformations, ignored
 

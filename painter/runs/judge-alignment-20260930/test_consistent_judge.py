@@ -157,6 +157,11 @@ class ConsistentJudgeTests(unittest.TestCase):
         value["_preference"] = value.pop("preference")
         self.assertEqual(judge._parse(json.dumps(value), ids)["preference"], "slight")
         value = _assessment(ids, ids[0])
+        value["_preference"] = value["preference"]
+        parsed, normalization = judge._normalize_response(json.dumps(value), ids)
+        self.assertEqual(parsed["preference"], "slight")
+        self.assertIn("duplicate_equal:'_preference'->preference", normalization["transformations"])
+        value = _assessment(ids, ids[0])
         value["_preference"] = "moderate"
         with self.assertRaises(ValueError):
             judge._parse(json.dumps(value), ids)
