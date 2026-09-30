@@ -127,3 +127,21 @@ but manual contact sheets still show some weak anchors (e.g. `t600-429` chair
 frame and `t600-444` T-handle corkscrew), and three early `t600-429` candidate
 canvases do not consistently preserve chair geometry. The 47 held-out cases
 and direct controls remain required before any quality decision.
+
+At the separate step-10 profile, the **effective optimizer batches** had
+10/10 nonzero gradients (mean norm 0.01330), learning rate fixed at `1e-6`,
+mean output 5,807 tokens per three-turn trajectory, p90 7,873, and zero
+generation-truncated fraction. Mean reported phase times per batch were
+257s model inference, 58s harness, and 29s scoring; these phases can overlap,
+so they are not a wall-clock decomposition. This points to model generation
+and invalid-code retries ahead of judging as the main throughput problem.
+The separate **125 saved generated traces** include speculative and stale
+work: 80 had valid final canvases, only 47 had a valid first turn, and 42
+recovered after an invalid turn. Across 375 generated turns, the primary
+invalid-turn classes were syntax (89), undefined symbol (32), unknown brush
+(27), type error (23), unsupported brush API (18), and render timeout (14).
+Those counts are turn-level and should not be called admitted-batch failures.
+The valid renders had median elapsed 16.17s and p90 59.89s. This establishes
+that an 8,192-token cap was not the dominant failure cause in this window;
+program validity and inference latency were. The final-run profile must
+repeat these statistics with its complete denominators.
