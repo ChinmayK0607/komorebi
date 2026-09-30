@@ -25,6 +25,18 @@ The manifest freezes exact briefs, image byte hashes, pair roles, old score
 metadata, and human feedback before new paid judgments. Judge requests omit
 case IDs, checkpoint names, old scores and human preferences.
 
+The API pass started on 2026-09-30 at 06:29:44 UTC from source commit
+`8440db9` (the committed bytes match those used by the process), with four
+concurrent pairs and one observation per prompt/order. The 36-pair manifest
+content SHA-256 is
+`5f998bc55c7e20bf0160eea5a4484b02e7ae1a1627799465850aca20136783e0`.
+The frozen old prompt SHA-256 is
+`214702df5bdf4e2465236ae0758903439d2cadb3e9680095a4cb3ee71a5a9452`;
+the new prompt SHA-256 is
+`7f0379436d72610561687948fd41b859a5b400017b84859d639e06fb84471c08`.
+The input manifest and raw receipts are in ignored
+`local-evidence/pass1/`; that pass requests 144 views before any parse retries.
+
 Historical gallery scores are **relative preferences against a fixed SFT
 anchor**, not absolute painting quality. Worse, prior SFT/RL-step-16 scores
 used `text-paint-sft-pairwise-margin-v1`, while pilot-step-24 scores used
@@ -41,6 +53,14 @@ fan `t600-516`, wool ball `t600-542`, sand yacht `t600-560`, and kingfisher
 and kingfisher, and the frozen SFT anchor over the other fan paintings.
 Other comments describe qualities or defects and are not converted into
 invented forced pairwise labels. Preserve them as qualitative feedback.
+
+The user clarified that these preferences concern **which image should get
+the higher reward**, rather than an absolute grade. In addition to direct
+pair preferences, inspect step-16 and step-24 rewards against the same frozen
+SFT opponent under each fresh protocol. A reversal between that reward
+ordering and a direct comparison is itself useful evidence of unreliability.
+Keep this secondary diagnostic separate from the precomputed five-label
+direct-agreement denominator; it is not five additional independent labels.
 
 The new prompt emphasizes a clearly readable main subject, connected parts,
 believable contact and containment, and an appealing finished painting.
@@ -85,3 +105,26 @@ disagreement, changes on the unlabelled controls, failures/censoring,
 reported usage/cost, and manual review of reasons. Keep grounded-v1 intact
 for reproduction. Do not announce a successful judge or launch RL merely
 because the selected calibration pairs agree.
+
+## Presentation follow-up registered before its calls
+
+Pass 1 completed with only 2/5 explicit direct preferences aligned under v2,
+versus 1/5 under v1. V2 still reversed its winner between image orders on
+11/36 pairs. That is insufficient support for deploying the revised judge.
+
+The next finite API pass keeps the exact v2 prompt, model, generation
+settings, cap, pair list and two-order scoring, but supplies two original
+600-pixel PNGs separately with adjacent `Painting A (first image)` and
+`Painting B (second image)` text. Reuse pass-1 v2 receipts as the baseline;
+do not purchase them again. Request 72 new views before retries, at eight
+concurrent pairs. This tests the presentation package (separate images,
+original resolution and explicit adjacent labels), not the isolated effect
+of any one component. The local contact sheet uses the fallback small font
+when DejaVu is absent; no claim is made that this caused the past failures.
+All 36 pairs remain in the test, including the eight control scenes.
+
+Judge requests still omit human preferences and checkpoint identities.
+Do not rewrite the prompt to force the fan or beekeeper result. Report
+explicit agreement and order consistency along with inspection of readable
+subjects, faint workers, extra wool-ball needles and the failed sand yacht.
+The split path remains separate from both frozen v2 and the training judge.
