@@ -19,6 +19,19 @@ RUN_NAME = "text-pairwise-rl-20260928"
 SFT_REVISION = "adf687e5b321514eda7be6eab050434fdc8e44ff"
 SFT_PREFIX = "photo-curriculum-sft-20260922-balanced/step_512"
 SFT_SHA256 = "bea72b066986faa1b92b9dc539c710093181ee916b99323e2b2498f318ac1740"
+DEFAULT_GPUS_PER_NODE = 2
+DEFAULT_NUM_TRAIN_GPUS = 1
+DEFAULT_NUM_INFER_GPUS = 1
+DEFAULT_BATCH_SIZE = 8
+DEFAULT_GROUP_SIZE = 4
+DEFAULT_INITIAL_INFLIGHT = 8
+DEFAULT_MAX_INFLIGHT = 8
+SUPPORTED_JUDGE_PROTOCOLS = {
+    "text-paint-sft-pairwise-v1",
+    "text-paint-sft-pairwise-margin-v1",
+    "text-paint-sft-pairwise-grounded-v1",
+    "text-paint-sft-pairwise-consistent-v1",
+}
 
 
 def prepare(*, output: Path, model: Path, run_root: Path, manifest: Path,
@@ -29,14 +42,19 @@ def prepare(*, output: Path, model: Path, run_root: Path, manifest: Path,
             adapter_revision: str = SFT_REVISION,
             adapter_prefix: str = SFT_PREFIX,
             adapter_sha256: str = SFT_SHA256,
-            mode: str = "fresh", learning_rate: float = 1e-6) -> dict:
+            mode: str = "fresh", learning_rate: float = 1e-6,
+            gpus_per_node: int = DEFAULT_GPUS_PER_NODE,
+            num_train_gpus: int = DEFAULT_NUM_TRAIN_GPUS,
+            num_infer_gpus: int = DEFAULT_NUM_INFER_GPUS,
+            batch_size: int = DEFAULT_BATCH_SIZE,
+            group_size: int = DEFAULT_GROUP_SIZE,
+            initial_inflight: int = DEFAULT_INITIAL_INFLIGHT,
+            max_inflight: int = DEFAULT_MAX_INFLIGHT) -> dict:
     if not run_name or "/" in run_name or "\\" in run_name:
         raise ValueError("run_name must be a simple non-empty name")
     if not output_root or "/" in output_root or "\\" in output_root:
         raise ValueError("output_root must be a simple non-empty name")
-    if judge_protocol not in {"text-paint-sft-pairwise-v1",
-                              "text-paint-sft-pairwise-margin-v1",
-                              "text-paint-sft-pairwise-grounded-v1"}:
+    if judge_protocol not in SUPPORTED_JUDGE_PROTOCOLS:
         raise ValueError("unsupported text judge protocol")
     if mode not in {"fresh", "recovered_policy"}:
         raise ValueError("unsupported policy initialization mode")
@@ -51,9 +69,11 @@ def prepare(*, output: Path, model: Path, run_root: Path, manifest: Path,
     config = photo.build_config(
         model=str(model), run_root=run_root, manifest=relative,
         max_steps=max_steps, checkpoint_interval=checkpoint_interval, run_name=run_name,
-        expected_count=expected_count, batch_size=8, group_size=4, max_turns=3,
+        expected_count=expected_count, gpus_per_node=gpus_per_node,
+        num_train_gpus=num_train_gpus, num_infer_gpus=num_infer_gpus,
+        batch_size=batch_size, group_size=group_size, max_turns=3,
         max_completion_tokens=8192, learning_rate=learning_rate,
-        initial_inflight=8, max_inflight=8,
+        initial_inflight=initial_inflight, max_inflight=max_inflight,
         mode=mode, adapter_revision=adapter_revision,
         adapter_prefix=adapter_prefix, adapter_sha256=adapter_sha256,
     )
@@ -102,6 +122,13 @@ def main() -> None:
     parser.add_argument("--adapter-sha256", default=SFT_SHA256)
     parser.add_argument("--mode", choices=("fresh", "recovered_policy"), default="fresh")
     parser.add_argument("--learning-rate", type=float, default=1e-6)
+    parser.add_argument("--gpus-per-node", type=int, default=DEFAULT_GPUS_PER_NODE)
+    parser.add_argument("--num-train-gpus", type=int, default=DEFAULT_NUM_TRAIN_GPUS)
+    parser.add_argument("--num-infer-gpus", type=int, default=DEFAULT_NUM_INFER_GPUS)
+    parser.add_argument("--batch-size", type=int, default=DEFAULT_BATCH_SIZE)
+    parser.add_argument("--group-size", type=int, default=DEFAULT_GROUP_SIZE)
+    parser.add_argument("--initial-inflight", type=int, default=DEFAULT_INITIAL_INFLIGHT)
+    parser.add_argument("--max-inflight", type=int, default=DEFAULT_MAX_INFLIGHT)
     args = parser.parse_args()
     print(json.dumps(prepare(**vars(args)), sort_keys=True))
 

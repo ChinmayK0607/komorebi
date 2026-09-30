@@ -1,0 +1,94 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+STEP="${1:?usage: finalize.sh STEP [--score]}"
+MODE="${2:-}"
+[[ "$STEP" =~ ^[1-9][0-9]*$ && ( -z "$MODE" || "$MODE" == --score ) ]] || {
+  echo 'usage: finalize.sh STEP [--score]' >&2; exit 2;
+}
+RUN="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
+REPO="$(cd "$RUN/../../.." && pwd -P)"
+NODE_ROOT="${PAINTER_NODE_ROOT:-/root/painter}"
+PRIME_ROOT="${PRIME_ROOT:-$NODE_ROOT/prime}"
+NAME="text-sft512-consistent-20260930"
+STATE="$RUN/supervisor-state.json"
+GEN="$RUN/validation/step-$STEP-all/generation-receipt.json"
+ADAPTER="$RUN/async-output/$NAME/artifacts/adapters/step_$STEP"
+MANIFEST="$RUN/anchors-frozen/validation-manifest.json"
+EVAL_ROOT="$RUN/validation/step-$STEP-all/eval"
+OUT="$RUN/validation/step-$STEP-all/comparison"
+KEY="${PAINTER_GATEWAY_ENV_FILE:-$NODE_ROOT/private/gateway.env}"
+
+[[ -f "$STATE" ]] || { echo 'finite supervisor state is missing' >&2; exit 1; }
+STATE_PY="${PRIME_ROOT}/.venv/bin/python"
+[[ -x "$STATE_PY" ]] || STATE_PY=python3
+"$STATE_PY" - "$STATE" <<'PY'
+import json, sys
+from pathlib import Path
+value = json.loads(Path(sys.argv[1]).read_text())
+if value.get('status') not in {'stopped', 'completed'}:
+    raise SystemExit('training supervisor is still active or has no terminal state')
+PY
+[[ -f "$ADAPTER/adapter_model.safetensors" && -f "$ADAPTER/hf-upload.json" ]] || {
+  echo 'final checkpoint or upload receipt is missing' >&2; exit 1;
+}
+[[ -f "$GEN" ]] || { echo 'generation-only evaluation receipt is missing; run evaluate.sh first' >&2; exit 1; }
+
+PY="${PRIME_ROOT}/.venv/bin/python"
+[[ -x "$PY" ]] || PY=python3
+"$PY" - "$ADAPTER" "$STEP" <<'PY'
+import hashlib, json, sys
+from pathlib import Path
+adapter, step = Path(sys.argv[1]), int(sys.argv[2])
+upload = json.loads((adapter / 'hf-upload.json').read_text())
+if upload.get('verified') is not True or upload.get('private') is not False:
+    raise SystemExit('final checkpoint is not a verified public upload')
+expected = upload.get('files', {}).get('adapter_model.safetensors', {}).get('sha256')
+actual = hashlib.sha256((adapter / 'adapter_model.safetensors').read_bytes()).hexdigest()
+if not isinstance(expected, str) or expected != actual:
+    raise SystemExit('final checkpoint adapter hash does not match public receipt')
+if upload.get('path') and upload['path'] != f'text-sft512-consistent-20260930/step_{step}':
+    raise SystemExit('public checkpoint path does not match requested run and step')
+PY
+
+if [[ "$MODE" == --score ]]; then
+  [[ -r "$KEY" && ! -L "$KEY" && "$(stat -c %a "$KEY")" == 600 ]] || {
+    echo 'private Gateway key file missing or insecure' >&2; exit 1;
+  }
+  [[ -d "$EVAL_ROOT" && -f "$MANIFEST" ]] || { echo 'evaluation traces or manifest missing' >&2; exit 1; }
+  mkdir -p "$OUT"
+  PYTHONPATH="$REPO/painter:$RUN" "$PY" "$REPO/painter/runs/text-pairwise-rl-20260928/score_validation.py" \
+    --manifest "$MANIFEST" --eval-root "$EVAL_ROOT" --output "$OUT" --key-file "$KEY" \
+    --protocol text-paint-sft-pairwise-consistent-v1
+fi
+
+"$PY" - "$RUN" "$STEP" "$MODE" <<'PY'
+import hashlib, json, sys, time
+from pathlib import Path
+run, step, mode = Path(sys.argv[1]), int(sys.argv[2]), sys.argv[3]
+def sha(path):
+    h = hashlib.sha256()
+    with path.open('rb') as stream:
+        for block in iter(lambda: stream.read(1024 * 1024), b''):
+            h.update(block)
+    return h.hexdigest()
+generation = json.loads((run / f'validation/step-{step}-all/generation-receipt.json').read_text())
+if generation.get('scoring_protocol') != 'text-paint-sft-pairwise-consistent-v1' or generation.get('matched_control') != 'sft-step512':
+    raise SystemExit('generation receipt is not bound to the consistent SFT512 comparison')
+comparison = run / f'validation/step-{step}-all/comparison/summary.json'
+report = {
+    'schema': 'text-sft512-consistent-finalizer-v1',
+    'run_name': 'text-sft512-consistent-20260930',
+    'step': step,
+    'generation_receipt': str(run / f'validation/step-{step}-all/generation-receipt.json'),
+    'comparison_path': str(comparison) if comparison.is_file() else None,
+    'scoring_protocol': 'text-paint-sft-pairwise-consistent-v1',
+    'matched_control': 'sft-step512',
+    'scored_locally': mode == '--score',
+    'created_epoch': time.time(),
+    'source_identity_sha256': sha(run / 'source-identity.json'),
+}
+(run / 'finalizer-receipt.json').write_text(json.dumps(report, indent=2, sort_keys=True) + '\n')
+print(json.dumps(report, sort_keys=True))
+PY
+echo "TEXT_SFT512_CONSISTENT_FINALIZED: step=$STEP public receipt verified; node cleanup remains operator-owned"

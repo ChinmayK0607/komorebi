@@ -291,16 +291,28 @@ def _cache_env(root: Path, role: str, environment: dict[str, str]) -> dict[str, 
 def _orchestrator_env(environment: dict[str, str]) -> dict[str, str]:
     """Forward painter's optional group scorer through Prime's role env.
 
-    Prime supplies a separate child environment to ``Popen``. Keeping only
-    the parent's three required values avoids inheriting unrelated secrets.
-    The gateway variable is a path to an owner-only credential file, not the
-    credential itself.
+    Prime supplies a separate child environment to ``Popen``. Keep only the
+    run's explicit role values rather than inheriting unrelated secrets. The
+    gateway variable is a path to an owner-only credential file, not the
+    credential itself; the group-admission values are non-secret protocol
+    controls forwarded to the orchestrator child.
     """
     values = dict(environment)
-    for name in ("PAINTER_GROUP_RANK_MODULE", "PAINTER_GATEWAY_ENV_FILE", "PYTHONPATH"):
+    for name in (
+        "PAINTER_GROUP_RANK_MODULE",
+        "PAINTER_GATEWAY_ENV_FILE",
+        "PAINTER_WHOLE_GROUP_ADMISSION",
+        "PAINTER_WHOLE_GROUP_SIZE",
+        "PAINTER_CONSISTENT_GUARD_RECEIPT",
+        "PYTHONPATH",
+    ):
         value = os.environ.get(name)
         if value is not None:
             values[name] = value
+    # This helper is used only for Prime's orchestrator child.  The
+    # run-local sitecustomize hook uses the role marker to install the
+    # whole-group guard after Prime imports its scorer classes.
+    values["PAINTER_PRIME_ROLE"] = "orchestrator"
     return values
 
 
