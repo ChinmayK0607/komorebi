@@ -314,3 +314,44 @@ hashes before the first call. Do not claim the swap issue fixed merely because
 conflicts are hidden, converted to ties, or filtered out of the denominator.
 
 The strategy is informed by [Large Language Models are not Fair Evaluators](https://arxiv.org/abs/2305.17926), which studies evidence-before-rating and balanced positions for text judges. Applying it to paintings is an experiment, not an established visual-judging guarantee. The saved two-order calibration already detects winner instability; the proposed bounded recheck is a reliability policy rather than proof of a better visual evaluator.
+
+
+### Identity pass launch
+
+Reviewed source commit `92a775617a29d74fbbf6fb18f2fcf664d888645c` passed
+19 focused tests and compilation. The API-only pass started at
+2026-09-30 08:16:18 UTC with six concurrent pairs (up to 12 initial
+view calls); every image request contains both paintings together.
+Manifest content SHA-256:
+`56a9051c2eda3f23b64f17a4146c1108aba54637d2072c1907abf1f35c121f61`.
+Prompt SHA-256:
+`02a0d9783fbb31b7a115a7be0e79d6eee9424c3b40d13224192fe246dc62ed8c`.
+Judge module and runner hashes, source commit and timestamp are frozen in
+`local-evidence/identity-pass1/launch-record.json`. Evidence receipts preserve
+initial conflicts even if a malformed fresh vote is censored. No painting
+generation, GPU rental or training launch. The fresh vote repeats the
+canonical order, so two-of-three support can retain position bias; recovered
+choices are provisional, never evidence that perceptual order bias vanished.
+
+
+### Lossless response replay amendment — registered during the API pass
+
+Saved replies reveal format-only rejections: known keys with leading spaces,
+`_preference` instead of `preference`, and extra irrelevant top-level fields.
+The strict pass is retained unchanged, including all paid retries. A separate
+offline replay will trim only known key names, accept the explicit preference
+alias, and ignore extra top-level fields after validating every required
+field. Reject alias collisions, changed/unknown image IDs, invalid enums,
+contradictory winner/magnitude, and incomplete evidence or weakness lists.
+No prose, winner, preference, image ID or human label is invented or altered.
+
+Replay selects the first semantically valid saved response for each view,
+not the answer closest to the desired outcome. Raw calls, costs and the
+original strict receipts remain intact; replay metadata lists transformations.
+Two newly recovered initial views may disagree where the strict runtime never
+requested a third call. Such pairs remain pending/uncertain; replay does not
+invent a fresh vote or claim them resolved. A fully observed three-way split
+stays uncertain without a fourth vote. Source is
+`replay_identity_receipts.py` with its focused tests, separate from frozen
+source commit `92a7756`. Report replay results separately from strict runtime
+results, and preserve failures in the full 36-pair denominator.
