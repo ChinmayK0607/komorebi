@@ -145,3 +145,11 @@ The valid renders had median elapsed 16.17s and p90 59.89s. This establishes
 that an 8,192-token cap was not the dominant failure cause in this window;
 program validity and inference latency were. The final-run profile must
 repeat these statistics with its complete denominators.
+
+An independent CPU read of the published step-12 adapter against its
+hash-verified RL-step-16 initializer found matching shapes and keys for
+992/992 tensors, with nonzero changes in 992/992. The Frobenius norm of the
+delta was 0.022998 versus initializer norm 51.732831 (relative 0.0004446).
+This rules out a no-op checkpoint, while the small relative movement does
+not itself establish a visually meaningful update. Repeat at the final
+checkpoint and pair with held-out images before judging the learning rate.
