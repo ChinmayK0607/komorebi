@@ -259,3 +259,58 @@ Hugging Face Xet cache-write restriction; HTTP upload with a task-local
 cache succeeded. No GPU, additional judging, or broader filesystem grant
 was needed to repair publication. The artifact was frozen before adding
 this preservation receipt; its copies of this document omit this paragraph.
+
+
+## Joint-view identity repair — registered 2026-09-30
+
+The user chose joint presentation for future judging. The separate-PNG path
+remains historical evidence, not the default. In the saved joint-v2 pass,
+11/36 pairs have conflicting normalized winners: six prefer B in both
+positions and five prefer A in both positions. Both opposite-role patterns
+map correctly; this is not an arithmetic reversal defect. The beekeeper
+reasons change their claims about readable torso/contact along with order.
+This observation alone cannot separate position bias from ordinary response
+instability; the previous experiment has no same-order repetition control.
+
+**Hypothesis:** persistent content-based neutral image labels, legible joint
+600-pixel panels, and visible assessments before the verdict reduce identity
+confusion and conflicting preferences while retaining the user's intended
+quality comparison. Both canvases are always visible together. Stable IDs
+follow image bytes when their positions swap. Canonical request enumeration
+prevents caller anchor/candidate role from changing which request runs first;
+it does not by itself remove perceptual position bias.
+
+Test all 36 frozen pairs against reused grounded-v2 joint receipts from the
+pass-1 content manifest `5f998bc55c7e20bf0160eea5a4484b02e7ae1a1627799465850aca20136783e0`.
+Use the same `xiaomi/mimo-v2.6-flash` Gateway model at temperature zero.
+No case IDs, human notes/preferences, checkpoint names, or prior verdicts
+enter requests. Keep the same general quality/readability rubric rather than
+adding subject-specific desired answers. This is a protocol package test: IDs,
+layout, evidence-first contract and disagreement handling change together.
+The opaque provider model alias has no supplied immutable backend revision;
+record the exact response model identifiers without inventing a pinned version.
+
+Two balanced orders are judged independently. An initial disagreement gets
+one fresh joint-view adjudication without previous reasons or winners. A
+two-of-three identity majority uses the weakest supporting preference
+magnitude; no majority stays uncertain with no numerical reward. Malformed
+and failed requests remain censored, never zero or an invented tie. Recovered
+majorities are reported separately from initial order agreement, so retrying
+cannot hide position conflicts. Agreement is not correctness. Unlike v2,
+the new identity contract does not apply the candidate-only fidelity cap;
+compare winner agreement and conflict rates, not old versus new reward levels.
+Fidelity remains recorded in visible assessments rather than a new additive
+reward. No training scorer is replaced during this experiment.
+
+The finite test permits 72 initial successful judgments plus at most 36
+adjudications, with bounded parse retries. Preserve all successful retry
+usage and raw responses, request image/brief/prompt/format hashes, failures,
+latencies, and source revision. Reuse existing renders: no GPU rental, model
+generation, image rendering, or scheduled watcher. Report raw order conflicts,
+resolved versus unresolved conflicts, explicit direct labels (five selected
+comparisons, three of one fan), and controls separately. Run-level paid usage
+is provider-reported and not a verified invoice. Freeze source and configuration
+hashes before the first call. Do not claim the swap issue fixed merely because
+conflicts are hidden, converted to ties, or filtered out of the denominator.
+
+The strategy is informed by [Large Language Models are not Fair Evaluators](https://arxiv.org/abs/2305.17926), which studies evidence-before-rating and balanced positions for text judges. Applying it to paintings is an experiment, not an established visual-judging guarantee. The saved two-order calibration already detects winner instability; the proposed bounded recheck is a reliability policy rather than proof of a better visual evaluator.
