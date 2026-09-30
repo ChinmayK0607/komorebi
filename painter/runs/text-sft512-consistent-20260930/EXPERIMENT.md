@@ -465,3 +465,24 @@ Estimated combined elapsed-clock GPU spend is $10.09 including earlier
 attempts, not an invoice. Supervisor remains running and release-ready is
 absent; the finite cap, reward stopping, preservation and exact-pod release
 continue. No new rental or scheduled task was created.
+
+## Step-15 trend decision: 2026-09-30 17:25 UTC
+
+The registered step-15 admitted-batch check continued training: steps 6–10
+mean 0.1729167, steps 11–15 mean 0.1854167, delta +0.0125. This is a small
+positive rolling training-reward change, not a matched held-out gain or
+proof of judge accuracy. The next registered decision is at admitted batch
+20. Sixteen optimizer updates are complete; batch 17 dispatched with reward
+0.2395833 but its optimizer completion was not yet present. Update 16's
+reward is 0.1666667 and gradient norm 0.0072.
+
+The node reports a verified public step-16 checkpoint at revision
+`cd43b7eb3aecc03d461b1d65816616b356f1bf58`, path
+`text-sft512-consistent-20260930/step_16` in
+`CK0607/qwen3.8-27b-brush-painting`. No new anonymous parent hash check was
+performed in this snapshot; the existing node verification receipt is the
+evidence for this publication. Matched visual evaluation has not started.
+Supervisor is still running; release-ready is absent. Estimated combined
+elapsed-clock GPU spend is $11.40 including prior attempts, not an invoice.
+The combined under-$20 ceiling, finite preservation/release and existing
+reward rules remain unchanged. No new rental or scheduling action occurred.
