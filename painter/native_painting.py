@@ -109,7 +109,30 @@ DEFAULT_SEED = 918200
 DEFAULT_MAX_TURNS = 6
 DEFAULT_MAX_OUTPUT_TOKENS = 8192
 DEFAULT_CONTEXT_LENGTH = 32768
-RENDER_LIMIT = Semaphore(8)
+DEFAULT_RENDER_WORKERS = 8
+RENDER_WORKERS_ENV = "PAINTER_RENDER_WORKERS"
+
+
+def render_worker_limit(environ: Mapping[str, str] | None = None) -> int:
+    """Return the bounded renderer concurrency for this process.
+
+    The historical default remains eight.  Linux runs with a small CPU quota
+    can opt into a lower limit before importing this module; the semaphore is
+    deliberately process local and never changes the model or judge budget.
+    """
+
+    values = os.environ if environ is None else environ
+    raw = values.get(RENDER_WORKERS_ENV, str(DEFAULT_RENDER_WORKERS))
+    try:
+        value = int(raw)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"{RENDER_WORKERS_ENV} must be a positive integer") from exc
+    if value < 1:
+        raise ValueError(f"{RENDER_WORKERS_ENV} must be a positive integer")
+    return value
+
+
+RENDER_LIMIT = Semaphore(render_worker_limit())
 
 
 def sha(path: Path) -> str:
@@ -604,4 +627,12 @@ class _render_slot:
         RENDER_LIMIT.release()
 
 
-__all__ = ["NativePaintingTaskset", "NativePaintingEnv", "NativePaintingConfig", "NativePaintingEnvConfig"]
+__all__ = [
+    "DEFAULT_RENDER_WORKERS",
+    "RENDER_WORKERS_ENV",
+    "NativePaintingTaskset",
+    "NativePaintingEnv",
+    "NativePaintingConfig",
+    "NativePaintingEnvConfig",
+    "render_worker_limit",
+]

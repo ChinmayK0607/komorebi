@@ -15,6 +15,7 @@ POLICY_MODE="${PAINTER_POLICY_MODE:-fresh}"
 POLICY_REVISION="${PAINTER_POLICY_REVISION:-adf687e5b321514eda7be6eab050434fdc8e44ff}"
 POLICY_PREFIX="${PAINTER_POLICY_PREFIX:-photo-curriculum-sft-20260922-balanced/step_512}"
 POLICY_SHA256="${PAINTER_POLICY_SHA256:-bea72b066986faa1b92b9dc539c710093181ee916b99323e2b2498f318ac1740}"
+JUDGE_PROTOCOL="${PAINTER_JUDGE_PROTOCOL:-text-paint-sft-pairwise-consistent-v1}"
 MANIFEST_ROOT="$RUN/anchors-frozen"
 SFT_PATH_FILE="${PAINTER_SFT_ADAPTER_PATH_FILE:-$RUN/../photo-curriculum-rl-20260922/initial-adapter-path.txt}"
 FROZEN_SFT_PATH_FILE="${PAINTER_FROZEN_SFT_ADAPTER_PATH_FILE:-$RUN/../photo-curriculum-rl-20260922/initial-adapter-path.txt}"
@@ -67,6 +68,14 @@ fi
 for item in launch_rl.sh run_from_sft.py train_from_sft.py; do
   [[ -f "$BOOTSTRAP_RUN/$item" ]] || { echo "bootstrap output missing: $item" >&2; exit 1; }
   cp "$BOOTSTRAP_RUN/$item" "$RUN/$item"
+done
+# A continuation wrapper may use this base preparation with a different run
+# root.  Materialize the reviewed finite-run helpers into that root so the
+# later supervisor, archive, and Prime role hook resolve to the same source.
+HELPER_ROOT="$REPO/painter/runs/text-sft512-consistent-20260930"
+for item in sitecustomize.py finite_supervisor.py safe_archive.py completion_relay.py; do
+  [[ -f "$HELPER_ROOT/$item" ]] || { echo "reviewed helper missing: $HELPER_ROOT/$item" >&2; exit 1; }
+  [[ -e "$RUN/$item" ]] || cp "$HELPER_ROOT/$item" "$RUN/$item"
 done
 if [[ -n "${PAINTER_RENDERER_ROOT:-}" ]]; then
   PATCHED_RENDERER_ROOT="$(cd "$PAINTER_RENDERER_ROOT" && pwd -P)"
@@ -200,7 +209,7 @@ CONFIG_ARGS=(
   --prime-root "$PRIME_ROOT" --expected-count "${PAINTER_EXPECTED_COUNT:-40}"
   --max-steps 50 --checkpoint-interval "${PAINTER_CHECKPOINT_INTERVAL:-4}"
   --run-name "$RUN_NAME" --output-root rl-rollouts
-  --judge-protocol text-paint-sft-pairwise-consistent-v1
+  --judge-protocol "$JUDGE_PROTOCOL"
   --mode "$POLICY_MODE" --adapter-revision "$POLICY_REVISION"
   --adapter-prefix "$POLICY_PREFIX" --adapter-sha256 "$POLICY_SHA256"
   --gpus-per-node "${PAINTER_GPUS_PER_NODE:-2}"
@@ -235,7 +244,7 @@ FROZEN_SFT_ADAPTER="$(tr -d '\r\n' < "$FROZEN_SFT_PATH_FILE")"
 }
 
 "$PY" - "$RUN" "$SFT_ADAPTER" "$FROZEN_SFT_ADAPTER" "$POLICY_MODE" "$POLICY_REVISION" "$POLICY_PREFIX" "$POLICY_SHA256" <<'PY'
-import hashlib, json, sys
+import hashlib, json, os, sys
 from pathlib import Path
 run, adapter, frozen, mode, policy_revision, policy_prefix, policy_expected = sys.argv[1:]
 run, adapter, frozen = map(Path, (run, adapter, frozen))
@@ -265,7 +274,7 @@ config_sha = hashlib.sha256(config.read_bytes()).hexdigest()
     "policy_mode": mode,
     "train_manifest_sha256": manifest_sha,
     "config_sha256": config_sha,
-    "judge_protocol": "text-paint-sft-pairwise-consistent-v1",
+    "judge_protocol": os.environ.get("PAINTER_JUDGE_PROTOCOL", "text-paint-sft-pairwise-consistent-v1"),
 }, indent=2, sort_keys=True) + "\n")
 PY
 echo 'TEXT_SFT512_CONSISTENT_PREPARED: finite config and fixed anchors ready; launch via finite_supervisor.py'

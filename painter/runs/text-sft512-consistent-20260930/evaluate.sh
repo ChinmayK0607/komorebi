@@ -5,6 +5,9 @@ STEP="${1:?usage: evaluate.sh STEP [all|balanced16] [--preflight]}"
 SCOPE="${2:-all}"
 MODE="${3:-}"
 MAX_CONCURRENT="${PAINTER_EVAL_MAX_CONCURRENT:-16}"
+JUDGE_PROTOCOL="${PAINTER_JUDGE_PROTOCOL:-text-paint-sft-pairwise-consistent-v1}"
+JUDGE_FORMAT="${PAINTER_JUDGE_FORMAT:-identity-joint-side-schema-v1}"
+JUDGE_MODEL="${PAINTER_JUDGE_MODEL:-xiaomi/mimo-v2.6-flash}"
 [[ "$STEP" =~ ^[1-9][0-9]*$ && ( "$SCOPE" == all || "$SCOPE" == balanced16 ) ]] || {
   echo 'STEP must be positive and SCOPE must be all or balanced16' >&2; exit 2;
 }
@@ -134,13 +137,14 @@ done
 env PYTHONPATH="$REPO/painter" PAINTER_LOCAL_API_KEY=local \
   PAINTER_RENDER_TIMEOUT_SECONDS=180 PLAYWRIGHT_BROWSERS_PATH="$REPO/painter/browsers" \
   PAINTER_REQUIRE_VALID_FINAL_ACTION=1 PAINTER_JS_SYNTAX_PREFLIGHT=1 \
-  PAINTER_JUDGE_FORMAT="${PAINTER_JUDGE_FORMAT:-identity-joint-side-schema-v1}" \
+  PAINTER_JUDGE_PROTOCOL="$JUDGE_PROTOCOL" PAINTER_JUDGE_FORMAT="$JUDGE_FORMAT" \
+  PAINTER_JUDGE_MODEL="$JUDGE_MODEL" PAINTER_RENDER_WORKERS="${PAINTER_RENDER_WORKERS:-8}" \
   WANDB_MODE=disabled TOKENIZERS_PARALLELISM=false \
   bash -c 'cd "$1"; exec "$2" @ "$3" --no-serve --no-push' \
   _ "$PRIME_ROOT" "$EVAL" "$OUT/eval.toml" >"$OUT/logs/eval.log" 2>&1
 
 PYTHONPATH="$REPO/painter" "$PY" - "$OUT" "$OUT/eval/evaluation-rollouts" "$ADAPTER" "$STEP" "$SCOPE" "$MAX_CONCURRENT" <<'PY'
-import hashlib, json, sys
+import hashlib, json, os, sys
 from pathlib import Path
 from native_painting_eval import audit_evaluation_artifacts
 
@@ -175,7 +179,9 @@ if upload.get('verified') is not True or upload.get('private') is not False or a
 (out / 'generation-receipt.json').write_text(json.dumps({
     'schema': 'text-paint-consistent-generation-v2', 'run_name': out.parents[1].name, 'step': step,
     'scope': scope, 'adapter_sha256': actual, 'public_commit': upload.get('commit'),
-    'judge_deferred': True, 'scoring_protocol': 'text-paint-sft-pairwise-consistent-v1',
+    'judge_deferred': True, 'scoring_protocol': os.environ.get('PAINTER_JUDGE_PROTOCOL', 'text-paint-sft-pairwise-consistent-v1'),
+    'judge_format': os.environ.get('PAINTER_JUDGE_FORMAT', 'identity-joint-side-schema-v1'),
+    'judge_model': os.environ.get('PAINTER_JUDGE_MODEL', 'xiaomi/mimo-v2.6-flash'),
     'matched_control': 'sft-step512', 'max_turns': 3, 'max_tokens': 8192,
     'max_concurrent': max_concurrent,
     'evaluation_artifacts': {

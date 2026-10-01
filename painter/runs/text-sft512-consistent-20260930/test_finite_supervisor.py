@@ -34,6 +34,7 @@ path, pause = sys.argv[1], float(sys.argv[2])
 with open(path, 'w', encoding='utf-8') as stream:
     for step, reward in enumerate(json.loads(sys.argv[3]), 1):
         stream.write(json.dumps({'step': step, 'train/agg/effective/agent/reward/mean': reward}) + '\\n')
+        stream.write(json.dumps({'step': step, 'optim/grad_norm': 1.0, 'time/step': 1.0}) + '\\n')
         stream.flush()
         if pause:
             time.sleep(pause)
@@ -43,6 +44,30 @@ time.sleep(30)
 
 
 class FiniteSupervisorTests(unittest.TestCase):
+    def test_admitted_batch_is_distinct_from_completed_optimizer_step(self):
+        with tempfile.TemporaryDirectory() as temp:
+            path = Path(temp) / "metrics.jsonl"
+            rows = []
+            for step in range(1, 16):
+                rows.append(json.dumps({
+                    "step": step,
+                    "train/agg/effective/agent/reward/mean": 0.25,
+                }))
+                rows.append(json.dumps({
+                    "step": step, "producer": "orch", "time/step": 99.0,
+                }))
+                if step < 15:
+                    rows.append(json.dumps({
+                        "step": step, "producer": "trainer",
+                        "optim/grad_norm": 1.0, "time/step": 1.0,
+                    }))
+            path.write_text("\n".join(rows) + "\n")
+            self.assertEqual(supervisor.contiguous_step(supervisor.read_optimizer_rewards(path)), 15)
+            self.assertEqual(
+                max(supervisor.read_completed_optimizer_steps(path)), 14,
+                "admitted batch 15 must not be reported as completed optimizer step 15",
+            )
+
     def test_partial_jsonl_tail_is_ignored_until_newline(self):
         with tempfile.TemporaryDirectory() as temp:
             path = Path(temp) / "metrics.jsonl"

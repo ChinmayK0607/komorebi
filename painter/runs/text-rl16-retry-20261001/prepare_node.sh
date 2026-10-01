@@ -1,13 +1,14 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-RUN="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
+RUN="${PAINTER_RUN_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)}"
 REPO="$(cd "$RUN/../../.." && pwd -P)"
 BASE="$REPO/painter/runs/text-sft512-consistent-20260930"
 NODE_ROOT="${PAINTER_NODE_ROOT:-/root/painter}"
 NODE_BIN="${PAINTER_NODE_BIN:-node}"
 PATCHED_ROOT="${PAINTER_PATCHED_RENDERER_ROOT:-$RUN/runtime/watercolour-p5-brush-2.2.1-centroid-fix-v1}"
-export PAINTER_RUN_ROOT="$RUN" PAINTER_RUN_NAME=text-rl16-retry-20261001
+RUN_NAME="${PAINTER_RUN_NAME:-text-rl16-retry-20261001}"
+export PAINTER_RUN_ROOT="$RUN" PAINTER_RUN_NAME="$RUN_NAME"
 export PAINTER_GROUP_SIZE=4 PAINTER_INITIAL_INFLIGHT=32 PAINTER_MAX_INFLIGHT=32
 export PAINTER_POLICY_MODE=recovered_policy
 export PAINTER_POLICY_REVISION=ac4d3eda8e5925e2d23992cfdc1a63620ebde573

@@ -31,6 +31,20 @@ class PhotoRLRunnerTests(unittest.TestCase):
         self.assertEqual({name: child[name] for name in parent}, parent)
         self.assertEqual(child["MODEL_DIR"], "/tmp/model")
 
+    def test_painting_protocol_controls_reach_orchestrator_child(self):
+        names = (
+            "PAINTER_P5_BRUSH_API_REFERENCE",
+            "PAINTER_INSPECT_CHOICE_FEEDBACK",
+            "PAINTER_RENDER_WORKERS",
+            "PAINTER_JUDGE_PROTOCOL",
+            "PAINTER_JUDGE_FORMAT",
+            "PAINTER_JUDGE_MODEL",
+        )
+        parent = {name: str(index) for index, name in enumerate(names, 1)}
+        with patch.dict(MODULE.os.environ, parent):
+            child = MODULE._orchestrator_env({})
+        self.assertEqual({name: child[name] for name in names}, parent)
+
     def test_initial_live_and_frozen_aliases_are_distinct(self):
         self.assertEqual(MODULE._initial_aliases("/tmp/base", "sft-step512"), ("/tmp/base", "sft-step512"))
         with self.assertRaises(ValueError):

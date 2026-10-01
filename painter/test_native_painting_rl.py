@@ -54,8 +54,53 @@ class NativePaintingRLTests(unittest.TestCase):
             module._consistent_judge_module_name("identity-joint-side-schema-v1"),
             "painter.text_pairwise_consistent_side_judge",
         )
+        self.assertEqual(
+            module._consistent_judge_module_name("identity-joint-side-schema-v2-pro-v1"),
+            "painter.text_pairwise_consistent_side_judge_v2_pro",
+        )
         with self.assertRaises(ValueError):
             module._consistent_judge_module_name("unregistered-format")
+
+    def test_consistent_judge_model_argument_is_opt_in_and_receipt_keeps_identity(self):
+        module = _load_rl_module()
+        with TemporaryDirectory() as temp:
+            root = Path(temp)
+            brief, anchor, canvas = (root / name for name in ("brief.txt", "anchor.png", "canvas.png"))
+            brief.write_text("Paint a pear beside a cup.\n")
+            anchor.write_bytes(b"anchor")
+            canvas.write_bytes(b"candidate")
+            data = module.NativePaintingRLData(
+                root=str(root), task_id="text-pro", source_group="text-pro", family="simple",
+                reference=str(brief), reference_sha256=_digest(brief), reference_kind="text",
+                opponent=str(anchor), opponent_sha256=_digest(anchor), output_root="rl-rollouts",
+                mode="fresh",
+            )
+            result = {
+                "protocol": "text-paint-sft-pairwise-consistent-v1",
+                "format_version": "identity-joint-side-schema-v2-pro-v1",
+                "status": "scored", "score": 0.75,
+                "requested_model": "xiaomi/mimo-v2.6-pro",
+                "returned_models": ["xiaomi/mimo-v2.6-pro"],
+            }
+            seen = {}
+
+            async def fake_judge(**kwargs):
+                seen.update(kwargs)
+                return result
+
+            trace = _Trace(final_canvas=str(canvas), final_canvas_valid=True)
+            with patch.dict("os.environ", {
+                "PAINTER_GATEWAY_ENV_FILE": str(root / "key"),
+                "PAINTER_JUDGE_PROTOCOL": "text-paint-sft-pairwise-consistent-v1",
+                "PAINTER_JUDGE_FORMAT": "identity-joint-side-schema-v2-pro-v1",
+                "PAINTER_JUDGE_MODEL": "xiaomi/mimo-v2.6-pro",
+            }), patch("painter.text_pairwise_consistent_side_judge_v2_pro.judge_pair", fake_judge):
+                score = asyncio.run(module.NativePaintingRLTask(data).final_canvas_aesthetic(trace))
+            self.assertEqual(score, 0.75)
+            self.assertEqual(seen["model"], "xiaomi/mimo-v2.6-pro")
+            receipt = json.loads((root / "rl-rollouts/trace-test/text-judge.json").read_text())
+            self.assertEqual(receipt["requested_model"], "xiaomi/mimo-v2.6-pro")
+            self.assertEqual(receipt["returned_models"], ["xiaomi/mimo-v2.6-pro"])
 
     def test_text_reward_uses_fixed_anchor_pairwise_score(self):
         module = _load_rl_module()

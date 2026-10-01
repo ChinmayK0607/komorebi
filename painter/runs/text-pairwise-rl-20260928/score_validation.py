@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import inspect
 import json
 import math
 import os
@@ -20,6 +21,7 @@ from painter.text_pairwise_margin_judge import judge_pair as margin_judge_pair  
 from painter.text_pairwise_grounded_judge import judge_pair as grounded_judge_pair  # noqa: E402
 from painter.text_pairwise_consistent_judge import judge_pair as consistent_judge_pair  # noqa: E402
 from painter.text_pairwise_consistent_side_judge import judge_pair as consistent_side_judge_pair  # noqa: E402
+from painter.text_pairwise_consistent_side_judge_v2_pro import judge_pair as consistent_v2_pro_judge_pair  # noqa: E402
 
 
 def _judgment_error(judgment: object, protocol: str) -> str | None:
@@ -68,9 +70,13 @@ def _resolved_judgment(judgment: object, protocol: str | None = None) -> bool:
 
 async def score(manifest: Path, eval_root: Path, output: Path, key_file: Path,
                 protocol: str = "text-paint-sft-pairwise-v1") -> dict:
-    consistent = (consistent_side_judge_pair
-                  if os.environ.get("PAINTER_JUDGE_FORMAT") == "identity-joint-side-schema-v1"
-                  else consistent_judge_pair)
+    format_name = os.environ.get("PAINTER_JUDGE_FORMAT", "identity-joint-side-schema-v1")
+    if format_name == "identity-joint-side-schema-v2-pro-v1":
+        consistent = consistent_v2_pro_judge_pair
+    elif format_name == "identity-joint-side-schema-v1":
+        consistent = consistent_side_judge_pair
+    else:
+        consistent = consistent_judge_pair
     judges = {"text-paint-sft-pairwise-v1": binary_judge_pair,
               "text-paint-sft-pairwise-margin-v1": margin_judge_pair,
               "text-paint-sft-pairwise-grounded-v1": grounded_judge_pair,
@@ -109,8 +115,16 @@ async def score(manifest: Path, eval_root: Path, output: Path, key_file: Path,
             return {**record, "status": "censored", "reason": "missing_fixed_input"}
         async with limit:
             try:
-                judgment = await judge_pair(brief=brief, anchor=anchor,
-                                            candidate=Path(canvas), key_file=key_file)
+                kwargs = {
+                    "brief": brief, "anchor": anchor,
+                    "candidate": Path(canvas), "key_file": key_file,
+                    "model": os.environ.get("PAINTER_JUDGE_MODEL"),
+                }
+                parameters = inspect.signature(judge_pair).parameters
+                if not any(parameter.kind == inspect.Parameter.VAR_KEYWORD
+                           for parameter in parameters.values()):
+                    kwargs = {key: value for key, value in kwargs.items() if key in parameters}
+                judgment = await judge_pair(**kwargs)
             except Exception as exc:
                 return {**record, "status": "censored",
                         "reason": f"judge_failure_{type(exc).__name__}"}

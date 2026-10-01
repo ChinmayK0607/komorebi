@@ -106,6 +106,7 @@ DEFAULT_MANIFEST = "scaled-training-manifest.json"
 CONSISTENT_JUDGE_PROTOCOL = "text-paint-sft-pairwise-consistent-v1"
 DEFAULT_CONSISTENT_JUDGE_FORMAT = "identity-joint-schema-v1"
 SIDE_CONSISTENT_JUDGE_FORMAT = "identity-joint-side-schema-v1"
+V2_PRO_CONSISTENT_JUDGE_FORMAT = "identity-joint-side-schema-v2-pro-v1"
 
 
 def _consistent_judge_module_name(format_name: str | None = None) -> str:
@@ -118,6 +119,8 @@ def _consistent_judge_module_name(format_name: str | None = None) -> str:
         return "painter.text_pairwise_consistent_judge"
     if selected == SIDE_CONSISTENT_JUDGE_FORMAT:
         return "painter.text_pairwise_consistent_side_judge"
+    if selected == V2_PRO_CONSISTENT_JUDGE_FORMAT:
+        return "painter.text_pairwise_consistent_side_judge_v2_pro"
     raise ValueError(f"unsupported consistent judge format: {selected}")
 
 
@@ -542,9 +545,11 @@ class NativePaintingRLTask(vf.Task[NativePaintingRLData, vf.State, vf.TaskConfig
                 else:
                     raise
             try:
-                result = await judge_pair(
+                result = await _contract_call(
+                    judge_pair,
                     brief=reference, anchor=opponent, candidate=candidate,
                     key_file=Path(os.environ["PAINTER_GATEWAY_ENV_FILE"]),
+                    model=os.environ.get("PAINTER_JUDGE_MODEL"),
                 )
             except Exception as exc:
                 info["service_failure"] = f"text judge service failure: {type(exc).__name__}: {exc}"
@@ -561,6 +566,7 @@ class NativePaintingRLTask(vf.Task[NativePaintingRLData, vf.State, vf.TaskConfig
             decision_keys = (
                 "status", "protocol", "winner_id", "preference", "consensus", "acceptance",
                 "initial_conflict", "initial_votes", "recheck_votes", "format_version",
+                "requested_model", "returned_models", "model", "judge_model",
             )
             decision = {
                 key: result.get(key)
@@ -576,6 +582,8 @@ class NativePaintingRLTask(vf.Task[NativePaintingRLData, vf.State, vf.TaskConfig
                 "receipt_sha256": sha(receipt_path),
                 "protocol_version": result.get("protocol") if isinstance(result, dict) else None,
                 "decision": decision,
+                "requested_model": result.get("requested_model") if isinstance(result, dict) else None,
+                "returned_models": result.get("returned_models") if isinstance(result, dict) else None,
             }
             if not isinstance(result, dict) or score_evidence["status"] != "scored":
                 info.update(

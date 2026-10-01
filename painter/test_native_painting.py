@@ -182,6 +182,15 @@ class _Agents:
 
 
 class NativePaintingTests(unittest.TestCase):
+    def test_renderer_worker_limit_is_opt_in_and_validated(self):
+        module = _load_module()
+        self.assertEqual(module.render_worker_limit({}), module.DEFAULT_RENDER_WORKERS)
+        self.assertEqual(module.render_worker_limit({module.RENDER_WORKERS_ENV: "2"}), 2)
+        with self.assertRaises(ValueError):
+            module.render_worker_limit({module.RENDER_WORKERS_ENV: "0"})
+        with self.assertRaises(ValueError):
+            module.render_worker_limit({module.RENDER_WORKERS_ENV: "cpu"})
+
     def test_finish_parser_accepts_reason_but_never_code_with_finished(self):
         module = _load_module()
         self.assertTrue(module._is_finish("The observed canvas is complete.\nFINISHED"))

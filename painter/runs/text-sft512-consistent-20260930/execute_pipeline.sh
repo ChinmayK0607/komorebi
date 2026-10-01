@@ -22,6 +22,7 @@ NAME="${PAINTER_RUN_NAME:-text-sft512-consistent-20260930}"
 METRICS="$RUN/async-output/$NAME/monitors/file/metrics.jsonl"
 STATE="$RUN/supervisor-state.json"
 TREND="$RUN/reward-trend.jsonl"
+TRAINER_LOG="${PAINTER_TRAINER_LOG:-$RUN/async-output/$NAME/logs/attempt_1/trainer.log}"
 EVIDENCE="$RUN/local-evidence"
 ARCHIVE="$EVIDENCE/$NAME-evidence.tar.gz"
 UPLOAD="$ARCHIVE.upload.json"
@@ -309,7 +310,7 @@ PY
     exit 1
   fi
   if PAINTER_RL_SUPERVISED=1 "$PY" "$RUN/finite_supervisor.py" \
-      --metrics "$METRICS" --state "$STATE" --trend "$TREND" \
+      --metrics "$METRICS" --trainer-log "$TRAINER_LOG" --state "$STATE" --trend "$TREND" \
       --price-usd-per-hour "$PRICE" --rental-start-epoch "$START" \
       --max-gpu-usd "$CAP" --max-updates 50 --reserve-seconds "$RESERVE" \
       -- bash "$RUN/run.sh"; then

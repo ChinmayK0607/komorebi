@@ -14,6 +14,7 @@ import json
 import math
 import os
 from pathlib import Path
+import re
 import signal
 import statistics
 import subprocess
@@ -145,6 +146,59 @@ def contiguous_step(rewards: dict[int, float]) -> int:
     return step
 
 
+_SUCCESS_STEP = re.compile(r"SUCCESS[^\n]*?Step\s+(\d+)\s+\|")
+_TRAINER_METRIC_KEYS = frozenset({"optim/grad_norm", "time/step", "optimizer/step"})
+
+
+def read_completed_optimizer_steps(
+    metrics_path: Path,
+    *,
+    max_step: int = 50,
+    trainer_log: Path | None = None,
+) -> set[int]:
+    """Read trainer-completed optimizer steps with explicit provenance.
+
+    The orchestrator reward metric uses the same ``step`` field for admitted
+    batches, so it cannot establish that an optimizer update finished.  Prime
+    trainer rows carry optimizer timing/gradient metrics; older runs also
+    preserve ``SUCCESS ... Step N |`` lines in ``trainer.log``.  Either source
+    is accepted, but an admitted batch alone is never promoted to a completed
+    optimizer update.
+    """
+
+    completed: set[int] = set()
+    if metrics_path.is_file():
+        lines = metrics_path.read_text(encoding="utf-8").splitlines()
+        for line in lines:
+            try:
+                row = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if not isinstance(row, dict):
+                continue
+            step = row.get("step")
+            if isinstance(step, bool) or not isinstance(step, int) or not 1 <= step <= max_step:
+                continue
+            producer = row.get("producer")
+            trainer_metric = bool(_TRAINER_METRIC_KEYS.intersection(row))
+            # ``time/step`` is also emitted by the orchestrator.  Bind normal
+            # metrics to Prime's trainer producer; permit only an explicit
+            # gradient metric for legacy rows that predate producer labels.
+            if (producer == "trainer" and trainer_metric) or (
+                producer is None and "optim/grad_norm" in row
+            ):
+                completed.add(step)
+    if trainer_log is None:
+        # metrics.jsonl lives at <run>/async-output/<name>/monitors/file/.
+        trainer_log = metrics_path.parents[2] / "logs" / "attempt_1" / "trainer.log"
+    if trainer_log.is_file():
+        for raw in _SUCCESS_STEP.findall(trainer_log.read_text(encoding="utf-8", errors="replace")):
+            step = int(raw)
+            if 1 <= step <= max_step:
+                completed.add(step)
+    return completed
+
+
 def reward_trend(rewards: dict[int, float], checkpoint: int) -> dict[str, object]:
     """Compare the same five-step sampler used at each frozen checkpoint."""
 
@@ -244,6 +298,7 @@ def supervise(
     *,
     command: Sequence[str],
     metrics_path: Path,
+    trainer_log: Path | None = None,
     state_path: Path,
     trend_path: Path,
     budget: Budget,
@@ -282,12 +337,15 @@ def supervise(
             "metrics_path": str(metrics_path),
             "trend_path": str(trend_path),
             "max_updates": max_updates,
+            "admitted_batch_counter": 0,
+            "completed_optimizer_steps": None,
             "budget": budget.as_dict(),
         },
     )
 
     seen_checkpoints: set[int] = set()
-    last_step = 0
+    last_admitted_batch = 0
+    last_completed_optimizer_step: int | None = None
     last_progress_epoch = started
     final_status = "completed"
     final_reason = "process_exit"
@@ -305,7 +363,11 @@ def supervise(
                 "pid": owner.pid,
                 "pgid": owner.pgid,
                 "exit_code": code,
-                "last_optimizer_step": last_step,
+                # Keep the old field as a compatibility alias, but bind it to
+                # trainer completion rather than the orchestrator batch step.
+                "last_optimizer_step": last_completed_optimizer_step,
+                "last_admitted_batch": last_admitted_batch,
+                "completed_optimizer_steps": last_completed_optimizer_step,
                 "max_updates": max_updates,
                 "budget": budget.as_dict(),
                 "metrics_path": str(metrics_path),
@@ -325,12 +387,27 @@ def supervise(
             return finish(status=final_status, reason=final_reason, code=exit_code)
 
         current = contiguous_step(rewards)
-        if current > last_step:
-            last_step = current
+        if current > last_admitted_batch:
+            last_admitted_batch = current
             last_progress_epoch = now()
 
+        completed_steps = read_completed_optimizer_steps(
+            metrics_path, max_step=max_updates, trainer_log=trainer_log
+        )
+        completed_current = max(completed_steps) if completed_steps else None
+        if completed_current is not None and (
+            last_completed_optimizer_step is None or completed_current > last_completed_optimizer_step
+        ):
+            last_completed_optimizer_step = completed_current
+
         for checkpoint in CHECKPOINT_STEPS:
-            if checkpoint > max_updates or checkpoint > current or checkpoint in seen_checkpoints:
+            if (
+                checkpoint > max_updates
+                or checkpoint > current
+                or last_completed_optimizer_step is None
+                or checkpoint > last_completed_optimizer_step
+                or checkpoint in seen_checkpoints
+            ):
                 continue
             try:
                 trend = reward_trend(rewards, checkpoint)
@@ -355,7 +432,7 @@ def supervise(
                 owner.stop(grace_seconds=shutdown_grace_seconds)
             return finish(status=final_status, reason=final_reason, code=exit_code)
 
-        if current >= max_updates:
+        if last_completed_optimizer_step is not None and last_completed_optimizer_step >= max_updates:
             final_status, final_reason = "stopped", "max_updates_reached"
             if exit_code is None:
                 owner.stop(grace_seconds=shutdown_grace_seconds)
@@ -377,6 +454,8 @@ def supervise(
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--metrics", type=Path, required=True)
+    parser.add_argument("--trainer-log", type=Path,
+                        help="optional trainer completion log; metrics remain the admitted-batch source")
     parser.add_argument("--state", type=Path, required=True)
     parser.add_argument("--trend", type=Path, required=True)
     parser.add_argument("--price-usd-per-hour", type=float, required=True)
@@ -407,6 +486,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     return supervise(
         command=command,
         metrics_path=args.metrics,
+        trainer_log=args.trainer_log,
         state_path=args.state,
         trend_path=args.trend,
         budget=budget,
