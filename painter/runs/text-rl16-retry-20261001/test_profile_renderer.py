@@ -7,6 +7,7 @@ import json
 from pathlib import Path
 import sys
 import tempfile
+from unittest.mock import patch
 import unittest
 
 
@@ -113,12 +114,84 @@ class ProfileRendererTests(unittest.TestCase):
         self.assertIn("python_version", snapshot)
         self.assertIn("platform", snapshot)
 
+    def test_run_controls_returns_report_level_renderer_and_asset_identities(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            runtime = root / "runtime"
+            (runtime / "assets").mkdir(parents=True)
+            (runtime / "renderer.py").write_text("renderer fixture\n", encoding="utf-8")
+            (runtime / "assets" / "p5.min.js").write_text("p5 fixture\n", encoding="utf-8")
+            (runtime / "assets" / "p5.brush.js").write_text("brush fixture\n", encoding="utf-8")
+            record = {"id": "case-a", "source": root / "case-a.js", "source_sha256": "source", "seed": 17}
+            record["source"].write_text("function setup(){}\n", encoding="utf-8")
+            with patch.object(profile, "run_watchdog", return_value={"valid": True}):
+                report = profile.run_controls([record], runtime, Path(sys.executable), root / "control", 1, None)
+            self.assertEqual(report["renderer_sha256"], profile.sha256(runtime / "renderer.py"))
+            self.assertEqual(report["assets_sha256"], {name: profile.sha256(runtime / "assets" / name) for name in ("p5.min.js", "p5.brush.js")})
+            self.assertEqual(report["results"][0]["renderer_sha256"], report["renderer_sha256"])
+            self.assertEqual(report["results"][0]["assets_sha256"], report["assets_sha256"])
+
     def test_control_comparison_requires_matching_png_hashes(self):
-        profile_report = {"renderer_sha256": "r", "results": [{"id": "a", "valid": True, "png_sha256": "same", "watchdog_elapsed_seconds": 3}]}
-        control_report = {"renderer_sha256": "r", "results": [{"id": "a", "valid": True, "png_sha256": "same", "watchdog_elapsed_seconds": 2}]}
+        identity = {"source_sha256": "source", "seed": 17, "renderer_sha256": "r", "assets_sha256": {"p5": "p5"}}
+        profile_report = {**identity, "case_ids": ["a"], "results": [{"id": "a", **identity, "valid": True, "png_sha256": "same", "watchdog_elapsed_seconds": 3}]}
+        control_report = {**identity, "case_ids": ["a"], "results": [{"id": "a", **identity, "valid": True, "png_sha256": "same", "watchdog_elapsed_seconds": 2}]}
         result = profile.compare_control(profile_report, control_report)
         self.assertTrue(result["same_renderer_identity"])
+        self.assertTrue(result["same_assets_identity"])
+        self.assertTrue(result["cases"][0]["identity_equal"])
         self.assertTrue(result["cases"][0]["png_sha_equal"])
+
+    def test_control_comparison_reports_unequal_and_missing_identities_strictly(self):
+        profile_report = {
+            "renderer_sha256": "profile-renderer",
+            "assets_sha256": {"p5": "profile-p5"},
+            "case_ids": ["registered", "baseline-only"],
+            "results": [{
+                "id": "registered",
+                "source_sha256": "source-a",
+                "seed": 17,
+                "renderer_sha256": "profile-row-renderer",
+                "assets_sha256": {"p5": "profile-row-p5"},
+                "valid": True,
+                "png_sha256": "profile-png",
+            }],
+        }
+        control_report = {
+            "renderer_sha256": "control-renderer",
+            "assets_sha256": {"p5": "control-p5"},
+            "case_ids": ["registered", "control-only"],
+            "results": [{
+                "id": "registered",
+                "source_sha256": "source-b",
+                "seed": 18,
+                "renderer_sha256": "control-row-renderer",
+                "assets_sha256": {"p5": "control-row-p5"},
+                "valid": True,
+                "png_sha256": "control-png",
+            }],
+        }
+        result = profile.compare_control(profile_report, control_report)
+        self.assertFalse(result["same_renderer_identity"])
+        self.assertFalse(result["same_assets_identity"])
+        self.assertEqual([row["id"] for row in result["cases"]], ["registered"])
+        self.assertEqual(result["missing_profile_cases"], ["control-only"])
+        self.assertEqual(result["profile_cases_without_registered_controls"], ["baseline-only"])
+        self.assertEqual(result["missing_control_results"], ["control-only"])
+        row = result["cases"][0]
+        self.assertFalse(row["source_sha_equal"])
+        self.assertFalse(row["seed_equal"])
+        self.assertFalse(row["renderer_sha_equal"])
+        self.assertFalse(row["assets_sha_equal"])
+        self.assertFalse(row["identity_equal"])
+
+    def test_control_comparison_does_not_treat_missing_identities_as_equal(self):
+        profile_report = {"case_ids": ["a"], "results": [{"id": "a", "valid": True}]}
+        control_report = {"case_ids": ["a"], "results": [{"id": "a", "valid": True}]}
+        result = profile.compare_control(profile_report, control_report)
+        self.assertFalse(result["same_renderer_identity"])
+        self.assertFalse(result["same_assets_identity"])
+        self.assertFalse(result["cases"][0]["identity_equal"])
+        self.assertFalse(result["cases"][0]["png_sha_equal"])
 
 
 if __name__ == "__main__":

@@ -360,7 +360,9 @@ def control_command(record: Mapping[str, Any], runtime: Path, renderer_python: P
 
 def run_controls(records: Sequence[Mapping[str, Any]], runtime: Path, renderer_python: Path, output_root: Path, timeout: float, browsers_path: Path | None) -> dict[str, Any]:
     output_root.mkdir(parents=True, exist_ok=True)
-    report: dict[str, Any] = {"schema": SCHEMA, "profile_version": PROFILE_VERSION, "mode": "direct_frozen_worker_control", "status": "running", "case_ids": [str(record["id"]) for record in records], "resource_snapshot": resource_snapshot(), "results": []}
+    renderer_sha = sha256(runtime / "renderer.py")
+    assets_sha = {name: sha256(runtime / "assets" / name) for name in ("p5.min.js", "p5.brush.js")}
+    report: dict[str, Any] = {"schema": SCHEMA, "profile_version": PROFILE_VERSION, "mode": "direct_frozen_worker_control", "status": "running", "case_ids": [str(record["id"]) for record in records], "resource_snapshot": resource_snapshot(), "renderer_sha256": renderer_sha, "assets_sha256": assets_sha, "results": []}
     _write_json(output_root / "control.json", report)
     try:
         for record in records:
@@ -375,7 +377,7 @@ def run_controls(records: Sequence[Mapping[str, Any]], runtime: Path, renderer_p
                 result = run_watchdog(control_command(record, runtime, renderer_python, output, timeout), receipt, journal, log, timeout, _minimal_env(Path(scratch), browsers_path))
             if output.is_file():
                 result["png_sha256"] = sha256(output)
-            result.update({"id": case_id, "control_mode": "direct_frozen_worker", "source_sha256": record["source_sha256"], "seed": record["seed"], "renderer_sha256": sha256(runtime / "renderer.py"), "assets_sha256": {name: sha256(runtime / "assets" / name) for name in ("p5.min.js", "p5.brush.js")}, "resource_snapshot": resource_snapshot()})
+            result.update({"id": case_id, "control_mode": "direct_frozen_worker", "source_sha256": record["source_sha256"], "seed": record["seed"], "renderer_sha256": renderer_sha, "assets_sha256": assets_sha, "resource_snapshot": resource_snapshot()})
             _write_json(receipt, result)
             report["results"].append(result)
             _write_json(output_root / "control.json", report)
@@ -389,13 +391,64 @@ def run_controls(records: Sequence[Mapping[str, Any]], runtime: Path, renderer_p
 
 
 def compare_control(profile: Mapping[str, Any], control: Mapping[str, Any]) -> dict[str, Any]:
-    controls = {str(row["id"]): row for row in control.get("results", [])}
+    def present_and_equal(left: Any, right: Any) -> bool:
+        """Compare an identity field without treating two omissions as equal."""
+
+        return left is not None and right is not None and left == right
+
+    profile_results = {str(row["id"]): row for row in profile.get("results", []) if row.get("id") is not None}
+    control_results = {str(row["id"]): row for row in control.get("results", []) if row.get("id") is not None}
+
+    # ``case_ids`` is the requested/registered set.  It can be larger than
+    # ``results`` when a run stopped before returning every receipt.  Older
+    # reports do not have it, so fall back to the returned rows in that case.
+    def registered_ids(report: Mapping[str, Any], results: Mapping[str, Any]) -> list[str]:
+        values = report.get("case_ids")
+        if values is None:
+            values = results
+        return list(dict.fromkeys(str(case_id) for case_id in values))
+
+    profile_order = registered_ids(profile, profile_results)
+    control_order = registered_ids(control, control_results)
+    profile_ids = set(profile_order)
+    control_ids = set(control_order)
     rows = []
-    for row in profile.get("results", []):
-        case_id = str(row["id"])
-        reference = controls.get(case_id, {})
-        rows.append({"id": case_id, "profile_valid": bool(row.get("valid")), "control_valid": bool(reference.get("valid")), "png_sha_equal": bool(row.get("png_sha256") and reference.get("png_sha256") and row["png_sha256"] == reference["png_sha256"]), "profile_elapsed_seconds": row.get("watchdog_elapsed_seconds"), "control_elapsed_seconds": reference.get("watchdog_elapsed_seconds")})
-    return {"schema": "watercolour-render-profile-comparison-v2", "same_renderer_identity": profile.get("renderer_sha256") == control.get("renderer_sha256"), "cases": rows}
+    for case_id in control_order:
+        if case_id not in profile_ids:
+            continue
+        row = profile_results.get(case_id)
+        reference = control_results.get(case_id)
+        if row is None or reference is None:
+            # The requested case is reported explicitly below.  Do not emit a
+            # misleading row with validity or image equality defaults.
+            continue
+        source_sha_equal = present_and_equal(row.get("source_sha256"), reference.get("source_sha256"))
+        seed_equal = present_and_equal(row.get("seed"), reference.get("seed"))
+        renderer_sha_equal = present_and_equal(row.get("renderer_sha256"), reference.get("renderer_sha256"))
+        assets_sha_equal = present_and_equal(row.get("assets_sha256"), reference.get("assets_sha256"))
+        rows.append({
+            "id": case_id,
+            "profile_valid": bool(row.get("valid")),
+            "control_valid": bool(reference.get("valid")),
+            "source_sha_equal": source_sha_equal,
+            "seed_equal": seed_equal,
+            "renderer_sha_equal": renderer_sha_equal,
+            "assets_sha_equal": assets_sha_equal,
+            "identity_equal": all((source_sha_equal, seed_equal, renderer_sha_equal, assets_sha_equal)),
+            "png_sha_equal": bool(row.get("png_sha256") and reference.get("png_sha256") and row["png_sha256"] == reference["png_sha256"]),
+            "profile_elapsed_seconds": row.get("watchdog_elapsed_seconds"),
+            "control_elapsed_seconds": reference.get("watchdog_elapsed_seconds"),
+        })
+    return {
+        "schema": "watercolour-render-profile-comparison-v2",
+        "same_renderer_identity": present_and_equal(profile.get("renderer_sha256"), control.get("renderer_sha256")),
+        "same_assets_identity": present_and_equal(profile.get("assets_sha256"), control.get("assets_sha256")),
+        "missing_profile_cases": [case_id for case_id in control_order if case_id not in profile_ids],
+        "profile_cases_without_registered_controls": [case_id for case_id in profile_order if case_id not in control_ids],
+        "missing_profile_results": [case_id for case_id in control_order if case_id in profile_ids and case_id not in profile_results],
+        "missing_control_results": [case_id for case_id in control_order if case_id not in control_results],
+        "cases": rows,
+    }
 
 
 def main(argv: Sequence[str] | None = None) -> int:
