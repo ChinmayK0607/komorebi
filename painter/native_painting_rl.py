@@ -84,6 +84,17 @@ except ImportError:
         validate_seed,
     )
 
+try:
+    from painter.final_action_credit import (
+        require_valid_final_action_enabled,
+        validate_last_turn,
+    )
+except ImportError:
+    from final_action_credit import (  # type: ignore
+        require_valid_final_action_enabled,
+        validate_last_turn,
+    )
+
 
 RL_PROTOCOL_VERSION = "native-painting-rl-v2"
 DEFAULT_JUDGE_TIMEOUT_SECONDS = 1800.0
@@ -391,6 +402,30 @@ class NativePaintingRLTask(vf.Task[NativePaintingRLData, vf.State, vf.TaskConfig
         if info.get("service_failure"):
             # Renderer/judge outages are operational failures, never visual scores.
             raise RuntimeError(f"service failure is not a visual score: {info['service_failure']}")
+        if require_valid_final_action_enabled():
+            try:
+                final_action = validate_last_turn(info)
+            except RuntimeError as exc:
+                info["final_action_validation"] = {
+                    "enabled": True,
+                    "status": "operational_error",
+                    "error": str(exc),
+                }
+                info["reward_status"] = "final_action_evidence_error"
+                raise
+            if not final_action["valid"]:
+                # Keep the retained canvas and its native validity provenance
+                # untouched.  This gate only controls terminal credit; it does
+                # not erase a valid canvas retained from an earlier turn.
+                info["final_action_validation"] = {
+                    **final_action,
+                    "retained_final_canvas": info.get("final_canvas"),
+                    "retained_final_canvas_valid": info.get("final_canvas_valid"),
+                }
+                info["final_canvas_score"] = 0.0
+                info["reward_status"] = "model_invalid_final_action"
+                return 0.0
+            info["final_action_validation"] = final_action
         final_canvas_value = info.get("final_canvas")
         if not final_canvas_value or not info.get("final_canvas_valid"):
             # A model can finish after emitting invalid JavaScript or after a

@@ -15,6 +15,7 @@ py-modules = [
   "native_painting",
   "native_painting_eval",
   "native_painting_rl",
+  "final_action_credit",
   "native_painting_renderer",
   "text_pairwise_judge",
   "frozen_opponent",

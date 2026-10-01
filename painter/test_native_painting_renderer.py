@@ -1,6 +1,7 @@
 import hashlib
 import json
 import os
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
@@ -65,6 +66,152 @@ class NativePaintingRendererTests(unittest.TestCase):
             with self.subTest(value=value), patch.dict(os.environ, {"PAINTER_RENDER_TIMEOUT_SECONDS": value}, clear=False):
                 with self.assertRaises(ValueError):
                     renderer_module.render_timeout_seconds()
+
+    def test_syntax_error_skips_renderer_and_preserves_previous_canvas(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            folder = root / "episode"
+            renderer = root / "renderer.py"
+            renderer_python = root / "python"
+            renderer.write_text("# test renderer\n")
+            renderer_python.write_text("# test python\n")
+            previous_canvas = root / "previous.png"
+            previous_canvas.write_bytes(b"previous canvas")
+
+            def fake_run(command, **kwargs):
+                self.assertEqual(command[:2], ["node", "--check"])
+                self.assertNotIn("HF_TOKEN", kwargs["env"])
+                return SimpleNamespace(
+                    returncode=1,
+                    stdout="",
+                    stderr="/episode/program.js:1\nSyntaxError: Unexpected token '}'",
+                )
+
+            with patch.dict(
+                os.environ,
+                {renderer_module.JS_SYNTAX_PREFLIGHT_ENV: "1", "HF_TOKEN": "secret"},
+                clear=False,
+            ):
+                with patch.object(renderer_module.subprocess, "run", side_effect=fake_run) as run:
+                    result = renderer_module.render_action(
+                        root=root,
+                        folder=folder,
+                        reply="```javascript\nfunction setup(){\nfunction draw(){}}\n```",
+                        initial_canvas=previous_canvas,
+                        initial_program=None,
+                        renderer=renderer,
+                        renderer_python=renderer_python,
+                    )
+
+            self.assertFalse(result["valid"])
+            self.assertEqual(result["failure_kind"], "program")
+            self.assertEqual(result["canvas"], str(previous_canvas))
+            self.assertIn("SyntaxError", result["error"])
+            self.assertEqual(run.call_count, 1)
+
+    def test_valid_browser_script_is_checked_then_forwarded_to_existing_renderer(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            renderer = root / "renderer.py"
+            renderer_python = root / "python"
+            renderer.write_text("# test renderer\n")
+            renderer_python.write_text("# test python\n")
+
+            def fake_run(command, **kwargs):
+                if command[:2] == ["node", "--check"]:
+                    return SimpleNamespace(returncode=0, stdout="", stderr="")
+                source = Path(command[6])
+                output = Path(command[8])
+                image = Image.new("RGB", (600, 600), "white")
+                image.paste("#315b70", (100, 100, 500, 500))
+                image.save(output)
+                output.with_suffix(".json").write_text(json.dumps({
+                    "valid": True,
+                    "source_sha256": hashlib.sha256(source.read_bytes()).hexdigest(),
+                    "png_sha256": hashlib.sha256(output.read_bytes()).hexdigest(),
+                }))
+                return SimpleNamespace(returncode=0, stdout="", stderr="")
+
+            # Optional chaining, nullish coalescing, destructuring, and spread
+            # are valid browser Script grammar and must not be rejected by a
+            # preflight implemented with a narrower ad-hoc parser.
+            reply = """```javascript
+function setup(){createCanvas(600,600);}
+function draw(){
+  const points = [{x: 1, y: 2, extra: true}];
+  const copy = points?.map(({x = 0, y = 0, ...rest}) => ({x, y, ...rest})) ?? [];
+  background(copy.length ? '#fff' : '#000');
+  noLoop();
+}
+```"""
+            with patch.dict(
+                os.environ,
+                {renderer_module.JS_SYNTAX_PREFLIGHT_ENV: "1"},
+                clear=False,
+            ):
+                with patch.object(renderer_module.subprocess, "run", side_effect=fake_run) as run:
+                    result = renderer_module.render_action(
+                        root=root,
+                        folder=root / "episode",
+                        reply=reply,
+                        initial_canvas=None,
+                        initial_program=None,
+                        renderer=renderer,
+                        renderer_python=renderer_python,
+                    )
+
+            self.assertTrue(result["valid"])
+            self.assertEqual(run.call_count, 2)
+            self.assertEqual(run.call_args_list[0].args[0][:2], ["node", "--check"])
+            self.assertEqual(run.call_args_list[1].args[0][0], "/usr/sbin/runuser")
+
+    def test_missing_node_is_an_operational_failure(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            with patch.dict(
+                os.environ,
+                {renderer_module.JS_SYNTAX_PREFLIGHT_ENV: "1"},
+                clear=False,
+            ):
+                with patch.object(
+                    renderer_module.subprocess,
+                    "run",
+                    side_effect=FileNotFoundError("node"),
+                ):
+                    with self.assertRaisesRegex(RuntimeError, "Node.js.*unavailable"):
+                        renderer_module.render_action(
+                            root=root,
+                            folder=root / "episode",
+                            reply="```javascript\nfunction setup(){}\nfunction draw(){}\n```",
+                            initial_canvas=None,
+                            initial_program=None,
+                            renderer=root / "renderer.py",
+                            renderer_python=root / "python",
+                        )
+
+    def test_syntax_preflight_timeout_is_an_operational_failure(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            timeout = subprocess.TimeoutExpired(
+                ["node", "--check", "program.js"],
+                renderer_module.JS_SYNTAX_PREFLIGHT_TIMEOUT_SECONDS,
+            )
+            with patch.dict(
+                os.environ,
+                {renderer_module.JS_SYNTAX_PREFLIGHT_ENV: "1"},
+                clear=False,
+            ):
+                with patch.object(renderer_module.subprocess, "run", side_effect=timeout):
+                    with self.assertRaisesRegex(RuntimeError, "syntax preflight timed out"):
+                        renderer_module.render_action(
+                            root=root,
+                            folder=root / "episode",
+                            reply="```javascript\nfunction setup(){}\nfunction draw(){}\n```",
+                            initial_canvas=None,
+                            initial_program=None,
+                            renderer=root / "renderer.py",
+                            renderer_python=root / "python",
+                        )
 
     def test_blank_canvas_is_model_failure_even_when_renderer_reports_valid(self):
         with tempfile.TemporaryDirectory() as temp:

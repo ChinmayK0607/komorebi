@@ -520,6 +520,100 @@ class NativePaintingRLTests(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, "not a visual score"):
                 asyncio.run(task.final_canvas_aesthetic(_Trace(service_failure="renderer unavailable")))
 
+    def test_opt_in_invalid_final_action_gets_zero_but_retains_canvas_provenance(self):
+        module = _load_rl_module()
+        with TemporaryDirectory() as temp:
+            root = Path(temp)
+            brief, anchor, canvas = (root / name for name in ("brief.txt", "anchor.png", "canvas.png"))
+            brief.write_text("Paint a pear beside a cup.\n")
+            anchor.write_bytes(b"anchor")
+            canvas.write_bytes(b"candidate")
+            data = module.NativePaintingRLData(
+                root=str(root), task_id="text-final-invalid", source_group="text-final-invalid",
+                family="simple", reference=str(brief), reference_sha256=_digest(brief),
+                reference_kind="text", opponent=str(anchor), opponent_sha256=_digest(anchor),
+                output_root="rl-rollouts", mode="fresh",
+            )
+            trace = _Trace(
+                final_canvas=str(canvas), final_canvas_valid=True,
+                turns=[{"turn": 2, "action": "paint", "valid": False, "failure_kind": "program"}],
+            )
+            with patch.dict("os.environ", {
+                "PAINTER_REQUIRE_VALID_FINAL_ACTION": "1",
+                "PAINTER_GATEWAY_ENV_FILE": str(root / "key"),
+            }), patch("painter.text_pairwise_judge.judge_pair") as judge:
+                score = asyncio.run(module.NativePaintingRLTask(data).final_canvas_aesthetic(trace))
+            self.assertEqual(score, 0.0)
+            self.assertEqual(trace.info["reward_status"], "model_invalid_final_action")
+            self.assertEqual(trace.info["final_canvas"], str(canvas))
+            self.assertTrue(trace.info["final_canvas_valid"])
+            self.assertEqual(trace.info["final_action_validation"]["status"], "invalid")
+            judge.assert_not_called()
+
+    def test_opt_in_valid_final_action_remains_judge_eligible(self):
+        module = _load_rl_module()
+        with TemporaryDirectory() as temp:
+            root = Path(temp)
+            brief, anchor, canvas = (root / name for name in ("brief.txt", "anchor.png", "canvas.png"))
+            brief.write_text("Paint a pear beside a cup.\n")
+            anchor.write_bytes(b"anchor")
+            canvas.write_bytes(b"candidate")
+            data = module.NativePaintingRLData(
+                root=str(root), task_id="text-final-valid", source_group="text-final-valid", family="simple",
+                reference=str(brief), reference_sha256=_digest(brief), reference_kind="text",
+                opponent=str(anchor), opponent_sha256=_digest(anchor), output_root="rl-rollouts", mode="fresh",
+            )
+            async def fake_judge(**_kwargs):
+                return {"protocol": "text-paint-sft-pairwise-v1", "score": 0.25,
+                        "status": "scored", "views": []}
+            trace = _Trace(
+                final_canvas=str(canvas), final_canvas_valid=True,
+                turns=[{"turn": 3, "action": "finish", "valid": True}],
+            )
+            with patch.dict("os.environ", {
+                "PAINTER_REQUIRE_VALID_FINAL_ACTION": "1",
+                "PAINTER_GATEWAY_ENV_FILE": str(root / "key"),
+            }), patch("painter.text_pairwise_judge.judge_pair", fake_judge):
+                score = asyncio.run(module.NativePaintingRLTask(data).final_canvas_aesthetic(trace))
+            self.assertEqual(score, 0.25)
+            self.assertEqual(trace.info["final_action_validation"]["status"], "valid")
+
+    def test_opt_in_missing_final_action_evidence_is_operational(self):
+        module = _load_rl_module()
+        with TemporaryDirectory() as temp:
+            root = Path(temp)
+            reference, opponent, canvas = (root / name for name in ("reference.png", "opponent.png", "canvas.png"))
+            reference.write_bytes(b"reference")
+            opponent.write_bytes(b"opponent")
+            canvas.write_bytes(b"candidate")
+            data = module.NativePaintingRLData(
+                root=str(root), task_id="task-final-missing", source_group="group", family="shape",
+                reference=str(reference), reference_sha256=_digest(reference), opponent=str(opponent),
+                opponent_sha256=_digest(opponent), mode="fresh",
+            )
+            trace = _Trace(final_canvas=str(canvas), final_canvas_valid=True)
+            with patch.dict("os.environ", {"PAINTER_REQUIRE_VALID_FINAL_ACTION": "1"}):
+                with self.assertRaisesRegex(RuntimeError, "last turn"):
+                    asyncio.run(module.NativePaintingRLTask(data).final_canvas_aesthetic(trace))
+            self.assertEqual(trace.info["reward_status"], "final_action_evidence_error")
+            self.assertNotIn("final_canvas_score", trace.info)
+
+    def test_opt_in_service_failure_stays_operational(self):
+        module = _load_rl_module()
+        task = module.NativePaintingRLTask(module.NativePaintingRLData(
+            root=".", task_id="task-service", source_group="group", family="shape",
+            reference="reference.png", reference_sha256="a" * 64,
+            opponent="opponent.png", opponent_sha256="b" * 64, mode="fresh",
+        ))
+        trace = _Trace(
+            service_failure="renderer unavailable",
+            turns=[{"turn": 2, "action": "paint", "valid": False, "failure_kind": "service"}],
+        )
+        with patch.dict("os.environ", {"PAINTER_REQUIRE_VALID_FINAL_ACTION": "1"}):
+            with self.assertRaisesRegex(RuntimeError, "not a visual score"):
+                asyncio.run(task.final_canvas_aesthetic(trace))
+        self.assertNotIn("final_action_validation", trace.info)
+
 
 if __name__ == "__main__":
     unittest.main()

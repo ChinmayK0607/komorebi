@@ -67,6 +67,29 @@ runtime/bin/python rollout.py --reference /path/reference.png --output /path/epi
   --renderer vendor/integrations/watercolour/renderer.py --renderer-python renderer-env/bin/python
 ```
 
+The native renderer has an opt-in JavaScript syntax preflight for the Linux
+pilot. Set `PAINTER_JS_SYNTAX_PREFLIGHT=1` to run the submitted source through
+the installed Node.js parser as `node --check <file>` before launching the
+pinned Watercolour renderer. This is a bounded, non-executing parse of
+Node.js parser syntax; it does not validate p5/brush APIs, browser globals,
+runtime behavior, or other semantics, and Node and browser parsers can still
+differ at the edges. A parser syntax error is reported as the same model
+program failure and keeps the previous canvas. Missing Node.js or a parser
+startup/timeout error is an operational renderer failure. The flag remains
+off by default until the Linux pilot adopts it.
+
+The native RL reward also has an optional terminal-credit contract for a future
+pilot. Set `PAINTER_REQUIRE_VALID_FINAL_ACTION=1` only after registering the
+new objective and its matched experiment record. With the flag enabled, a
+recorded final turn with `valid: false` receives zero terminal reward with
+`reward_status=model_invalid_final_action`, while the retained canvas and its
+`final_canvas_valid` provenance remain intact. The default is off, so existing
+traces and configurations are unchanged; the flag gates only terminal credit,
+not turn-level credit, and does not address positively credited intermediate
+failed attempts. Missing or malformed final-turn evidence is an operational
+error rather than an invented model zero, and renderer/judge service failures
+remain operational errors.
+
 Portable adapters remain public on Hugging Face under versioned run paths, using the existing verified export/upload implementation. Native optimizer-state resume requires separate checkpoint storage; the prior adapter-only run does not provide exact optimizer continuation. Do not claim otherwise. Per-case data/render/model-call resume is implemented here; distributed training resume is not newly validated.
 
 Routine PNG differences are diagnostics. Wrong inputs, unusable outputs, nonfinite training or execution failures need correction, but a failed case does not discard its neighbors. Generate galleries before asking for more labels. Keep a node through recoverable fixes and scheduled evaluation; release it after evidence collection. Historical correction checkpoints and their unfinished comparison remain a separate diagnostic, not evidence that this new curriculum succeeded.

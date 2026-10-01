@@ -20,6 +20,8 @@ from PIL import Image, ImageStat
 
 DEFAULT_RENDER_TIMEOUT_SECONDS = 180
 MAX_RENDER_TIMEOUT_SECONDS = 180
+JS_SYNTAX_PREFLIGHT_ENV = "PAINTER_JS_SYNTAX_PREFLIGHT"
+JS_SYNTAX_PREFLIGHT_TIMEOUT_SECONDS = 5
 MIN_CANVAS_CHANNEL_VARIANCE = 1.0
 
 
@@ -56,6 +58,50 @@ def render_timeout_seconds() -> int:
     return value
 
 
+def _run_js_syntax_preflight(source: Path) -> str | None:
+    """Check JavaScript Script grammar without executing the submitted code.
+
+    ``node --check`` parses a file and exits before evaluating it.  Keep the
+    child environment deliberately small: syntax checking needs only PATH and
+    locale, and must not inherit model/API credentials from the renderer
+    process.  Startup and timeout failures are operational failures and are
+    raised for the native loop's service-failure path.  A non-zero parser exit
+    is a model-program failure and returns the parser's diagnostic.
+    """
+
+    command = ["node", "--check", str(source)]
+    child_env = {
+        "PATH": os.environ.get("PATH", ""),
+        "LANG": os.environ.get("LANG", "C"),
+        "LC_ALL": os.environ.get("LC_ALL", "C"),
+    }
+    try:
+        completed = subprocess.run(
+            command,
+            capture_output=True,
+            text=True,
+            timeout=JS_SYNTAX_PREFLIGHT_TIMEOUT_SECONDS,
+            check=False,
+            env=child_env,
+        )
+    except FileNotFoundError as exc:
+        raise RuntimeError(
+            "JavaScript syntax preflight is enabled but Node.js (`node`) is unavailable"
+        ) from exc
+    except subprocess.TimeoutExpired as exc:
+        raise RuntimeError(
+            "JavaScript syntax preflight timed out after "
+            f"{JS_SYNTAX_PREFLIGHT_TIMEOUT_SECONDS}s"
+        ) from exc
+    except OSError as exc:
+        raise RuntimeError(f"JavaScript syntax preflight could not start Node.js: {exc}") from exc
+
+    if completed.returncode == 0:
+        return None
+    detail = (getattr(completed, "stderr", "") or getattr(completed, "stdout", "") or "").strip()
+    return detail or f"node --check exited with status {completed.returncode}"
+
+
 def render_action(
     *,
     root: Path,
@@ -87,6 +133,15 @@ def render_action(
     source.write_text(program)
     os.chmod(source, 0o644)
     row["program"] = program
+    if os.environ.get(JS_SYNTAX_PREFLIGHT_ENV) == "1":
+        syntax_error = _run_js_syntax_preflight(source)
+        if syntax_error is not None:
+            row.update(
+                error=syntax_error,
+                renderer_errors=[syntax_error],
+                failure_kind="program",
+            )
+            return row
     if initial_program is not None and program.strip() == initial_program.strip():
         row.update(valid=True, canvas=str(initial_canvas), no_change=True)
         return row
@@ -171,4 +226,11 @@ def render_action(
     return row
 
 
-__all__ = ["DEFAULT_RENDER_TIMEOUT_SECONDS", "extract_sketch", "render_action", "render_timeout_seconds"]
+__all__ = [
+    "DEFAULT_RENDER_TIMEOUT_SECONDS",
+    "JS_SYNTAX_PREFLIGHT_ENV",
+    "JS_SYNTAX_PREFLIGHT_TIMEOUT_SECONDS",
+    "extract_sketch",
+    "render_action",
+    "render_timeout_seconds",
+]
