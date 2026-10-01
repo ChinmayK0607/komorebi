@@ -55,6 +55,18 @@ export PAINTER_BOOTSTRAP_RUN="${PAINTER_BOOTSTRAP_RUN:-$REPO/painter/runs/text-p
 
 bash "$BASE/prepare_node.sh"
 
+# The patch helper assembles privately, then publishes a read/traverse-only
+# runtime. Reassert this at node preparation so a retained runtime from an
+# older helper cannot strand the unprivileged renderer account.
+chmod a+rx "$RUN" "$(dirname "$PATCHED_ROOT")" "$PATCHED_ROOT"
+find "$PATCHED_ROOT" -type d -exec chmod a+rx {} +
+find "$PATCHED_ROOT" -type f -exec chmod a+r {} +
+[[ -x "$PATCHED_RENDERER_PYTHON" ]] || { echo 'renderer Python executable is missing' >&2; exit 1; }
+mkdir -p "$RUN/renderer-home"
+/usr/sbin/runuser -u painter -- env -i \
+  PATH=/usr/bin:/bin HOME="$RUN/renderer-home" LANG=C \
+  "$PATCHED_RENDERER_PYTHON" "$PATCHED_RENDERER" --help >/dev/null
+
 # Keep the immutable policy/frozen identities and renderer provenance explicit
 # for the parent experiment record, while retaining the base preparation
 # receipt for its fixed-anchor checks.

@@ -87,6 +87,8 @@ class RL16RunContractTests(unittest.TestCase):
         self.assertIn("PAINTER_BOOTSTRAP_RUN:-$REPO/painter/runs/text-pairwise-rl-20260928", text)
         self.assertIn("PAINTER_RENDERER_PATH", text)
         self.assertIn("PATCH-MANIFEST.json", text)
+        self.assertIn('find "$PATCHED_ROOT" -type d -exec chmod a+rx {} +', text)
+        self.assertIn('/usr/sbin/runuser -u painter -- env -i', text)
 
     def test_finite_supervisor_keeps_requested_checkpoint_stop_rule(self):
         text = (BASE / "finite_supervisor.py").read_text()

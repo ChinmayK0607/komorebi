@@ -270,6 +270,12 @@ def build_runtime(
         (temporary / "PATCH-MANIFEST.json").write_text(
             json.dumps(metadata, indent=2, sort_keys=True) + "\n", encoding="utf-8"
         )
+        # The runtime is consumed by the unprivileged ``painter`` account on
+        # Linux.  tempfile.mkdtemp creates a mode-700 root; preserve private
+        # build isolation during assembly, then publish a read/traverse-only
+        # runtime so that account can load the renderer and its assets.
+        for directory in (temporary, *[path for path in temporary.rglob("*") if path.is_dir()]):
+            directory.chmod(0o755)
         temporary.rename(output_root)
     except Exception:
         shutil.rmtree(temporary, ignore_errors=True)

@@ -66,6 +66,10 @@ class BrushCentroidPatchTests(unittest.TestCase):
             self.assertTrue((output / "PATCH-MANIFEST.json").is_file())
             for relative in COPIED_FILES:
                 self.assertTrue((output / relative).is_file(), relative)
+            for path in (output, *(candidate for candidate in output.rglob("*") if candidate.is_dir())):
+                self.assertEqual(path.stat().st_mode & 0o777, 0o755, path)
+            for relative in COPIED_FILES:
+                self.assertTrue((output / relative).stat().st_mode & 0o444, relative)
             manifest = json.loads((output / "PATCH-MANIFEST.json").read_text())
             self.assertEqual(manifest["provenance"]["upstream"]["commit"], "35f7ccc096829ba2d1d7ac8d9feeed7fd882fa82")
             self.assertEqual(manifest["licenses"]["p5.brush"]["spdx"], "MIT")
