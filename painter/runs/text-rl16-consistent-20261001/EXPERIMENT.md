@@ -25,3 +25,9 @@ LoRA LR1e-6, group8, batch16, three visually inspected turns, 8192 completion to
 Keep the registered admitted-batch checks at15/20/every5: latest-five mean must exceed prior-five mean to continue. These changing-prompt checks are a conservative operational stopping rule, not a matched visual progress test. Also report validity, valid-canvas preference, judgment censorship, per-family fixed held-out results, completed optimizer updates versus shipped batches, gradients, pipeline timing, interval GPU utilization and costs. A noisy online curve is not sufficient evidence for improvement; successful scaling requires better matched painting quality without validity collapse.
 
 Preparation begins on 2026-10-01. No node rented or trainer started yet. Implementation source/config and Linux launch evidence are pending; the root research index will distinguish preparation from actual updates.
+
+## Rental and launch preparation — 2026-10-01
+
+Reviewed source `fb36ed92077eb48b96169085811eec1697f7ef3a` was handed off as a verified Git bundle. Relevant checks passed: six continuation contracts, 53 shared-run tests, ten evaluation tests, ten launcher tests, and seventeen credit/patch/group-admission tests (one Node fixture skipped on the Mac; the Linux syntax runtime is checked separately).
+
+A two-card 96 GB node was rented at $2.38/hour. Conservative rental clock starts 2026-10-01T05:22:45.422071+00:00. Total GPU ceiling remains $20, including preparation; the absolute clock deadline is 2026-10-01T13:46:57.522911+00:00. A finite exact-node controller is active with a three-minute release margin. Training has not started: source transfer and pinned Linux preparation are in progress. No scheduled task was created.
