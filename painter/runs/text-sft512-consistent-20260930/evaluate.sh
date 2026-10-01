@@ -32,6 +32,15 @@ RENDERER_PYTHON="${PAINTER_RENDERER_PYTHON_PATH:-$RUN/renderer-env/bin/python}"
 }
 [[ -f "$ALL_MANIFEST" ]] || { echo 'frozen 47-case validation manifest is missing' >&2; exit 1; }
 [[ -f "$RENDERER" && -x "$RENDERER_PYTHON" ]] || { echo 'explicit renderer runtime is missing' >&2; exit 1; }
+# Verify the exact lexical virtualenv interpreter before starting vLLM.  Do not
+# resolve this path: renderer-env/bin/python may be a symlink whose enclosing
+# virtualenv supplies Playwright and its browser dependencies.
+"$RENDERER_PYTHON" - <<'PY'
+try:
+    import playwright  # noqa: F401
+except Exception as exc:
+    raise SystemExit(f'renderer interpreter cannot import playwright: {exc}')
+PY
 [[ ! -e "$OUT" ]] || { echo 'evaluation output already exists; preserve it before retrying' >&2; exit 1; }
 mkdir -p "$OUT/logs"
 

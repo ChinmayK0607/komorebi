@@ -5,8 +5,11 @@ from __future__ import annotations
 import hashlib
 import io
 import json
+import subprocess
+import sys
 import tomllib
 import unittest
+import venv
 from contextlib import redirect_stdout
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -34,6 +37,40 @@ class NativePaintingEvalTests(unittest.TestCase):
             self.assertTrue(artifact_root.is_absolute())
             self.assertEqual(artifact_root, output.resolve() / "evaluation-rollouts")
             self.assertTrue(artifact_root.is_relative_to(configured_output))
+
+    def test_config_preserves_virtualenv_python_symlink(self):
+        with TemporaryDirectory() as temp:
+            root = Path(temp)
+            venv_root = root / "renderer-env"
+            venv.EnvBuilder(with_pip=False).create(venv_root)
+            renderer_python = venv_root / "bin" / "lexical-python"
+            renderer_python.symlink_to(Path(sys.executable))
+            lexical_prefix = subprocess.check_output(
+                [str(renderer_python), "-c", "import sys; print(sys.prefix)"],
+                text=True,
+            ).strip()
+            resolved_prefix = subprocess.check_output(
+                [str(renderer_python.resolve()), "-c", "import sys; print(sys.prefix)"],
+                text=True,
+            ).strip()
+            self.assertEqual(Path(lexical_prefix).resolve(), venv_root.resolve())
+            self.assertNotEqual(Path(resolved_prefix).resolve(), venv_root.resolve())
+
+            text = config_text(
+                taskset_id="native_painting",
+                root=root,
+                manifest=root / "cases.json",
+                policy_label="step-12",
+                model="model",
+                output_dir=root / "eval",
+                renderer=root / "renderer.py",
+                renderer_python=renderer_python,
+            )
+            config = tomllib.loads(text)
+            configured_python = Path(config["env"]["taskset"]["renderer_python"])
+            self.assertEqual(configured_python, renderer_python)
+            self.assertTrue(configured_python.is_symlink())
+            self.assertNotEqual(configured_python, configured_python.resolve())
 
     def test_artifact_audit_requires_hash_verified_png_for_valid_receipts(self):
         with TemporaryDirectory() as temp:

@@ -9,7 +9,13 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-from run_cpu_replay import ReplayError, build_command, load_replay_inputs, run_replay
+from run_cpu_replay import (
+    RECOVERY_INPUT_SCHEMA,
+    ReplayError,
+    build_command,
+    load_replay_inputs,
+    run_replay,
+)
 
 
 def digest(value: bytes) -> str:
@@ -105,6 +111,47 @@ class CpuReplayRunnerTests(unittest.TestCase):
             report["cases"][0]["program_file"],
             "cases/case-a/program.js",
         )
+
+    def test_first_turn_recovery_replay_does_not_invent_target_comparisons(self) -> None:
+        raw = json.loads(self.manifest_path.read_text())
+        raw["schema"] = RECOVERY_INPUT_SCHEMA
+        raw["replay_mode"] = "first_turn_recovery"
+        for case in raw["cases"]:
+            case.pop("target_png_sha256")
+            case["original_receipt_sha256"] = "f" * 64
+        self.manifest_path.write_text(json.dumps(raw))
+        output = self.root / "recovery-results"
+
+        def fake_invoke(command: list[str], _browser: Path | None):
+            source = Path(command[2])
+            case_dir = source.parent
+            pixels = b"first-turn-recovery"
+            (case_dir / "painting.png").write_bytes(pixels)
+            (case_dir / "painting.json").write_text(json.dumps({
+                "valid": True,
+                "source_sha256": digest(source.read_bytes()),
+                "png_sha256": digest(pixels),
+                "seed": 0,
+            }))
+            return 0, None, 0.1
+
+        report = run_replay(
+            manifest_path=self.manifest_path,
+            renderer=self.renderer,
+            renderer_python=self.renderer_python,
+            output_dir=output,
+            workers=2,
+            run_as_user=None,
+            platform_name="linux",
+            invoke=fake_invoke,
+        )
+        self.assertEqual(report["replay_mode"], "first_turn_recovery")
+        self.assertEqual(report["summary"]["replayed"], 3)
+        self.assertEqual(report["summary"]["not_applicable_comparison"], 3)
+        self.assertEqual(report["summary"]["verified"], 0)
+        self.assertTrue(all(row["comparison"] == "not-applicable" for row in report["cases"]))
+        self.assertTrue(all(row["target_png_sha256"] is None for row in report["cases"]))
+        self.assertIn("not a three-turn evaluation", (output / "report.md").read_text())
 
     def test_runner_refuses_non_linux_hosts_before_rendering(self) -> None:
         with self.assertRaisesRegex(ReplayError, "only on Linux"):

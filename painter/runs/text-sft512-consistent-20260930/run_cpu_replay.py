@@ -4,8 +4,10 @@
 The runner is deliberately separate from model evaluation.  It invokes only
 the pinned local renderer, with seed 0 and a 180-second render deadline.  It
 does not contact an API, start a browser on the calling host, or overwrite a
-previous replay archive.  Run it on the Linux node as root; each renderer
-process is dropped to the configured unprivileged user.
+previous replay archive.  It accepts ordinary target-hash replays and the
+explicit ``first_turn_recovery`` input schema, whose results have no target
+comparison.  Run it on the Linux node as root; each renderer process is
+dropped to the configured unprivileged user.
 """
 
 from __future__ import annotations
@@ -28,6 +30,7 @@ from typing import Any, Callable
 
 SCHEMA = "text-sft512-cpu-replay-results-v1"
 INPUT_SCHEMA = "text-sft512-cpu-replay-inputs-v1"
+RECOVERY_INPUT_SCHEMA = "text-paint-first-turn-recovery-inputs-v1"
 SEED = 0
 RENDER_TIMEOUT_SECONDS = 180
 MIN_WORKERS = 2
@@ -102,8 +105,11 @@ def load_replay_inputs(manifest_path: Path, renderer: Path) -> dict[str, Any]:
         raw = json.loads(manifest_path.read_text(encoding="utf-8"))
     except (OSError, ValueError, json.JSONDecodeError) as exc:
         raise ReplayError("replay input manifest is not valid JSON") from exc
-    if not isinstance(raw, dict) or raw.get("schema") != INPUT_SCHEMA:
+    if not isinstance(raw, dict) or raw.get("schema") not in {INPUT_SCHEMA, RECOVERY_INPUT_SCHEMA}:
         raise ReplayError("unexpected replay input manifest schema")
+    recovery_mode = raw.get("schema") == RECOVERY_INPUT_SCHEMA
+    if recovery_mode and raw.get("replay_mode") != "first_turn_recovery":
+        raise ReplayError("first-turn recovery input manifest has the wrong replay mode")
     if raw.get("seed") != SEED:
         raise ReplayError("replay input seed is not the pinned seed 0")
     expected_renderer = raw.get("renderer")
@@ -138,7 +144,11 @@ def load_replay_inputs(manifest_path: Path, renderer: Path) -> dict[str, Any]:
         actual_source = sha256(source)
         if actual_source != expected_source:
             raise ReplayError(f"source hash mismatch for {case_id}")
-        target = _hash_value(case.get("target_png_sha256"), f"target_png_sha256 for {case_id}")
+        target_value = case.get("target_png_sha256")
+        if target_value is None and recovery_mode:
+            target = None
+        else:
+            target = _hash_value(target_value, f"target_png_sha256 for {case_id}")
         if case.get("seed") != SEED:
             raise ReplayError(f"seed mismatch for {case_id}")
         normalized.append({
@@ -149,12 +159,14 @@ def load_replay_inputs(manifest_path: Path, renderer: Path) -> dict[str, Any]:
             "target_png_sha256": target,
             "family": case.get("family") if isinstance(case.get("family"), str) else None,
             "source_turn": case.get("source_turn"),
+            "original_receipt_sha256": case.get("original_receipt_sha256"),
         })
     return {
         "path": manifest_path,
         "root": root,
         "manifest_sha256": sha256(manifest_path),
         "schema": raw["schema"],
+        "replay_mode": "first_turn_recovery" if recovery_mode else "target_replay",
         "protocol_version": raw.get("protocol_version"),
         "seed": SEED,
         "renderer_sha256": renderer_sha,
@@ -293,8 +305,12 @@ def _case_result(
     comparison = "unavailable"
     status = "failed"
     if not reasons:
-        comparison = "recovered-identical" if png_hash == case["target_png_sha256"] else "new-replay"
-        status = "verified"
+        if case["target_png_sha256"] is None:
+            comparison = "not-applicable"
+            status = "replayed"
+        else:
+            comparison = "recovered-identical" if png_hash == case["target_png_sha256"] else "new-replay"
+            status = "verified"
     replay_receipt = {
         "schema": "text-sft512-cpu-replay-receipt-v1",
         "id": case["id"],
@@ -302,6 +318,8 @@ def _case_result(
         "timeout_seconds": RENDER_TIMEOUT_SECONDS,
         "source_sha256": case["source_sha256"],
         "target_png_sha256": case["target_png_sha256"],
+        "replay_mode": "first_turn_recovery" if case["target_png_sha256"] is None else "target_replay",
+        "original_receipt_sha256": case.get("original_receipt_sha256"),
         "replay_png_sha256": png_hash,
         "status": status,
         "comparison": comparison,
@@ -317,6 +335,8 @@ def _case_result(
         "source_turn": case.get("source_turn"),
         "source_sha256": case["source_sha256"],
         "target_png_sha256": case["target_png_sha256"],
+        "replay_mode": "first_turn_recovery" if case["target_png_sha256"] is None else "target_replay",
+        "original_receipt_sha256": case.get("original_receipt_sha256"),
         "replay_png_sha256": png_hash,
         "comparison": comparison,
         "status": status,
@@ -438,10 +458,16 @@ def run_replay(
     summary = {
         "cases": len(ordered),
         "verified": sum(row["status"] == "verified" for row in ordered),
+        "replayed": sum(row["status"] == "replayed" for row in ordered),
         "failed": sum(row["status"] == "failed" for row in ordered),
         "recovered_identical": sum(row["comparison"] == "recovered-identical" for row in ordered),
         "new_replay": sum(row["comparison"] == "new-replay" for row in ordered),
-        "target_comparison_denominator": "verified replay PNGs only",
+        "not_applicable_comparison": sum(row["comparison"] == "not-applicable" for row in ordered),
+        "target_comparison_denominator": (
+            "none; first-turn recovery inputs have no target PNG hashes"
+            if inputs["replay_mode"] == "first_turn_recovery"
+            else "verified replay PNGs only"
+        ),
     }
     report = {
         "schema": SCHEMA,
@@ -454,10 +480,15 @@ def run_replay(
             "renderer_sha256": inputs["renderer_sha256"],
             "assets_sha256": inputs["assets_sha256"],
         },
+        "replay_mode": inputs["replay_mode"],
         "summary": summary,
         "cases": ordered,
         "limitations": [
-            "Target canvases were absent locally; comparison uses recorded target PNG hashes.",
+            (
+                "This is a first-turn recovery replay of saved failed programs; no target PNG hashes were supplied."
+                if inputs["replay_mode"] == "first_turn_recovery"
+                else "Target canvases were absent locally; comparison uses recorded target PNG hashes."
+            ),
             "No model, API, or remote service was contacted; the pinned local Chromium renderer executes each replay.",
             "Failed renderer receipts are retained per case and are excluded from comparison counts.",
         ],
@@ -466,10 +497,14 @@ def run_replay(
     lines = [
         "# CPU replay report",
         "",
-        f"Cases: {summary['cases']} | verified: {summary['verified']} | failed: {summary['failed']}",
+        f"Mode: {inputs['replay_mode']} | Cases: {summary['cases']} | verified: {summary['verified']} | replayed: {summary['replayed']} | failed: {summary['failed']}",
         f"Recovered-identical: {summary['recovered_identical']} | new replay: {summary['new_replay']}",
         "",
-        "Comparison uses recorded target PNG hashes; target PNG files were not available locally.",
+        (
+            "No target PNG hashes were supplied; this replay is not a three-turn evaluation."
+            if inputs["replay_mode"] == "first_turn_recovery"
+            else "Comparison uses recorded target PNG hashes; target PNG files were not available locally."
+        ),
         "",
         "| Case | Status | Comparison | Replay PNG SHA-256 |",
         "|---|---|---|---|",

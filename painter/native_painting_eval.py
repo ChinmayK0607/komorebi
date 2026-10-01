@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import shlex
 from pathlib import Path
 
@@ -25,6 +26,17 @@ DEFAULT_MAX_CONCURRENT = 4
 
 def _sha(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def _absolute_path(path: Path) -> Path:
+    """Make a path absolute without dereferencing its final symlink.
+
+    Executable paths often point into a virtual environment via a symlink.
+    ``Path.resolve()`` replaces that path with the system interpreter and can
+    silently drop the environment's installed dependencies.
+    """
+
+    return Path(os.path.abspath(os.fspath(path.expanduser())))
 
 
 def audit_evaluation_artifacts(artifact_root: Path) -> dict[str, int | str]:
@@ -201,7 +213,7 @@ max_turns = {max_turns}
 policy_label = {json.dumps(policy_label)}
 output_root = {json.dumps(str(evaluation_output_root))}
 {f'renderer = {json.dumps(str(renderer.expanduser().resolve()))}' if renderer else ''}
-{f'renderer_python = {json.dumps(str(renderer_python.expanduser().resolve()))}' if renderer_python else ''}
+{f'renderer_python = {json.dumps(str(_absolute_path(renderer_python)))}' if renderer_python else ''}
 
 [env.agent]
 max_turns = {max_turns}

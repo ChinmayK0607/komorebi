@@ -12,10 +12,11 @@ from __future__ import annotations
 import base64
 import hashlib
 import json
+import os
 import re
 import uuid
 from asyncio import Semaphore, to_thread
-from collections.abc import Iterable
+from collections.abc import Iterable, Mapping
 from pathlib import Path
 from typing import Any
 
@@ -44,6 +45,19 @@ TEXT_NEXT_VERSION = "Inspect the PAINTING BRIEF and current canvas, then paint t
 TEXT_NO_CHANGE = ("Your previous revision made no change to the current canvas. Inspect the PAINTING BRIEF "
                   "and current canvas. If the painting already satisfies the brief, respond FINISHED without code. "
                   "Otherwise identify a specific mismatch and change the sketch; do not repeat the same program.")
+INSPECT_CHOICE_FEEDBACK_ENV = "PAINTER_INSPECT_CHOICE_FEEDBACK"
+LEGACY_FEEDBACK_VERSION = "legacy-v1"
+INSPECT_CHOICE_FEEDBACK_VERSION = "inspect-choice-v1"
+TEXT_INSPECT_CHOICE_INITIAL = (
+    "No CURRENT CANVAS exists yet. Return one complete JavaScript sketch in one JavaScript fenced code block "
+    "and no prose plan. FINISHED is invalid until a valid rendered canvas is available."
+)
+TEXT_INSPECT_CHOICE = (
+    "Inspect the PAINTING BRIEF and CURRENT CANVAS. Choose exactly one response form:\n"
+    "- If the observed canvas satisfies the brief, keep it and reply FINISHED without a code block.\n"
+    "- Otherwise, revise it by returning one complete replacement JavaScript sketch in one JavaScript fenced "
+    "code block. Do not append FINISHED to a code response."
+)
 
 try:
     from painter.native_painting_renderer import render_action
@@ -143,7 +157,53 @@ def _is_finish(reply: str) -> bool:
     return "```" not in reply and bool(re.search(r"(?m)^\s*FINISHED\s*$", reply))
 
 
-def _program_failure_feedback(errors: Any) -> str:
+def inspect_choice_feedback_enabled(environ: Mapping[str, str] | None = None) -> bool:
+    """Return whether the opt-in inspect/finish/revise feedback is enabled."""
+
+    values = os.environ if environ is None else environ
+    return values.get(INSPECT_CHOICE_FEEDBACK_ENV) == "1"
+
+
+def feedback_version(environ: Mapping[str, str] | None = None) -> str:
+    """Return the user-facing feedback version selected for a trace."""
+
+    return INSPECT_CHOICE_FEEDBACK_VERSION if inspect_choice_feedback_enabled(environ) else LEGACY_FEEDBACK_VERSION
+
+
+def _text_initial_feedback(*, has_canvas: bool = False) -> str:
+    if not inspect_choice_feedback_enabled():
+        return TEXT_NEXT_VERSION
+    return TEXT_INSPECT_CHOICE if has_canvas else TEXT_INSPECT_CHOICE_INITIAL
+
+
+def _text_inspect_choice_feedback(*, has_canvas: bool, no_change: bool = False) -> str:
+    """Describe the two legal next responses without changing the wire format."""
+
+    if not has_canvas:
+        return TEXT_INSPECT_CHOICE_INITIAL
+    prefix = "Your previous revision made no change to the current canvas.\n" if no_change else ""
+    return prefix + TEXT_INSPECT_CHOICE
+
+
+def _text_failed_revision_feedback(base: str, *, has_canvas: bool) -> str:
+    """Add inspect/finish/revise choices after a failed text paint action."""
+
+    if not has_canvas:
+        return (
+            f"{base}\nNo CURRENT CANVAS exists yet, so FINISHED is invalid. "
+            "Return one complete JavaScript sketch in one JavaScript fenced code block; "
+            "inspect its rendered canvas before choosing FINISHED."
+        )
+    return (
+        f"{base}\nThe failed revision produced no new canvas; the previously valid CURRENT CANVAS is retained. "
+        "Inspect that retained canvas, then choose exactly one response form:\n"
+        "- If it satisfies the brief, keep it and reply FINISHED without a code block.\n"
+        "- Otherwise, return one complete replacement JavaScript sketch in one JavaScript fenced code block. "
+        "Do not append FINISHED to a code response."
+    )
+
+
+def _program_failure_feedback(errors: Any, *, include_guidance: bool = True) -> str:
     """Give a concise, actionable model-code error without rewriting its sketch."""
 
     if isinstance(errors, list):
@@ -171,7 +231,8 @@ def _program_failure_feedback(errors: Any) -> str:
         guidance = "Define every variable and helper before use, then return a complete sketch."
     elif "not iterable" in lower:
         guidance = "Check every brush.polygon point list and every spread, destructuring, or for-of source; each must receive an iterable. Return a complete sketch."
-    return f"The sketch produced no valid canvas. Renderer error: {detail}\n{guidance}"
+    diagnostic = f"The sketch produced no valid canvas. Renderer error: {detail}"
+    return f"{diagnostic}\n{guidance}" if include_guidance else diagnostic
 
 
 class NativePaintingData(vf.TaskData):
@@ -260,7 +321,10 @@ class NativePaintingTaskset(vf.Taskset[NativePaintingTask, NativePaintingConfig]
             prompt = _reference_parts(reference_path, reference_kind)
             if mode == "correction":
                 prompt.extend([_text("CURRENT CANVAS"), _image(initial_canvas_path), _text("Current program:\n" + str(initial_program_value))])
-            prompt.append(_text(TEXT_NEXT_VERSION if reference_kind == "text" else NEXT_VERSION))
+            prompt.append(_text(
+                _text_initial_feedback(has_canvas=mode == "correction" and initial_canvas_path is not None)
+                if reference_kind == "text" else NEXT_VERSION
+            ))
             data = NativePaintingData(
                 idx=index,
                 name=str(task_id),
@@ -304,6 +368,9 @@ class NativePaintingEnv(vf.Env[NativePaintingEnvConfig]):
         current_program: str | None = data.initial_program
         info: dict[str, Any] = {
             "protocol_version": PROTOCOL_VERSION,
+            "feedback_version": (
+                feedback_version() if data.reference_kind == "text" else LEGACY_FEEDBACK_VERSION
+            ),
             "mode": data.mode,
             "task_id": data.task_id,
             "source_group": data.source_group,
@@ -331,7 +398,11 @@ class NativePaintingEnv(vf.Env[NativePaintingEnvConfig]):
                     if current_canvas is None:
                         turn_info.update(action="finish", valid=False, failure_kind="finish_without_canvas")
                         interaction.trace.info.setdefault("invalid_finish_turns", []).append(turn)
-                        feedback = FINISH_WITHOUT_CANVAS
+                        feedback = (
+                            TEXT_INSPECT_CHOICE_INITIAL
+                            if data.reference_kind == "text" and inspect_choice_feedback_enabled()
+                            else FINISH_WITHOUT_CANVAS
+                        )
                     else:
                         turn_info.update(action="finish", valid=True)
                         interaction.trace.info.update(
@@ -365,11 +436,32 @@ class NativePaintingEnv(vf.Env[NativePaintingEnvConfig]):
                     if result.get("valid"):
                         current_canvas = Path(str(result["canvas"])) if result.get("canvas") else current_canvas
                         current_program = result.get("program") or current_program
-                        feedback = (TEXT_NO_CHANGE if result.get("no_change") else TEXT_NEXT_VERSION) if data.reference_kind == "text" else (NO_CHANGE if result.get("no_change") else NEXT_VERSION)
+                        if data.reference_kind == "text" and inspect_choice_feedback_enabled():
+                            feedback = _text_inspect_choice_feedback(
+                                has_canvas=current_canvas is not None,
+                                no_change=bool(result.get("no_change")),
+                            )
+                        else:
+                            feedback = (
+                                (TEXT_NO_CHANGE if result.get("no_change") else TEXT_NEXT_VERSION)
+                                if data.reference_kind == "text"
+                                else (NO_CHANGE if result.get("no_change") else NEXT_VERSION)
+                            )
                     else:
-                        feedback = _program_failure_feedback(
-                            result.get("renderer_errors") or result.get("error")
+                        inspect_choice_text = (
+                            data.reference_kind == "text" and inspect_choice_feedback_enabled()
                         )
+                        failure_feedback = _program_failure_feedback(
+                            result.get("renderer_errors") or result.get("error"),
+                            include_guidance=not (inspect_choice_text and current_canvas is not None),
+                        )
+                        if inspect_choice_text:
+                            feedback = _text_failed_revision_feedback(
+                                failure_feedback,
+                                has_canvas=current_canvas is not None,
+                            )
+                        else:
+                            feedback = failure_feedback
                 interaction.trace.info.setdefault("turns", []).append(turn_info)
                 if turn >= data.max_turns:
                     break

@@ -40,6 +40,7 @@ try:
         NativePaintingTask,
         TEXT_NEXT_VERSION,
         TEXT_SYSTEM,
+        _text_initial_feedback,
         _image,
         _reference_parts,
         _resolve,
@@ -54,6 +55,7 @@ except ImportError:
         NativePaintingTask,
         TEXT_NEXT_VERSION,
         TEXT_SYSTEM,
+        _text_initial_feedback,
         _image,
         _reference_parts,
         _resolve,
@@ -986,7 +988,10 @@ class NativePaintingRLTaskset(vf.Taskset[NativePaintingRLTask, NativePaintingRLC
                         _text("Current program:\n" + str(row["initial_program"])),
                     ]
                 )
-            prompt_parts.append(_text(TEXT_NEXT_VERSION if row["reference_kind"] == "text" else NEXT_VERSION))
+            prompt_parts.append(_text(
+                _text_initial_feedback(has_canvas=row["mode"] == "correction")
+                if row["reference_kind"] == "text" else NEXT_VERSION
+            ))
             data = NativePaintingRLData(
                 idx=index,
                 name=row["task_id"],

@@ -30,6 +30,12 @@ class EvaluateScriptTests(unittest.TestCase):
         self.assertLess(text.index("audit_evaluation_artifacts"), text.index("generation-receipt.json"))
         self.assertIn("evaluation-artifact-receipt.json", text)
 
+    def test_renderer_python_import_is_checked_before_gpu_server_start(self):
+        text = SCRIPT.read_text()
+        self.assertIn('"$RENDERER_PYTHON" - <<\'PY\'', text)
+        self.assertIn("import playwright", text)
+        self.assertLess(text.index("import playwright"), text.index('"$VLLM" serve'))
+
     def test_embedded_python_blocks_compile(self):
         blocks = []
         active = None

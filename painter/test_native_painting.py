@@ -180,6 +180,116 @@ class _Agents:
 
 
 class NativePaintingTests(unittest.TestCase):
+    def test_finish_parser_accepts_reason_but_never_code_with_finished(self):
+        module = _load_module()
+        self.assertTrue(module._is_finish("The observed canvas is complete.\nFINISHED"))
+        self.assertFalse(module._is_finish("FINISHED in prose"))
+        self.assertFalse(module._is_finish("```javascript\nfunction draw(){}\nFINISHED\n```"))
+
+    def test_inspect_choice_feedback_is_opt_in_and_trace_versioned(self):
+        module = _load_module()
+        with TemporaryDirectory() as temp:
+            root = Path(temp)
+            brief = root / "brief.txt"
+            brief.write_text("Paint a pear left of a blue mug.\n")
+            manifest = root / "tasks.json"
+            manifest.write_text(json.dumps({"cases": [{
+                "id": "text-pear", "source_group": "text-pear", "reference": brief.name,
+                "reference_kind": "text",
+            }]}))
+            def load_task():
+                return list(module.NativePaintingTaskset(module.NativePaintingConfig(
+                    root=str(root), manifest=manifest.name, expected_count=1, max_turns=2,
+                )).load())[0]
+
+            with patch.dict("os.environ", {}, clear=True):
+                task = load_task()
+                initial_text = " ".join(part.text for part in task.data.prompt[0].content if hasattr(part, "text"))
+                self.assertIn(module.TEXT_NEXT_VERSION, initial_text)
+                agents = _Agents(["FINISHED", "FINISHED"])
+                asyncio.run(module.NativePaintingEnv.__dict__["run"](_DummyEnv(), task, agents))
+            self.assertEqual(
+                agents.agent.interaction_obj.trace.info["feedback_version"],
+                module.LEGACY_FEEDBACK_VERSION,
+            )
+
+            with patch.dict("os.environ", {module.INSPECT_CHOICE_FEEDBACK_ENV: "1"}, clear=True):
+                task = load_task()
+                initial_text = " ".join(part.text for part in task.data.prompt[0].content if hasattr(part, "text"))
+                self.assertIn("No CURRENT CANVAS exists yet", initial_text)
+                self.assertIn("FINISHED is invalid", initial_text)
+                self.assertIn("Choose exactly one response form", module._text_initial_feedback(has_canvas=True))
+                agents = _Agents(["FINISHED", "FINISHED"])
+                asyncio.run(module.NativePaintingEnv.__dict__["run"](_DummyEnv(), task, agents))
+            self.assertEqual(
+                agents.agent.interaction_obj.trace.info["feedback_version"],
+                module.INSPECT_CHOICE_FEEDBACK_VERSION,
+            )
+            followup_text = " ".join(
+                part.text
+                for part in agents.agent.interaction_obj.messages[1][0].content
+                if hasattr(part, "text")
+            )
+            self.assertIn("No CURRENT CANVAS exists yet", followup_text)
+            self.assertIn("FINISHED is invalid", followup_text)
+
+            image = root / "reference.png"
+            image.write_bytes(b"\x89PNG\r\n\x1a\nreference")
+            image_data = module.NativePaintingData(
+                idx=0, name="image-pear", source_group="image-pear", root=str(root),
+                task_id="image-pear", reference=str(image), reference_sha256=module.sha(image),
+                reference_kind="image", max_turns=2,
+            )
+            with patch.dict("os.environ", {module.INSPECT_CHOICE_FEEDBACK_ENV: "1"}, clear=True):
+                image_agents = _Agents(["FINISHED", "FINISHED"])
+                asyncio.run(module.NativePaintingEnv.__dict__["run"](
+                    _DummyEnv(), module.NativePaintingTask(image_data), image_agents
+                ))
+            self.assertEqual(
+                image_agents.agent.interaction_obj.trace.info["feedback_version"],
+                module.LEGACY_FEEDBACK_VERSION,
+            )
+
+    def test_inspect_choice_feedback_retains_canvas_as_explicit_finish_option(self):
+        module = _load_module()
+        with TemporaryDirectory() as temp:
+            root = Path(temp)
+            brief = root / "brief.txt"
+            brief.write_text("Paint a pear beside a blue mug.\n")
+            canvas = root / "canvas.png"
+            canvas.write_bytes(b"canvas")
+            data = module.NativePaintingData(
+                idx=0, name="text-pear", source_group="text-pear", root=str(root),
+                task_id="text-pear", reference=str(brief), reference_sha256=module.sha(brief),
+                reference_kind="text", max_turns=3,
+            )
+            agents = _Agents([
+                "```javascript\nfunction draw(){}\n```",
+                "```javascript\nbroken();\n```",
+                "FINISHED",
+            ])
+            results = iter([
+                {"valid": True, "canvas": str(canvas), "program": "function draw(){}", "no_change": False},
+                {"valid": False, "canvas": None, "error": "SyntaxError: unexpected token ')'", "failure_kind": "program"},
+            ])
+            with patch.dict("os.environ", {module.INSPECT_CHOICE_FEEDBACK_ENV: "1"}, clear=True), \
+                    patch.object(module, "render_action", side_effect=lambda **_: next(results)):
+                asyncio.run(module.NativePaintingEnv.__dict__["run"](_DummyEnv(), module.NativePaintingTask(data), agents))
+            info = agents.agent.interaction_obj.trace.info
+            self.assertEqual(info["feedback_version"], module.INSPECT_CHOICE_FEEDBACK_VERSION)
+            feedback = " ".join(
+                part.text
+                for part in agents.agent.interaction_obj.messages[2][0].content
+                if hasattr(part, "text")
+            )
+            self.assertIn("previously valid CURRENT CANVAS is retained", feedback)
+            self.assertIn("SyntaxError: unexpected token", feedback)
+            self.assertNotIn("Fix the JavaScript syntax", feedback)
+            self.assertIn("reply FINISHED without a code block", feedback)
+            self.assertIn("complete replacement JavaScript sketch", feedback)
+            self.assertIn("JavaScript fenced code block", feedback)
+            self.assertTrue(info["final_canvas_valid"])
+
     def test_text_reference_is_text_only_on_first_and_revision_turns(self):
         module = _load_module()
         with TemporaryDirectory() as temp:
