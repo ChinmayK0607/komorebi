@@ -6,11 +6,11 @@ MODE="${2:-}"
 [[ "$STEP" =~ ^[1-9][0-9]*$ && ( -z "$MODE" || "$MODE" == --score ) ]] || {
   echo 'usage: finalize.sh STEP [--score]' >&2; exit 2;
 }
-RUN="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
+RUN="${PAINTER_RUN_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)}"
 REPO="$(cd "$RUN/../../.." && pwd -P)"
 NODE_ROOT="${PAINTER_NODE_ROOT:-/root/painter}"
 PRIME_ROOT="${PRIME_ROOT:-$NODE_ROOT/prime}"
-NAME="text-sft512-consistent-20260930"
+NAME="${PAINTER_RUN_NAME:-text-sft512-consistent-20260930}"
 STATE="$RUN/supervisor-state.json"
 GEN="$RUN/validation/step-$STEP-all/generation-receipt.json"
 ADAPTER="$RUN/async-output/$NAME/artifacts/adapters/step_$STEP"
@@ -47,7 +47,7 @@ expected = upload.get('files', {}).get('adapter_model.safetensors', {}).get('sha
 actual = hashlib.sha256((adapter / 'adapter_model.safetensors').read_bytes()).hexdigest()
 if not isinstance(expected, str) or expected != actual:
     raise SystemExit('final checkpoint adapter hash does not match public receipt')
-if upload.get('path') and upload['path'] != f'text-sft512-consistent-20260930/step_{step}':
+if upload.get('path') and upload['path'] != f'{run.name}/step_{step}':
     raise SystemExit('public checkpoint path does not match requested run and step')
 PY
 
@@ -77,8 +77,8 @@ if generation.get('scoring_protocol') != 'text-paint-sft-pairwise-consistent-v1'
     raise SystemExit('generation receipt is not bound to the consistent SFT512 comparison')
 comparison = run / f'validation/step-{step}-all/comparison/summary.json'
 report = {
-    'schema': 'text-sft512-consistent-finalizer-v1',
-    'run_name': 'text-sft512-consistent-20260930',
+    'schema': 'text-paint-consistent-finalizer-v2',
+    'run_name': run.name,
     'step': step,
     'generation_receipt': str(run / f'validation/step-{step}-all/generation-receipt.json'),
     'comparison_path': str(comparison) if comparison.is_file() else None,

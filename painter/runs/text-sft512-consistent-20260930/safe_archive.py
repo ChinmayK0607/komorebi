@@ -13,6 +13,7 @@ import argparse
 import hashlib
 import io
 import json
+import os
 from pathlib import Path
 import re
 import tarfile
@@ -20,7 +21,7 @@ from typing import Any
 
 
 REPO_ID = "CK0607/komorebi-painter-experiments"
-RUN_NAME = "text-sft512-consistent-20260930"
+RUN_NAME = os.environ.get("PAINTER_RUN_NAME", "text-sft512-consistent-20260930")
 TEXT_EXTENSIONS = frozenset({
     ".csv", ".html", ".js", ".json", ".jsonl", ".log", ".md", ".py", ".sh", ".toml", ".txt",
 })

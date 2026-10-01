@@ -1,16 +1,21 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-RUN="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
+RUN="${PAINTER_RUN_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)}"
 REPO="$(cd "$RUN/../../.." && pwd -P)"
 NODE_ROOT="${PAINTER_NODE_ROOT:-/root/painter}"
 PRIME_ROOT="${PRIME_ROOT:-$NODE_ROOT/prime}"
-MODEL_REVISION="1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0"
+MODEL_REVISION="${PAINTER_BASE_MODEL_REVISION:-1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0}"
 MODEL_DIR="${MODEL_DIR:-$NODE_ROOT/model-cache/qwen/$MODEL_REVISION}"
-RUN_NAME="text-sft512-consistent-20260930"
+RUN_NAME="${PAINTER_RUN_NAME:-text-sft512-consistent-20260930}"
 CONFIG="${PAINTER_RL_CONFIG:-$RUN/native.toml}"
 MANIFEST="${PAINTER_RL_MANIFEST:-$RUN/anchors-frozen/train-manifest.json}"
 SFT_PATH_FILE="${PAINTER_SFT_ADAPTER_PATH_FILE:-$RUN/../photo-curriculum-rl-20260922/initial-adapter-path.txt}"
+FROZEN_SFT_PATH_FILE="${PAINTER_FROZEN_SFT_ADAPTER_PATH_FILE:-$RUN/../photo-curriculum-rl-20260922/initial-adapter-path.txt}"
+POLICY_MODE="${PAINTER_POLICY_MODE:-fresh}"
+POLICY_REVISION="${PAINTER_POLICY_REVISION:-adf687e5b321514eda7be6eab050434fdc8e44ff}"
+POLICY_PREFIX="${PAINTER_POLICY_PREFIX:-photo-curriculum-sft-20260922-balanced/step_512}"
+POLICY_SHA256="${PAINTER_POLICY_SHA256:-bea72b066986faa1b92b9dc539c710093181ee916b99323e2b2498f318ac1740}"
 
 [[ "$(uname -s)" == Linux ]] || { echo 'Linux GPU node required' >&2; exit 1; }
 for required in "$CONFIG" "$MANIFEST" "$RUN/rl-config-receipt.json" \
@@ -19,6 +24,9 @@ for required in "$CONFIG" "$MANIFEST" "$RUN/rl-config-receipt.json" \
   "$RUN/sitecustomize.py" "$REPO/painter/consistent_group_admission.py"; do
   [[ -e "$required" ]] || { echo "missing prepared input: $required" >&2; exit 1; }
 done
+[[ -f "$REPO/painter/final_action_credit.py" ]] || {
+  echo 'final action credit module is missing from the runtime pack' >&2; exit 1;
+}
 [[ -r "$SFT_PATH_FILE" ]] || { echo 'verified SFT adapter path file missing' >&2; exit 1; }
 WATERCOLOUR_INIT_ADAPTER="$(tr -d '\r\n' < "$SFT_PATH_FILE")"
 [[ -f "$WATERCOLOUR_INIT_ADAPTER/adapter_model.safetensors" ]] || {
@@ -29,14 +37,15 @@ export PAINTER_REPO_ROOT="$REPO" BRUSH_ROOT="$REPO/painter/rl_helpers"
 export PRIME_ROOT MODEL_DIR WATERCOLOUR_INIT_ADAPTER
 export HF_TOKEN_PATH="${HF_TOKEN_PATH:-$NODE_ROOT/private/hf-token}"
 export PAINTER_GATEWAY_ENV_FILE="${PAINTER_GATEWAY_ENV_FILE:-$NODE_ROOT/private/gateway.env}"
-export PAINTER_RL_MODE=fresh PAINTER_RL_FIXED_OPPONENT=1
+export PAINTER_RL_MODE="$POLICY_MODE" PAINTER_RL_FIXED_OPPONENT=1
 export PAINTER_RL_CONFIG="$CONFIG" PAINTER_RL_MANIFEST="$MANIFEST"
 export PAINTER_RL_RUN_NAME="$RUN_NAME" PAINTER_RL_MAX_STEPS=50
-export PAINTER_RL_ADAPTER_REVISION=adf687e5b321514eda7be6eab050434fdc8e44ff
-export PAINTER_RL_ADAPTER_PREFIX=photo-curriculum-sft-20260922-balanced/step_512
-export PAINTER_RL_ADAPTER_SHA256=bea72b066986faa1b92b9dc539c710093181ee916b99323e2b2498f318ac1740
+export PAINTER_RL_ADAPTER_REVISION="$POLICY_REVISION"
+export PAINTER_RL_ADAPTER_PREFIX="$POLICY_PREFIX"
+export PAINTER_RL_ADAPTER_SHA256="$POLICY_SHA256"
 export PAINTER_FROZEN_SFT_ALIAS=sft-step512
 export PAINTER_JUDGE_PROTOCOL=text-paint-sft-pairwise-consistent-v1
+export PAINTER_JUDGE_FORMAT="${PAINTER_JUDGE_FORMAT:-identity-joint-side-schema-v1}"
 export PAINTER_JUDGE_MODEL=xiaomi/mimo-v2.6-flash PAINTER_JUDGE_EFFORT=gateway-default
 export PAINTER_GPUS_PER_NODE="${PAINTER_GPUS_PER_NODE:-2}"
 export PAINTER_NUM_TRAIN_GPUS="${PAINTER_NUM_TRAIN_GPUS:-1}"
@@ -44,6 +53,23 @@ export PAINTER_NUM_INFER_GPUS="${PAINTER_NUM_INFER_GPUS:-1}"
 export PAINTER_GROUP_RANK_MODULE="${PAINTER_GROUP_RANK_MODULE:-painter.consistent_group_admission}"
 export PAINTER_WHOLE_GROUP_ADMISSION=1 PAINTER_WHOLE_GROUP_SIZE=8
 export PAINTER_CONSISTENT_GUARD_RECEIPT="${PAINTER_CONSISTENT_GUARD_RECEIPT:-$RUN/consistent-group-admission-activation.json}"
+export PAINTER_REQUIRE_VALID_FINAL_ACTION=1 PAINTER_JS_SYNTAX_PREFLIGHT=1
+export PAINTER_RENDERER_PATH="${PAINTER_RENDERER_PATH:-$RUN/vendor/integrations/watercolour/renderer.py}"
+export PAINTER_RENDERER_PYTHON_PATH="${PAINTER_RENDERER_PYTHON_PATH:-$RUN/renderer-env/bin/python}"
+[[ -f "$PAINTER_RENDERER_PATH" && -x "$PAINTER_RENDERER_PYTHON_PATH" ]] || {
+  echo 'explicit renderer paths are unavailable' >&2; exit 1;
+}
+if [[ "$POLICY_MODE" == recovered_policy ]]; then
+  [[ -r "$FROZEN_SFT_PATH_FILE" ]] || { echo 'frozen SFT adapter path file missing' >&2; exit 1; }
+  FROZEN_SFT_ADAPTER="$(tr -d '\r\n' < "$FROZEN_SFT_PATH_FILE")"
+  [[ -f "$FROZEN_SFT_ADAPTER/adapter_model.safetensors" && -f "$FROZEN_SFT_ADAPTER/adapter_config.json" ]] || {
+    echo 'verified frozen SFT adapter is unavailable' >&2; exit 1;
+  }
+  [[ "$(cd "$WATERCOLOUR_INIT_ADAPTER" && pwd -P)" != "$(cd "$FROZEN_SFT_ADAPTER" && pwd -P)" ]] || {
+    echo 'policy initializer and frozen SFT adapter must be distinct' >&2; exit 1;
+  }
+  export PAINTER_FROZEN_SFT_ADAPTER="$FROZEN_SFT_ADAPTER"
+fi
 export PYTHONPATH="$REPO:$REPO/painter:$RUN${PYTHONPATH:+:$PYTHONPATH}"
 
 [[ -f "$PAINTER_GATEWAY_ENV_FILE" && ! -L "$PAINTER_GATEWAY_ENV_FILE" ]] || {

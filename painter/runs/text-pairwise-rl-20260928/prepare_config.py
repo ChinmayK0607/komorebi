@@ -49,7 +49,9 @@ def prepare(*, output: Path, model: Path, run_root: Path, manifest: Path,
             batch_size: int = DEFAULT_BATCH_SIZE,
             group_size: int = DEFAULT_GROUP_SIZE,
             initial_inflight: int = DEFAULT_INITIAL_INFLIGHT,
-            max_inflight: int = DEFAULT_MAX_INFLIGHT) -> dict:
+            max_inflight: int = DEFAULT_MAX_INFLIGHT,
+            renderer: str | None = None,
+            renderer_python: str | None = None) -> dict:
     if not run_name or "/" in run_name or "\\" in run_name:
         raise ValueError("run_name must be a simple non-empty name")
     if not output_root or "/" in output_root or "\\" in output_root:
@@ -84,6 +86,10 @@ def prepare(*, output: Path, model: Path, run_root: Path, manifest: Path,
     # otherwise interleaves families alphabetically, starting with intermediate.
     source["env"]["taskset"]["preserve_manifest_order"] = True
     source["env"]["taskset"]["output_root"] = output_root
+    if renderer is not None:
+        source["env"]["taskset"]["renderer"] = renderer
+    if renderer_python is not None:
+        source["env"]["taskset"]["renderer_python"] = renderer_python
     source["env"]["agent"]["timeout"]["scoring"] = 600
     config["orchestrator"]["max_off_policy_steps"] = 1
     message = photo.write_config(output, config, validate_prime=prime_root is not None,
@@ -129,6 +135,8 @@ def main() -> None:
     parser.add_argument("--group-size", type=int, default=DEFAULT_GROUP_SIZE)
     parser.add_argument("--initial-inflight", type=int, default=DEFAULT_INITIAL_INFLIGHT)
     parser.add_argument("--max-inflight", type=int, default=DEFAULT_MAX_INFLIGHT)
+    parser.add_argument("--renderer")
+    parser.add_argument("--renderer-python")
     args = parser.parse_args()
     print(json.dumps(prepare(**vars(args)), sort_keys=True))
 

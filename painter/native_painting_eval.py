@@ -163,6 +163,8 @@ def config_text(
     rollout_timeout: int = DEFAULT_ROLLOUT_TIMEOUT,
     context_length: int = DEFAULT_CONTEXT,
     max_concurrent: int = DEFAULT_MAX_CONCURRENT,
+    renderer: Path | None = None,
+    renderer_python: Path | None = None,
 ) -> str:
     _positive_int("count", count)
     _positive_int("max_tokens", max_tokens)
@@ -198,6 +200,8 @@ expected_count = {count}
 max_turns = {max_turns}
 policy_label = {json.dumps(policy_label)}
 output_root = {json.dumps(str(evaluation_output_root))}
+{f'renderer = {json.dumps(str(renderer.expanduser().resolve()))}' if renderer else ''}
+{f'renderer_python = {json.dumps(str(renderer_python.expanduser().resolve()))}' if renderer_python else ''}
 
 [env.agent]
 max_turns = {max_turns}
@@ -234,6 +238,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--rollout-timeout", type=int, default=DEFAULT_ROLLOUT_TIMEOUT)
     parser.add_argument("--context-length", type=int, default=DEFAULT_CONTEXT)
     parser.add_argument("--max-concurrent", type=int, default=DEFAULT_MAX_CONCURRENT)
+    parser.add_argument("--renderer", type=Path)
+    parser.add_argument("--renderer-python", type=Path)
     args = parser.parse_args(argv)
     audit = validate_manifest(args.root, args.manifest, expected_count=args.expected_count)
     args.config.parent.mkdir(parents=True, exist_ok=True)
@@ -250,6 +256,8 @@ def main(argv: list[str] | None = None) -> int:
         rollout_timeout=args.rollout_timeout,
         context_length=args.context_length,
         max_concurrent=args.max_concurrent,
+        renderer=args.renderer,
+        renderer_python=args.renderer_python,
     ))
     command = (
         f"cd {shlex.quote(str(args.root / 'prime-rl'))} && "

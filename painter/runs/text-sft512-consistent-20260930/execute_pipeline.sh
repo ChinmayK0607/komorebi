@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-RUN="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
+RUN="${PAINTER_RUN_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)}"
 REPO="$(cd "$RUN/../../.." && pwd -P)"
 NODE_ROOT="${PAINTER_NODE_ROOT:-/root/painter}"
 PRIME_ROOT="${PRIME_ROOT:-$NODE_ROOT/prime}"
@@ -16,8 +16,8 @@ PARENT_RELEASE_RESERVE="${PAINTER_PARENT_RELEASE_RESERVE_SECONDS:-180}"
 COMPLETION_MARGIN="${PAINTER_COMPLETION_MARGIN_SECONDS:-120}"
 HF_TOKEN_PATH="${HF_TOKEN_PATH:-$NODE_ROOT/private/hf-token}"
 HF_REPO="${PAINTER_EVIDENCE_REPO_ID:-CK0607/komorebi-painter-experiments}"
-HF_PATH="${PAINTER_EVIDENCE_REMOTE_PATH:-runs/text-sft512-consistent-20260930/evidence.tar.gz}"
-NAME=text-sft512-consistent-20260930
+HF_PATH="${PAINTER_EVIDENCE_REMOTE_PATH:-runs/${PAINTER_RUN_NAME:-text-sft512-consistent-20260930}/evidence.tar.gz}"
+NAME="${PAINTER_RUN_NAME:-text-sft512-consistent-20260930}"
 METRICS="$RUN/async-output/$NAME/monitors/file/metrics.jsonl"
 STATE="$RUN/supervisor-state.json"
 TREND="$RUN/reward-trend.jsonl"
@@ -81,12 +81,16 @@ files = {
 if any(not path.is_file() for path in files.values()):
     raise SystemExit('immutable config, manifest, or foundation lock is missing')
 identity.update({key: sha(path) for key, path in files.items()})
-initializer_revision = identity.get('initializer_revision') or identity.get('model_revision') or identity.get('policy_initializer', {}).get('revision')
-if not initializer_revision:
-    raise SystemExit('pinned SFT model revision is missing')
+policy_revision = (identity.get('initializer_revision') or identity.get('policy_initializer', {}).get('revision')
+                   or identity.get('model_revision'))
+frozen_revision = (identity.get('frozen_sft_model_revision') or identity.get('sft_model_revision')
+                   or identity.get('frozen_sft_initializer', {}).get('revision') or policy_revision)
+if not policy_revision or not frozen_revision:
+    raise SystemExit('pinned policy and frozen SFT model revisions are missing')
 identity.setdefault('source_git_commit', identity.get('source_commit', commit))
 identity['completion_source_git_commit'] = commit
-identity['sft_model_revision'] = initializer_revision
+identity['policy_model_revision'] = policy_revision
+identity['sft_model_revision'] = frozen_revision
 tmp = identity_path.with_suffix('.json.tmp')
 tmp.write_text(json.dumps(identity, indent=2, sort_keys=True) + '\n')
 tmp.replace(identity_path)
@@ -116,8 +120,11 @@ completion = supplied or identity.get('completion_source_git_commit') or identit
 if not isinstance(completion, str) or not re.fullmatch(r'[0-9a-fA-F]{7,64}', completion):
     raise SystemExit('post-training completion source commit is missing or invalid')
 source_commit = identity.get('source_commit') or identity.get('source_git_commit')
-model_revision = identity.get('model_revision') or identity.get('sft_model_revision') or identity.get('initializer_revision') or identity.get('policy_initializer', {}).get('revision')
-required = (source_commit, identity.get('config_sha256'), identity.get('manifest_sha256'), identity.get('foundation_lock_sha256'), model_revision)
+model_revision = (identity.get('model_revision') or identity.get('policy_model_revision')
+                  or identity.get('initializer_revision') or identity.get('policy_initializer', {}).get('revision'))
+frozen_revision = (identity.get('frozen_sft_model_revision') or identity.get('sft_model_revision')
+                   or identity.get('frozen_sft_initializer', {}).get('revision') or model_revision)
+required = (source_commit, identity.get('config_sha256'), identity.get('manifest_sha256'), identity.get('foundation_lock_sha256'), model_revision, frozen_revision)
 if any(not item for item in required):
     raise SystemExit('source identity is incomplete; immutable source IDs must be recorded before post-training finalization')
 # Preserve source_commit, config, manifest, and foundation fields exactly as
@@ -158,8 +165,8 @@ try:
 except (OSError, json.JSONDecodeError):
     state_value = None
 report = {
-    'schema': 'text-sft512-consistent-terminal-v1',
-    'run_name': 'text-sft512-consistent-20260930',
+    'schema': 'text-paint-consistent-terminal-v2',
+    'run_name': run.name,
     'status': 'complete' if original_rc == '0' and archive_rc == '0' else 'failed',
     'pipeline_exit_code': int(original_rc),
     'archive_exit_code': int(archive_rc) if archive_rc else None,
@@ -235,8 +242,11 @@ import json, sys
 from pathlib import Path
 value = json.loads((Path(sys.argv[1]) / 'source-identity.json').read_text())
 source_commit = value.get('source_git_commit') or value.get('source_commit')
-model_revision = value.get('model_revision') or value.get('sft_model_revision') or value.get('initializer_revision') or value.get('policy_initializer', {}).get('revision')
-required = (source_commit, value.get('config_sha256'), value.get('manifest_sha256'), value.get('foundation_lock_sha256'), model_revision)
+model_revision = (value.get('model_revision') or value.get('policy_model_revision')
+                  or value.get('initializer_revision') or value.get('policy_initializer', {}).get('revision'))
+frozen_revision = (value.get('frozen_sft_model_revision') or value.get('sft_model_revision')
+                   or value.get('frozen_sft_initializer', {}).get('revision') or model_revision)
+required = (source_commit, value.get('config_sha256'), value.get('manifest_sha256'), value.get('foundation_lock_sha256'), model_revision, frozen_revision)
 if any(not item for item in required):
     raise SystemExit('source identity is incomplete; parent must record immutable source IDs before post-training finalization')
 PY

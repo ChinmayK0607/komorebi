@@ -3,16 +3,21 @@ set -Eeuo pipefail
 
 # Finite, idempotent Linux preparation.  This stages the known-good bootstrap,
 # fixed SFT anchors, and one frozen config; it never starts the trainer.
-RUN="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
+RUN="${PAINTER_RUN_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)}"
 REPO="$(cd "$RUN/../../.." && pwd -P)"
 NODE_ROOT="${PAINTER_NODE_ROOT:-/root/painter}"
 PRIME_ROOT="${PRIME_ROOT:-$NODE_ROOT/prime}"
 BOOTSTRAP_RUN="${PAINTER_BOOTSTRAP_RUN:-}"
 MODEL_REVISION="1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0"
 MODEL_DIR="${MODEL_DIR:-$NODE_ROOT/model-cache/qwen/$MODEL_REVISION}"
-RUN_NAME="text-sft512-consistent-20260930"
+RUN_NAME="${PAINTER_RUN_NAME:-text-sft512-consistent-20260930}"
+POLICY_MODE="${PAINTER_POLICY_MODE:-fresh}"
+POLICY_REVISION="${PAINTER_POLICY_REVISION:-adf687e5b321514eda7be6eab050434fdc8e44ff}"
+POLICY_PREFIX="${PAINTER_POLICY_PREFIX:-photo-curriculum-sft-20260922-balanced/step_512}"
+POLICY_SHA256="${PAINTER_POLICY_SHA256:-bea72b066986faa1b92b9dc539c710093181ee916b99323e2b2498f318ac1740}"
 MANIFEST_ROOT="$RUN/anchors-frozen"
 SFT_PATH_FILE="${PAINTER_SFT_ADAPTER_PATH_FILE:-$RUN/../photo-curriculum-rl-20260922/initial-adapter-path.txt}"
+FROZEN_SFT_PATH_FILE="${PAINTER_FROZEN_SFT_ADAPTER_PATH_FILE:-$RUN/../photo-curriculum-rl-20260922/initial-adapter-path.txt}"
 ARCHIVE="$NODE_ROOT/cache/scaled-final-20260929.tar.gz"
 ARCHIVE_SHA256="ba4252251a54f9eeab16cff7cbf45939ee37e57730a8fa9191fe9121f235ccd3"
 ANCHORS_ALL="$RUN/anchors-all"
@@ -35,11 +40,49 @@ fi
 # and public SFT adapter.  It exits before any server or optimizer starts.
 bash "$BOOTSTRAP_RUN/setup_node.sh"
 
+if [[ -n "${PAINTER_POLICY_DOWNLOAD_SCRIPT:-}" ]]; then
+  POLICY_RECEIPT="${PAINTER_POLICY_DOWNLOAD_RECEIPT:-$RUN/policy-adapter-receipt.json}"
+  if [[ ! -f "$POLICY_RECEIPT" ]]; then
+    "$NODE_ROOT/bootstrap/bin/python" "$PAINTER_POLICY_DOWNLOAD_SCRIPT" \
+      --revision "$POLICY_REVISION" --prefix "$POLICY_PREFIX" \
+      --expected-sha256 "$POLICY_SHA256" --receipt "$POLICY_RECEIPT"
+  fi
+  "$NODE_ROOT/bootstrap/bin/python" - "$POLICY_RECEIPT" "$SFT_PATH_FILE" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+receipt, path_file = Path(sys.argv[1]), Path(sys.argv[2])
+value = json.loads(receipt.read_text())
+if value.get("verified") is not True or not isinstance(value.get("adapter_path"), str):
+    raise SystemExit("public policy adapter receipt is not verified")
+path = Path(value["adapter_path"]).resolve()
+if not (path / "adapter_model.safetensors").is_file():
+    raise SystemExit("public policy adapter path is incomplete")
+path_file.parent.mkdir(parents=True, exist_ok=True)
+path_file.write_text(str(path) + "\n")
+PY
+fi
+
 for item in launch_rl.sh run_from_sft.py train_from_sft.py; do
   [[ -f "$BOOTSTRAP_RUN/$item" ]] || { echo "bootstrap output missing: $item" >&2; exit 1; }
   cp "$BOOTSTRAP_RUN/$item" "$RUN/$item"
 done
-for item in vendor renderer-env browsers; do
+if [[ -n "${PAINTER_RENDERER_ROOT:-}" ]]; then
+  PATCHED_RENDERER_ROOT="$(cd "$PAINTER_RENDERER_ROOT" && pwd -P)"
+  [[ -f "$PATCHED_RENDERER_ROOT/renderer.py" && -f "$PATCHED_RENDERER_ROOT/PATCH-MANIFEST.json" ]] || {
+    echo 'versioned patched renderer is incomplete' >&2; exit 1;
+  }
+  mkdir -p "$RUN/vendor/integrations"
+  if [[ -e "$RUN/vendor/integrations/watercolour" && ! -L "$RUN/vendor/integrations/watercolour" ]]; then
+    echo 'run vendor renderer path exists and is not a symlink' >&2; exit 1
+  fi
+  [[ -e "$RUN/vendor/integrations/watercolour" ]] || ln -s "$PATCHED_RENDERER_ROOT" "$RUN/vendor/integrations/watercolour"
+else
+  [[ -e "$BOOTSTRAP_RUN/vendor" ]] || { echo 'bootstrap renderer asset missing: vendor' >&2; exit 1; }
+  [[ -e "$RUN/vendor" ]] || ln -s "$BOOTSTRAP_RUN/vendor" "$RUN/vendor"
+fi
+for item in renderer-env browsers; do
   [[ -e "$BOOTSTRAP_RUN/$item" ]] || { echo "bootstrap renderer asset missing: $item" >&2; exit 1; }
   if [[ ! -e "$RUN/$item" ]]; then
     ln -s "$BOOTSTRAP_RUN/$item" "$RUN/$item"
@@ -91,6 +134,29 @@ fi
 [[ -f "$MANIFEST_ROOT/train-manifest.json" && -f "$MANIFEST_ROOT/validation-manifest.json" ]] || {
   echo 'curated fixed-anchor manifests are incomplete' >&2; exit 1;
 }
+if [[ -n "${PAINTER_RENDERER_PATH:-}" || -n "${PAINTER_RENDERER_PYTHON_PATH:-}" ]]; then
+  "$PRIME_ROOT/.venv/bin/python" - "$MANIFEST_ROOT" "${PAINTER_RENDERER_PATH:-}" "${PAINTER_RENDERER_PYTHON_PATH:-}" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+root, renderer, renderer_python = Path(sys.argv[1]), sys.argv[2], sys.argv[3]
+if not renderer or not renderer_python:
+    raise SystemExit("renderer and renderer_python must be supplied together")
+for name, key in (("train-manifest.json", "rows"), ("validation-manifest.json", "cases")):
+    path = root / name
+    raw = json.loads(path.read_text())
+    rows = raw.get(key)
+    if not isinstance(rows, list) or not rows:
+        raise SystemExit(f"{name} has no {key}")
+    for row in rows:
+        if not isinstance(row, dict):
+            raise SystemExit(f"{name} contains a malformed row")
+        row["renderer"] = renderer
+        row["renderer_python"] = renderer_python
+    path.write_text(json.dumps(raw, indent=2, sort_keys=True) + "\n")
+PY
+fi
 "$PRIME_ROOT/.venv/bin/python" - "$MANIFEST_ROOT" "$ANCHORS_ALL" <<'PY'
 import hashlib, json, sys
 from pathlib import Path
@@ -126,23 +192,30 @@ PY="$PRIME_ROOT/.venv/bin/python"
 [[ -x "$PY" ]] || { echo "pinned Prime Python missing: $PY" >&2; exit 1; }
 PROPOSED="$RUN/native.toml.proposed.$$"
 trap 'rm -f "$PROPOSED"' EXIT
+CONFIG_ARGS=(
+  --model "$MODEL_DIR" --run-root "$RUN"
+  --manifest "$MANIFEST_ROOT/train-manifest.json" --output "$PROPOSED"
+  --prime-root "$PRIME_ROOT" --expected-count "${PAINTER_EXPECTED_COUNT:-40}"
+  --max-steps 50 --checkpoint-interval "${PAINTER_CHECKPOINT_INTERVAL:-4}"
+  --run-name "$RUN_NAME" --output-root rl-rollouts
+  --judge-protocol text-paint-sft-pairwise-consistent-v1
+  --mode "$POLICY_MODE" --adapter-revision "$POLICY_REVISION"
+  --adapter-prefix "$POLICY_PREFIX" --adapter-sha256 "$POLICY_SHA256"
+  --gpus-per-node "${PAINTER_GPUS_PER_NODE:-2}"
+  --num-train-gpus "${PAINTER_NUM_TRAIN_GPUS:-1}"
+  --num-infer-gpus "${PAINTER_NUM_INFER_GPUS:-1}"
+  --batch-size 16 --group-size 8
+  --initial-inflight "${PAINTER_INITIAL_INFLIGHT:-16}"
+  --max-inflight "${PAINTER_MAX_INFLIGHT:-16}" --learning-rate 1e-6
+)
+if [[ -n "${PAINTER_RENDERER_PATH:-}" ]]; then
+  CONFIG_ARGS+=(--renderer "$PAINTER_RENDERER_PATH")
+fi
+if [[ -n "${PAINTER_RENDERER_PYTHON_PATH:-}" ]]; then
+  CONFIG_ARGS+=(--renderer-python "$PAINTER_RENDERER_PYTHON_PATH")
+fi
 "$PY" "$REPO/painter/runs/text-pairwise-rl-20260928/prepare_config.py" \
-  --model "$MODEL_DIR" --run-root "$RUN" \
-  --manifest "$MANIFEST_ROOT/train-manifest.json" --output "$PROPOSED" \
-  --prime-root "$PRIME_ROOT" --expected-count "${PAINTER_EXPECTED_COUNT:-40}" \
-  --max-steps 50 --checkpoint-interval "${PAINTER_CHECKPOINT_INTERVAL:-4}" \
-  --run-name "$RUN_NAME" --output-root rl-rollouts \
-  --judge-protocol text-paint-sft-pairwise-consistent-v1 \
-  --mode fresh --adapter-revision adf687e5b321514eda7be6eab050434fdc8e44ff \
-  --adapter-prefix photo-curriculum-sft-20260922-balanced/step_512 \
-  --adapter-sha256 bea72b066986faa1b92b9dc539c710093181ee916b99323e2b2498f318ac1740 \
-  --gpus-per-node "${PAINTER_GPUS_PER_NODE:-2}" \
-  --num-train-gpus "${PAINTER_NUM_TRAIN_GPUS:-1}" \
-  --num-infer-gpus "${PAINTER_NUM_INFER_GPUS:-1}" \
-  --batch-size 16 --group-size 8 \
-  --initial-inflight "${PAINTER_INITIAL_INFLIGHT:-16}" \
-  --max-inflight "${PAINTER_MAX_INFLIGHT:-16}" \
-  --learning-rate 1e-6
+  "${CONFIG_ARGS[@]}"
 if [[ -e "$RUN/native.toml" ]]; then
   cmp -s "$PROPOSED" "$RUN/native.toml" || {
     echo 'existing native.toml differs from the frozen proposal' >&2; exit 1;
@@ -153,31 +226,44 @@ fi
 rm -f "$PROPOSED"
 trap - EXIT
 
-"$PY" - "$RUN" "$SFT_ADAPTER" <<'PY'
+[[ -r "$FROZEN_SFT_PATH_FILE" ]] || { echo "frozen SFT adapter path file missing: $FROZEN_SFT_PATH_FILE" >&2; exit 1; }
+FROZEN_SFT_ADAPTER="$(tr -d '\r\n' < "$FROZEN_SFT_PATH_FILE")"
+[[ -f "$FROZEN_SFT_ADAPTER/adapter_model.safetensors" && -f "$FROZEN_SFT_ADAPTER/adapter_config.json" ]] || {
+  echo 'verified frozen SFT adapter directory is incomplete' >&2; exit 1;
+}
+
+"$PY" - "$RUN" "$SFT_ADAPTER" "$FROZEN_SFT_ADAPTER" "$POLICY_MODE" "$POLICY_REVISION" "$POLICY_PREFIX" "$POLICY_SHA256" <<'PY'
 import hashlib, json, sys
 from pathlib import Path
-run, adapter = Path(sys.argv[1]), Path(sys.argv[2])
+run, adapter, frozen, mode, policy_revision, policy_prefix, policy_expected = sys.argv[1:]
+run, adapter, frozen = map(Path, (run, adapter, frozen))
 weight = adapter / "adapter_model.safetensors"
 digest = hashlib.sha256(weight.read_bytes()).hexdigest()
-if digest != "bea72b066986faa1b92b9dc539c710093181ee916b99323e2b2498f318ac1740":
-    raise SystemExit("SFT512 adapter hash mismatch")
+if digest != policy_expected:
+    raise SystemExit("policy initializer adapter hash mismatch")
+frozen_digest = hashlib.sha256((frozen / "adapter_model.safetensors").read_bytes()).hexdigest()
+if frozen_digest != "bea72b066986faa1b92b9dc539c710093181ee916b99323e2b2498f318ac1740":
+    raise SystemExit("frozen SFT512 adapter hash mismatch")
+if mode == "recovered_policy" and adapter.resolve() == frozen.resolve():
+    raise SystemExit("recovered policy initializer must differ from frozen SFT adapter")
 manifest = run / "anchors-frozen/train-manifest.json"
 manifest_sha = hashlib.sha256(manifest.read_bytes()).hexdigest()
 config = run / "native.toml"
 config_sha = hashlib.sha256(config.read_bytes()).hexdigest()
 (run / "preparation-receipt.json").write_text(json.dumps({
-    "schema": "text-sft512-consistent-preparation-v1",
-    "run_name": "text-sft512-consistent-20260930",
+    "schema": "text-paint-consistent-preparation-v2",
+    "run_name": run.name,
     "base_model_revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
     "prime_revision": "26b3131d2716a4f8210b165df584b83b4bc54f61",
-    "initializer_revision": "adf687e5b321514eda7be6eab050434fdc8e44ff",
-    "initializer_prefix": "photo-curriculum-sft-20260922-balanced/step_512",
+    "initializer_revision": policy_revision,
+    "initializer_prefix": policy_prefix,
     "initializer_sha256": digest,
-    "frozen_anchor_sha256": digest,
+    "frozen_sft_adapter_sha256": frozen_digest,
+    "optimizer_resume": False,
+    "policy_mode": mode,
     "train_manifest_sha256": manifest_sha,
     "config_sha256": config_sha,
     "judge_protocol": "text-paint-sft-pairwise-consistent-v1",
-    "optimizer_resume": False,
 }, indent=2, sort_keys=True) + "\n")
 PY
 echo 'TEXT_SFT512_CONSISTENT_PREPARED: finite config and fixed anchors ready; launch via finite_supervisor.py'

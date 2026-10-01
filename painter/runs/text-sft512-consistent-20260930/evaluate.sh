@@ -10,7 +10,7 @@ MAX_CONCURRENT="${PAINTER_EVAL_MAX_CONCURRENT:-16}"
 }
 [[ -z "$MODE" || "$MODE" == --preflight ]] || { echo 'usage: evaluate.sh STEP [all|balanced16] [--preflight]' >&2; exit 2; }
 [[ "$MAX_CONCURRENT" =~ ^[1-9][0-9]*$ ]] || { echo 'PAINTER_EVAL_MAX_CONCURRENT must be a positive integer' >&2; exit 2; }
-RUN="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
+RUN="${PAINTER_RUN_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)}"
 REPO="$(cd "$RUN/../../.." && pwd -P)"
 NODE_ROOT="${PAINTER_NODE_ROOT:-/root/painter}"
 PRIME_ROOT="${PRIME_ROOT:-$NODE_ROOT/prime}"
@@ -18,16 +18,20 @@ PY="$PRIME_ROOT/.venv/bin/python"
 VLLM="$PRIME_ROOT/.venv/bin/vllm"
 EVAL="$PRIME_ROOT/.venv/bin/eval"
 MODEL_DIR="${MODEL_DIR:-$NODE_ROOT/model-cache/qwen/1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0}"
-NAME="text-sft512-consistent-20260930"
+NAME="${PAINTER_RUN_NAME:-text-sft512-consistent-20260930}"
 ADAPTER="$RUN/async-output/$NAME/artifacts/adapters/step_$STEP"
 ALL_MANIFEST="$RUN/anchors-frozen/validation-manifest.json"
 OUT="$RUN/validation/step-$STEP-$SCOPE"
+RENDERER="${PAINTER_RENDERER_PATH:-$RUN/vendor/integrations/watercolour/renderer.py}"
+RENDERER_PYTHON="${PAINTER_RENDERER_PYTHON_PATH:-$RUN/renderer-env/bin/python}"
+[[ "$OUT" == /* ]] || { echo 'evaluation output path must be absolute' >&2; exit 1; }
 
 [[ -x "$PY" && -x "$VLLM" && -x "$EVAL" ]] || { echo 'pinned Prime runtime is unavailable' >&2; exit 1; }
 [[ -f "$ADAPTER/adapter_model.safetensors" && -f "$ADAPTER/hf-upload.json" ]] || {
   echo 'requested public checkpoint adapter is missing' >&2; exit 1;
 }
 [[ -f "$ALL_MANIFEST" ]] || { echo 'frozen 47-case validation manifest is missing' >&2; exit 1; }
+[[ -f "$RENDERER" && -x "$RENDERER_PYTHON" ]] || { echo 'explicit renderer runtime is missing' >&2; exit 1; }
 [[ ! -e "$OUT" ]] || { echo 'evaluation output already exists; preserve it before retrying' >&2; exit 1; }
 mkdir -p "$OUT/logs"
 
@@ -57,7 +61,8 @@ PYTHONPATH="$REPO/painter" "$PY" "$REPO/painter/native_painting_eval.py" \
   --output-dir "$OUT/eval" --config "$OUT/eval.toml" \
   --expected-count "$([[ "$SCOPE" == balanced16 ]] && echo 16 || echo 47)" \
   --max-turns 3 --max-tokens 8192 --rollout-timeout 1800 \
-  --max-concurrent "$MAX_CONCURRENT" >"$OUT/logs/config.json"
+  --max-concurrent "$MAX_CONCURRENT" --renderer "$RENDERER" \
+  --renderer-python "$RENDERER_PYTHON" >"$OUT/logs/config.json"
 "$PY" - "$OUT/eval.toml" "$MAX_CONCURRENT" <<'PY'
 from pathlib import Path
 import os, sys
@@ -119,6 +124,8 @@ done
 (( SECONDS < deadline )) || { echo 'evaluation vLLM startup timeout' >&2; exit 1; }
 env PYTHONPATH="$REPO/painter" PAINTER_LOCAL_API_KEY=local \
   PAINTER_RENDER_TIMEOUT_SECONDS=180 PLAYWRIGHT_BROWSERS_PATH="$REPO/painter/browsers" \
+  PAINTER_REQUIRE_VALID_FINAL_ACTION=1 PAINTER_JS_SYNTAX_PREFLIGHT=1 \
+  PAINTER_JUDGE_FORMAT="${PAINTER_JUDGE_FORMAT:-identity-joint-side-schema-v1}" \
   WANDB_MODE=disabled TOKENIZERS_PARALLELISM=false \
   bash -c 'cd "$1"; exec "$2" @ "$3" --no-serve --no-push' \
   _ "$PRIME_ROOT" "$EVAL" "$OUT/eval.toml" >"$OUT/logs/eval.log" 2>&1
@@ -157,7 +164,7 @@ if upload.get('verified') is not True or upload.get('private') is not False or a
     **artifact_audit,
 }, indent=2, sort_keys=True) + '\n')
 (out / 'generation-receipt.json').write_text(json.dumps({
-    'schema': 'text-sft512-consistent-generation-v1', 'step': step,
+    'schema': 'text-paint-consistent-generation-v2', 'run_name': out.parents[1].name, 'step': step,
     'scope': scope, 'adapter_sha256': actual, 'public_commit': upload.get('commit'),
     'judge_deferred': True, 'scoring_protocol': 'text-paint-sft-pairwise-consistent-v1',
     'matched_control': 'sft-step512', 'max_turns': 3, 'max_tokens': 8192,

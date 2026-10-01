@@ -23,7 +23,11 @@ import tarfile
 import time
 from typing import Any, Callable, Sequence
 
-RUN_NAME = "text-sft512-consistent-20260930"
+RUN_NAME = os.environ.get("PAINTER_RUN_NAME", "text-sft512-consistent-20260930")
+TERMINAL_SCHEMAS = frozenset({
+    "text-sft512-consistent-terminal-v1",
+    "text-paint-consistent-terminal-v2",
+})
 DEFAULT_REMOTE_RUN = f"/root/painter/repo/painter/runs/{RUN_NAME}"
 POD_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
 COMMIT_RE = re.compile(r"^[0-9a-fA-F]{7,64}$")
@@ -150,7 +154,7 @@ def parse_terminal_output(raw: str) -> dict[str, Any] | None:
 
     def find(candidate: Any, failed: bool = False) -> dict[str, Any] | None:
         if isinstance(candidate, dict):
-            if not failed and candidate.get("schema") == "text-sft512-consistent-terminal-v1":
+            if not failed and candidate.get("schema") in TERMINAL_SCHEMAS:
                 return candidate if candidate.get("archive_exit_code") is not None else None
             code = candidate.get("exit_code", candidate.get("returncode"))
             try:
@@ -268,7 +272,7 @@ def _valid_terminal_receipt(path: Path) -> bool:
         value = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError):
         return False
-    return isinstance(value, dict) and value.get("schema") == "text-sft512-consistent-terminal-v1"
+    return isinstance(value, dict) and value.get("schema") in TERMINAL_SCHEMAS
 
 
 def _valid_archive(path: Path) -> bool:
@@ -356,7 +360,10 @@ def relay(
     upload_copied = _scp(lium_bin, inputs["pod_id"], f"{remote_run}/local-evidence/{RUN_NAME}-evidence.tar.gz.upload.json", upload_path, run=run, timeout=30.0)
     verified = upload_copied and _verified_upload(upload_path)
     archive_copied = False
-    local_evidence = Path(__file__).resolve().parent / "local-evidence"
+    local_evidence = Path(os.environ.get(
+        "PAINTER_RELAY_EVIDENCE_DIR",
+        str(Path(__file__).resolve().parent / "local-evidence"),
+    )).expanduser()
     if not verified:
         archive_copied = _scp(
             lium_bin, inputs["pod_id"], f"{remote_run}/local-evidence/{RUN_NAME}-evidence.tar.gz",

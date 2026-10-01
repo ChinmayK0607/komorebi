@@ -6,6 +6,7 @@ import argparse
 import asyncio
 import json
 import math
+import os
 import sys
 from pathlib import Path
 
@@ -18,6 +19,7 @@ from painter.text_pairwise_judge import judge_pair as binary_judge_pair  # noqa:
 from painter.text_pairwise_margin_judge import judge_pair as margin_judge_pair  # noqa: E402
 from painter.text_pairwise_grounded_judge import judge_pair as grounded_judge_pair  # noqa: E402
 from painter.text_pairwise_consistent_judge import judge_pair as consistent_judge_pair  # noqa: E402
+from painter.text_pairwise_consistent_side_judge import judge_pair as consistent_side_judge_pair  # noqa: E402
 
 
 def _judgment_error(judgment: object, protocol: str) -> str | None:
@@ -66,10 +68,13 @@ def _resolved_judgment(judgment: object, protocol: str | None = None) -> bool:
 
 async def score(manifest: Path, eval_root: Path, output: Path, key_file: Path,
                 protocol: str = "text-paint-sft-pairwise-v1") -> dict:
+    consistent = (consistent_side_judge_pair
+                  if os.environ.get("PAINTER_JUDGE_FORMAT") == "identity-joint-side-schema-v1"
+                  else consistent_judge_pair)
     judges = {"text-paint-sft-pairwise-v1": binary_judge_pair,
               "text-paint-sft-pairwise-margin-v1": margin_judge_pair,
               "text-paint-sft-pairwise-grounded-v1": grounded_judge_pair,
-              "text-paint-sft-pairwise-consistent-v1": consistent_judge_pair}
+              "text-paint-sft-pairwise-consistent-v1": consistent}
     if protocol not in judges:
         raise ValueError(f"unsupported judge protocol: {protocol}")
     judge_pair = judges[protocol]
