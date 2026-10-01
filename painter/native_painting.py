@@ -41,6 +41,45 @@ TEXT_SYSTEM = (SYSTEM
       "Do not redefine p5 globals such as translate or use brush.rect/brush.ellipse. Use brush.polygon for filled shapes and brush.line for strokes. "
       "A valid skeleton is `function setup(){createCanvas(600,600,WEBGL);} "
       "function draw(){translate(-300,-300); background('#f5efe4'); /* brush strokes */ noLoop();}`.")
+P5_BRUSH_API_REFERENCE_ENV = "PAINTER_P5_BRUSH_API_REFERENCE"
+P5_BRUSH_API_REFERENCE_VERSION = "p5-brush-api-v1"
+# This is the vendored export basis used to author the concise reference. It is
+# not a hash claim about the live renderer bundle.
+P5_BRUSH_EXPORT_BASIS_SHA256 = "9c6e271a78e5dcb23c9cfa9d085775317fe5fb2188f976465c83c1f7965d1ec8"
+P5_BRUSH_DEFAULT_NAMES = (
+    "pen", "rotring", "2B", "HB", "2H", "cpencil", "pastel", "crayon", "charcoal", "spray", "marker",
+)
+P5_BRUSH_SUPPORTED_OPERATIONS = (
+    "box", "circle", "fill", "fillBleed", "fillTexture", "line", "noFill", "noStroke", "noWash",
+    "polygon", "rect", "set", "spline", "stroke", "strokeWeight", "wash",
+)
+P5_BRUSH_API_REFERENCE = (
+    "Pinned p5.brush API reference (derived from vendored export-basis asset SHA256 "
+    + P5_BRUSH_EXPORT_BASIS_SHA256
+    + "): `brush` is the "
+    "already-loaded singleton. Supported calls include `brush.box()`, `brush.set(name, color, weight)`, "
+    "`brush.circle`, `brush.rect`, `brush.polygon([[x1, y1], [x2, y2], [x3, y3]])`, `brush.line`, "
+    "`brush.spline(points)`, "
+    "`brush.fill`, `brush.noFill`, `brush.noStroke`, `brush.noWash`, `brush.fillBleed`, `brush.fillTexture`, "
+    "`brush.stroke`, `brush.strokeWeight`, and `brush.wash`. `brush.box()` returns these built-in names: "
+    + ", ".join(P5_BRUSH_DEFAULT_NAMES)
+    + ". Use valid p5 color values such as `#rrggbb`. `brush.ellipse` and `brush.create` are not exports; "
+      "use `brush.circle` for round forms or bounded `brush.polygon` points for other silhouettes. "
+      "Do not call `new p5.brush(...)` or `p5.brush(...)`, and do not shadow p5 globals such as `scale`, "
+      "`translate`, `background`, or `noLoop`."
+)
+# Trace the exact UTF-8 bytes shown to the model, separately from the asset
+# hash above, so a prompt change cannot be mistaken for an asset change.
+P5_BRUSH_API_REFERENCE_SHA256 = hashlib.sha256(P5_BRUSH_API_REFERENCE.encode("utf-8")).hexdigest()
+TEXT_SYSTEM_API = (
+    TEXT_SYSTEM.replace(
+        "Do not redefine p5 globals such as translate or use brush.rect/brush.ellipse. Use brush.polygon for filled shapes and brush.line for strokes. ",
+        "Do not redefine p5 globals such as translate. `brush.rect` is supported; `brush.ellipse` is not. Use brush.polygon for filled shapes and brush.line for strokes. ",
+    )
+    + "\n"
+    + P5_BRUSH_API_REFERENCE
+)
+SYSTEM_API = SYSTEM + "\n" + P5_BRUSH_API_REFERENCE
 TEXT_NEXT_VERSION = "Inspect the PAINTING BRIEF and current canvas, then paint the next complete version."
 TEXT_NO_CHANGE = ("Your previous revision made no change to the current canvas. Inspect the PAINTING BRIEF "
                   "and current canvas. If the painting already satisfies the brief, respond FINISHED without code. "
@@ -164,10 +203,23 @@ def inspect_choice_feedback_enabled(environ: Mapping[str, str] | None = None) ->
     return values.get(INSPECT_CHOICE_FEEDBACK_ENV) == "1"
 
 
+def brush_api_reference_enabled(environ: Mapping[str, str] | None = None) -> bool:
+    """Return whether the opt-in pinned p5.brush API reference is enabled."""
+
+    values = os.environ if environ is None else environ
+    return values.get(P5_BRUSH_API_REFERENCE_ENV) == "1"
+
+
 def feedback_version(environ: Mapping[str, str] | None = None) -> str:
     """Return the user-facing feedback version selected for a trace."""
 
     return INSPECT_CHOICE_FEEDBACK_VERSION if inspect_choice_feedback_enabled(environ) else LEGACY_FEEDBACK_VERSION
+
+
+def _painting_system_prompt(reference_kind: str) -> str:
+    if brush_api_reference_enabled():
+        return TEXT_SYSTEM_API if reference_kind == "text" else SYSTEM_API
+    return TEXT_SYSTEM if reference_kind == "text" else SYSTEM
 
 
 def _text_initial_feedback(*, has_canvas: bool = False) -> str:
@@ -203,7 +255,12 @@ def _text_failed_revision_feedback(base: str, *, has_canvas: bool) -> str:
     )
 
 
-def _program_failure_feedback(errors: Any, *, include_guidance: bool = True) -> str:
+def _program_failure_feedback(
+    errors: Any,
+    *,
+    include_guidance: bool = True,
+    include_api_guidance: bool = False,
+) -> str:
     """Give a concise, actionable model-code error without rewriting its sketch."""
 
     if isinstance(errors, list):
@@ -213,7 +270,51 @@ def _program_failure_feedback(errors: Any, *, include_guidance: bool = True) -> 
     detail = detail[:700]
     lower = detail.lower()
     guidance = "Return a complete, readable JavaScript sketch in one code block; do not repeat the failed sketch."
-    if "no complete javascript code block" in lower:
+    factual_guidance: str | None = None
+    if include_api_guidance and (
+        "unknown brush" in lower
+        or "brush name" in lower
+        or ("brush" in lower and "not found" in lower)
+    ):
+        factual_guidance = (
+            "The pinned runtime's brush.box() names are "
+            + ", ".join(P5_BRUSH_DEFAULT_NAMES)
+            + "; the requested brush name is not in that list."
+        )
+    elif include_api_guidance and "invalid color" in lower:
+        factual_guidance = (
+            "The pinned runtime rejected this color string; pass a valid p5 color such as #rrggbb and do not "
+            "strip the first character from lerpColor(...).toString()."
+        )
+    elif include_api_guidance and (
+        ("p5.brush" in lower and "constructor" in lower)
+        or "new p5.brush" in lower
+        or "brush.create" in lower
+    ):
+        factual_guidance = (
+            "The renderer exposes an already-loaded global brush singleton; p5.brush is not a constructor "
+            "and brush.create is not an export."
+        )
+    elif include_api_guidance and "brush.ellipse" in lower and "not a function" in lower:
+        factual_guidance = (
+            "brush.ellipse is not an export. Use brush.circle for round forms or bounded brush.polygon points "
+            "for an ellipse-like silhouette."
+        )
+    elif include_api_guidance and "invalid array length" in lower:
+        factual_guidance = (
+            "brush.polygon expects a flat array of finite numeric [x, y] points, for example "
+            "brush.polygon([[x, y], [x2, y2], [x3, y3]]). If P(...) returns [x, y], pass "
+            "[P(...), P(...), P(...)], not an extra nested point array."
+        )
+    elif include_api_guidance and any(name + " is not a function" in lower for name in ("scale", "translate", "background", "noloop")):
+        factual_guidance = (
+            "p5 global functions such as scale and translate must remain callable; a local variable or helper "
+            "with the same name shadows the global."
+        )
+        guidance = (
+            "Do not shadow p5 global functions such as scale or translate; rename the local variable or helper."
+        )
+    elif "no complete javascript code block" in lower:
         guidance = ("Your reply had no executable sketch. Begin the next reply with ```javascript "
                     "and return a complete setup() and draw() sketch, not a prose plan; "
                     "do not return HTML, <script> tags, imports, or CDN URLs. "
@@ -232,7 +333,13 @@ def _program_failure_feedback(errors: Any, *, include_guidance: bool = True) -> 
     elif "not iterable" in lower:
         guidance = "Check every brush.polygon point list and every spread, destructuring, or for-of source; each must receive an iterable. Return a complete sketch."
     diagnostic = f"The sketch produced no valid canvas. Renderer error: {detail}"
-    return f"{diagnostic}\n{guidance}" if include_guidance else diagnostic
+    if include_guidance:
+        if factual_guidance:
+            return f"{diagnostic}\n{guidance}\n{factual_guidance}"
+        return f"{diagnostic}\n{guidance}"
+    if factual_guidance:
+        return f"{diagnostic}\n{factual_guidance}"
+    return diagnostic
 
 
 class NativePaintingData(vf.TaskData):
@@ -329,7 +436,7 @@ class NativePaintingTaskset(vf.Taskset[NativePaintingTask, NativePaintingConfig]
                 idx=index,
                 name=str(task_id),
                 prompt=[vf.UserMessage(content=prompt)],
-                system_prompt=TEXT_SYSTEM if reference_kind == "text" else SYSTEM,
+                system_prompt=_painting_system_prompt(reference_kind),
                 root=str(root),
                 task_id=str(task_id),
                 source_group=str(source_group),
@@ -370,6 +477,15 @@ class NativePaintingEnv(vf.Env[NativePaintingEnvConfig]):
             "protocol_version": PROTOCOL_VERSION,
             "feedback_version": (
                 feedback_version() if data.reference_kind == "text" else LEGACY_FEEDBACK_VERSION
+            ),
+            "brush_api_reference_version": (
+                P5_BRUSH_API_REFERENCE_VERSION if brush_api_reference_enabled() else None
+            ),
+            "brush_api_reference_sha256": (
+                P5_BRUSH_API_REFERENCE_SHA256 if brush_api_reference_enabled() else None
+            ),
+            "brush_api_reference_export_basis_sha256": (
+                P5_BRUSH_EXPORT_BASIS_SHA256 if brush_api_reference_enabled() else None
             ),
             "mode": data.mode,
             "task_id": data.task_id,
@@ -451,9 +567,11 @@ class NativePaintingEnv(vf.Env[NativePaintingEnvConfig]):
                         inspect_choice_text = (
                             data.reference_kind == "text" and inspect_choice_feedback_enabled()
                         )
+                        api_reference_enabled = brush_api_reference_enabled()
                         failure_feedback = _program_failure_feedback(
                             result.get("renderer_errors") or result.get("error"),
                             include_guidance=not (inspect_choice_text and current_canvas is not None),
+                            include_api_guidance=api_reference_enabled,
                         )
                         if inspect_choice_text:
                             feedback = _text_failed_revision_feedback(

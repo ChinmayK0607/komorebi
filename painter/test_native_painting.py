@@ -4,8 +4,10 @@ from __future__ import annotations
 
 import asyncio
 import base64
+import hashlib
 import importlib
 import json
+import re
 import sys
 import types
 import unittest
@@ -333,6 +335,113 @@ class NativePaintingTests(unittest.TestCase):
                 feedback = module._program_failure_feedback(errors)
                 self.assertIn(expected, feedback)
                 self.assertIn(errors[0], feedback)
+
+    def test_opt_in_brush_reference_matches_pinned_exports_and_names(self):
+        module = _load_module()
+        asset = Path(__file__).parent / "vendor/integrations/watercolour/assets/p5.brush.js"
+        source = asset.read_text()
+        self.assertEqual(
+            hashlib.sha256(asset.read_bytes()).hexdigest(),
+            module.P5_BRUSH_EXPORT_BASIS_SHA256,
+        )
+        self.assertEqual(
+            hashlib.sha256(module.P5_BRUSH_API_REFERENCE.encode("utf-8")).hexdigest(),
+            module.P5_BRUSH_API_REFERENCE_SHA256,
+        )
+        for operation in module.P5_BRUSH_SUPPORTED_OPERATIONS:
+            with self.subTest(operation=operation):
+                self.assertRegex(source, rf"t\.{re.escape(operation)}\s*=")
+        for name in module.P5_BRUSH_DEFAULT_NAMES:
+            with self.subTest(name=name):
+                self.assertIn(f'["{name}",', source)
+        for fictional in ("cgpen", "cwall", "cwater", "cmarker"):
+            self.assertNotIn(f'"{fictional}"', module.P5_BRUSH_API_REFERENCE)
+
+        with patch.dict("os.environ", {module.P5_BRUSH_API_REFERENCE_ENV: "1"}, clear=True):
+            prompt = module._painting_system_prompt("text")
+            self.assertIn(module.P5_BRUSH_API_REFERENCE, prompt)
+            self.assertIn("`brush.rect` is supported", prompt)
+            self.assertNotIn("use brush.rect/brush.ellipse", prompt)
+            cases = (
+                (["Error: Unknown brush name mysterybrush"], "brush.box() names"),
+                (["Invalid color string"], "valid p5 color"),
+                (["TypeError: p5.brush is not a constructor"], "already-loaded global brush singleton"),
+                (["TypeError: brush.ellipse is not a function"], "brush.circle"),
+                (["RangeError: Invalid array length"], "flat array of finite numeric [x, y] points"),
+                (["TypeError: scale is not a function"], "shadows the global"),
+            )
+            for errors, expected in cases:
+                with self.subTest(errors=errors):
+                    feedback = module._program_failure_feedback(
+                        errors, include_guidance=False, include_api_guidance=True,
+                    )
+                    self.assertIn(expected, feedback)
+                    self.assertNotIn("Return a complete", feedback)
+
+            legacy = module._program_failure_feedback(["Error: Brush mysterybrush not found"])
+            api = module._program_failure_feedback(
+                ["Error: Brush mysterybrush not found"], include_api_guidance=True,
+            )
+            self.assertIn(legacy, api)
+            self.assertIn("brush.box() names", api)
+
+        with patch.dict("os.environ", {}, clear=True):
+            self.assertIs(module._painting_system_prompt("text"), module.TEXT_SYSTEM)
+
+        with TemporaryDirectory() as temp:
+            root = Path(temp)
+            brief = root / "brief.txt"
+            brief.write_text("Paint a pear.\n")
+            data = module.NativePaintingData(
+                idx=0, name="api-trace", source_group="api-trace", root=str(root),
+                task_id="api-trace", reference=str(brief), reference_sha256=module.sha(brief),
+                reference_kind="text", max_turns=2,
+            )
+            with patch.dict("os.environ", {module.P5_BRUSH_API_REFERENCE_ENV: "1"}, clear=True):
+                agents = _Agents(["FINISHED", "FINISHED"])
+                asyncio.run(module.NativePaintingEnv.__dict__["run"](_DummyEnv(), module.NativePaintingTask(data), agents))
+            info = agents.agent.interaction_obj.trace.info
+            self.assertEqual(info["brush_api_reference_version"], module.P5_BRUSH_API_REFERENCE_VERSION)
+            self.assertEqual(info["brush_api_reference_sha256"], module.P5_BRUSH_API_REFERENCE_SHA256)
+            self.assertEqual(
+                info["brush_api_reference_export_basis_sha256"],
+                module.P5_BRUSH_EXPORT_BASIS_SHA256,
+            )
+
+    def test_api_reference_keeps_legacy_retained_canvas_feedback(self):
+        module = _load_module()
+        with TemporaryDirectory() as temp:
+            root = Path(temp)
+            brief = root / "brief.txt"
+            brief.write_text("Paint a pear.\n")
+            canvas = root / "canvas.png"
+            canvas.write_bytes(b"canvas")
+            data = module.NativePaintingData(
+                idx=0, name="api-retained", source_group="api-retained", root=str(root),
+                task_id="api-retained", reference=str(brief), reference_sha256=module.sha(brief),
+                reference_kind="text", max_turns=3,
+            )
+            agents = _Agents([
+                "```javascript\nfunction draw(){}\n```",
+                "```javascript\nbroken();\n```",
+                "FINISHED",
+            ])
+            results = iter([
+                {"valid": True, "canvas": str(canvas), "program": "function draw(){}", "no_change": False},
+                {"valid": False, "canvas": None, "error": "Error: Brush mysterybrush not found", "failure_kind": "program"},
+            ])
+            with patch.dict("os.environ", {module.P5_BRUSH_API_REFERENCE_ENV: "1"}, clear=True), \
+                    patch.object(module, "render_action", side_effect=lambda **_: next(results)):
+                asyncio.run(module.NativePaintingEnv.__dict__["run"](_DummyEnv(), module.NativePaintingTask(data), agents))
+            feedback = " ".join(
+                part.text
+                for part in agents.agent.interaction_obj.messages[2][0].content
+                if hasattr(part, "text")
+            )
+            self.assertIn("Return a complete, readable JavaScript sketch", feedback)
+            self.assertIn("brush.box() names", feedback)
+            self.assertNotIn("previously valid CURRENT CANVAS is retained", feedback)
+            self.assertTrue(agents.agent.interaction_obj.trace.info["final_canvas_valid"])
 
     def test_image_preserves_bytes_and_uses_png_or_jpeg_mime(self):
         module = _load_module()
