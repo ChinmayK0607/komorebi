@@ -1,0 +1,73 @@
+{
+  "base_model": {
+    "id": "Qwen/Qwen3.8-27B",
+    "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0"
+  },
+  "frozen_sft_initializer": {
+    "adapter_sha256": "bea72b066986faa1b92b9dc539c710093181ee916b99323e2b2498f318ac1740",
+    "alias": "sft-step512",
+    "immutable": true,
+    "prefix": "photo-curriculum-sft-20260922-balanced/step_512",
+    "repo": "CK0607/qwen3.8-27b-brush-painting",
+    "revision": "adf687e5b321514eda7be6eab050434fdc8e44ff"
+  },
+  "judge": {
+    "model": "xiaomi/mimo-v2.6-flash",
+    "module": "painter/text_pairwise_consistent_side_judge.py",
+    "protocol": "text-paint-sft-pairwise-consistent-v1",
+    "source_format_sha256": "f94cfc9e880c8423f89a091486a0cf174cf1818c13d9acdf18fd21ace79aa069",
+    "transport": "side"
+  },
+  "policy_initializer": {
+    "adapter_sha256": "e5211706a23b46354aa269f2b9cfaaaad1b64eef1012b433b1887c149f5a927c",
+    "mode": "recovered_policy",
+    "optimizer_resume": false,
+    "prefix": "text-pairwise-scaled-20260929/step_16",
+    "repo": "CK0607/qwen3.8-27b-brush-painting",
+    "revision": "ac4d3eda8e5925e2d23992cfdc1a63620ebde573"
+  },
+  "prime": {
+    "revision": "26b3131d2716a4f8210b165df584b83b4bc54f61"
+  },
+  "protocol": {
+    "batch_size": 16,
+    "checkpoint_interval": 4,
+    "checkpoint_steps": [
+      15,
+      20,
+      25,
+      30,
+      35,
+      40,
+      45,
+      50
+    ],
+    "context_length": 32768,
+    "evaluation_max_concurrent": 16,
+    "final_action_credit": true,
+    "gpu_cap_usd": 18.55,
+    "gpus_per_node": 2,
+    "group_size": 4,
+    "initial_inflight": 32,
+    "js_syntax_preflight": true,
+    "learning_rate": 1e-06,
+    "max_completion_tokens": 8192,
+    "max_inflight": 32,
+    "max_turns": 3,
+    "max_updates": 50,
+    "num_infer_gpus": 1,
+    "num_train_gpus": 1,
+    "trend": "latest five admitted optimizer-batch rewards must exceed prior five at each observed checkpoint"
+  },
+  "renderer": {
+    "build_script": "painter/patch_brush_centroid.py",
+    "configured_explicitly": true,
+    "derivative_brush_sha256": "db5b0094cb223529a8c5fc3bbba7bf8f2d5b5f5a5c0a847062194feaf917d16b",
+    "runtime_id": "watercolour-p5-brush-2.2.1-centroid-fix-v1",
+    "source": "painter/vendor/integrations/watercolour",
+    "source_brush_sha256": "9c6e271a78e5dcb23c9cfa9d085775317fe5fb2188f976465c83c1f7965d1ec8",
+    "source_renderer_sha256": "6181fb904a0c5dcd580f5c3cb01eaf341a14b7a15479e811d99ebb10b70bc841"
+  },
+  "run_name": "text-rl16-retry-20261001",
+  "schema": "text-rl16-consistent-source-identity-v1"
+}

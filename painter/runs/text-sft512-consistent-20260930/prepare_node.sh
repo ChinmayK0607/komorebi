@@ -192,6 +192,8 @@ PY="$PRIME_ROOT/.venv/bin/python"
 [[ -x "$PY" ]] || { echo "pinned Prime Python missing: $PY" >&2; exit 1; }
 PROPOSED="$RUN/native.toml.proposed.$$"
 trap 'rm -f "$PROPOSED"' EXIT
+GROUP_SIZE="${PAINTER_GROUP_SIZE:-8}"
+[[ "$GROUP_SIZE" =~ ^[1-9][0-9]*$ ]] || { echo 'PAINTER_GROUP_SIZE must be a positive integer' >&2; exit 1; }
 CONFIG_ARGS=(
   --model "$MODEL_DIR" --run-root "$RUN"
   --manifest "$MANIFEST_ROOT/train-manifest.json" --output "$PROPOSED"
@@ -204,7 +206,7 @@ CONFIG_ARGS=(
   --gpus-per-node "${PAINTER_GPUS_PER_NODE:-2}"
   --num-train-gpus "${PAINTER_NUM_TRAIN_GPUS:-1}"
   --num-infer-gpus "${PAINTER_NUM_INFER_GPUS:-1}"
-  --batch-size 16 --group-size 8
+  --batch-size 16 --group-size "$GROUP_SIZE"
   --initial-inflight "${PAINTER_INITIAL_INFLIGHT:-16}"
   --max-inflight "${PAINTER_MAX_INFLIGHT:-16}" --learning-rate 1e-6
 )

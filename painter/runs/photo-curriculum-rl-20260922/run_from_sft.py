@@ -304,6 +304,7 @@ def _orchestrator_env(environment: dict[str, str]) -> dict[str, str]:
         "PAINTER_WHOLE_GROUP_ADMISSION",
         "PAINTER_WHOLE_GROUP_SIZE",
         "PAINTER_CONSISTENT_GUARD_RECEIPT",
+        "PAINTER_CONSISTENT_GROUP_TELEMETRY",
         "PAINTER_REQUIRE_VALID_FINAL_ACTION",
         "PAINTER_JS_SYNTAX_PREFLIGHT",
         "PAINTER_RENDERER_PATH",

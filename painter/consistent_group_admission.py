@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import os
 import logging
+import json
 from dataclasses import dataclass
 from collections import Counter
 from typing import Any, Callable, Iterable
@@ -40,6 +41,39 @@ _UNCERTAIN_EVIDENCE_STATUSES = frozenset({
     "missing",
 })
 _LOGGER = logging.getLogger(__name__)
+
+
+def _emit_group_log(message: str, *args: Any) -> None:
+    """Use Prime's configured sink in production, stdlib logging in tests."""
+    rendered = message % args if args else message
+    try:
+        from prime_rl.utils.logger import get_logger
+    except ModuleNotFoundError:
+        _LOGGER.warning(rendered)
+    else:
+        get_logger().warning(rendered)
+
+
+def _write_telemetry(guard: "WholeGroupAdmissionGuard", check: GroupCheck, decision: str) -> None:
+    """Optionally append compact group decisions for early stall diagnosis."""
+    target = os.environ.get("PAINTER_CONSISTENT_GROUP_TELEMETRY")
+    if not target:
+        return
+    record = {
+        "schema": "consistent-group-admission-telemetry-v1",
+        "group_size": guard.group_size,
+        "observed_size": check.observed_size,
+        "decision": decision,
+        "reason": check.reason,
+        "groups_observed": guard.groups_observed,
+        "groups_admitted": guard.groups_admitted,
+        "groups_rejected": guard.groups_rejected,
+        "delegate_rejections": guard.delegate_rejections,
+    }
+    path = os.path.abspath(target)
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "a", encoding="utf-8") as stream:
+        stream.write(json.dumps(record, sort_keys=True) + "\n")
 
 
 @dataclass(frozen=True)
@@ -146,12 +180,13 @@ class WholeGroupAdmissionGuard:
         if not check.valid:
             self.groups_rejected += 1
             self.rejections_by_reason[check.reason or "invalid_group"] += 1
-            _LOGGER.info(
+            _emit_group_log(
                 "consistent whole-group admission rejected group: size=%d reason=%s "
                 "observed=%d rejected=%d",
                 check.observed_size, check.reason or "invalid_group",
                 self.groups_observed, self.groups_rejected,
             )
+            _write_telemetry(self, check, "reject_uncertain_or_error")
         # Invoke Prime's hook for every completed group so sampler observation
         # and admission counters remain intact.  The guard overrides only the
         # final decision for incomplete/error/uncertain groups.
@@ -160,8 +195,22 @@ class WholeGroupAdmissionGuard:
             return False
         if not delegated:
             self.delegate_rejections += 1
+            _emit_group_log(
+                "consistent whole-group admission delegated rejection: size=%d "
+                "observed=%d admitted=%d rejected=%d delegate_rejections=%d",
+                check.observed_size, self.groups_observed, self.groups_admitted,
+                self.groups_rejected, self.delegate_rejections,
+            )
+            _write_telemetry(self, check, "reject_delegate")
             return False
         self.groups_admitted += 1
+        _emit_group_log(
+            "consistent whole-group admission accepted: size=%d observed=%d "
+            "admitted=%d rejected=%d",
+            check.observed_size, self.groups_observed, self.groups_admitted,
+            self.groups_rejected,
+        )
+        _write_telemetry(self, check, "admit")
         return True
 
     def stats(self) -> dict[str, Any]:

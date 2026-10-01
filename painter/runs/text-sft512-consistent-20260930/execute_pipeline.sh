@@ -10,6 +10,7 @@ PRICE="${2:?usage: execute_pipeline.sh RENTAL_START_EPOCH PRICE_USD_PER_HOUR MAX
 CAP="${3:?usage: execute_pipeline.sh RENTAL_START_EPOCH PRICE_USD_PER_HOUR MAX_GPU_USD}"
 [[ $# == 3 ]] || { echo 'usage: execute_pipeline.sh RENTAL_START_EPOCH PRICE_USD_PER_HOUR MAX_GPU_USD' >&2; exit 2; }
 RESERVE="${PAINTER_RESERVE_SECONDS:-2700}"
+GROUP_SIZE="${PAINTER_GROUP_SIZE:-8}"
 EVAL_TIMEOUT="${PAINTER_EVAL_TIMEOUT_SECONDS:-1800}"
 ARCHIVE_TIMEOUT="${PAINTER_ARCHIVE_TIMEOUT_SECONDS:-600}"
 PARENT_RELEASE_RESERVE="${PAINTER_PARENT_RELEASE_RESERVE_SECONDS:-180}"
@@ -275,7 +276,7 @@ else
     rm -f "$GUARD_RECEIPT"
     PAINTER_PRIME_ROLE=orchestrator \
     PAINTER_JUDGE_PROTOCOL=text-paint-sft-pairwise-consistent-v1 \
-    PAINTER_WHOLE_GROUP_ADMISSION=1 PAINTER_WHOLE_GROUP_SIZE=8 \
+    PAINTER_WHOLE_GROUP_ADMISSION=1 PAINTER_WHOLE_GROUP_SIZE="$GROUP_SIZE" \
     PAINTER_GROUP_RANK_MODULE=painter.consistent_group_admission \
     PAINTER_CONSISTENT_GUARD_RECEIPT="$GUARD_RECEIPT" \
     PYTHONPATH="$REPO:$REPO/painter:$RUN${PYTHONPATH:+:$PYTHONPATH}" \
@@ -289,8 +290,9 @@ if not receipt.is_file():
 value = json.loads(receipt.read_text())
 if value.get('role') != 'orchestrator' or value.get('protocol') != 'text-paint-sft-pairwise-consistent-v1':
     raise SystemExit('guard activation receipt has the wrong role or protocol')
-if value.get('group_size') != 8 or not (value.get('installed') or value.get('already_installed')):
-    raise SystemExit('whole-group guard was not installed for group size 8')
+expected = int(os.environ['PAINTER_WHOLE_GROUP_SIZE'])
+if value.get('group_size') != expected or not (value.get('installed') or value.get('already_installed')):
+    raise SystemExit(f'whole-group guard was not installed for group size {expected}')
 print('CONSISTENT_GROUP_GUARD_CHILD_ACTIVATED')
 PY
   }
