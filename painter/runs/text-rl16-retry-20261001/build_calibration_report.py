@@ -160,6 +160,27 @@ def _view_rows(result: dict[str, Any]) -> list[tuple[str, dict[str, Any]]]:
     return rows
 
 
+def _orientation_note(pair: dict[str, Any], view: dict[str, Any]) -> str:
+    """Explain request-side orientation without inferring from view position."""
+
+    ids = pair["image_ids"]
+    for call in view.get("calls") or []:
+        if not isinstance(call, dict) or not isinstance(call.get("assessment"), dict):
+            continue
+        image_ids = call.get("image_ids")
+        if not isinstance(image_ids, dict):
+            continue
+        left_id, right_id = image_ids.get("A"), image_ids.get("B")
+        if left_id == ids.get("anchor") and right_id == ids.get("candidate"):
+            orientation = "LEFT = SFT, RIGHT = RL"
+        elif left_id == ids.get("candidate") and right_id == ids.get("anchor"):
+            orientation = "LEFT = RL, RIGHT = SFT"
+        else:
+            continue
+        return f"In this judge request: {orientation}. The review images above stay SFT left / RL right."
+    return "In this judge request: LEFT/RIGHT orientation unavailable from the saved accepted call metadata. The review images above stay SFT left / RL right."
+
+
 def _assessment_html(pair: dict[str, Any], assessment: dict[str, Any]) -> str:
     ids = pair["image_ids"]
     cards: list[str] = []
@@ -204,8 +225,11 @@ def _repeat_html(pair: dict[str, Any], repeat: int,
     details: list[str] = []
     for label, view in _view_rows(result):
         assessment = view.get("assessment")
+        orientation = html.escape(_orientation_note(pair, view))
         if isinstance(assessment, dict):
-            details.append(f"<section><h5>{label}</h5>{_assessment_html(pair, assessment)}</section>")
+            details.append(f"<section><h5>{label}</h5><p class='scope'>{orientation}</p>{_assessment_html(pair, assessment)}</section>")
+        else:
+            details.append(f"<section><h5>{label}</h5><p class='scope'>{orientation}</p><p>No parsed assessment was recorded for this view.</p></section>")
     votes = (result.get("initial_votes") or []) + (result.get("recheck_votes") or [])
     vote_html = f"<p><b>Returned order votes:</b> {html.escape(' · '.join(_side_name(pair, vote) for vote in votes))}</p>" if votes else ""
     identity_json = html.escape(json.dumps(receipt.get("identity", {}), indent=2, sort_keys=True))

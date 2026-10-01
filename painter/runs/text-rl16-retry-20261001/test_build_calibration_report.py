@@ -98,7 +98,10 @@ class CalibrationReportTests(unittest.TestCase):
                     "preference": "slight" if not (method == "old" and repeat == 2) else None,
                     "score": 2 / 3 if not (method == "old" and repeat == 2) else None,
                     "initial_votes": [self.candidate_id, self.candidate_id],
-                    "recheck_votes": [], "views": [{"assessment": assessment}],
+                    "recheck_votes": [], "views": [{"assessment": assessment, "calls": [{
+                        "assessment": assessment,
+                        "image_ids": {"A": self.candidate_id, "B": self.anchor_id},
+                    }]}],
                     "recheck_views": [],
                 }
                 if method == "old" and repeat == 2:
@@ -129,6 +132,8 @@ class CalibrationReportTests(unittest.TestCase):
         self.assertIn("Paint one connected subject", text)
         self.assertIn("A small part is detached.", text)
         self.assertIn("Uncertain — no accepted consensus; no score", text)
+        self.assertIn("LEFT = RL, RIGHT = SFT", text)
+        self.assertIn("The review images above stay SFT left / RL right.", text)
         self.assertNotIn("aggregate reward improvement claims", text)
         self.assertIn("grid-template-columns:repeat(2,minmax(0,1fr))", text)
         self.assertIn("@media(max-width:800px){.methods,.assessments", text)
