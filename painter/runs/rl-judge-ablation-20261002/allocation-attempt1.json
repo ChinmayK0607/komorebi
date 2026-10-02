@@ -1,0 +1,34 @@
+{
+  "schema": "rl-judge-ablation-allocation-result-v1",
+  "source_commit": "f6e9388e615186555e89b2f209f06bda0a1b0586",
+  "gpu_count": 8,
+  "gpu_memory_mib": [
+    97887,
+    97887,
+    97887,
+    97887,
+    97887,
+    97887,
+    97887,
+    97887
+  ],
+  "price_usd_per_hour": 13.52,
+  "rental_request_epoch": 1790925365.010004,
+  "release_verified_epoch": 1790925881.295383,
+  "estimated_gpu_cost_usd": 1.9389384231037563,
+  "cost_basis": "request-to-verified-release elapsed clock; not provider invoice",
+  "optimizer_updates": 0,
+  "status": "shared_preparation_failed_pod_released",
+  "failure_diagnosis": "Clean Git checkout records base prepare_node.sh mode100644; matrix prepare.sh requires executable mode despite invoking bash. This reproduces a deterministic startup rejection. Remote error log was not preserved, so attribution to the observed remote exit is inferred.",
+  "campaign_status": {
+    "campaign_gpu_cap_usd": 59.4,
+    "common_preparation_share_seconds": 0.0,
+    "per_arm_gpu_cap_usd": 19.8,
+    "price_usd_per_hour": 13.52,
+    "reason": "shared_preparation_failed",
+    "schema": "text-paint-rl-judge-ablation-campaign-v1",
+    "started_epoch": 1790925365.010004,
+    "status": "failed",
+    "updated_epoch": 1790925856.022156
+  }
+}

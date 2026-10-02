@@ -28,8 +28,8 @@ if [[ "$MODE" == --plan-only ]]; then
 fi
 
 [[ "$(uname -s)" == Linux ]] || { echo 'Linux GPU node required for node preparation' >&2; exit 1; }
-[[ -x "$BASE/prepare_node.sh" ]] || { echo "base preparation missing: $BASE/prepare_node.sh" >&2; exit 1; }
-[[ -x "$RETRY/prepare_node.sh" ]] || { echo "retry preparation missing: $RETRY/prepare_node.sh" >&2; exit 1; }
+[[ -f "$BASE/prepare_node.sh" ]] || { echo "base preparation missing: $BASE/prepare_node.sh" >&2; exit 1; }
+[[ -f "$RETRY/prepare_node.sh" ]] || { echo "retry preparation missing: $RETRY/prepare_node.sh" >&2; exit 1; }
 if [[ -e "$SHARED/preparation-receipt.json" ]]; then
   :
 elif [[ -e "$SHARED" ]]; then
@@ -37,7 +37,7 @@ elif [[ -e "$SHARED" ]]; then
   exit 1
 else
   if [[ ! -r "$FROZEN_SOURCE" ]]; then
-    [[ -x "$BOOTSTRAP/setup_node.sh" ]] || {
+    [[ -f "$BOOTSTRAP/setup_node.sh" ]] || {
       echo "reviewed bootstrap setup is missing: $BOOTSTRAP/setup_node.sh" >&2
       exit 1
     }

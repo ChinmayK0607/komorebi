@@ -75,6 +75,19 @@ class RentalControllerTests(unittest.TestCase):
         with self.assertRaises(controller.RentalControllerError):
             controller.exact_pod_present([{"id": "pod-123"}, {"id": "pod-123"}], "pod-123")
 
+    def test_pod_present_accepts_valid_exact_inventory_with_warning_exit(self):
+        def fake_run(_argv, **_kwargs):
+            return FakeResult('[{"id":"pod-123"}]\n', returncode=1, stderr="warning: stale cache")
+
+        self.assertTrue(controller.pod_present(pod_id="pod-123", lium_bin="lium", run=fake_run))
+
+    def test_pod_present_keeps_nonzero_absent_inventory_as_failure(self):
+        def fake_run(_argv, **_kwargs):
+            return FakeResult('[{"id":"other-pod"}]\n', returncode=1, stderr="error: unavailable")
+
+        with self.assertRaises(controller.RentalControllerError):
+            controller.pod_present(pod_id="pod-123", lium_bin="lium", run=fake_run)
+
     def test_release_calls_exact_rm_and_verifies_absence_without_logging_output(self):
         calls: list[list[str]] = []
         inventory = [[{"id": "pod-123"}], []]

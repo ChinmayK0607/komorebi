@@ -260,6 +260,24 @@ class AblationContractTests(unittest.TestCase):
             self.assertTrue(retry_marker.exists(), result.stderr)
             self.assertEqual(frozen.read_text().strip(), "/tmp/mock-frozen-adapter")
 
+    def test_clean_checkout_modes_match_bash_invocation_contract(self):
+        repo = RUN.parents[2]
+        paths = [
+            "painter/runs/text-sft512-consistent-20260930/prepare_node.sh",
+            "painter/runs/text-sft512-consistent-20260930/run.sh",
+            "painter/runs/text-sft512-consistent-20260930/evaluate.sh",
+            "painter/runs/text-sft512-consistent-20260930/finalize.sh",
+            "painter/runs/text-pairwise-rl-20260928/setup_node.sh",
+        ]
+        output = subprocess.check_output(["git", "ls-files", "-s", *paths], cwd=repo, text=True)
+        modes = {line.split("\t", 1)[1]: line.split()[0] for line in output.splitlines()}
+        for path in paths:
+            self.assertEqual(modes[path], "100644", path)
+        prepare_text = (RUN / "prepare.sh").read_text()
+        self.assertIn('[[ -f "$BASE/prepare_node.sh" ]]', prepare_text)
+        self.assertIn('[[ -f "$RETRY/prepare_node.sh" ]]', prepare_text)
+        self.assertIn('[[ -f "$BOOTSTRAP/setup_node.sh" ]]', prepare_text)
+
     def test_materialized_wrapper_executes_fixed_arm_route(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)

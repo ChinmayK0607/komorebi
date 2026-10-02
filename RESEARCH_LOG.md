@@ -1,5 +1,8 @@
 # Painter research index
 
+**Three-judge RL allocation: startup failure and immediate release — 2026-10-02 07:25 UTC:** The eight-card node received reviewed source `f6e9388`; shared setup failed before training, and the finite controller released it. Zero optimizer updates. GPU-clock estimate $1.9389 including allocation delay, not an invoice. A clean Git checkout exposes a script-mode mismatch hidden by local permissions; the remote error log was not retained, so causal attribution is inferred. Retry preparation is being repaired; these costs count toward the three-arm ceiling. See the [failure record](painter/runs/rl-judge-ablation-20261002/allocation-attempt1.json) and [experiment](painter/runs/rl-judge-ablation-20261002/EXPERIMENT.md).
+
+
 Updated 2026-10-02 (latest experiment records use UTC). This is a compact index of the current painter curriculum, recovery, diversity, contract, and revision-RL records that are present in this workspace. It is intentionally bounded: archived folders, tarballs, and unrelated upstream clones under `work/` are not an exhaustive historical record. Read the linked run documents for scope, raw labels, hashes, and limitations before treating a statement as a result.
 
 ## Current status

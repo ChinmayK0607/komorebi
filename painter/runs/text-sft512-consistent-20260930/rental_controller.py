@@ -140,9 +140,14 @@ def _run_lium(
 
 def pod_present(*, pod_id: str, lium_bin: str, run: Callable[..., Any]) -> bool:
     result = _run_lium(lium_bin, ("ps", "--format", "json"), run=run)
-    if result.returncode != 0:
+    # Some Lium CLI versions print a valid inventory followed by a warning and
+    # still exit nonzero. Accept that narrow case only when the parsed payload
+    # contains the one exact pod we are controlling; malformed output, an
+    # error payload, or an absent pod remains a controller failure.
+    present = exact_pod_present(parse_ps_prefix(result.stdout), pod_id)
+    if result.returncode != 0 and not present:
         raise RentalControllerError(f"lium ps failed with exit {result.returncode}")
-    return exact_pod_present(parse_ps_prefix(result.stdout), pod_id)
+    return present
 
 
 def release_exact_pod(
