@@ -348,3 +348,5 @@ For every new run, preserve one hypothesis, immutable model/data/config/source i
 - 2026-10-02 17:50 IST: allocated eightA10080 at$9.20/hour for the matched Flash/Pro/Luna restart, source `8ef3c32`; finite controller active, preparation underway, zero verified updates so far. [Allocation and immutable protocol](painter/runs/rl-judge-ablation-20261002/allocation-attempt3.json).
 
 - 2026-10-02 18:05 IST: restart stopped before its first gradient update after an inference Triton cache JSON disappeared during concurrent compilation. Public screened evidence preserved, exact node released, Pro/Luna skipped. Attempt GPU estimate$2.31, cumulative failed setup$9.72. Cache isolation repair underway; no training result claimed. [Terminal evidence and cost](painter/runs/rl-judge-ablation-20261002/allocation-attempt3-result.json).
+
+- 2026-10-02 18:14 IST: worker-isolated replay allocated, source `0c011a9`, same Flash/Pro/Luna protocol and RL16 initializer. Remaining GPUcap$49.50, including$9.72 failedsetup combinedper-arm ceiling$19.74. Finite observation/release controller active. [Allocation](painter/runs/rl-judge-ablation-20261002/allocation-attempt4.json).

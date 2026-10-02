@@ -1,0 +1,24 @@
+{
+  "schema": "text-paint-rl-judge-ablation-allocation-attempt-v1",
+  "attempt": 4,
+  "source_commit": "0c011a989c9201d11f877068e5469458f4b5f2c2",
+  "requested_utc": "2026-10-02T12:44:11.025141+00:00",
+  "status": "allocated_preparing_not_training",
+  "hardware": {
+    "gpu": "A100",
+    "gpu_count": 8,
+    "advertised_vram_gib_per_gpu": 80,
+    "trainer_gpus": 1,
+    "inference_gpus": 7,
+    "activation_cpu_offload": true
+  },
+  "price_usd_per_hour": 9.2,
+  "remaining_campaign_gpu_cap_usd": 49.5,
+  "remaining_per_arm_gpu_cap_usd": 16.5,
+  "prior_failed_setup_gpu_estimate_usd": 9.7174365,
+  "combined_per_arm_gpu_ceiling_usd": 19.7391455,
+  "provider_expiry_minutes": 319,
+  "cache_protocol": "inference spawn; unique per-process VLLM/TRITON/TORCHINDUCTOR namespaces",
+  "monitoring": "finite30-second stage/counter observations; existingGPUtelemetry; no Codex recurring automation",
+  "cost_scope": "elapsed-clock estimate, not invoice"
+}
