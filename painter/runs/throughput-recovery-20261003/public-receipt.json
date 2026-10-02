@@ -1,0 +1,38 @@
+{
+  "clean_git_archive_validation": {
+    "exit_code": 0,
+    "includes_private_or_untracked_files": false,
+    "passed": 83,
+    "skipped": 1,
+    "source_commit": "7cf7e4c77e73407d70ed06f77ed01cdbf0273622",
+    "test_count": 84
+  },
+  "dataset": "CK0607/komorebi-painter-experiments",
+  "files": {
+    "ANALYSIS.md": {
+      "anonymous_verified": true,
+      "bytes": 9875,
+      "sha256": "5ec4733e6785f0560e54c078843ea40243c355acdd92d8089fe5555047afdda2"
+    },
+    "RECOVERY.md": {
+      "anonymous_verified": true,
+      "bytes": 4757,
+      "sha256": "5b87999aaf8b1afe2871524df057a15bb0b0826e19f8590839019c412c7da8f4"
+    },
+    "audit.json": {
+      "anonymous_verified": true,
+      "bytes": 35241,
+      "sha256": "51aba0b416ac71639e31419989a045357b9a7e3dc13abba9ca18e00661817130"
+    },
+    "validation.json": {
+      "anonymous_verified": true,
+      "bytes": 2733,
+      "sha256": "ba5051e6a42934994916d4be852c713ee199aac19d505067bd6289e47d6e5d00"
+    }
+  },
+  "prefix": "runs/throughput-recovery-20261003",
+  "public": true,
+  "revision": "55e82cf10fc38044524409e1c09cf1eb10779eff",
+  "schema": "public-offline-audit-receipt-v1",
+  "source_commit": "7cf7e4c77e73407d70ed06f77ed01cdbf0273622"
+}
