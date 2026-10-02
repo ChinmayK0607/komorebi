@@ -1,0 +1,36 @@
+{
+  "schema": "text-paint-rl-judge-ablation-attempt-result-v1",
+  "attempt": 5,
+  "source_commit": "2e560aa078e4d998845403d9b05ad5cfcd44839a",
+  "status": "failed_node_released",
+  "failure": "missing_metric_timeout:1800-second first-update watchdog included633-second inference startup plus multi-turn group collection; killed at4/16 admitted and29buffered.",
+  "completed_optimizer_updates": 0,
+  "pro_and_luna_started": false,
+  "shared_preparation_seconds": 347.876266719,
+  "inference_ready_seconds": 633,
+  "intermediate_render_receipts": 183,
+  "intermediate_valid_renders": 92,
+  "intermediate_invalid_renders": 91,
+  "judge_receipts": 13,
+  "admitted_complete_groups": 1,
+  "render_failure_samples": [
+    "brush.fillStyle is not a function",
+    "unavailablebrush charge",
+    "missing brush/color setup"
+  ],
+  "render_timeout_receipts": 11,
+  "evidence_scope": "intermediate attempts, not finalepisode success or visualquality; shutdownEngineDeadError follows parentSIGTERM, not independentGPUfailure",
+  "public_evidence": {
+    "repo": "CK0607/komorebi-painter-experiments",
+    "revision": "6505413ac11a62743409a022183796e3f76b2fb7",
+    "remote_path": "runs/rl-judge-ablation-flash-20261002/evidence.tar.gz",
+    "bytes": 49640464,
+    "sha256": "85abac5518d2792ffb7bc404dfc37a0434ee0e8ef1122be2a4966dfe9c7d7cbd",
+    "anonymous_download": true
+  },
+  "release_utc": "2026-10-02T13:50:40.083044+00:00",
+  "gpu_clock_estimate_usd": 5.836580384890238,
+  "combined_failed_setup_gpu_clock_estimate_usd": 18.427243876393636,
+  "cost_scope": "request-to-confirmed-release elapsed-clock estimate, not invoice",
+  "next_decision": "Bound initial metric grace to3600seconds for allarms; leave later1800-second stall timeout and hardcostdeadline unchanged; reviewnestedtimeouts and simulatedlong-startup regression before renewedrental."
+}
