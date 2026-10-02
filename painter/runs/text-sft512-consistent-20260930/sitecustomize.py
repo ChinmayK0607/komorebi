@@ -10,7 +10,34 @@ from __future__ import annotations
 import json
 import os
 from pathlib import Path
+import sys
 import uuid
+
+
+def _is_torchinductor_compile_worker() -> bool:
+    """Identify PyTorch's async-compile sidecar before cache isolation.
+
+    Pinned Torch 2.11 starts ``torch/_inductor/compile_worker/__main__.py``
+    with ``subprocess.Popen`` and that sidecar then owns a forked compile
+    pool.  The sidecar must retain the caller's cache namespace: Triton
+    returns artifacts to the caller and the caller may reload them from the
+    same cache.  Re-isolating this helper would split that handoff and can
+    produce a missing Triton autotune JSON file.  The vLLM worker itself does
+    not have this path or the compile-worker argument shape.
+    """
+
+    argv = [str(value) for value in getattr(sys, "argv", ())]
+    if argv:
+        script = Path(argv[0]).as_posix()
+        if "/torch/_inductor/compile_worker/__main__.py" in script:
+            return True
+    # Keep the detection useful when a packaged interpreter invokes the
+    # helper through a binary rather than the source-file entrypoint.
+    return (
+        any(value.startswith("--pickler=torch._inductor.compile_worker.") for value in argv)
+        and any(value.startswith("--kind=") for value in argv)
+        and any(value.startswith("--parent=") for value in argv)
+    )
 
 
 def _worker_cache_identity() -> str | None:
@@ -37,6 +64,11 @@ def _isolate_inference_compile_cache() -> None:
     """Give each spawned inference worker a private Triton/Inductor cache."""
 
     if os.environ.get("PAINTER_PRIME_ROLE") != "inference":
+        return
+    # TorchInductor's compile sidecar and its forked pool are descendants of
+    # one vLLM worker.  They must share that worker's namespace for compiled
+    # Triton artifacts; only independent vLLM workers get separate roots.
+    if _is_torchinductor_compile_worker():
         return
     root = os.environ.get("PAINTER_COMPILE_CACHE_ROOT")
     identity = _worker_cache_identity()

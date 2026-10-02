@@ -49,7 +49,7 @@
     "photo_config_source_sha256": "6700a253ced2bfe4ee580b73afb261286d481a327e689609691cf2d9f09d94bc",
     "preparation_source_sha256": "336513e7f657b14dc228362119565f5301cb800f72e6dd34b9511dd39af4376e",
     "run_from_sft_source_sha256": "4c17a36f6be5d5aee99daace64342d82fc25ea01a1bca5d7c908291269c78f47",
-    "runtime_sitecustomize_source_sha256": "58cb8f0adb7ea004520306adaf9120c05e4de20d5d9fc7f954927c72e59d2ed2",
+    "runtime_sitecustomize_source_sha256": "1b4d60dbfae8b0c57b12c844b3d24a8b77da7d25b7670c6a1a504f1989ec952d",
     "safe_archive_source_sha256": "495a34ef7b0913a485c4db7e1350932f27d1c7710e83814313526971cf399f0e",
     "text_config_source_sha256": "1bbe6495ed55c3b8e953a22efee9a26c32c66e5e20c304d5a5f8e60e8f6c3e3a"
   },

@@ -48,6 +48,80 @@ class SitecustomizeActivationTests(unittest.TestCase):
             self.assertIn("/workers/pid-", pid_one)
             self.assertIn("/workers/pid-", pid_two)
 
+    def test_torchinductor_compile_sidecar_preserves_parent_cache_namespace(self):
+        spec = importlib.util.spec_from_file_location("run_sitecustomize_compile_worker", MODULE_PATH)
+        assert spec and spec.loader
+        prior_argv = list(sys.argv)
+        try:
+            sys.argv = [
+                "/opt/prime/lib/python3.12/site-packages/torch/_inductor/compile_worker/__main__.py",
+                "--pickler=torch._inductor.compile_worker.subproc_pool.SubprocPickler",
+                "--kind=fork",
+                "--workers=8",
+                "--parent=1234",
+            ]
+            expected = "/tmp/rl-cache/inference/workers/rank-3-pid-1234-parent"
+            with patch.dict(os.environ, {
+                "PAINTER_PRIME_ROLE": "inference",
+                "PAINTER_COMPILE_CACHE_ROOT": "/tmp/rl-cache/inference",
+                "PAINTER_COMPILE_CACHE_PROCESS_ISOLATION": "1",
+                "LOCAL_RANK": "3",
+                "VLLM_CACHE_ROOT": expected + "/vllm",
+                "TRITON_CACHE_DIR": expected + "/triton",
+                "TORCHINDUCTOR_CACHE_DIR": expected + "/torchinductor",
+            }, clear=False):
+                module = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(module)
+                self.assertTrue(module._is_torchinductor_compile_worker())
+                self.assertEqual(os.environ["VLLM_CACHE_ROOT"], expected + "/vllm")
+                self.assertEqual(os.environ["TRITON_CACHE_DIR"], expected + "/triton")
+                self.assertEqual(os.environ["TORCHINDUCTOR_CACHE_DIR"], expected + "/torchinductor")
+        finally:
+            sys.argv = prior_argv
+
+    def test_actual_compile_sidecar_entrypoint_preserves_namespace(self):
+        with tempfile.TemporaryDirectory() as temp:
+            temp_root = Path(temp)
+            script = temp_root / "torch" / "_inductor" / "compile_worker" / "__main__.py"
+            script.parent.mkdir(parents=True)
+            script.write_text(
+                "import json, os\n"
+                "print(json.dumps({k: os.environ[k] for k in (\"VLLM_CACHE_ROOT\", \"TRITON_CACHE_DIR\", \"TORCHINDUCTOR_CACHE_DIR\")}))\n"
+            )
+            expected = temp_root / "parent-worker"
+            env = {
+                "PYTHONPATH": str(MODULE_PATH.parent),
+                "PAINTER_PRIME_ROLE": "inference",
+                "PAINTER_COMPILE_CACHE_ROOT": str(temp_root / "inference"),
+                "PAINTER_COMPILE_CACHE_PROCESS_ISOLATION": "1",
+                "LOCAL_RANK": "3",
+                "VLLM_CACHE_ROOT": str(expected / "vllm"),
+                "TRITON_CACHE_DIR": str(expected / "triton"),
+                "TORCHINDUCTOR_CACHE_DIR": str(expected / "torchinductor"),
+            }
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    str(script),
+                    "--pickler=torch._inductor.compile_worker.subproc_pool.SubprocPickler",
+                    "--kind=fork",
+                    "--workers=8",
+                    "--parent=1234",
+                ],
+                check=True,
+                env=env,
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(
+                json.loads(result.stdout),
+                {
+                    "VLLM_CACHE_ROOT": str(expected / "vllm"),
+                    "TRITON_CACHE_DIR": str(expected / "triton"),
+                    "TORCHINDUCTOR_CACHE_DIR": str(expected / "torchinductor"),
+                },
+            )
+
     def test_inference_workers_get_distinct_compile_cache_namespaces(self):
         spec = importlib.util.spec_from_file_location("run_sitecustomize_cache_test", MODULE_PATH)
         assert spec and spec.loader
