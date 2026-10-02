@@ -110,9 +110,15 @@ class PhotoRLRunnerTests(unittest.TestCase):
     def test_cache_paths_are_role_specific(self):
         with TemporaryDirectory() as temp:
             root = Path(temp)
-            inference = MODULE._cache_env(root, "inference", {"MODEL_DIR": "/tmp/base"})
+            inference = MODULE._cache_env(root, "inference", {
+                "MODEL_DIR": "/tmp/base", "VLLM_WORKER_MULTIPROC_METHOD": "fork",
+            })
             trainer = MODULE._cache_env(root, "trainer", {"MODEL_DIR": "/tmp/base"})
             self.assertNotEqual(inference["TORCHINDUCTOR_CACHE_DIR"], trainer["TORCHINDUCTOR_CACHE_DIR"])
+            self.assertNotEqual(inference["PAINTER_COMPILE_CACHE_ROOT"], trainer["PAINTER_COMPILE_CACHE_ROOT"])
+            self.assertEqual(inference["PAINTER_COMPILE_CACHE_PROCESS_ISOLATION"], "1")
+            self.assertEqual(inference["VLLM_WORKER_MULTIPROC_METHOD"], "spawn")
+            self.assertEqual(trainer["PAINTER_COMPILE_CACHE_PROCESS_ISOLATION"], "0")
             self.assertTrue(Path(inference["VLLM_CACHE_ROOT"]).is_dir())
             self.assertTrue(Path(trainer["TRITON_CACHE_DIR"]).is_dir())
 

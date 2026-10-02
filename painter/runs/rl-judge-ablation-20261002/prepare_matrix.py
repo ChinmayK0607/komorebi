@@ -135,7 +135,9 @@ def source_identity(matrix: dict[str, Any], *, repo: Path = RUN.parents[2]) -> d
         "base_prepare_source_sha256": repo / "painter/runs/text-sft512-consistent-20260930/prepare_node.sh",
         "text_config_source_sha256": repo / "painter/runs/text-pairwise-rl-20260928/prepare_config.py",
         "photo_config_source_sha256": repo / "painter/runs/photo-curriculum-rl-20260922/prepare_rl_config.py",
+        "run_from_sft_source_sha256": repo / "painter/runs/photo-curriculum-rl-20260922/run_from_sft.py",
         "native_config_writer_source_sha256": repo / "painter/prepare_scaled_native_rl.py",
+        "runtime_sitecustomize_source_sha256": repo / "painter/runs/text-sft512-consistent-20260930/sitecustomize.py",
         "safe_archive_source_sha256": repo / "painter/runs/text-sft512-consistent-20260930/safe_archive.py",
     }
     missing = [str(path) for path in files.values() if not path.is_file()]

@@ -282,7 +282,19 @@ def _cache_env(root: Path, role: str, environment: dict[str, str]) -> dict[str, 
         VLLM_CACHE_ROOT=str(cache / "vllm"),
         TORCHINDUCTOR_CACHE_DIR=str(cache / "torchinductor"),
         TRITON_CACHE_DIR=str(cache / "triton"),
+        # vLLM's data-parallel workers inherit this marker and the run-local
+        # sitecustomize hook gives each worker rank (or process fallback) its
+        # own compiler cache. Compilation remains reusable within a process.
+        PAINTER_PRIME_ROLE=role,
+        PAINTER_COMPILE_CACHE_ROOT=str(cache),
+        PAINTER_COMPILE_CACHE_PROCESS_ISOLATION="1" if role == "inference" else "0",
     )
+    if role == "inference":
+        # vLLM documents this environment variable for its worker context;
+        # spawn makes every EngineCore worker execute sitecustomize before
+        # importing Torch/Triton. The process-token fallback still protects
+        # workers whose rank is assigned after Python startup.
+        values["VLLM_WORKER_MULTIPROC_METHOD"] = "spawn"
     for path in (cache / "vllm", cache / "torchinductor", cache / "triton"):
         path.mkdir(parents=True, exist_ok=True)
     return values
