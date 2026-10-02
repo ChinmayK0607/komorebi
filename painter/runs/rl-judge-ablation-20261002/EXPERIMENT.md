@@ -105,3 +105,5 @@ Next replay retains all registered arms and opts into a bounded1200-second initi
 ## Allocation attempt5: bounded cold startup
 
 Allocated13:12UTC (18:42IST), reviewed source `2e560aa078e4d998845403d9b05ad5cfcd44839a`;37targetedtests and clean Gitbundleplan passed. Same8A10080/$9.20hour and matched three arms, startupallowance1200seconds, sidecarcachecompatibility included in fresh clone. Finite controller began immediately,cap$46.50 and299-minute providerexpiry. Current state preparation; no updates or quality gain yet. [Allocation](allocation-attempt5.json).
+
+Attempt4startup-only profile,12:51:13.683–13:02:04.836UTC:528GPU-samples (66/card), requested5-second interval, actualabout10seconds. Physical0–6inference:462samples, samplemean3.51%utilization, nonzero samplefraction21.65%, max68,222MiB. Trainerphysical7:66samples,0%samplemean, max4MiB. These are startup measurements and do not establish pipeline saturation. [Denominators](allocation-attempt4-profile.json). Attempt5sharedprep completed347.88seconds; Flashnative33-field rollout check passed and inferenceinitialization began13:19:45UTC. Optimizerupdates remainzero.

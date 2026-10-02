@@ -1,0 +1,39 @@
+{
+  "schema": "startup-gpu-interval-profile-v1",
+  "attempt": 4,
+  "window_utc": [
+    "2026/10/02 12:51:13.683",
+    "2026/10/02 13:02:04.836"
+  ],
+  "scope": "startup-only, zero completed optimizer updates; not full-pipeline training utilization",
+  "requested_sample_interval_seconds": 5,
+  "actual_sample_interval_seconds_approx": 10,
+  "denominator_total_gpu_samples": 528,
+  "role_mapping": {
+    "inference_physical_gpu_indices": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ],
+    "trainer_physical_gpu_indices": [
+      7
+    ]
+  },
+  "aggregation": "unweighted sample means; nonzero fraction is observed sample fraction, not time integral",
+  "inference": {
+    "gpu_sample_count": 462,
+    "sample_mean_utilization_percent": 3.5108225108225106,
+    "nonzero_utilization_sample_fraction": 0.21645021645021645,
+    "maximum_memory_mib": 68222.0
+  },
+  "trainer": {
+    "gpu_sample_count": 66,
+    "sample_mean_utilization_percent": 0.0,
+    "nonzero_utilization_sample_fraction": 0.0,
+    "maximum_memory_mib": 4.0
+  }
+}
