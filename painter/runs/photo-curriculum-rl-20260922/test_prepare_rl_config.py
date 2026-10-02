@@ -99,6 +99,26 @@ class PhotoRLConfigTests(unittest.TestCase):
         self.assertEqual(parsed["deployment"]["gpus_per_node"], 4)
         self.assertEqual(parsed["inference"]["vllm"]["data_parallel_size"], 3)
 
+    def test_activation_cpu_offload_is_explicit_opt_in_and_rendered(self):
+        default = MODULE.build_config(model="/tmp/model", run_root=Path("/tmp/photo-rl"))
+        self.assertEqual(default["trainer"]["model"]["ac_offloading"], "None")
+        opted = MODULE.build_config(
+            model="/tmp/model", run_root=Path("/tmp/photo-rl"),
+            gpus_per_node=8, num_train_gpus=1, num_infer_gpus=7,
+            activation_cpu_offload=True,
+        )
+        self.assertEqual(opted["trainer"]["model"]["ac_offloading"], {
+            "pin_memory": True, "max_inflight_activations": 1,
+        })
+        parsed = tomllib.loads(MODULE.render_toml(opted))
+        self.assertEqual(parsed["trainer"]["model"]["ac_offloading"], {
+            "pin_memory": True, "max_inflight_activations": 1,
+        })
+        self.assertEqual(opted["deployment"], {
+            "type": "single_node", "gpus_per_node": 8,
+            "num_train_gpus": 1, "num_infer_gpus": 7,
+        })
+
     def test_bounded_inflight_can_limit_stale_speculation(self):
         config = MODULE.build_config(
             model="/tmp/model", run_root=Path("/tmp/photo-rl"),

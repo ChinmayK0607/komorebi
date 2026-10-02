@@ -87,6 +87,7 @@ def load_matrix(path: Path = MATRIX_PATH) -> dict[str, Any]:
             or protocol.get("gpus_per_node") != 8
             or protocol.get("num_train_gpus") != 1
             or protocol.get("num_infer_gpus") != 7
+            or protocol.get("activation_cpu_offload") is not True
             or protocol.get("render_workers") != 8):
         raise ValueError("matrix optimizer shape changed")
     if protocol.get("training_seeds") != {"orchestrator": 42, "inference": 0}:
@@ -131,6 +132,10 @@ def source_identity(matrix: dict[str, Any], *, repo: Path = RUN.parents[2]) -> d
         "base_execute_source_sha256": repo / "painter/runs/text-sft512-consistent-20260930/execute_pipeline.sh",
         "base_evaluate_source_sha256": repo / "painter/runs/text-sft512-consistent-20260930/evaluate.sh",
         "base_finalize_source_sha256": repo / "painter/runs/text-sft512-consistent-20260930/finalize.sh",
+        "base_prepare_source_sha256": repo / "painter/runs/text-sft512-consistent-20260930/prepare_node.sh",
+        "text_config_source_sha256": repo / "painter/runs/text-pairwise-rl-20260928/prepare_config.py",
+        "photo_config_source_sha256": repo / "painter/runs/photo-curriculum-rl-20260922/prepare_rl_config.py",
+        "native_config_writer_source_sha256": repo / "painter/prepare_scaled_native_rl.py",
         "safe_archive_source_sha256": repo / "painter/runs/text-sft512-consistent-20260930/safe_archive.py",
     }
     missing = [str(path) for path in files.values() if not path.is_file()]

@@ -119,6 +119,7 @@ def build_config(
     learning_rate: float = LEARNING_RATE,
     initial_inflight: int | None = None,
     max_inflight: int | None = None,
+    activation_cpu_offload: bool = False,
 ) -> dict:
     """Return the validated-shape native RL config for this run."""
 
@@ -139,6 +140,8 @@ def build_config(
         raise ValueError("batch_size must be divisible by group_size")
     if not 0 < learning_rate <= 1e-4:
         raise ValueError("learning_rate must be in (0, 1e-4]")
+    if not isinstance(activation_cpu_offload, bool):
+        raise ValueError("activation_cpu_offload must be a boolean")
 
     config = _build_native_config(
         model=model,
@@ -235,6 +238,15 @@ def build_config(
             "max_loras": 2,
         }
     )
+    if activation_cpu_offload:
+        config["trainer"]["model"]["ac_offloading"] = {
+            "pin_memory": True,
+            "max_inflight_activations": 1,
+        }
+    else:
+        # Preserve the historical config shape unless this run explicitly
+        # opts into Prime's native CPU activation path.
+        config["trainer"]["model"]["ac_offloading"] = "None"
     config["ckpt"] = {"interval": checkpoint_interval, "keep_last": 1}
     return config
 
@@ -286,6 +298,7 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--learning-rate", type=float, default=LEARNING_RATE)
     parser.add_argument("--initial-inflight", type=int)
     parser.add_argument("--max-inflight", type=int)
+    parser.add_argument("--activation-cpu-offload", action="store_true")
     parser.add_argument("--mode", choices=("fresh", "recovered_policy"), default=DEFAULT_MODE)
     parser.add_argument("--adapter-revision", default=DEFAULT_ADAPTER_REVISION)
     parser.add_argument("--adapter-prefix", default=DEFAULT_ADAPTER_PREFIX)
@@ -325,6 +338,7 @@ def main(argv: list[str] | None = None) -> int:
         learning_rate=args.learning_rate,
         initial_inflight=args.initial_inflight,
         max_inflight=args.max_inflight,
+        activation_cpu_offload=args.activation_cpu_offload,
     )
     message = write_config(args.output, config, validate_prime=args.validate_prime, prime_root=args.prime_root)
     receipt = {
@@ -362,6 +376,8 @@ def main(argv: list[str] | None = None) -> int:
         "mode": args.mode,
         "initialization": "fresh_optimizer_from_recovered_policy_adapter" if args.mode == "recovered_policy" else "fresh_optimizer_from_declared_adapter",
         "optimizer_resume": False,
+        "activation_cpu_offload": args.activation_cpu_offload,
+        "activation_offloading": config["trainer"]["model"]["ac_offloading"],
         "adapter_revision": adapter["revision"],
         "adapter_prefix": adapter["prefix"],
         "adapter_sha256": adapter["sha256"],

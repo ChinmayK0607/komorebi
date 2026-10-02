@@ -149,13 +149,45 @@ verified = receipt.get("public_hash_verified") is True and receipt.get("private"
 print("1" if valid_status and public and verified else "0")
 PY
 )"
-  "$PY" - "$ARM_STATUS_FILE" "$ARM" "$ARM_RC" "$PRESERVED" "$TERMINAL" "$LOCAL_ARCHIVE" "$UPLOAD_RECEIPT" "$ARM_START" "$EFFECTIVE_START" "$ARM_CAP" "$COMMON_PREP_SHARE" <<'PY'
+  SUPERVISOR_STATE="$ARM_ROOT/supervisor-state.json"
+  ZERO_FATAL_RESULT="$($PY - "$TERMINAL" "$SUPERVISOR_STATE" "$ARM_RC" <<'PY'
+import json, sys
+from pathlib import Path
+
+terminal_path, state_path, arm_rc = sys.argv[1:]
+def read(path):
+    try:
+        value = json.loads(Path(path).read_text())
+    except (OSError, json.JSONDecodeError):
+        return {}
+    return value if isinstance(value, dict) else {}
+
+terminal = read(terminal_path)
+state = read(state_path)
+completed = state.get("completed_optimizer_steps")
+if completed is None:
+    completed = state.get("last_optimizer_step")
+try:
+    completed = int(completed)
+except (TypeError, ValueError):
+    completed = 0
+pipeline_failed = int(arm_rc) != 0 or terminal.get("pipeline_exit_code") not in (None, 0)
+train_failed_or_preflight = terminal.get("train_exit_code") is None or terminal.get("train_exit_code") != 0
+fatal = pipeline_failed and train_failed_or_preflight and completed == 0
+print(f"{1 if fatal else 0}:{completed}")
+PY
+)"
+  ZERO_FATAL="${ZERO_FATAL_RESULT%%:*}"
+  VERIFIED_UPDATES="${ZERO_FATAL_RESULT##*:}"
+  "$PY" - "$ARM_STATUS_FILE" "$ARM" "$ARM_RC" "$PRESERVED" "$ZERO_FATAL" "$VERIFIED_UPDATES" "$TERMINAL" "$LOCAL_ARCHIVE" "$UPLOAD_RECEIPT" "$ARM_START" "$EFFECTIVE_START" "$ARM_CAP" "$COMMON_PREP_SHARE" <<'PY'
 import json, sys, time
 from pathlib import Path
-path, arm, code, preserved, terminal, archive, upload, arm_start, effective_start, cap, prep_share = sys.argv[1:]
+path, arm, code, preserved, zero_fatal, verified_updates, terminal, archive, upload, arm_start, effective_start, cap, prep_share = sys.argv[1:]
 row = {
     "schema": "text-paint-rl-judge-ablation-arm-result-v1",
     "arm": arm, "exit_code": int(code), "preserved": preserved == "1",
+    "zero_optimizer_updates_training_fatal": zero_fatal == "1",
+    "verified_optimizer_updates": int(verified_updates),
     "terminal_receipt": terminal, "local_evidence_archive": archive,
     "upload_receipt": upload,
     "arm_start_epoch": float(arm_start), "effective_start_epoch": float(effective_start),
@@ -167,6 +199,10 @@ with Path(path).open("a", encoding="utf-8") as stream:
 PY
   if ! group_is_gone "$ARM_ROOT/supervisor-state.json"; then
     write_status failed "owned_process_group_remains_after_${ARM}"
+    exit 1
+  fi
+  if [[ "$ZERO_FATAL" == 1 ]]; then
+    write_status failed "zero_optimizer_updates_training_or_preflight_fatal_after_${ARM}"
     exit 1
   fi
   if [[ "$PRESERVED" != 1 ]]; then

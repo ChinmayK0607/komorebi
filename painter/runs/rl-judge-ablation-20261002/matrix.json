@@ -69,6 +69,7 @@
     "num_train_gpus": 1,
     "num_infer_gpus": 7,
     "gpus_per_node": 8,
+    "activation_cpu_offload": true,
     "render_workers": 8
   },
   "evaluation": {

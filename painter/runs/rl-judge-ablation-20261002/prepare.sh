@@ -77,6 +77,7 @@ else
   PAINTER_GROUP_SIZE=4 \
   PAINTER_INITIAL_INFLIGHT=96 \
   PAINTER_MAX_INFLIGHT=96 \
+  PAINTER_ACTIVATION_CPU_OFFLOAD=1 \
   PAINTER_SFT_ADAPTER_PATH_FILE="$SHARED/policy-adapter-path.txt" \
   PAINTER_FROZEN_SFT_ADAPTER_PATH_FILE="$SHARED/frozen-sft-adapter-path.txt" \
   bash "$RETRY/prepare_node.sh"
@@ -144,6 +145,8 @@ if receipt.get("run_name") != expected_name or receipt.get("model_revision") != 
     raise SystemExit("existing arm receipt does not match the registered run identity")
 if receipt.get("adapter_revision") != "ac4d3eda8e5925e2d23992cfdc1a63620ebde573" or receipt.get("adapter_prefix") != "text-pairwise-scaled-20260929/step_16":
     raise SystemExit("existing arm receipt does not match the registered initializer")
+if receipt.get("activation_cpu_offload") is not True or receipt.get("activation_offloading") != {"pin_memory": True, "max_inflight_activations": 1}:
+    raise SystemExit("existing arm receipt does not enable the registered CPU activation offload")
 deployment = receipt.get("deployment", {})
 if deployment != {"gpus_per_node": 8, "num_train_gpus": 1, "num_infer_gpus": 7}:
     raise SystemExit("existing arm receipt has a different frozen topology")
@@ -162,6 +165,7 @@ PY
       --mode recovered_policy --learning-rate 1e-6 --gpus-per-node "$GPU_COUNT" \
       --num-train-gpus "$TRAIN_GPU_COUNT" --num-infer-gpus "$INFER_GPU_COUNT" --batch-size 16 --group-size 4 \
       --initial-inflight "$INITIAL_INFLIGHT" --max-inflight "$MAX_INFLIGHT" \
+      --activation-cpu-offload \
       --renderer "$ARM_ROOT/vendor/integrations/watercolour/renderer.py" \
       --renderer-python "$ARM_ROOT/renderer-env/bin/python" >/dev/null
   fi

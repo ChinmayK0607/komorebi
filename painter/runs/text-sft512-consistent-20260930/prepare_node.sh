@@ -16,6 +16,11 @@ POLICY_REVISION="${PAINTER_POLICY_REVISION:-adf687e5b321514eda7be6eab050434fdc8e
 POLICY_PREFIX="${PAINTER_POLICY_PREFIX:-photo-curriculum-sft-20260922-balanced/step_512}"
 POLICY_SHA256="${PAINTER_POLICY_SHA256:-bea72b066986faa1b92b9dc539c710093181ee916b99323e2b2498f318ac1740}"
 JUDGE_PROTOCOL="${PAINTER_JUDGE_PROTOCOL:-text-paint-sft-pairwise-consistent-v1}"
+ACTIVATION_CPU_OFFLOAD="${PAINTER_ACTIVATION_CPU_OFFLOAD:-0}"
+[[ "$ACTIVATION_CPU_OFFLOAD" == 0 || "$ACTIVATION_CPU_OFFLOAD" == 1 ]] || {
+  echo 'PAINTER_ACTIVATION_CPU_OFFLOAD must be 0 or 1' >&2
+  exit 1
+}
 MANIFEST_ROOT="$RUN/anchors-frozen"
 SFT_PATH_FILE="${PAINTER_SFT_ADAPTER_PATH_FILE:-$RUN/../photo-curriculum-rl-20260922/initial-adapter-path.txt}"
 FROZEN_SFT_PATH_FILE="${PAINTER_FROZEN_SFT_ADAPTER_PATH_FILE:-$RUN/../photo-curriculum-rl-20260922/initial-adapter-path.txt}"
@@ -219,6 +224,9 @@ CONFIG_ARGS=(
   --initial-inflight "${PAINTER_INITIAL_INFLIGHT:-16}"
   --max-inflight "${PAINTER_MAX_INFLIGHT:-16}" --learning-rate 1e-6
 )
+if [[ "$ACTIVATION_CPU_OFFLOAD" == 1 ]]; then
+  CONFIG_ARGS+=(--activation-cpu-offload)
+fi
 if [[ -n "${PAINTER_RENDERER_PATH:-}" ]]; then
   CONFIG_ARGS+=(--renderer "$PAINTER_RENDERER_PATH")
 fi
@@ -272,6 +280,9 @@ config_sha = hashlib.sha256(config.read_bytes()).hexdigest()
     "frozen_sft_adapter_sha256": frozen_digest,
     "optimizer_resume": False,
     "policy_mode": mode,
+    "activation_cpu_offload": os.environ.get("PAINTER_ACTIVATION_CPU_OFFLOAD", "0") == "1",
+    "activation_offloading": {"pin_memory": True, "max_inflight_activations": 1}
+        if os.environ.get("PAINTER_ACTIVATION_CPU_OFFLOAD", "0") == "1" else "None",
     "train_manifest_sha256": manifest_sha,
     "config_sha256": config_sha,
     "judge_protocol": os.environ.get("PAINTER_JUDGE_PROTOCOL", "text-paint-sft-pairwise-consistent-v1"),

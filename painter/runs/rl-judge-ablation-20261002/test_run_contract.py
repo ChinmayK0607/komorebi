@@ -81,6 +81,7 @@ class AblationContractTests(unittest.TestCase):
         self.assertEqual(matrix["protocol"]["group_size"], 4)
         self.assertEqual(matrix["protocol"]["initial_inflight"], 96)
         self.assertEqual(matrix["protocol"]["max_inflight"], 96)
+        self.assertTrue(matrix["protocol"]["activation_cpu_offload"])
         self.assertEqual(
             (matrix["protocol"]["gpus_per_node"], matrix["protocol"]["num_train_gpus"],
              matrix["protocol"]["num_infer_gpus"]),
@@ -114,6 +115,13 @@ class AblationContractTests(unittest.TestCase):
             identity["model_revision"],
             "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
         )
+        self.assertTrue(identity["protocol"]["activation_cpu_offload"])
+        for key in (
+            "base_prepare_source_sha256", "text_config_source_sha256",
+            "photo_config_source_sha256", "native_config_writer_source_sha256",
+        ):
+            with self.subTest(key=key):
+                self.assertRegex(identity["files"][key], r"^[0-9a-f]{64}$")
 
     def test_matrix_rejects_unsupported_two_trainer_initializer_shape(self):
         with tempfile.TemporaryDirectory() as temp:
@@ -156,15 +164,43 @@ class AblationContractTests(unittest.TestCase):
             self.assertEqual(value["inference"]["vllm"]["data_parallel_size"], 7)
             self.assertEqual(value["orchestrator"]["concurrency"]["initial_inflight"], 96)
             self.assertEqual(value["orchestrator"]["concurrency"]["max_inflight"], 96)
+            self.assertEqual(value["trainer"]["model"]["ac_offloading"], "None")
+
+            opted_output = root / "native-offload.toml"
+            opted_receipt = config_tool.prepare(
+                output=opted_output, model=root / "model", run_root=root, manifest=manifest,
+                run_name="rl-judge-ablation-flash-20261002-offload", max_steps=50,
+                checkpoint_interval=4, judge_protocol="text-paint-sft-pairwise-consistent-v1",
+                mode="recovered_policy", batch_size=16, group_size=4,
+                initial_inflight=96, max_inflight=96, gpus_per_node=8,
+                num_train_gpus=1, num_infer_gpus=7,
+                adapter_revision="ac4d3eda8e5925e2d23992cfdc1a63620ebde573",
+                adapter_prefix="text-pairwise-scaled-20260929/step_16",
+                adapter_sha256="e5211706a23b46354aa269f2b9cfaaaad1b64eef1012b433b1887c149f5a927c",
+                activation_cpu_offload=True,
+            )
+            opted = tomllib.loads(opted_output.read_text())
+            self.assertEqual(
+                opted["trainer"]["model"]["ac_offloading"],
+                {"pin_memory": True, "max_inflight_activations": 1},
+            )
+            self.assertEqual(opted["deployment"], {"type": "single_node", "gpus_per_node": 8, "num_train_gpus": 1, "num_infer_gpus": 7})
+            self.assertEqual(opted["inference"]["vllm"]["tensor_parallel_size"], 1)
+            self.assertEqual(opted["inference"]["vllm"]["data_parallel_size"], 7)
+            self.assertTrue(opted_receipt["activation_cpu_offload"])
+            self.assertEqual(opted_receipt["activation_offloading"], {"pin_memory": True, "max_inflight_activations": 1})
 
     def test_entrypoints_bind_model_effort_format_and_unique_outputs(self):
         env = (RUN / "arm_env.sh").read_text()
         self.assertIn("PAINTER_JUDGE_EFFORT=medium", env)
+        self.assertIn("PAINTER_ACTIVATION_CPU_OFFLOAD=1", env)
         self.assertIn("PAINTER_EVAL_PREFERRED_STEP=12", env)
         self.assertIn("identity-joint-side-schema-v2-generic-v1", env)
         self.assertIn("download_public_adapter.py", env)
         self.assertIn("rl-judge-ablation-shared-20261002/runtime/watercolour", env)
         prep_script = (RUN / "prepare.sh").read_text()
+        self.assertIn("PAINTER_ACTIVATION_CPU_OFFLOAD=1", prep_script)
+        self.assertIn("--activation-cpu-offload", prep_script)
         self.assertIn('RETRY="${PAINTER_RETRY_RUN:-$REPO/painter/runs/text-rl16-retry-20261001}"', prep_script)
         self.assertIn('bash "$RETRY/prepare_node.sh"', prep_script)
         self.assertIn('shared preparation did not preserve verified adapter path', prep_script)
@@ -508,6 +544,49 @@ class AblationContractTests(unittest.TestCase):
             status = json.loads((state / "campaign/status.json").read_text())
             self.assertEqual(status["status"], "complete")
             self.assertAlmostEqual(status["per_arm_gpu_cap_usd"], 19.8, places=6)
+
+    def test_campaign_stops_after_zero_update_training_failure(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            state = root / "state"
+            prepare = root / "prepare.sh"
+            execute = root / "execute.sh"
+            prepare.write_text("#!/usr/bin/env bash\nexit 0\n")
+            execute.write_text(
+                "#!/usr/bin/env bash\n"
+                "arm=\"$1\"\n"
+                "printf '%s\\n' \"$arm\" >> \"$PAINTER_CAMPAIGN_STATE_ROOT/order\"\n"
+                "name=\"rl-judge-ablation-${arm}-20261002\"\n"
+                "run=\"$PAINTER_CAMPAIGN_STATE_ROOT/../$name\"\n"
+                "mkdir -p \"$run/local-evidence\"\n"
+                "printf '%s\\n' '{\"status\": \"failed\", \"pipeline_exit_code\": 1, \"public_archive_hash_verified\": true}' > \"$run/terminal-receipt.json\"\n"
+                "printf '%s\\n' '{\"schema\":\"finite-text-paint-supervisor-v1\",\"status\":\"failed\",\"completed_optimizer_steps\":null}' > \"$run/supervisor-state.json\"\n"
+                "printf '%s\\n' evidence > \"$run/local-evidence/${name}-evidence.tar.gz\"\n"
+                "printf '%s\\n' '{\"public_hash_verified\": true, \"private\": false}' > \"$run/local-evidence/${name}-evidence.tar.gz.upload.json\"\n"
+                "exit 1\n",
+            )
+            prepare.chmod(0o755)
+            execute.chmod(0o755)
+            env = {
+                **os.environ,
+                "PAINTER_CAMPAIGN_ALLOW_NON_LINUX": "1",
+                "PAINTER_CAMPAIGN_SKIP_LOCK": "1",
+                "PAINTER_CAMPAIGN_STATE_ROOT": str(state),
+                "PAINTER_ABLATION_PREPARE_SCRIPT": str(prepare),
+                "PAINTER_ABLATION_EXECUTE_SCRIPT": str(execute),
+            }
+            result = subprocess.run(
+                [str(RUN / "campaign.sh"), "100000", "9.2", "59.4"],
+                check=False, env=env,
+            )
+            self.assertNotEqual(result.returncode, 0)
+            self.assertEqual((state / "order").read_text().splitlines(), ["flash"])
+            status = json.loads((state / "campaign/status.json").read_text())
+            self.assertEqual(status["reason"], "zero_optimizer_updates_training_or_preflight_fatal_after_flash")
+            arm_row = json.loads((state / "campaign/arms.jsonl").read_text().strip())
+            self.assertTrue(arm_row["zero_optimizer_updates_training_fatal"])
+            self.assertEqual(arm_row["verified_optimizer_updates"], 0)
+            self.assertFalse((state / "campaign-release.ready").exists())
 
     def test_safe_archive_keeps_rl_rollouts_evidence(self):
         safe_archive = _load(

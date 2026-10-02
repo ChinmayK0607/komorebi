@@ -243,6 +243,9 @@ def render_toml(config: dict[str, Any]) -> str:
     table("trainer.model", config["trainer"]["model"])
     table("trainer.model.lora", config["trainer"]["model"]["lora"])
     table("trainer.model.ac", config["trainer"]["model"]["ac"])
+    ac_offloading = config["trainer"]["model"].get("ac_offloading")
+    if isinstance(ac_offloading, dict):
+        table("trainer.model.ac_offloading", ac_offloading)
     table("trainer.optim", config["trainer"]["optim"])
     table("trainer.scheduler", config["trainer"]["scheduler"])
     table("trainer.loss", config["trainer"]["loss"])

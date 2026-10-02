@@ -51,7 +51,8 @@ def prepare(*, output: Path, model: Path, run_root: Path, manifest: Path,
             initial_inflight: int = DEFAULT_INITIAL_INFLIGHT,
             max_inflight: int = DEFAULT_MAX_INFLIGHT,
             renderer: str | None = None,
-            renderer_python: str | None = None) -> dict:
+            renderer_python: str | None = None,
+            activation_cpu_offload: bool = False) -> dict:
     if not run_name or "/" in run_name or "\\" in run_name:
         raise ValueError("run_name must be a simple non-empty name")
     if not output_root or "/" in output_root or "\\" in output_root:
@@ -78,6 +79,7 @@ def prepare(*, output: Path, model: Path, run_root: Path, manifest: Path,
         initial_inflight=initial_inflight, max_inflight=max_inflight,
         mode=mode, adapter_revision=adapter_revision,
         adapter_prefix=adapter_prefix, adapter_sha256=adapter_sha256,
+        activation_cpu_offload=activation_cpu_offload,
     )
     source = config["orchestrator"]["train"]["source"][0]
     source["name"] = "text-paint-fixed-sft-pairwise"
@@ -101,6 +103,8 @@ def prepare(*, output: Path, model: Path, run_root: Path, manifest: Path,
         "adapter_prefix": adapter_prefix,
         "adapter_sha256": adapter_sha256,
         "mode": mode, "optimizer_resume": False,
+        "activation_cpu_offload": activation_cpu_offload,
+        "activation_offloading": config["trainer"]["model"]["ac_offloading"],
         "frozen_anchor": {"alias": "sft-step512", "immutable": True,
                           "checkpoint_sha256": SFT_SHA256},
         "deployment": config["deployment"], "manifest": relative,
@@ -137,6 +141,7 @@ def main() -> None:
     parser.add_argument("--max-inflight", type=int, default=DEFAULT_MAX_INFLIGHT)
     parser.add_argument("--renderer")
     parser.add_argument("--renderer-python")
+    parser.add_argument("--activation-cpu-offload", action="store_true")
     args = parser.parse_args()
     print(json.dumps(prepare(**vars(args)), sort_keys=True))
 
