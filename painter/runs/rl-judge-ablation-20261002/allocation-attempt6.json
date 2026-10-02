@@ -1,0 +1,26 @@
+{
+  "schema": "text-paint-rl-judge-ablation-allocation-attempt-v1",
+  "attempt": 6,
+  "source_commit": "68d5db6618a0264f26ec52248da0a1662727adff",
+  "requested_utc": "2026-10-02T13:57:23.630444+00:00",
+  "status": "allocated_preparing_not_training",
+  "hardware": {
+    "gpu": "A100",
+    "gpu_count": 8,
+    "advertised_vram_gib_per_gpu": 80,
+    "trainer_gpus": 1,
+    "inference_gpus": 7,
+    "activation_cpu_offload": true
+  },
+  "price_usd_per_hour": 9.2,
+  "remaining_campaign_gpu_cap_usd": 41.1,
+  "remaining_per_arm_gpu_cap_usd": 13.7,
+  "prior_failed_gpu_estimate_usd": 18.427243876393636,
+  "combined_per_arm_gpu_ceiling_usd": 19.842414625464546,
+  "provider_expiry_minutes": 267,
+  "initial_readiness_timeout_seconds": 1200,
+  "initial_optimizer_metric_grace_seconds": 3600,
+  "subsequent_optimizer_stall_timeout_seconds": 1800,
+  "monitoring": "finite stage observations; optimizer checks in supervisor every20seconds; statusfile startup/terminalonly, parentreadsactualtrainerlogs/metrics; no recurring Codex automation",
+  "cost_scope": "elapsed-clock estimate, not invoice"
+}
