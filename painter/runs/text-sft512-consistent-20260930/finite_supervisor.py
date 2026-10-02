@@ -29,6 +29,7 @@ DEFAULT_MAX_GPU_USD = 20.0
 DEFAULT_RESERVE_SECONDS = 45 * 60
 DEFAULT_POLL_SECONDS = 20.0
 DEFAULT_METRIC_TIMEOUT_SECONDS = 30 * 60
+MAX_INITIAL_METRIC_TIMEOUT_SECONDS = 60 * 60
 
 
 class SupervisorError(RuntimeError):
@@ -305,6 +306,7 @@ def supervise(
     max_updates: int = 50,
     poll_seconds: float = DEFAULT_POLL_SECONDS,
     metric_timeout_seconds: float = DEFAULT_METRIC_TIMEOUT_SECONDS,
+    initial_metric_timeout_seconds: float | None = None,
     shutdown_grace_seconds: float = 90.0,
     now: Callable[[], float] = time.time,
     sleep: Callable[[float], None] = time.sleep,
@@ -320,7 +322,21 @@ def supervise(
         raise ValueError("training command must not be empty")
     if not 1 <= max_updates <= 50:
         raise ValueError("max_updates must be in [1, 50]")
-    if poll_seconds < 0 or metric_timeout_seconds <= 0 or shutdown_grace_seconds < 0:
+    if initial_metric_timeout_seconds is None:
+        # Preserve callers that historically supplied a custom metric timeout:
+        # before this two-phase guard existed, it applied from process start.
+        initial_metric_timeout_seconds = metric_timeout_seconds
+    if (
+        not all(
+            math.isfinite(float(value))
+            for value in (poll_seconds, metric_timeout_seconds, initial_metric_timeout_seconds, shutdown_grace_seconds)
+        )
+        or poll_seconds < 0
+        or metric_timeout_seconds <= 0
+        or initial_metric_timeout_seconds <= 0
+        or initial_metric_timeout_seconds > MAX_INITIAL_METRIC_TIMEOUT_SECONDS
+        or shutdown_grace_seconds < 0
+    ):
         raise ValueError("poll and timeout values are invalid")
 
     started = now()
@@ -340,13 +356,18 @@ def supervise(
             "admitted_batch_counter": 0,
             "completed_optimizer_steps": None,
             "budget": budget.as_dict(),
+            "metric_timeout_seconds": metric_timeout_seconds,
+            "initial_metric_timeout_seconds": initial_metric_timeout_seconds,
         },
     )
 
     seen_checkpoints: set[int] = set()
     last_admitted_batch = 0
     last_completed_optimizer_step: int | None = None
-    last_progress_epoch = started
+    # Rollout/admission rows are not optimizer progress.  Keep this timestamp
+    # anchored at process start until the first real trainer completion, then
+    # advance it only when a newer optimizer step is observed.
+    last_optimizer_progress_epoch = started
     final_status = "completed"
     final_reason = "process_exit"
     exit_code: int | None = None
@@ -389,7 +410,6 @@ def supervise(
         current = contiguous_step(rewards)
         if current > last_admitted_batch:
             last_admitted_batch = current
-            last_progress_epoch = now()
 
         completed_steps = read_completed_optimizer_steps(
             metrics_path, max_step=max_updates, trainer_log=trainer_log
@@ -399,6 +419,7 @@ def supervise(
             last_completed_optimizer_step is None or completed_current > last_completed_optimizer_step
         ):
             last_completed_optimizer_step = completed_current
+            last_optimizer_progress_epoch = now()
 
         for checkpoint in CHECKPOINT_STEPS:
             if (
@@ -443,7 +464,12 @@ def supervise(
                 return finish(status="completed", reason="process_exit", code=exit_code)
             return finish(status="failed", reason="process_exit_nonzero", code=exit_code)
 
-        if current_time - last_progress_epoch >= metric_timeout_seconds:
+        timeout_seconds = (
+            metric_timeout_seconds
+            if last_completed_optimizer_step is not None
+            else initial_metric_timeout_seconds
+        )
+        if current_time - last_optimizer_progress_epoch >= timeout_seconds:
             final_status, final_reason = "failed", "missing_metric_timeout"
             owner.stop(grace_seconds=shutdown_grace_seconds)
             return finish(status=final_status, reason=final_reason, code=exit_code)
@@ -465,6 +491,7 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--max-updates", type=int, default=50)
     parser.add_argument("--poll-seconds", type=float, default=DEFAULT_POLL_SECONDS)
     parser.add_argument("--metric-timeout-seconds", type=float, default=DEFAULT_METRIC_TIMEOUT_SECONDS)
+    parser.add_argument("--initial-metric-timeout-seconds", type=float, default=None)
     parser.add_argument("--shutdown-grace-seconds", type=float, default=90.0)
     parser.add_argument("command", nargs=argparse.REMAINDER, help="training command after --")
     return parser
@@ -493,6 +520,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         max_updates=args.max_updates,
         poll_seconds=args.poll_seconds,
         metric_timeout_seconds=args.metric_timeout_seconds,
+        initial_metric_timeout_seconds=args.initial_metric_timeout_seconds,
         shutdown_grace_seconds=args.shutdown_grace_seconds,
     )
 

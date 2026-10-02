@@ -120,6 +120,7 @@ class AblationContractTests(unittest.TestCase):
             "base_prepare_source_sha256", "text_config_source_sha256",
             "photo_config_source_sha256", "run_from_sft_source_sha256",
             "native_config_writer_source_sha256", "runtime_sitecustomize_source_sha256",
+            "finite_supervisor_source_sha256",
         ):
             with self.subTest(key=key):
                 self.assertRegex(identity["files"][key], r"^[0-9a-f]{64}$")

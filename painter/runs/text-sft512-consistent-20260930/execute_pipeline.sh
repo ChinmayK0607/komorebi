@@ -12,6 +12,7 @@ CAP="${3:?usage: execute_pipeline.sh RENTAL_START_EPOCH PRICE_USD_PER_HOUR MAX_G
 RESERVE="${PAINTER_RESERVE_SECONDS:-2700}"
 GROUP_SIZE="${PAINTER_GROUP_SIZE:-8}"
 EVAL_TIMEOUT="${PAINTER_EVAL_TIMEOUT_SECONDS:-1800}"
+INITIAL_METRIC_TIMEOUT="${PAINTER_INITIAL_METRIC_TIMEOUT_SECONDS:-1800}"
 ARCHIVE_TIMEOUT="${PAINTER_ARCHIVE_TIMEOUT_SECONDS:-600}"
 PARENT_RELEASE_RESERVE="${PAINTER_PARENT_RELEASE_RESERVE_SECONDS:-180}"
 COMPLETION_MARGIN="${PAINTER_COMPLETION_MARGIN_SECONDS:-120}"
@@ -36,18 +37,20 @@ EVAL_STATUS=
 FINALIZE_STATUS=
 STEP=
 
-"$PY" - "$START" "$PRICE" "$CAP" "$RESERVE" "$EVAL_TIMEOUT" "$ARCHIVE_TIMEOUT" \
-    "$PARENT_RELEASE_RESERVE" "$COMPLETION_MARGIN" <<'PY'
+"$PY" - "$START" "$PRICE" "$CAP" "$RESERVE" "$EVAL_TIMEOUT" "$INITIAL_METRIC_TIMEOUT" \
+    "$ARCHIVE_TIMEOUT" "$PARENT_RELEASE_RESERVE" "$COMPLETION_MARGIN" <<'PY'
 import math, sys
-start, price, cap, reserve, eval_timeout, archive_timeout, parent_reserve, margin = map(float, sys.argv[1:])
+start, price, cap, reserve, eval_timeout, initial_metric_timeout, archive_timeout, parent_reserve, margin = map(float, sys.argv[1:])
 if any(not math.isfinite(x) or x <= 0 for x in (start, price, cap, reserve)):
     raise SystemExit('rental start, price, cap, and reserve must be positive finite numbers')
 if cap > 20:
     raise SystemExit('GPU cap exceeds the hard $20 limit')
 if reserve >= cap / price * 3600:
     raise SystemExit('reserved completion window exceeds rental budget')
-if any(not math.isfinite(x) or x <= 0 for x in (eval_timeout, archive_timeout, parent_reserve, margin)):
+if any(not math.isfinite(x) or x <= 0 for x in (eval_timeout, initial_metric_timeout, archive_timeout, parent_reserve, margin)):
     raise SystemExit('completion timeout and release margin values must be positive finite numbers')
+if initial_metric_timeout > 3600:
+    raise SystemExit('initial metric timeout must be at most 3600 seconds')
 if reserve < eval_timeout + archive_timeout + parent_reserve + margin:
     raise SystemExit('completion reserve is shorter than evaluation, archive, release, and margin bounds')
 PY
@@ -313,6 +316,7 @@ PY
       --metrics "$METRICS" --trainer-log "$TRAINER_LOG" --state "$STATE" --trend "$TREND" \
       --price-usd-per-hour "$PRICE" --rental-start-epoch "$START" \
       --max-gpu-usd "$CAP" --max-updates 50 --reserve-seconds "$RESERVE" \
+      --metric-timeout-seconds 1800 --initial-metric-timeout-seconds "$INITIAL_METRIC_TIMEOUT" \
       -- bash "$RUN/run.sh"; then
     TRAIN_STATUS=0
   else

@@ -130,6 +130,7 @@ def source_identity(matrix: dict[str, Any], *, repo: Path = RUN.parents[2]) -> d
         "finalize_source_sha256": RUN / "finalize.sh",
         "arm_env_source_sha256": RUN / "arm_env.sh",
         "base_execute_source_sha256": repo / "painter/runs/text-sft512-consistent-20260930/execute_pipeline.sh",
+        "finite_supervisor_source_sha256": repo / "painter/runs/text-sft512-consistent-20260930/finite_supervisor.py",
         "base_evaluate_source_sha256": repo / "painter/runs/text-sft512-consistent-20260930/evaluate.sh",
         "base_finalize_source_sha256": repo / "painter/runs/text-sft512-consistent-20260930/finalize.sh",
         "base_prepare_source_sha256": repo / "painter/runs/text-sft512-consistent-20260930/prepare_node.sh",

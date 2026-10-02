@@ -8,6 +8,7 @@ import sys
 import tempfile
 import time
 import unittest
+from unittest import mock
 
 
 MODULE_PATH = Path(__file__).with_name("finite_supervisor.py")
@@ -44,6 +45,64 @@ time.sleep(30)
 
 
 class FiniteSupervisorTests(unittest.TestCase):
+    @staticmethod
+    def _clocked_supervision(
+        root: Path,
+        *,
+        initial_metric_timeout_seconds=None,
+        metric_timeout_seconds=1800.0,
+        writer=None,
+    ):
+        clock = [1000.0]
+        stopped = []
+
+        class Process:
+            pid = 321
+
+            def poll(self):
+                return None
+
+        process = Process()
+
+        class Owner:
+            pid = process.pid
+            pgid = process.pid
+
+            def stop(self, *, grace_seconds):
+                stopped.append(clock[0])
+
+        owner = Owner()
+
+        def now():
+            return clock[0]
+
+        def sleep(seconds):
+            clock[0] += seconds
+            if writer is not None:
+                writer(clock[0])
+
+        with mock.patch.object(supervisor, "OwnedProcessGroup", lambda _process: owner):
+            code = supervisor.supervise(
+                command=["fake-training"],
+                metrics_path=root / "metrics.jsonl",
+                state_path=root / "state.json",
+                trend_path=root / "trend.jsonl",
+                budget=supervisor.make_budget(
+                    price_usd_per_hour=3600.0,
+                    rental_start_epoch=1000.0,
+                    max_gpu_usd=10000.0,
+                    reserve_seconds=0.0,
+                ),
+                poll_seconds=100.0,
+                metric_timeout_seconds=metric_timeout_seconds,
+                initial_metric_timeout_seconds=initial_metric_timeout_seconds,
+                shutdown_grace_seconds=0.0,
+                now=now,
+                sleep=sleep,
+                popen=lambda *_args, **_kwargs: process,
+            )
+        return code, stopped, json.loads((root / "state.json").read_text())
+
     def test_admitted_batch_is_distinct_from_completed_optimizer_step(self):
         with tempfile.TemporaryDirectory() as temp:
             path = Path(temp) / "metrics.jsonl"
@@ -163,6 +222,81 @@ class FiniteSupervisorTests(unittest.TestCase):
             self.assertEqual(code, 1)
             self.assertEqual(json.loads(state.read_text())["reason"], "missing_metric_timeout")
             self.assertLess(time.monotonic() - started, 2.0)
+
+    def test_initial_metric_window_allows_slow_first_update_without_heartbeat_reset(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            step = [0]
+            observed_at_1900 = []
+
+            def rollout_heartbeat(_now):
+                step[0] += 1
+                if _now == 1900.0:
+                    observed_at_1900.append(True)
+                with (root / "metrics.jsonl").open("a", encoding="utf-8") as stream:
+                    stream.write(json.dumps({
+                        "step": step[0],
+                        "train/agg/effective/agent/reward/mean": 0.5,
+                    }) + "\n")
+
+            code, stopped, state = self._clocked_supervision(
+                root,
+                initial_metric_timeout_seconds=3600.0,
+                writer=rollout_heartbeat,
+            )
+            self.assertEqual(code, 1)
+            self.assertEqual(state["reason"], "missing_metric_timeout")
+            self.assertEqual(len(stopped), 1)
+            self.assertEqual(observed_at_1900, [True])
+            self.assertEqual(stopped[0] - state["started_epoch"], 3600.0)
+
+    def test_default_initial_metric_window_remains_1800_seconds(self):
+        with tempfile.TemporaryDirectory() as temp:
+            code, stopped, state = self._clocked_supervision(Path(temp))
+            self.assertEqual(code, 1)
+            self.assertEqual(state["reason"], "missing_metric_timeout")
+            self.assertEqual(stopped[0] - state["started_epoch"], 1800.0)
+
+    def test_optimizer_completion_switches_to_existing_1800_second_stall_guard(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            written = [False]
+
+            def first_optimizer_update(_now):
+                if not written[0]:
+                    written[0] = True
+                    with (root / "metrics.jsonl").open("a", encoding="utf-8") as stream:
+                        stream.write(json.dumps({
+                            "step": 1,
+                            "producer": "trainer",
+                            "optim/grad_norm": 1.0,
+                        }) + "\n")
+
+            code, stopped, state = self._clocked_supervision(
+                root,
+                initial_metric_timeout_seconds=3600.0,
+                metric_timeout_seconds=1800.0,
+                writer=first_optimizer_update,
+            )
+            self.assertEqual(code, 1)
+            self.assertEqual(state["reason"], "missing_metric_timeout")
+            self.assertEqual(len(stopped), 1)
+            self.assertEqual(stopped[0], 2900.0)
+
+    def test_initial_metric_timeout_rejects_nonpositive_or_overbound_values(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            kwargs = {
+                "command": ["fake-training"],
+                "metrics_path": root / "metrics.jsonl",
+                "state_path": root / "state.json",
+                "trend_path": root / "trend.jsonl",
+                "budget": _budget(seconds=10000),
+                "popen": lambda *_args, **_kwargs: self.fail("invalid timeout launched training"),
+            }
+            for value in (0.0, -1.0, 3600.1, float("inf")):
+                with self.subTest(value=value), self.assertRaises(ValueError):
+                    supervisor.supervise(**kwargs, initial_metric_timeout_seconds=value)
 
     def test_finite_elapsed_budget_stops_before_rental_deadline(self):
         with tempfile.TemporaryDirectory() as temp:
