@@ -1,0 +1,45 @@
+# Actual three-judge RL ablation — 2026-10-02
+
+## User objective and hypothesis
+
+The user clarified that the ablation means three actual RL runs, not merely grading frozen images. Compare which judge produces the best visual checkpoints and reinforces the intended readability, beauty, warmth and spatial precision. The offline three-model assay is supporting diagnostic evidence only; it does not satisfy this training comparison or prove a training improvement.
+
+Register three independent continuations, all starting from the same old scaled RL16 adapter with a fresh optimizer: Flash, Pro, GPT-6 Luna. Only the judge model changes. The same current v2 holistic rubric already includes beauty, warmth, readability, spatial relationships and muddy overpainting. Do not introduce new additive reward terms or merge weights in this comparison.
+
+## Matched recipe
+
+- Base model `Qwen/Qwen3.8-27B@1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0`; Prime commit `26b3131d2716a4f8210b165df584b83b4bc54f61`.
+- Initial policy `CK0607/qwen3.8-27b-brush-painting@ac4d3eda8e5925e2d23992cfdc1a63620ebde573`, prefix `text-pairwise-scaled-20260929/step_16`, adapter SHA-256 `e5211706a23b46354aa269f2b9cfaaaad1b64eef1012b433b1887c149f5a927c`. Each arm reloads this exact initializer; no chaining one judge's result into another arm.
+- Frozen SFT opponent from public revision `adf687e5b321514eda7be6eab050434fdc8e44ff`, prefix `photo-curriculum-sft-20260922-balanced/step_512`, adapter SHA-256 `bea72b066986faa1b92b9dc539c710093181ee916b99323e2b2498f318ac1740`.
+- Same 40 interleaved training briefs, semantic manifest SHA-256 `13ac0eebb3595fbd931ee7864e69101abdc8b7c9c1faccf11dfcd9bd495c6501`, and 47 disjoint held-out briefs. Same frozen PNG opponents and brief hashes. This reproduces the grounded run's curriculum, not the distinct 68-brief original scaled curriculum. Data expansion follows judge comparison rather than changing data between arms.
+- Group4, batch16, learning rate1e-6, identical optimizer/normalization/credit/admission logic, three turns with8,192 maximum completion tokens and32,768 context, painter temperature1 and thinking disabled. Prime's pinned training defaults are orchestrator seed42 and inference seed0; the matched evaluation panel uses seed918210 in every arm.
+- Judges: `xiaomi/mimo-v2.6-flash`, `xiaomi/mimo-v2.6-pro`, `openai/gpt-6-luna`, explicit requested reasoning medium, equal4,096 output ceilings, omitted sampling controls. Same v2 prompt SHA-256 `d21e4644e7a3874a0694b2ad406420e733b7638222eb7717e7f5f91cbdf1613c`, exact side schema, balanced views, same recheck consensus and whole-group uncertainty censoring. Xiaomi maps non-none effort to thinking enabled, so equal requested effort does not mean equal internal compute. Preserve actual usage and model identities.
+
+The materializer keeps the three run roots as flat siblings under `painter/runs/`: `rl-judge-ablation-flash-20261002`, `rl-judge-ablation-pro-20261002`, and `rl-judge-ablation-luna-20261002`. Each root has its own config, manifests, checkpoints, receipts, and `rl-rollouts` directory. The shared `rl-rollouts` name is required by the existing archive/supervisor contract; the sibling roots and distinct run names keep the evidence isolated.
+
+Use [`campaign.sh`](campaign.sh) as the single foreground node command after the parent has allocated the exact pod and supplied its start epoch and whole-node price:
+
+```bash
+RUN=/root/painter/repo/painter/runs/rl-judge-ablation-20261002
+bash "$RUN/campaign.sh" "$RENTAL_START_EPOCH" "$PRICE_USD_PER_HOUR" 59.4
+```
+
+The campaign prepares the shared source once, divides the elapsed setup time from the rental start equally across the three `$19.80` per-arm budgets, then runs Flash, Pro, and Luna sequentially through the bounded pipeline. It records terminal outcomes, requires a verified public archive receipt before advancing to the next arm, checks that the previous arm's owned process group is gone, and creates `campaign-release.ready` only after all three public archives are verified. A missing public archive stops the campaign and leaves the arm censored for parent review; a local archive alone is not release proof. The parent controller remains responsible for exact-pod release; this command contains no rental credentials or provider calls.
+
+On a fresh node, preparation invokes the reviewed bootstrap setup before checking the frozen SFT path file. That bootstrap installs the pinned runtime and materializes the public SFT adapter path; the shared retry preparation then reuses that verified path for all three arms.
+
+## Comparison, budget and stopping
+
+Sequential independent arms reuse one node's runtime/model cache. The registered candidate topology is eight GPUs with one trainer and seven inference replicas, 96 initial/max in-flight episodes, and eight renderer workers; these values are identical in all three configs. The pinned adapter initializer supports one trainer GPU, so preparation rejects the earlier two trainer split. Prime maps inference to seven tensor-parallel-one data-parallel replicas; the parent must still verify the actual provider's memory and startup before launch. The prior measured 27B BF16 run peaked at about 92.2 GiB on a 96 GiB card, so the parent must preserve that trainer-card headroom. Exact price/start/topology/source/config hashes will be recorded before training starts.
+
+Hard GPU ceiling **$20 per arm**, including allocated preparation/evaluation/preservation overhead; total maximum across three arms **$60**, not a claim of expected cost. Gateway charges separate. This matrix records a 1,920-second per-arm completion reserve: 1,200 seconds for the matched16 evaluation, 360 for archive preservation, 240 for parent release, and 120 margin. Target up to50 updates only while the registered trend rises; first actual-optimizer trend decision at15, then20/every5, stop when latest5 mean fails to exceed prior5. Same stopping rule across arms; unequal stop lengths remain explicit. A judge's own reward curve is not a cross-judge quality score.
+
+Public hash-verified checkpoints every4 updates. Step12 is the predeclared primary quality comparison: when the existing public-checkpoint validator confirms a public step12 adapter, the bounded pipeline evaluates that step on the same16-case panel. If an arm cannot verify step12, it evaluates its latest verified public checkpoint and records the result as exploratory and censored for the primary comparison. The training trend stop and the quality checkpoint choice are separate decisions; a judge's own reward curve never selects its quality checkpoint. A parent-controlled postpass may collect the same panel at other common steps only when the completion reserve fits. Avoid calling an arm superior because it alone was allowed more updates. Predeclare the same16-case evaluation panel: simple t600-512/516/542/543; intermediate425/433/439/445; complex309/366/375/377/413/466/478/560. These are selected diagnostic cases from the original47 held-out prompts, not a random new confirmation set. Include invalid final actions and censored cases in denominators. Final render must be the same defined action/turn selection in every arm; do not replace failed final images with earlier best-looking ones. Blinded visual comparison against RL16 and frozen SFT512 is primary, with judge agreement/censoring and observed failures supporting interpretation. Preserve complete47 evaluation option for a later independent confirmation when affordable.
+
+The previous all47 global30-minute cutoff truncated evaluation. This matrix requires a bounded matched smaller panel and a complete/partial summary even on a cutoff; show the16/47 scope rather than inventing a47-case result. After an arm finishes, upload screened checkpoint/evidence publicly, independently hash verify, then advance from the original initializer to the next arm. Release the exact pod at completion or the finite campaign cost boundary. No scheduled task, heartbeat watcher or recurring automation.
+
+## Supporting API wiring check
+
+Before GPU rental, six Gateway calls (three models, both image orders on the same fan) returned exact requested model identities and valid strict schemas with explicit medium reasoning. All three models reversed their image preference between orders on this pair; the images and mappings were correct. This is actual judgment inconsistency, not a parser failure, and remains censored/rechecked under the same shared protocol in all arms. It is not evidence that any judge is generally better. Reported call times: Luna8.35/10.16s, Flash14.69/21.03s, Pro16.48/20.39s; limited to two calls each, not a general latency benchmark. Raw safe receipts are in `../judge-threeway-ablation-20261002/local-evidence/wiring-six-calls/`.
+
+Status: implementation/preparation in progress; no GPU rental or actual training has started.

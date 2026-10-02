@@ -16,7 +16,7 @@ import time
 import urllib.error
 import urllib.request
 from pathlib import Path
-from typing import Any
+from typing import Any, Mapping
 
 try:
     from painter import text_pairwise_consistent_side_judge_v2 as rubric
@@ -64,26 +64,45 @@ def _parse(raw: str, ids: tuple[str, str]) -> dict[str, Any]:
     return rubric._parse(raw, ids)
 
 
-def _model_config_sha256(model: str) -> str:
+def _normalise_reasoning(reasoning: Mapping[str, Any] | None) -> dict[str, Any] | None:
+    """Validate an explicit Gateway reasoning object without changing defaults."""
+
+    if reasoning is None:
+        return None
+    if not isinstance(reasoning, Mapping):
+        raise ValueError("reasoning must be a mapping when supplied")
+    value = dict(reasoning)
+    if value != {"effort": "medium"}:
+        raise ValueError("only the registered reasoning object {'effort': 'medium'} is supported")
+    return value
+
+
+def _model_config_sha256(model: str, reasoning: Mapping[str, Any] | None = None) -> str:
+    reasoning_value = _normalise_reasoning(reasoning)
     value = {
         "model": validate_model(model),
-        "temperature": TEMPERATURE,
         "max_tokens": MAX_TOKENS,
         "response_format": _response_format(),
         "protocol": PROTOCOL,
         "format_version": FORMAT_VERSION,
     }
+    if reasoning_value is None:
+        value["temperature"] = TEMPERATURE
+    else:
+        value["reasoning"] = reasoning_value
     return hashlib.sha256(json.dumps(value, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
 
 
 def _view(*, key: str, model: str, brief: str, a: Path, b: Path,
-          a_id: str, b_id: str) -> dict[str, Any]:
+          a_id: str, b_id: str,
+          reasoning: Mapping[str, Any] | None = None) -> dict[str, Any]:
     """Send one view with explicit model and strict returned-model binding."""
 
     model = validate_model(model)
+    reasoning_value = _normalise_reasoning(reasoning)
     sheet, sheet_sha = sheet_transport._sheet(a, b, "LEFT", "RIGHT")
     payload = {
-        "model": model, "temperature": TEMPERATURE, "max_tokens": MAX_TOKENS,
+        "model": model, "max_tokens": MAX_TOKENS,
         "response_format": _response_format(), "stream": False,
         "messages": [
             {"role": "system", "content": PROMPT},
@@ -93,6 +112,10 @@ def _view(*, key: str, model: str, brief: str, a: Path, b: Path,
             ]},
         ],
     }
+    if reasoning_value is None:
+        payload["temperature"] = TEMPERATURE
+    else:
+        payload["reasoning"] = reasoning_value
     request = urllib.request.Request(
         ENDPOINT, data=json.dumps(payload).encode(), method="POST",
         headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"},
@@ -106,10 +129,16 @@ def _view(*, key: str, model: str, brief: str, a: Path, b: Path,
         "rubric_source_format_sha256": RUBRIC_SOURCE_FORMAT_SHA256,
         "response_schema": "painting_comparison_by_side", "elapsed_seconds": 0.0,
         "usage": None, "finish_reason": None, "requested_model": model,
-        "returned_model": None, "request_config_sha256": _model_config_sha256(model),
-        "reasoning": {"mode": "provider_default", "request_field_omitted": True},
+        "returned_model": None, "request_config_sha256": _model_config_sha256(model, reasoning_value),
         "observed_reasoning_tokens": None,
     }
+    if reasoning_value is None:
+        call["reasoning"] = {"mode": "provider_default", "request_field_omitted": True}
+    else:
+        call["reasoning"] = {
+            "mode": "explicit", "request_field": "reasoning",
+            "request": reasoning_value, "sampling_parameters_omitted": True,
+        }
     try:
         with urllib.request.urlopen(request, timeout=240) as response:
             response_bytes = response.read()
@@ -165,11 +194,13 @@ def _view(*, key: str, model: str, brief: str, a: Path, b: Path,
 
 
 async def _call_with_retry(*, key: str, model: str, brief: str, a: Path, b: Path,
-                           a_id: str, b_id: str) -> dict[str, Any]:
+                           a_id: str, b_id: str,
+                           reasoning: Mapping[str, Any] | None = None) -> dict[str, Any]:
     calls: list[dict[str, Any]] = []
     for attempt in range(2):
         call = await asyncio.to_thread(_view, key=key, model=model, brief=brief,
-                                       a=a, b=b, a_id=a_id, b_id=b_id)
+                                       a=a, b=b, a_id=a_id, b_id=b_id,
+                                       reasoning=reasoning)
         call["attempt"] = attempt + 1
         calls.append(call)
         if "assessment" in call or "parse_error" not in call:
@@ -180,13 +211,14 @@ async def _call_with_retry(*, key: str, model: str, brief: str, a: Path, b: Path
 
 
 def _result_base(*, model: str, brief: Path, anchor: Path, candidate: Path,
-                 anchor_id: str, candidate_id: str) -> dict[str, Any]:
+                 anchor_id: str, candidate_id: str,
+                 reasoning: Mapping[str, Any] | None = None) -> dict[str, Any]:
     return {
         "protocol": PROTOCOL, "format_version": FORMAT_VERSION,
         "source_format_sha256": SOURCE_FORMAT_SHA256,
         "rubric_source_format_sha256": RUBRIC_SOURCE_FORMAT_SHA256,
         "prompt_sha256": PROMPT_SHA256, "requested_model": validate_model(model),
-        "model_config_sha256": _model_config_sha256(model),
+        "model_config_sha256": _model_config_sha256(model, reasoning),
         "brief_sha256": digest(brief),
         "image_ids": {"anchor": anchor_id, "candidate": candidate_id},
         "image_sha256": {"anchor": digest(anchor), "candidate": digest(candidate)},
@@ -194,10 +226,12 @@ def _result_base(*, model: str, brief: Path, anchor: Path, candidate: Path,
 
 
 async def judge_pair(*, brief: Path, anchor: Path, candidate: Path,
-                     key_file: Path, model: str = DEFAULT_MODEL) -> dict[str, Any]:
+                     key_file: Path, model: str = DEFAULT_MODEL,
+                     reasoning: Mapping[str, Any] | None = None) -> dict[str, Any]:
     """Judge one pair using ``model`` without mutating module or provider state."""
 
     model = validate_model(model)
+    reasoning_value = _normalise_reasoning(reasoning)
     for path in (brief, anchor, candidate):
         if path.is_symlink() or not path.is_file():
             raise FileNotFoundError(path)
@@ -210,12 +244,18 @@ async def judge_pair(*, brief: Path, anchor: Path, candidate: Path,
         raise ValueError("image identity prefix collision")
     if anchor_sha == candidate_sha:
         result = _result_base(model=model, brief=brief, anchor=anchor, candidate=candidate,
-                              anchor_id=anchor_id, candidate_id=candidate_id)
+                              anchor_id=anchor_id, candidate_id=candidate_id,
+                              reasoning=reasoning_value)
         result.update({"status": "identical_canvases", "winner_id": "tie",
                        "preference": "tied", "score": 0.5,
                        "consensus": "identical", "acceptance": "true_tie",
                        "initial_conflict": False, "initial_votes": [],
                        "recheck_votes": [], "views": [], "recheck_views": []})
+        if reasoning_value is not None:
+            result["reasoning"] = {
+                "mode": "explicit", "request": reasoning_value,
+                "sampling_parameters_omitted": True,
+            }
         return result
     key = load_key(key_file)
     ordered = sorted(((anchor_id, anchor), (candidate_id, candidate)),
@@ -224,12 +264,13 @@ async def judge_pair(*, brief: Path, anchor: Path, candidate: Path,
     second_ids = (ordered[1][0], ordered[0][0])
     first, second = await asyncio.gather(
         _call_with_retry(key=key, model=model, brief=text, a=ordered[0][1], b=ordered[1][1],
-                         a_id=first_ids[0], b_id=first_ids[1]),
+                         a_id=first_ids[0], b_id=first_ids[1], reasoning=reasoning_value),
         _call_with_retry(key=key, model=model, brief=text, a=ordered[1][1], b=ordered[0][1],
-                         a_id=second_ids[0], b_id=second_ids[1]),
+                         a_id=second_ids[0], b_id=second_ids[1], reasoning=reasoning_value),
     )
     result = _result_base(model=model, brief=brief, anchor=anchor, candidate=candidate,
-                          anchor_id=anchor_id, candidate_id=candidate_id)
+                          anchor_id=anchor_id, candidate_id=candidate_id,
+                          reasoning=reasoning_value)
     initial_views = [first, second]
     initial_votes = rubric._assessment_votes(initial_views)
     initial_conflict = len(initial_votes) == 2 and initial_votes[0][0] != initial_votes[1][0]
@@ -241,6 +282,11 @@ async def judge_pair(*, brief: Path, anchor: Path, candidate: Path,
                    }),
                    "initial_votes": [vote for vote, _ in initial_votes],
                    "recheck_votes": [], "initial_conflict": initial_conflict})
+    if reasoning_value is not None:
+        result["reasoning"] = {
+            "mode": "explicit", "request": reasoning_value,
+            "sampling_parameters_omitted": True,
+        }
     if len(initial_votes) != 2:
         result.update({"status": "uncertain", "winner_id": None,
                        "preference": None, "score": None,
@@ -258,9 +304,9 @@ async def judge_pair(*, brief: Path, anchor: Path, candidate: Path,
         return result
     recheck_first, recheck_second = await asyncio.gather(
         _call_with_retry(key=key, model=model, brief=text, a=ordered[0][1], b=ordered[1][1],
-                         a_id=first_ids[0], b_id=first_ids[1]),
+                         a_id=first_ids[0], b_id=first_ids[1], reasoning=reasoning_value),
         _call_with_retry(key=key, model=model, brief=text, a=ordered[1][1], b=ordered[0][1],
-                         a_id=second_ids[0], b_id=second_ids[1]),
+                         a_id=second_ids[0], b_id=second_ids[1], reasoning=reasoning_value),
     )
     recheck_views = [recheck_first, recheck_second]
     recheck_votes = rubric._assessment_votes(recheck_views)

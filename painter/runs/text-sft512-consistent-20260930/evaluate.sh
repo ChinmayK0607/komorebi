@@ -5,6 +5,7 @@ STEP="${1:?usage: evaluate.sh STEP [all|balanced16] [--preflight]}"
 SCOPE="${2:-all}"
 MODE="${3:-}"
 MAX_CONCURRENT="${PAINTER_EVAL_MAX_CONCURRENT:-16}"
+EXPECTED_COUNT="${PAINTER_EVAL_EXPECTED_COUNT:-47}"
 JUDGE_PROTOCOL="${PAINTER_JUDGE_PROTOCOL:-text-paint-sft-pairwise-consistent-v1}"
 JUDGE_FORMAT="${PAINTER_JUDGE_FORMAT:-identity-joint-side-schema-v1}"
 JUDGE_MODEL="${PAINTER_JUDGE_MODEL:-xiaomi/mimo-v2.6-flash}"
@@ -13,6 +14,7 @@ JUDGE_MODEL="${PAINTER_JUDGE_MODEL:-xiaomi/mimo-v2.6-flash}"
 }
 [[ -z "$MODE" || "$MODE" == --preflight ]] || { echo 'usage: evaluate.sh STEP [all|balanced16] [--preflight]' >&2; exit 2; }
 [[ "$MAX_CONCURRENT" =~ ^[1-9][0-9]*$ ]] || { echo 'PAINTER_EVAL_MAX_CONCURRENT must be a positive integer' >&2; exit 2; }
+[[ "$EXPECTED_COUNT" =~ ^[1-9][0-9]*$ ]] || { echo 'PAINTER_EVAL_EXPECTED_COUNT must be a positive integer' >&2; exit 2; }
 RUN="${PAINTER_RUN_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)}"
 REPO="$(cd "$RUN/../../.." && pwd -P)"
 NODE_ROOT="${PAINTER_NODE_ROOT:-/root/painter}"
@@ -23,17 +25,19 @@ EVAL="$PRIME_ROOT/.venv/bin/eval"
 MODEL_DIR="${MODEL_DIR:-$NODE_ROOT/model-cache/qwen/1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0}"
 NAME="${PAINTER_RUN_NAME:-text-sft512-consistent-20260930}"
 ADAPTER="$RUN/async-output/$NAME/artifacts/adapters/step_$STEP"
-ALL_MANIFEST="$RUN/anchors-frozen/validation-manifest.json"
+ALL_MANIFEST="${PAINTER_EVAL_MANIFEST:-$RUN/anchors-frozen/validation-manifest.json}"
 OUT="$RUN/validation/step-$STEP-$SCOPE"
 RENDERER="${PAINTER_RENDERER_PATH:-$RUN/vendor/integrations/watercolour/renderer.py}"
 RENDERER_PYTHON="${PAINTER_RENDERER_PYTHON_PATH:-$RUN/renderer-env/bin/python}"
+EVAL_EXPECTED_COUNT="$EXPECTED_COUNT"
+[[ "$SCOPE" == balanced16 ]] && EVAL_EXPECTED_COUNT=16
 [[ "$OUT" == /* ]] || { echo 'evaluation output path must be absolute' >&2; exit 1; }
 
 [[ -x "$PY" && -x "$VLLM" && -x "$EVAL" ]] || { echo 'pinned Prime runtime is unavailable' >&2; exit 1; }
 [[ -f "$ADAPTER/adapter_model.safetensors" && -f "$ADAPTER/hf-upload.json" ]] || {
   echo 'requested public checkpoint adapter is missing' >&2; exit 1;
 }
-[[ -f "$ALL_MANIFEST" ]] || { echo 'frozen 47-case validation manifest is missing' >&2; exit 1; }
+[[ -f "$ALL_MANIFEST" ]] || { echo 'frozen validation manifest is missing' >&2; exit 1; }
 [[ -f "$RENDERER" && -x "$RENDERER_PYTHON" ]] || { echo 'explicit renderer runtime is missing' >&2; exit 1; }
 # Verify the exact lexical virtualenv interpreter before starting vLLM.  Do not
 # resolve this path: renderer-env/bin/python may be a symlink whose enclosing
@@ -47,14 +51,15 @@ PY
 [[ ! -e "$OUT" ]] || { echo 'evaluation output already exists; preserve it before retrying' >&2; exit 1; }
 mkdir -p "$OUT/logs"
 
-"$PY" - "$ALL_MANIFEST" "$OUT/cases.json" "$SCOPE" <<'PY'
+"$PY" - "$ALL_MANIFEST" "$OUT/cases.json" "$SCOPE" "$EXPECTED_COUNT" <<'PY'
 import json, sys
 from pathlib import Path
 source, target = Path(sys.argv[1]), Path(sys.argv[2])
 scope = sys.argv[3]
+expected_count = int(sys.argv[4])
 rows = json.loads(source.read_text())['cases']
-if len(rows) != 47 or len({row['id'] for row in rows}) != 47:
-    raise SystemExit('expected immutable 47-case validation set')
+if len(rows) != expected_count or len({row['id'] for row in rows}) != expected_count:
+    raise SystemExit(f'expected immutable {expected_count}-case validation set')
 if scope == 'balanced16':
     simple = [row for row in rows if row['family'] == 'simple']
     intermediate = [row for row in rows if row['family'] == 'intermediate']
@@ -62,7 +67,7 @@ if scope == 'balanced16':
     if len(simple) < 4 or len(intermediate) < 4 or len(complex_rows) < 8:
         raise SystemExit('balanced16 requires four simple, four intermediate, and eight complex cases')
     rows = simple[:4] + intermediate[:4] + complex_rows[:8]
-if len(rows) != (16 if scope == 'balanced16' else 47):
+if len(rows) != (16 if scope == 'balanced16' else expected_count):
     raise SystemExit('requested validation scope is incomplete')
 target.write_text(json.dumps({'cases': rows}, indent=2, sort_keys=True) + '\n')
 PY
@@ -71,7 +76,7 @@ PYTHONPATH="$REPO/painter" "$PY" "$REPO/painter/native_painting_eval.py" \
   --root "$REPO/painter" --manifest "$OUT/cases.json" \
   --policy-label "consistent-step-$STEP" --model "consistent-step-$STEP" \
   --output-dir "$OUT/eval" --config "$OUT/eval.toml" \
-  --expected-count "$([[ "$SCOPE" == balanced16 ]] && echo 16 || echo 47)" \
+  --expected-count "$EVAL_EXPECTED_COUNT" \
   --max-turns 3 --max-tokens 8192 --rollout-timeout 1800 \
   --max-concurrent "$MAX_CONCURRENT" --renderer "$RENDERER" \
   --renderer-python "$RENDERER_PYTHON" >"$OUT/logs/config.json"

@@ -11,12 +11,19 @@ REPO="$(cd "$RUN/../../.." && pwd -P)"
 NODE_ROOT="${PAINTER_NODE_ROOT:-/root/painter}"
 PRIME_ROOT="${PRIME_ROOT:-$NODE_ROOT/prime}"
 NAME="${PAINTER_RUN_NAME:-text-sft512-consistent-20260930}"
+EVAL_SCOPE="${PAINTER_EVAL_SCOPE:-all}"
+[[ "$EVAL_SCOPE" == all || "$EVAL_SCOPE" == balanced16 ]] || {
+  echo 'PAINTER_EVAL_SCOPE must be all or balanced16' >&2; exit 2;
+}
 STATE="$RUN/supervisor-state.json"
-GEN="$RUN/validation/step-$STEP-all/generation-receipt.json"
+GEN="$RUN/validation/step-$STEP-$EVAL_SCOPE/generation-receipt.json"
 ADAPTER="$RUN/async-output/$NAME/artifacts/adapters/step_$STEP"
 MANIFEST="$RUN/anchors-frozen/validation-manifest.json"
-EVAL_ROOT="$RUN/validation/step-$STEP-all/eval"
-OUT="$RUN/validation/step-$STEP-all/comparison"
+if [[ "$EVAL_SCOPE" == balanced16 ]]; then
+  MANIFEST="$RUN/evaluation/matched16-manifest.json"
+fi
+EVAL_ROOT="$RUN/validation/step-$STEP-$EVAL_SCOPE/eval"
+OUT="$RUN/validation/step-$STEP-$EVAL_SCOPE/comparison"
 KEY="${PAINTER_GATEWAY_ENV_FILE:-$NODE_ROOT/private/gateway.env}"
 JUDGE_PROTOCOL="${PAINTER_JUDGE_PROTOCOL:-text-paint-sft-pairwise-consistent-v1}"
 JUDGE_FORMAT="${PAINTER_JUDGE_FORMAT:-identity-joint-side-schema-v1}"
@@ -66,31 +73,40 @@ if [[ "$MODE" == --score ]]; then
     --protocol "$JUDGE_PROTOCOL"
 fi
 
-"$PY" - "$RUN" "$STEP" "$MODE" "$JUDGE_PROTOCOL" "$JUDGE_FORMAT" "$JUDGE_MODEL" <<'PY'
+"$PY" - "$RUN" "$STEP" "$EVAL_SCOPE" "$MODE" "$JUDGE_PROTOCOL" "$JUDGE_FORMAT" "$JUDGE_MODEL" <<'PY'
 import hashlib, json, sys, time
 from pathlib import Path
-run, step, mode = Path(sys.argv[1]), int(sys.argv[2]), sys.argv[3]
-judge_protocol, judge_format, judge_model = sys.argv[4:7]
+run, step, eval_scope, mode = Path(sys.argv[1]), int(sys.argv[2]), sys.argv[3], sys.argv[4]
+judge_protocol, judge_format, judge_model = sys.argv[5:8]
 def sha(path):
     h = hashlib.sha256()
     with path.open('rb') as stream:
         for block in iter(lambda: stream.read(1024 * 1024), b''):
             h.update(block)
     return h.hexdigest()
-generation = json.loads((run / f'validation/step-{step}-all/generation-receipt.json').read_text())
+generation = json.loads((run / f'validation/step-{step}-{eval_scope}/generation-receipt.json').read_text())
 if generation.get('scoring_protocol') != judge_protocol or generation.get('matched_control') != 'sft-step512':
     raise SystemExit('generation receipt is not bound to the consistent SFT512 comparison')
-comparison = run / f'validation/step-{step}-all/comparison/summary.json'
+comparison = run / f'validation/step-{step}-{eval_scope}/comparison/summary.json'
+selection = {}
+selection_path = run / 'local-evidence/latest-public-checkpoint.json'
+if selection_path.is_file():
+    try:
+        selection = json.loads(selection_path.read_text())
+    except (OSError, json.JSONDecodeError):
+        raise SystemExit('checkpoint selection receipt is malformed')
 report = {
     'schema': 'text-paint-consistent-finalizer-v2',
     'run_name': run.name,
     'step': step,
-    'generation_receipt': str(run / f'validation/step-{step}-all/generation-receipt.json'),
+    'generation_receipt': str(run / f'validation/step-{step}-{eval_scope}/generation-receipt.json'),
     'comparison_path': str(comparison) if comparison.is_file() else None,
     'scoring_protocol': judge_protocol,
     'judge_format': judge_format,
     'judge_model': judge_model,
     'matched_control': 'sft-step512',
+    'checkpoint_selection': selection.get('selection'),
+    'primary_quality_status': (selection.get('selection') or {}).get('primary_quality_status'),
     'scored_locally': mode == '--score',
     'created_epoch': time.time(),
     'source_identity_sha256': sha(run / 'source-identity.json'),

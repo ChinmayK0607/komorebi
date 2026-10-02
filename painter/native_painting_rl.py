@@ -107,6 +107,7 @@ CONSISTENT_JUDGE_PROTOCOL = "text-paint-sft-pairwise-consistent-v1"
 DEFAULT_CONSISTENT_JUDGE_FORMAT = "identity-joint-schema-v1"
 SIDE_CONSISTENT_JUDGE_FORMAT = "identity-joint-side-schema-v1"
 V2_PRO_CONSISTENT_JUDGE_FORMAT = "identity-joint-side-schema-v2-pro-v1"
+V2_GENERIC_CONSISTENT_JUDGE_FORMAT = "identity-joint-side-schema-v2-generic-v1"
 
 
 def _consistent_judge_module_name(format_name: str | None = None) -> str:
@@ -121,6 +122,8 @@ def _consistent_judge_module_name(format_name: str | None = None) -> str:
         return "painter.text_pairwise_consistent_side_judge"
     if selected == V2_PRO_CONSISTENT_JUDGE_FORMAT:
         return "painter.text_pairwise_consistent_side_judge_v2_pro"
+    if selected == V2_GENERIC_CONSISTENT_JUDGE_FORMAT:
+        return "painter.text_pairwise_consistent_side_judge_v2_generic"
     raise ValueError(f"unsupported consistent judge format: {selected}")
 
 

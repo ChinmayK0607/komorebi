@@ -29,4 +29,16 @@ Prior same-eight-pair, two-repeat offline provider-default calibration: Flash49 
 
 No GPU rental, training, rendering, automation or scheduled task. Use existing saved PNGs and finite paid API requests only. Keep generated images/receipts/report outside Git. Public HF evidence will be screened for credentials and hash verified after execution. The next decision is which judge settings warrant one controlled low-cost RL continuation from the preferred old checkpoint. Do not claim that a cheap judge or more RL wins alone proves better supervision. GPU ceiling for any future run remains $20 and the user's 15/20-update trend stop applies; no training launched here.
 
-Results pending. Immutable source/config/manifest hashes and complete call outcomes will be appended after implementation review and before/after paid execution, respectively.
+## Completed supporting assay
+
+Reviewed source commit `f1c1a4d`; manifest content SHA-256 `2f5e19f828dd814d6f1371f4887d890ac6fb682f529792b42057087aa2ff15d2`, runner SHA-256 `153c9f53de89bfafaff0485a59ca71fa4e84ae6e2650472397a23e2cda18936a`. Completed180 calls, exactly60 per model, with24 selected pairs and six fixed repeated pairs. No GPU, rendering or training ran. All usage/cost fields were present; preserved at `local-evidence/results/summary.json` and individual call/round receipts. Fixed-side gallery at `local-evidence/report/index.html`.
+
+| Model | Valid calls | Mean completion/call (includes reasoning) | Mean reasoning/call | Mean seconds/call | Reported cost |
+|---|---:|---:|---:|---:|---:|
+| GPT-6 Luna |60/60|795.85|495.27|9.78|$0.03444676|
+| MiMo Flash |59/60|1229.98|865.50|26.73|$0.0304362688|
+| MiMo Pro |54/60|1250.00|782.77|23.46|$0.0949957932|
+
+Luna had25 agreeing/5 conflicting valid reversal rounds; Flash24 agreeing/5 conflicting/1 invalid; Pro13 agreeing/11 conflicting/6 invalid. Invalid outcomes remain censored, not ties. Flash's invalid call exhausted its4096-token output limit; Pro's invalid calls had stopped outputs with schema deviations (extra/missing/misspelled fields). Complete judgments were not silently repaired or repaid. Repeats are included and the selected24 pairs are not a random sample. Agreement and latency do not establish human alignment or causal training quality. Total reported API cost$0.159878822, distinct from GPU spend and the provider invoice.
+
+The user's clarified next step is [three actual matched RL runs](../rl-judge-ablation-20261002/EXPERIMENT.md), not choosing a winner from this offline assay. No actual ablation arm has started yet.

@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+# Shared environment binding for one isolated ablation arm.
+set -Eeuo pipefail
+
+ARM_ID="${1:?arm id required: flash|pro|luna}"
+case "$ARM_ID" in
+  flash) ARM_MODEL=xiaomi/mimo-v2.6-flash; ARM_RUN_NAME=rl-judge-ablation-flash-20261002; ARM_OUTPUT_ROOT=rl-rollouts; ARM_PUBLIC_PREFIX=text-rl-judge-ablation-flash-20261002 ;;
+  pro) ARM_MODEL=xiaomi/mimo-v2.6-pro; ARM_RUN_NAME=rl-judge-ablation-pro-20261002; ARM_OUTPUT_ROOT=rl-rollouts; ARM_PUBLIC_PREFIX=text-rl-judge-ablation-pro-20261002 ;;
+  luna) ARM_MODEL=openai/gpt-6-luna; ARM_RUN_NAME=rl-judge-ablation-luna-20261002; ARM_OUTPUT_ROOT=rl-rollouts; ARM_PUBLIC_PREFIX=text-rl-judge-ablation-luna-20261002 ;;
+  *) echo "unknown arm: $ARM_ID" >&2; exit 2 ;;
+esac
+
+AB_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
+export PAINTER_ABLATION_ROOT="$AB_ROOT"
+export PAINTER_REPO_ROOT="$(cd "$AB_ROOT/../../.." && pwd -P)"
+export PAINTER_BOOTSTRAP_RUN="${PAINTER_BOOTSTRAP_RUN:-$PAINTER_REPO_ROOT/painter/runs/text-pairwise-rl-20260928}"
+export PAINTER_ARM_ID="$ARM_ID"
+export PAINTER_RUN_ROOT="$AB_ROOT/../$ARM_RUN_NAME"
+export PAINTER_RUN_NAME="$ARM_RUN_NAME"
+export PAINTER_RL_RUN_NAME="$ARM_RUN_NAME"
+export PAINTER_OUTPUT_ROOT="$ARM_OUTPUT_ROOT"
+export PAINTER_PUBLIC_CHECKPOINT_PREFIX="$ARM_PUBLIC_PREFIX"
+export PAINTER_POLICY_MODE=recovered_policy
+export PAINTER_POLICY_REVISION=ac4d3eda8e5925e2d23992cfdc1a63620ebde573
+export PAINTER_POLICY_PREFIX=text-pairwise-scaled-20260929/step_16
+export PAINTER_POLICY_SHA256=e5211706a23b46354aa269f2b9cfaaaad1b64eef1012b433b1887c149f5a927c
+export PAINTER_POLICY_DOWNLOAD_SCRIPT="$PAINTER_REPO_ROOT/painter/runs/text-pairwise-rl-20260928/download_public_adapter.py"
+export PAINTER_POLICY_DOWNLOAD_RECEIPT="$PAINTER_RUN_ROOT/policy-adapter-receipt.json"
+export PAINTER_JUDGE_PROTOCOL=text-paint-sft-pairwise-consistent-v1
+export PAINTER_JUDGE_FORMAT=identity-joint-side-schema-v2-generic-v1
+export PAINTER_JUDGE_MODEL="$ARM_MODEL"
+export PAINTER_JUDGE_EFFORT=medium
+export PAINTER_GROUP_SIZE=4
+export PAINTER_INITIAL_INFLIGHT=96
+export PAINTER_MAX_INFLIGHT=96
+export PAINTER_GPUS_PER_NODE=8
+export PAINTER_NUM_TRAIN_GPUS=1
+export PAINTER_NUM_INFER_GPUS=7
+export PAINTER_RL_MAX_STEPS=50
+export PAINTER_EVAL_PREFERRED_STEP=12
+export PAINTER_RESERVE_SECONDS="${PAINTER_RESERVE_SECONDS:-1920}"
+export PAINTER_EVAL_TIMEOUT_SECONDS="${PAINTER_EVAL_TIMEOUT_SECONDS:-1200}"
+export PAINTER_ARCHIVE_TIMEOUT_SECONDS="${PAINTER_ARCHIVE_TIMEOUT_SECONDS:-360}"
+export PAINTER_PARENT_RELEASE_RESERVE_SECONDS="${PAINTER_PARENT_RELEASE_RESERVE_SECONDS:-240}"
+export PAINTER_COMPLETION_MARGIN_SECONDS="${PAINTER_COMPLETION_MARGIN_SECONDS:-120}"
+export PAINTER_SFT_ADAPTER_PATH_FILE="$PAINTER_RUN_ROOT/policy-adapter-path.txt"
+export PAINTER_FROZEN_SFT_ADAPTER_PATH_FILE="${PAINTER_FROZEN_SFT_ADAPTER_PATH_FILE:-$PAINTER_RUN_ROOT/frozen-sft-adapter-path.txt}"
+export PAINTER_RENDER_WORKERS=8
+export PAINTER_P5_BRUSH_API_REFERENCE=1 PAINTER_INSPECT_CHOICE_FEEDBACK=1
+export PAINTER_REQUIRE_VALID_FINAL_ACTION=1 PAINTER_JS_SYNTAX_PREFLIGHT=1
+export PAINTER_RENDERER_PATH="${PAINTER_RENDERER_PATH:-$PAINTER_RUN_ROOT/vendor/integrations/watercolour/renderer.py}"
+export PAINTER_RENDERER_PYTHON_PATH="${PAINTER_RENDERER_PYTHON_PATH:-$PAINTER_RUN_ROOT/renderer-env/bin/python}"
+export PAINTER_RENDERER_ROOT="${PAINTER_RENDERER_ROOT:-$AB_ROOT/../rl-judge-ablation-shared-20261002/runtime/watercolour-p5-brush-2.2.1-centroid-fix-v1}"

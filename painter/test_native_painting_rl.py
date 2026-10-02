@@ -58,6 +58,10 @@ class NativePaintingRLTests(unittest.TestCase):
             module._consistent_judge_module_name("identity-joint-side-schema-v2-pro-v1"),
             "painter.text_pairwise_consistent_side_judge_v2_pro",
         )
+        self.assertEqual(
+            module._consistent_judge_module_name("identity-joint-side-schema-v2-generic-v1"),
+            "painter.text_pairwise_consistent_side_judge_v2_generic",
+        )
         with self.assertRaises(ValueError):
             module._consistent_judge_module_name("unregistered-format")
 

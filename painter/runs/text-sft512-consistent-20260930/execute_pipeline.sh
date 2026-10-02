@@ -328,16 +328,24 @@ print(max(0, int(float(sys.argv[1]) - time.time())))
 PY
 }
 
-STEP="$($PY - "$RUN" "$EVIDENCE/latest-public-checkpoint.json" <<'PY'
+STEP="$($PY - "$RUN" "$EVIDENCE/latest-public-checkpoint.json" "${PAINTER_EVAL_PREFERRED_STEP:-}" <<'PY'
 import json
 import sys
 from pathlib import Path
-run, target = Path(sys.argv[1]), Path(sys.argv[2])
+run, target, preferred_raw = Path(sys.argv[1]), Path(sys.argv[2]), sys.argv[3]
 sys.path.insert(0, str(run))
-from safe_archive import select_latest_public_checkpoint
-selected = select_latest_public_checkpoint(run)
+from safe_archive import select_latest_public_checkpoint, select_preferred_public_checkpoint
+preferred = int(preferred_raw) if preferred_raw.isdigit() else None
+if preferred is None:
+    # Preserve the historical latest-verified selection for existing runs.
+    selected = select_latest_public_checkpoint(run)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(json.dumps(selected or {}, indent=2, sort_keys=True) + '\n')
+    print(selected['step'] if selected else '')
+    raise SystemExit
+selected, selection = select_preferred_public_checkpoint(run, preferred)
 target.parent.mkdir(parents=True, exist_ok=True)
-target.write_text(json.dumps(selected or {}, indent=2, sort_keys=True) + '\n')
+target.write_text(json.dumps({**(selected or {}), "selection": selection}, indent=2, sort_keys=True) + '\n')
 print(selected['step'] if selected else '')
 PY
 )"

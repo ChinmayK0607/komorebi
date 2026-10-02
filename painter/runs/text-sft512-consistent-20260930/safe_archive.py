@@ -91,6 +91,38 @@ def _screen_file(path: Path, relative: Path) -> bool:
     return True
 
 
+def _verified_public_checkpoint(receipt_path: Path) -> dict[str, Any] | None:
+    """Validate one checkpoint receipt and its local adapter bytes."""
+
+    match = re.fullmatch(r"step_([0-9]+)", receipt_path.parent.name)
+    if match is None:
+        return None
+    try:
+        receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None
+    weight = receipt_path.parent / "adapter_model.safetensors"
+    expected = receipt.get("files", {}).get("adapter_model.safetensors", {}).get("sha256")
+    if (receipt.get("verified") is not True or receipt.get("private") is not False or
+            not weight.is_file() or not isinstance(expected, str) or digest(weight) != expected):
+        return None
+    return {
+        "step": int(match.group(1)), "adapter": str(receipt_path.parent),
+        "receipt": str(receipt_path), "adapter_sha256": expected,
+        "public_commit": receipt.get("commit"), "public_path": receipt.get("path"),
+    }
+
+
+def select_public_checkpoint(run_root: Path, step: int, *, run_name: str = RUN_NAME) -> dict[str, Any] | None:
+    """Return one exact step only when the existing public validator accepts it."""
+
+    if isinstance(step, bool) or not isinstance(step, int) or step < 1:
+        return None
+    receipt = (run_root / "async-output" / run_name / "artifacts" / "adapters" /
+               f"step_{step}" / "hf-upload.json")
+    return _verified_public_checkpoint(receipt)
+
+
 def select_latest_public_checkpoint(run_root: Path, *, run_name: str = RUN_NAME) -> dict[str, Any] | None:
     """Return the highest-step adapter whose upload receipt verifies bytes."""
 
@@ -99,24 +131,44 @@ def select_latest_public_checkpoint(run_root: Path, *, run_name: str = RUN_NAME)
     if not root.is_dir():
         return None
     for receipt_path in root.glob("step_*/hf-upload.json"):
-        match = re.fullmatch(r"step_([0-9]+)", receipt_path.parent.name)
-        if match is None:
-            continue
-        try:
-            receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
-        except (OSError, json.JSONDecodeError):
-            continue
-        weight = receipt_path.parent / "adapter_model.safetensors"
-        expected = receipt.get("files", {}).get("adapter_model.safetensors", {}).get("sha256")
-        if (receipt.get("verified") is not True or receipt.get("private") is not False or
-                not weight.is_file() or not isinstance(expected, str) or digest(weight) != expected):
-            continue
-        candidates.append({
-            "step": int(match.group(1)), "adapter": str(receipt_path.parent),
-            "receipt": str(receipt_path), "adapter_sha256": expected,
-            "public_commit": receipt.get("commit"), "public_path": receipt.get("path"),
-        })
+        candidate = _verified_public_checkpoint(receipt_path)
+        if candidate is not None:
+            candidates.append(candidate)
     return max(candidates, key=lambda row: row["step"]) if candidates else None
+
+
+def select_preferred_public_checkpoint(
+    run_root: Path, preferred_step: int | None, *, run_name: str = RUN_NAME
+) -> tuple[dict[str, Any] | None, dict[str, Any]]:
+    """Choose a verified preferred step, otherwise a censored exploratory fallback."""
+
+    preferred = (select_public_checkpoint(run_root, preferred_step, run_name=run_name)
+                 if preferred_step is not None else None)
+    latest = select_latest_public_checkpoint(run_root, run_name=run_name)
+    if preferred is not None:
+        return preferred, {
+            "policy": "preferred_verified_public_checkpoint",
+            "preferred_step": preferred_step,
+            "selected_step": preferred["step"],
+            "primary_quality_status": "primary",
+            "fallback_reason": None,
+        }
+    if latest is not None:
+        return latest, {
+            "policy": "preferred_verified_public_checkpoint",
+            "preferred_step": preferred_step,
+            "selected_step": latest["step"],
+            "primary_quality_status": "exploratory_censored",
+            "fallback_reason": ("preferred_checkpoint_not_verified_or_unavailable"
+                                if preferred_step is not None else "no_preferred_checkpoint_declared"),
+        }
+    return None, {
+        "policy": "preferred_verified_public_checkpoint",
+        "preferred_step": preferred_step,
+        "selected_step": None,
+        "primary_quality_status": "no_verified_checkpoint",
+        "fallback_reason": "no_verified_public_checkpoint",
+    }
 
 
 def select_files(run_root: Path, *, output: Path | None = None) -> dict[str, Path]:
