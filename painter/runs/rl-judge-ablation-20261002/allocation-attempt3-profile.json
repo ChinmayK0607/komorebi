@@ -1,0 +1,57 @@
+{
+  "schema": "gpu-window-profile-v1",
+  "scope": "startup-only failed inference warm-up; zero RL optimizer updates",
+  "source_public_revision": "bebefdd91d5333ac4895a22bd2939211fc2bdb47",
+  "telemetry_member": "logs/gpu-telemetry-20261002T122713Z.csv",
+  "sampling_requested_seconds": 5,
+  "window_utc": [
+    "2026/10/02 12:27:13.327",
+    "2026/10/02 12:34:04.087"
+  ],
+  "sample_rows": 336,
+  "actual_role_mapping": {
+    "inference_physical_gpus": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ],
+    "trainer_physical_gpu": 7
+  },
+  "roles": {
+    "inference": {
+      "gpu_indices": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "gpu_sample_denominator": 294,
+      "mean_reported_utilization_percent": 1.2619047619047619,
+      "sample_busy_fraction_utilization_gt_zero": 0.25170068027210885,
+      "max_memory_mib": 63304.0
+    },
+    "trainer": {
+      "gpu_indices": [
+        7
+      ],
+      "gpu_sample_denominator": 42,
+      "mean_reported_utilization_percent": 0.0,
+      "sample_busy_fraction_utilization_gt_zero": 0.0,
+      "max_memory_mib": 4.0
+    }
+  },
+  "observed_gpu0_sample_interval_seconds": {
+    "median": 10.016,
+    "mean": 10.018219512195122,
+    "minimum": 10.011,
+    "maximum": 10.087
+  },
+  "utilization_aggregation": "unweighted sample means/busy fractions over the listed window; no claim of time-weighted saturation"
+}
