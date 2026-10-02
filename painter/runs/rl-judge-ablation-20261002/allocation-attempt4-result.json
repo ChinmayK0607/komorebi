@@ -1,0 +1,25 @@
+{
+  "schema": "text-paint-rl-judge-ablation-attempt-result-v1",
+  "attempt": 4,
+  "source_commit": "0c011a989c9201d11f877068e5469458f4b5f2c2",
+  "status": "failed_node_released",
+  "completed_optimizer_updates": 0,
+  "pro_and_luna_started": false,
+  "failure": "Inference server readiness exceeded600-second startup cutoff after GPU worker compilation and graph capture; parent terminated startup.",
+  "cache_missing_file_recurred": false,
+  "runtime_patch_applied": false,
+  "runtime_patch_note": "Git fast-forward was blocked by node-materialized tracked source identity; fresh next bundle includes compiler-sidecar exemption.",
+  "public_evidence": {
+    "repo": "CK0607/komorebi-painter-experiments",
+    "revision": "e4163ae55abefe92ccd412fda4e93a86801b1f12",
+    "remote_path": "runs/rl-judge-ablation-flash-20261002/evidence.tar.gz",
+    "bytes": 50745,
+    "sha256": "b46df59741f920ba13eb869406aac701f61d5d6d0f93ccb0eb2b0f8588b50f7c",
+    "anonymous_download": true
+  },
+  "release_utc": "2026-10-02T13:02:55.331357+00:00",
+  "gpu_clock_estimate_usd": 2.8732269964483046,
+  "combined_failed_setup_gpu_clock_estimate_usd": 12.590663491503397,
+  "cost_scope": "request-to-confirmed-release elapsed-clock estimate, not invoice",
+  "next_decision": "Bounded1200-second initial readiness allowance across all arms; preserve600-second historical default and120-second per-adapter load timeout; same recipe and measured startup monitoring."
+}

@@ -93,3 +93,11 @@ Parent reran34 scoped tests, including actual Python child-startup tests, source
 ## Allocation attempt4: isolated workers
 
 Restart allocated12:44UTC (18:14IST) from reviewed source `0c011a989c9201d11f877068e5469458f4b5f2c2`; clean bundleplan and34targetedtests passed. Same eightA10080/$9.20hour, CPUactivationoffload, matched three-arm RL protocol. The finite controller started immediately; remaining campaigncap$49.50 with319-minute expiry. This is an allocation/preparation record, not a completed update. [Safe allocation record](allocation-attempt4.json).
+
+## Attempt4 terminal result and bounded readiness repair
+
+Inference workers completed compilation and CUDA graph capture; the earlier missingTriton file exception did not recur. The launcher cut startup at its600-second readiness deadline while API processor warm-up was still progressing. Parent termination produced a final KeyboardInterrupt; this is not an independently observed processor defect. Zero optimizer updates; Pro/Luna skipped. An attempted mid-run compiler-sidecar patch was blocked by a node-materialized tracked source-identity file and **was not applied**. The next fresh bundle includes that reviewed compatibility fix.
+
+Public screened archive:50,745bytes, revision `e4163ae55abefe92ccd412fda4e93a86801b1f12`, SHA256 `b46df59741f920ba13eb869406aac701f61d5d6d0f93ccb0eb2b0f8588b50f7c`; anonymous retrieval verified. Node release13:02:55UTC (18:32:55IST). Attempt4 GPU-clock estimate$2.8732; cumulative failed starts$12.5907, not invoices. [Terminal record](allocation-attempt4-result.json).
+
+Next replay retains all registered arms and opts into a bounded1200-second initial server readiness allowance, instead of600; the historical default and120-second adapter load waits stay unchanged. Seven workers warmed close to the old cutoff, motivating this allowance; readiness and80-GiB trainer backward remain unproved. Parent37 scoped checks pass, including invalid/overlarge timeout rejection. Remaining totalcap$46.50 ($15.50/arm) plus prior failures gives combined per-arm ceiling$19.6969, below$20; provider299-minute expiry also bounds the rental. No GPU allocated during repair.

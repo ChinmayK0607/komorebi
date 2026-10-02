@@ -13,6 +13,7 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import json
+import math
 import os
 from pathlib import Path
 import sys
@@ -24,7 +25,32 @@ import urllib.request
 
 DEFAULT_INFERENCE_URL = "http://127.0.0.1:8000"
 READY_TIMEOUT_SECONDS = 600.0
+MAX_READY_TIMEOUT_SECONDS = 1200.0
 LOAD_TIMEOUT_SECONDS = 120.0
+
+
+def _ready_timeout_seconds() -> float:
+    """Return the bounded model-server startup allowance.
+
+    The historical 10-minute default remains unchanged.  A fresh ablation
+    node may opt into the ten-minute larger bound while loading a 27B model,
+    but the environment cannot turn this readiness wait into an unbounded
+    rental or silently exceed the reviewed 20-minute ceiling.
+    """
+
+    raw = os.environ.get("PAINTER_INFERENCE_READY_TIMEOUT_SECONDS")
+    if raw is None:
+        return READY_TIMEOUT_SECONDS
+    try:
+        value = float(raw)
+    except ValueError as exc:
+        raise ValueError("PAINTER_INFERENCE_READY_TIMEOUT_SECONDS must be numeric") from exc
+    if not math.isfinite(value) or value <= 0 or value > MAX_READY_TIMEOUT_SECONDS:
+        raise ValueError(
+            "PAINTER_INFERENCE_READY_TIMEOUT_SECONDS must be finite, positive, and at most "
+            f"{MAX_READY_TIMEOUT_SECONDS:g} seconds"
+        )
+    return value
 
 
 def trainer_command(command: list[str], wrapper: Path) -> list[str]:
@@ -202,7 +228,7 @@ def _wait_and_load(
 ) -> None:
     if not aliases or any(not alias for alias in aliases) or len(set(aliases)) != len(aliases):
         raise ValueError("initial adapter aliases must be non-empty and distinct")
-    deadline = time.monotonic() + READY_TIMEOUT_SECONDS
+    deadline = time.monotonic() + _ready_timeout_seconds()
     last_status = None
     try:
         while time.monotonic() < deadline:
@@ -369,6 +395,10 @@ def main() -> None:
         if basename == "inference":
             if inference_started:
                 raise RuntimeError("Prime attempted to start duplicate inference server")
+            # Validate the reviewed startup bound before creating the owned
+            # server, so a malformed override cannot start a billable process
+            # and only fail after the first readiness poll.
+            _ready_timeout_seconds()
             inference_started = True
             kwargs["env"] = _cache_env(root, "inference", environment)
             process = original(command, *args, **kwargs)

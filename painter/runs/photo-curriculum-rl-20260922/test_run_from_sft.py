@@ -50,6 +50,17 @@ class PhotoRLRunnerTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             MODULE._initial_aliases("/tmp/base", "/tmp/base")
 
+    def test_model_server_ready_timeout_is_bounded_and_opt_in(self):
+        self.assertEqual(MODULE._ready_timeout_seconds(), 600.0)
+        with patch.dict(MODULE.os.environ, {"PAINTER_INFERENCE_READY_TIMEOUT_SECONDS": "1200"}):
+            self.assertEqual(MODULE._ready_timeout_seconds(), 1200.0)
+        with patch.dict(MODULE.os.environ, {"PAINTER_INFERENCE_READY_TIMEOUT_SECONDS": "1200.1"}):
+            with self.assertRaisesRegex(ValueError, "at most 1200"):
+                MODULE._ready_timeout_seconds()
+        with patch.dict(MODULE.os.environ, {"PAINTER_INFERENCE_READY_TIMEOUT_SECONDS": "never"}):
+            with self.assertRaisesRegex(ValueError, "must be numeric"):
+                MODULE._ready_timeout_seconds()
+
     def test_recovered_policy_loads_frozen_alias_from_distinct_adapter(self):
         with TemporaryDirectory() as temp:
             root = Path(temp)
