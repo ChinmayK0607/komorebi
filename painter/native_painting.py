@@ -14,6 +14,9 @@ import hashlib
 import json
 import os
 import re
+import asyncio
+import threading
+import time
 import uuid
 from asyncio import Semaphore, to_thread
 from collections.abc import Iterable, Mapping
@@ -71,6 +74,27 @@ P5_BRUSH_API_REFERENCE = (
 # Trace the exact UTF-8 bytes shown to the model, separately from the asset
 # hash above, so a prompt change cannot be mistaken for an asset change.
 P5_BRUSH_API_REFERENCE_SHA256 = hashlib.sha256(P5_BRUSH_API_REFERENCE.encode("utf-8")).hexdigest()
+P5_BRUSH_API_REFERENCE_V2_ENV = "PAINTER_P5_BRUSH_API_REFERENCE_V2"
+P5_BRUSH_API_REFERENCE_V2_VERSION = "p5-brush-api-v2"
+# V2 is a separate, default-off reference.  Keep the v1 bytes above untouched
+# so historical prompt/hash receipts remain valid.
+P5_BRUSH_API_REFERENCE_V2 = """Pinned p5.brush drawing API reference v2 (opt-in; use only these verified calls):
+`brush` is the already-loaded global singleton. Select a real named brush and its stroke color with
+`brush.set(name, color, weight)`; `brush.box()` returns names such as `cpencil`, `pen`, `marker`, and `charcoal`.
+`brush.stroke(color)` is the exported stroke-color setter. Exact drawing signatures are:
+`brush.circle(x, y, radius, roughness?)`, `brush.rect(x, y, width, height, mode?)`,
+`brush.line(x1, y1, x2, y2)`, and `brush.spline([[x, y, pressure], ...], curvature?)`.
+Use `mode` `corner` or `center` for `brush.rect`; provide at least two points to `brush.spline`.
+Do not invent global helpers named `circle`, `line`, `ellipse`, or `box`; call the methods on `brush`.
+Do not define a second `setup()` or `draw()`. A minimal complete sketch is:
+```javascript
+function setup(){createCanvas(600,600,WEBGL);}
+function draw(){translate(-width/2,-height/2);background('#f5efe4');brush.noFill();brush.noWash();brush.set('cpencil','#554d44',0.8);brush.stroke('#554d44');brush.line(80,80,520,520);noLoop();}
+```
+""".strip()
+P5_BRUSH_API_REFERENCE_V2_SHA256 = hashlib.sha256(
+    P5_BRUSH_API_REFERENCE_V2.encode("utf-8")
+).hexdigest()
 TEXT_SYSTEM_API = (
     TEXT_SYSTEM.replace(
         "Do not redefine p5 globals such as translate or use brush.rect/brush.ellipse. Use brush.polygon for filled shapes and brush.line for strokes. ",
@@ -78,6 +102,14 @@ TEXT_SYSTEM_API = (
     )
     + "\n"
     + P5_BRUSH_API_REFERENCE
+)
+TEXT_SYSTEM_API_V2 = (
+    TEXT_SYSTEM.replace(
+        "Do not redefine p5 globals such as translate or use brush.rect/brush.ellipse. Use brush.polygon for filled shapes and brush.line for strokes. ",
+        "Do not redefine p5 globals such as translate. `brush.rect` is supported; `brush.ellipse` is not. Use brush.polygon for filled shapes and brush.line for strokes. ",
+    )
+    + "\n"
+    + P5_BRUSH_API_REFERENCE_V2
 )
 SYSTEM_API = SYSTEM + "\n" + P5_BRUSH_API_REFERENCE
 TEXT_NEXT_VERSION = "Inspect the PAINTING BRIEF and current canvas, then paint the next complete version."
@@ -233,6 +265,13 @@ def brush_api_reference_enabled(environ: Mapping[str, str] | None = None) -> boo
     return values.get(P5_BRUSH_API_REFERENCE_ENV) == "1"
 
 
+def brush_api_reference_v2_enabled(environ: Mapping[str, str] | None = None) -> bool:
+    """Return whether the separate default-off drawing API v2 is enabled."""
+
+    values = os.environ if environ is None else environ
+    return values.get(P5_BRUSH_API_REFERENCE_V2_ENV) == "1"
+
+
 def feedback_version(environ: Mapping[str, str] | None = None) -> str:
     """Return the user-facing feedback version selected for a trace."""
 
@@ -240,6 +279,8 @@ def feedback_version(environ: Mapping[str, str] | None = None) -> str:
 
 
 def _painting_system_prompt(reference_kind: str) -> str:
+    if brush_api_reference_v2_enabled():
+        return TEXT_SYSTEM_API_V2 if reference_kind == "text" else SYSTEM + "\n" + P5_BRUSH_API_REFERENCE_V2
     if brush_api_reference_enabled():
         return TEXT_SYSTEM_API if reference_kind == "text" else SYSTEM_API
     return TEXT_SYSTEM if reference_kind == "text" else SYSTEM
@@ -502,13 +543,29 @@ class NativePaintingEnv(vf.Env[NativePaintingEnvConfig]):
                 feedback_version() if data.reference_kind == "text" else LEGACY_FEEDBACK_VERSION
             ),
             "brush_api_reference_version": (
-                P5_BRUSH_API_REFERENCE_VERSION if brush_api_reference_enabled() else None
+                P5_BRUSH_API_REFERENCE_V2_VERSION
+                if brush_api_reference_v2_enabled()
+                else P5_BRUSH_API_REFERENCE_VERSION
+                if brush_api_reference_enabled()
+                else None
             ),
             "brush_api_reference_sha256": (
-                P5_BRUSH_API_REFERENCE_SHA256 if brush_api_reference_enabled() else None
+                P5_BRUSH_API_REFERENCE_V2_SHA256
+                if brush_api_reference_v2_enabled()
+                else P5_BRUSH_API_REFERENCE_SHA256
+                if brush_api_reference_enabled()
+                else None
             ),
             "brush_api_reference_export_basis_sha256": (
-                P5_BRUSH_EXPORT_BASIS_SHA256 if brush_api_reference_enabled() else None
+                P5_BRUSH_EXPORT_BASIS_SHA256
+                if brush_api_reference_enabled() or brush_api_reference_v2_enabled()
+                else None
+            ),
+            "brush_api_reference_v2_version": (
+                P5_BRUSH_API_REFERENCE_V2_VERSION if brush_api_reference_v2_enabled() else None
+            ),
+            "brush_api_reference_v2_sha256": (
+                P5_BRUSH_API_REFERENCE_V2_SHA256 if brush_api_reference_v2_enabled() else None
             ),
             "mode": data.mode,
             "task_id": data.task_id,
@@ -555,17 +612,15 @@ class NativePaintingEnv(vf.Env[NativePaintingEnvConfig]):
                         break
                 else:
                     try:
-                        async with _render_slot():
-                            result = await to_thread(
-                                render_action,
-                                root=root,
-                                folder=folder / f"turn-{turn}",
-                                reply=reply,
-                                initial_canvas=current_canvas,
-                                initial_program=current_program,
-                                renderer=_resolve(root, data.renderer) if data.renderer else None,
-                                renderer_python=_resolve(root, data.renderer_python) if data.renderer_python else None,
-                            )
+                        result = await _render_action_with_slot(
+                            root=root,
+                            folder=folder / f"turn-{turn}",
+                            reply=reply,
+                            initial_canvas=current_canvas,
+                            initial_program=current_program,
+                            renderer=_resolve(root, data.renderer) if data.renderer else None,
+                            renderer_python=_resolve(root, data.renderer_python) if data.renderer_python else None,
+                        )
                     except Exception as exc:
                         interaction.trace.info["service_failure"] = f"renderer service failure: {type(exc).__name__}: {exc}"
                         turn_info.update(action="paint", valid=False, failure_kind="service")
@@ -590,7 +645,9 @@ class NativePaintingEnv(vf.Env[NativePaintingEnvConfig]):
                         inspect_choice_text = (
                             data.reference_kind == "text" and inspect_choice_feedback_enabled()
                         )
-                        api_reference_enabled = brush_api_reference_enabled()
+                        api_reference_enabled = (
+                            brush_api_reference_enabled() or brush_api_reference_v2_enabled()
+                        )
                         failure_feedback = _program_failure_feedback(
                             result.get("renderer_errors") or result.get("error"),
                             include_guidance=not (inspect_choice_text and current_canvas is not None),
@@ -627,12 +684,65 @@ class _render_slot:
         RENDER_LIMIT.release()
 
 
+async def _render_action_with_slot(**kwargs: Any) -> dict[str, Any]:
+    """Run one render while retaining its slot until the worker has stopped.
+
+    ``asyncio.to_thread`` cannot stop a synchronous renderer when its caller is
+    cancelled.  Shield the thread future, signal the renderer to clean up, and
+    drain it before leaving ``_render_slot``.  This keeps the semaphore aligned
+    with actual renderer processes instead of merely with live episode tasks.
+    """
+
+    queued_at = time.monotonic()
+    async with _render_slot():
+        queue_seconds = time.monotonic() - queued_at
+        active_started = time.monotonic()
+        cancel_event = threading.Event()
+        render_task = asyncio.create_task(
+            to_thread(render_action, cancel_event=cancel_event, **kwargs)
+        )
+        try:
+            result = await asyncio.shield(render_task)
+            measured = dict(result)
+            measured["render_queue_seconds"] = queue_seconds
+            measured["render_active_seconds"] = time.monotonic() - active_started
+            return measured
+        except asyncio.CancelledError:
+            cancel_event.set()
+            # A second cancellation may arrive while the owned subprocess is
+            # being drained.  Keep the slot until the thread has terminated;
+            # render_action bounds that cleanup and raises RenderCancelled.
+            while not render_task.done():
+                try:
+                    await asyncio.shield(render_task)
+                except asyncio.CancelledError:
+                    cancel_event.set()
+                except BaseException:
+                    # The worker has terminated with an operational or
+                    # cancellation exception; retrieve it below while keeping
+                    # the caller's cancellation authoritative.
+                    break
+            try:
+                render_task.result()
+            except BaseException:
+                # The caller's cancellation is the authoritative outcome.  Do
+                # not turn a stale render result or cleanup exception into an
+                # episode service failure.
+                pass
+            raise
+
+
 __all__ = [
+    "P5_BRUSH_API_REFERENCE_V2",
     "DEFAULT_RENDER_WORKERS",
+    "P5_BRUSH_API_REFERENCE_V2_ENV",
+    "P5_BRUSH_API_REFERENCE_V2_SHA256",
+    "P5_BRUSH_API_REFERENCE_V2_VERSION",
     "RENDER_WORKERS_ENV",
     "NativePaintingTaskset",
     "NativePaintingEnv",
     "NativePaintingConfig",
     "NativePaintingEnvConfig",
     "render_worker_limit",
+    "brush_api_reference_v2_enabled",
 ]

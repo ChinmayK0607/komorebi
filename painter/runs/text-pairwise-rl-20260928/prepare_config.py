@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import importlib.util
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -34,11 +35,32 @@ SUPPORTED_JUDGE_PROTOCOLS = {
 }
 
 
+def _resolved_checkpoint_interval(value: int | None) -> int:
+    """Resolve the opt-in environment override without changing old callers.
+
+    An explicit function/CLI value wins.  The environment is intentionally
+    consulted only when the caller omitted the value, so historical callers
+    that pass ``4`` remain byte-for-byte on the old cadence.
+    """
+    if value is None:
+        raw = os.environ.get("PAINTER_RL_CHECKPOINT_INTERVAL")
+        value = 4 if raw is None else raw
+    if isinstance(value, bool) or not isinstance(value, (int, str)):
+        raise ValueError("checkpoint_interval must be a positive integer")
+    try:
+        resolved = int(value)
+    except ValueError as exc:
+        raise ValueError("checkpoint_interval must be a positive integer") from exc
+    if resolved < 1:
+        raise ValueError("checkpoint_interval must be a positive integer")
+    return resolved
+
+
 def prepare(*, output: Path, model: Path, run_root: Path, manifest: Path,
             prime_root: Path | None = None, max_steps: int = 20,
             run_name: str = RUN_NAME, output_root: str = "rl-rollouts",
             judge_protocol: str = "text-paint-sft-pairwise-v1",
-            expected_count: int = 40, checkpoint_interval: int = 4,
+            expected_count: int = 40, checkpoint_interval: int | None = None,
             adapter_revision: str = SFT_REVISION,
             adapter_prefix: str = SFT_PREFIX,
             adapter_sha256: str = SFT_SHA256,
@@ -61,6 +83,7 @@ def prepare(*, output: Path, model: Path, run_root: Path, manifest: Path,
         raise ValueError("unsupported text judge protocol")
     if mode not in {"fresh", "recovered_policy"}:
         raise ValueError("unsupported policy initialization mode")
+    checkpoint_interval = _resolved_checkpoint_interval(checkpoint_interval)
     if len(adapter_sha256) != 64 or any(c not in "0123456789abcdef" for c in adapter_sha256):
         raise ValueError("adapter_sha256 must be lowercase SHA-256")
     rows = json.loads(manifest.read_text())["rows"]
@@ -103,6 +126,14 @@ def prepare(*, output: Path, model: Path, run_root: Path, manifest: Path,
         "adapter_prefix": adapter_prefix,
         "adapter_sha256": adapter_sha256,
         "mode": mode, "optimizer_resume": False,
+        "adapter_checkpoint_mode_required": "adapter_only_post_update",
+        "checkpoint_interval": checkpoint_interval,
+        "checkpoint_keep_last": config["ckpt"]["keep_last"],
+        "batch_size": config["orchestrator"]["batch_size"],
+        "group_size": config["orchestrator"]["group_size"],
+        "initial_inflight": config["orchestrator"]["concurrency"]["initial_inflight"],
+        "max_inflight": config["orchestrator"]["concurrency"]["max_inflight"],
+        "max_off_policy_steps": config["orchestrator"]["max_off_policy_steps"],
         "activation_cpu_offload": activation_cpu_offload,
         "activation_offloading": config["trainer"]["model"]["ac_offloading"],
         "frozen_anchor": {"alias": "sft-step512", "immutable": True,
@@ -126,7 +157,7 @@ def main() -> None:
     parser.add_argument("--output-root", default="rl-rollouts")
     parser.add_argument("--judge-protocol", default="text-paint-sft-pairwise-v1")
     parser.add_argument("--expected-count", type=int, default=40)
-    parser.add_argument("--checkpoint-interval", type=int, default=4)
+    parser.add_argument("--checkpoint-interval", type=int)
     parser.add_argument("--adapter-revision", default=SFT_REVISION)
     parser.add_argument("--adapter-prefix", default=SFT_PREFIX)
     parser.add_argument("--adapter-sha256", default=SFT_SHA256)

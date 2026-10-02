@@ -1,0 +1,53 @@
+{
+  "audit_sha256": "51aba0b416ac71639e31419989a045357b9a7e3dc13abba9ca18e00661817130",
+  "checks": {
+    "combined_unit_tests": {
+      "passed": 83,
+      "run": 84,
+      "skip_reason": "Node.js unavailable for existing pure centroid function fixture",
+      "skipped": 1
+    },
+    "copied_derivative_cli_help_exit": 0,
+    "diff_whitespace_passed": true,
+    "frozen_vendor_renderer_hash_unchanged": true,
+    "historical_ablation_contract_tests": {
+      "passed": 18,
+      "run": 18
+    },
+    "new_derivative_hash_guard_matches": true,
+    "real_metadata_audit_counts_verified": true
+  },
+  "date": "2026-10-03",
+  "not_tested": [
+    "Linux Chrome rendering",
+    "render pixel parity",
+    "steady-state training throughput",
+    "public checkpoint export at interval one",
+    "visual quality improvement"
+  ],
+  "operations": {
+    "actual_rendering": false,
+    "gpu_rentals": 0,
+    "machine_learning": false,
+    "paid_api_calls": 0,
+    "scheduled_tasks_created": 0
+  },
+  "review_base_commit": "465c14338219b3bdf3d5d60419e07186f4b8266d",
+  "schema": "offline-throughput-recovery-validation-v1",
+  "source_sha256": {
+    "painter/cancellable_watercolour_renderer.py": "c25f837bad1dddeb63be9043328c964f0f9db78eec887e97a3df703e980d752e",
+    "painter/native_painting.py": "da3a2d16f3a1d434b9c88a05e370485cb992f2115175fd6a104d58e2e306209b",
+    "painter/native_painting_renderer.py": "75b86a9a63e90878c404a281aaaf1d5073123f8ae1f75dcf65142848b2a0247e",
+    "painter/patch_brush_centroid.py": "9766fa97c22092acde6bfe7f8b0d5f918f759c4fd6c0010333e599cf4aaa179d",
+    "painter/pipeline_audit.py": "705046e2cff5fd7e67a3854132413f99f3593581d22eb8e78a21e09f57d27cd8",
+    "painter/runs/text-pairwise-rl-20260928/prepare_config.py": "c548c7850d263b0f2ac6749fbfbbbb1693562f5ddee5632f39f6381e3aff069a",
+    "painter/test_cancellable_watercolour_renderer.py": "792832001134df757e01bcc4628b03e404062ee145562a2c57194099d562c1ff",
+    "painter/test_native_painting.py": "3589b8390b9a10579ae407e18419d724eb411dd23ac5a3d411653071fdb17eb9",
+    "painter/test_native_painting_api_reference_v2.py": "e704aaace3aca4dafdf5f7d925ebdcf250608865466ff498447733d04012cdc0",
+    "painter/test_native_painting_renderer.py": "d9df12832a988fdb42f54209665aef7521a2ea58b1266877b6719507e56d5935",
+    "painter/test_patch_brush_centroid.py": "9de8a5c6ae04ffcad3bde7d2f835f7b5f8775b815bfc8188c343ba12bb121392",
+    "painter/test_pipeline_audit.py": "692eed71a8f042b556393be19097325f500b5597b16821b32e45a940f7b6c77c",
+    "painter/test_throughput_recovery_profile.py": "ae00b80b9cfbda7b9d4407058febeffde6b0a471904661608ac478bc65c69666",
+    "painter/throughput_recovery_profile.py": "e9ffc3a3234384c5650f29440e4b313c1be96dcd486e5287f33751a99579896b"
+  }
+}

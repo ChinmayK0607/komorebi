@@ -9,6 +9,8 @@ import importlib
 import json
 import re
 import sys
+import threading
+import time
 import types
 import unittest
 from pathlib import Path
@@ -190,6 +192,116 @@ class NativePaintingTests(unittest.TestCase):
             module.render_worker_limit({module.RENDER_WORKERS_ENV: "0"})
         with self.assertRaises(ValueError):
             module.render_worker_limit({module.RENDER_WORKERS_ENV: "cpu"})
+
+    def test_cancel_while_waiting_for_slot_does_not_release_other_owner(self):
+        module = _load_module()
+        async def scenario():
+            previous = module.RENDER_LIMIT
+            module.RENDER_LIMIT = asyncio.Semaphore(1)
+            await module.RENDER_LIMIT.acquire()
+            try:
+                pending = asyncio.create_task(module._render_action_with_slot())
+                await asyncio.sleep(0)
+                pending.cancel()
+                with self.assertRaises(asyncio.CancelledError):
+                    await pending
+                self.assertEqual(module.RENDER_LIMIT._value, 0)
+                module.RENDER_LIMIT.release()
+                self.assertEqual(module.RENDER_LIMIT._value, 1)
+            finally:
+                module.RENDER_LIMIT = previous
+
+        asyncio.run(scenario())
+
+    def test_render_timing_separates_slot_wait_from_active_worker(self):
+        module = _load_module()
+
+        async def scenario():
+            previous = module.RENDER_LIMIT
+            module.RENDER_LIMIT = asyncio.Semaphore(1)
+            await module.RENDER_LIMIT.acquire()
+            try:
+                with patch.object(
+                    module,
+                    "render_action",
+                    return_value={"valid": False, "failure_kind": "program"},
+                ):
+                    pending = asyncio.create_task(module._render_action_with_slot())
+                    await asyncio.sleep(0.02)
+                    module.RENDER_LIMIT.release()
+                    result = await pending
+                self.assertGreater(result["render_queue_seconds"], 0)
+                self.assertGreaterEqual(result["render_active_seconds"], 0)
+            finally:
+                module.RENDER_LIMIT = previous
+
+        asyncio.run(scenario())
+
+    def test_active_render_is_drained_before_slot_release(self):
+        module = _load_module()
+        started = threading.Event()
+        finished = threading.Event()
+
+        def fake_render(**kwargs):
+            started.set()
+            while not kwargs["cancel_event"].is_set():
+                time.sleep(0.002)
+            # Keep the worker alive briefly so the test observes the drain.
+            time.sleep(0.03)
+            finished.set()
+            raise RuntimeError("cancelled stub")
+
+        async def scenario():
+            previous = module.RENDER_LIMIT
+            module.RENDER_LIMIT = asyncio.Semaphore(1)
+            try:
+                with patch.object(module, "render_action", side_effect=fake_render):
+                    pending = asyncio.create_task(module._render_action_with_slot())
+                    while not started.is_set():
+                        await asyncio.sleep(0)
+                    pending.cancel()
+                    with self.assertRaises(asyncio.CancelledError):
+                        await pending
+                self.assertTrue(finished.is_set())
+                await asyncio.wait_for(module.RENDER_LIMIT.acquire(), timeout=1)
+                module.RENDER_LIMIT.release()
+            finally:
+                module.RENDER_LIMIT = previous
+
+        asyncio.run(scenario())
+
+    def test_repeated_cancel_during_render_drain_is_safe(self):
+        module = _load_module()
+        started = threading.Event()
+        finished = threading.Event()
+
+        def fake_render(**kwargs):
+            started.set()
+            kwargs["cancel_event"].wait(1)
+            time.sleep(0.08)
+            finished.set()
+            return {"valid": False, "failure_kind": "cancelled"}
+
+        async def scenario():
+            previous = module.RENDER_LIMIT
+            module.RENDER_LIMIT = asyncio.Semaphore(1)
+            try:
+                with patch.object(module, "render_action", side_effect=fake_render):
+                    pending = asyncio.create_task(module._render_action_with_slot())
+                    while not started.is_set():
+                        await asyncio.sleep(0)
+                    pending.cancel()
+                    await asyncio.sleep(0.01)
+                    pending.cancel()
+                    await asyncio.sleep(0.01)
+                    pending.cancel()
+                    with self.assertRaises(asyncio.CancelledError):
+                        await pending
+                self.assertTrue(finished.is_set())
+            finally:
+                module.RENDER_LIMIT = previous
+
+        asyncio.run(scenario())
 
     def test_finish_parser_accepts_reason_but_never_code_with_finished(self):
         module = _load_module()

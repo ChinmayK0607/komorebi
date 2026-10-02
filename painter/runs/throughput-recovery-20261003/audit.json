@@ -1,0 +1,1091 @@
+{
+  "arms": {
+    "flash": {
+      "admission": {
+        "decision_counts": {
+          "admit": 20,
+          "reject_uncertain_or_error": 4
+        },
+        "evidence_rows": 24,
+        "groups_admitted": 20,
+        "groups_censored": 4,
+        "groups_observed": 24,
+        "status": "ok"
+      },
+      "budget": {
+        "elapsed_seconds": 3330.1712124347687,
+        "estimated_cap_headroom_usd": 5.189562457111146,
+        "estimated_elapsed_cost_usd": 8.510437542888853,
+        "finished_epoch": 1790953207.4951031,
+        "gpu_cap_usd": 13.7,
+        "price_usd_per_hour": 9.2,
+        "reserve_seconds": 1920.0,
+        "started_epoch": 1790949877.3238907
+      },
+      "completion": {
+        "admitted_batch_counter": 2,
+        "completed_optimizer_steps": 2,
+        "evidence": "flash/supervisor-state.json",
+        "orchestrator_batch_steps": 2,
+        "orchestrator_steps_observed": [
+          1,
+          2
+        ],
+        "supervisor_last_optimizer_step": 2
+      },
+      "evidence": [
+        {
+          "path": "flash/source-identity.json",
+          "sha256": "5ffe553fd5974ebb607545d6141fad18c784d8ac185e7051cc3c736adea73a6f"
+        },
+        {
+          "path": "flash/evidence-manifest.json",
+          "sha256": "253c1659f9a0cb2275a60c314dc3b43e8c1554a94582ac9042971f9c71f64b22"
+        },
+        {
+          "path": "flash/supervisor-state.json",
+          "sha256": "496ef45013e9d51e857e790341010ea1a33c2ed68946f0260709f36380c1f319"
+        },
+        {
+          "path": "flash/analysis-summary.json",
+          "sha256": "c33465b1c39210fc414c7546a8aeb3094bd6fe4875164b2fffc98ca840286284"
+        },
+        {
+          "path": "flash/gpu-summary.json",
+          "sha256": "8be4f732a4d98998b1c50c51d87aaaa8f18819b05dc568e18247a454d3a967b7"
+        },
+        {
+          "path": "flash/consistent-group-admission.jsonl",
+          "sha256": "7555898e222401e42465799b9f4987d883f550650421ab4c111d9c82e269cd96"
+        },
+        {
+          "path": "flash/async-output/rl-judge-ablation-flash-20261002/logs/attempt_1/trainer.log",
+          "sha256": "c837119c6d5d2174ea8b4240db595f05eaf8954743aae80460f77f6501e9aded"
+        },
+        {
+          "path": "flash/async-output/rl-judge-ablation-flash-20261002/monitors/file/traces/annotations/orch.index.jsonl",
+          "sha256": "1f2dcfd2ed7f4f36d38e1ee4ce313308ca273d11bca0a11eed197b2baf20b29d"
+        },
+        {
+          "path": "flash/compact-traces-metrics.json",
+          "sha256": "cba1d5d0e06ffe23e1401563fb906c68ae592598e6cb5b5b11167fcdd05ef250"
+        },
+        {
+          "path": "flash/logs/gpu-telemetry-20261002T140447Z.csv",
+          "sha256": "66d39c72227f4ee9fdf5e7bcece0717cc7104e87cd7ed52119b1e44853e9a2af"
+        }
+      ],
+      "gpu": {
+        "evidence": "flash/logs/gpu-telemetry-20261002T140447Z.csv",
+        "roles": {
+          "inference": {
+            "busy_fraction_nonzero": 0.7548500881834215,
+            "denominator_samples": 2268,
+            "gpu_util_mean_percent": 70.47398589065256,
+            "per_gpu_cadence_seconds": {
+              "0": 10.028,
+              "1": 10.028,
+              "2": 10.028,
+              "3": 10.028,
+              "4": 10.028,
+              "5": 10.028,
+              "6": 10.028
+            },
+            "physical_indices": [
+              0,
+              1,
+              2,
+              3,
+              4,
+              5,
+              6
+            ],
+            "samples": 2268,
+            "window_end": "2026-10-02T14:58:46.145000",
+            "window_seconds": 3238.431,
+            "window_start": "2026-10-02T14:04:47.714000"
+          },
+          "trainer": {
+            "busy_fraction_nonzero": 0.19753086419753085,
+            "denominator_samples": 324,
+            "gpu_util_mean_percent": 12.320987654320987,
+            "per_gpu_cadence_seconds": {
+              "7": 10.028
+            },
+            "physical_indices": [
+              7
+            ],
+            "samples": 324,
+            "window_end": "2026-10-02T14:58:46.149000",
+            "window_seconds": 3238.361,
+            "window_start": "2026-10-02T14:04:47.788000"
+          }
+        },
+        "sample_cadence_seconds": 10.028,
+        "status": "ok",
+        "window_end": "2026-10-02T14:58:46.149000",
+        "window_start": "2026-10-02T14:04:47.714000"
+      },
+      "judge": {
+        "malformed_receipts": 0,
+        "receipts": 35,
+        "recheck_views": {
+          "deduplicated_call_count": 12,
+          "exact_record_reuse_count": 0,
+          "failed_call_count": 0,
+          "latency_seconds": {
+            "count": 12,
+            "max": 88.11264994199882,
+            "mean": 46.6035423279997,
+            "min": 21.814965357996698,
+            "p50": 39.755209267998,
+            "p90": 72.6119839180028,
+            "unit": "seconds"
+          },
+          "raw_call_count": 12,
+          "usage": {
+            "completion_tokens": 18609,
+            "cost_lower_bound_usd": 0.0053421872,
+            "prompt_tokens": 17624,
+            "reasoning_tokens": 14254,
+            "recorded_cost_usd": 0.0053421872,
+            "total_tokens": 36233,
+            "unknown_cost_count": 0
+          },
+          "view_entries": 12
+        },
+        "total_deduplicated_call_count": 86,
+        "total_failed_call_count": 0,
+        "total_latency_seconds": {
+          "count": 86,
+          "max": 88.11264994199882,
+          "mean": 36.186833741185644,
+          "min": 13.761113938999188,
+          "p50": 31.86168217499653,
+          "p90": 56.5233225799966,
+          "unit": "seconds"
+        },
+        "total_usage": {
+          "completion_tokens": 99408,
+          "cost_lower_bound_usd": 0.0424052552,
+          "prompt_tokens": 126407,
+          "reasoning_tokens": 67223,
+          "recorded_cost_usd": 0.0424052552,
+          "total_tokens": 225815,
+          "unknown_cost_count": 0
+        },
+        "views": {
+          "deduplicated_call_count": 74,
+          "exact_record_reuse_count": 0,
+          "failed_call_count": 0,
+          "latency_seconds": {
+            "count": 74,
+            "max": 86.13655519099848,
+            "mean": 34.49763775413472,
+            "min": 13.761113938999188,
+            "p50": 31.32339049100119,
+            "p90": 55.22940985999594,
+            "unit": "seconds"
+          },
+          "raw_call_count": 74,
+          "usage": {
+            "completion_tokens": 80799,
+            "cost_lower_bound_usd": 0.037063068,
+            "prompt_tokens": 108783,
+            "reasoning_tokens": 52969,
+            "recorded_cost_usd": 0.037063068,
+            "total_tokens": 189582,
+            "unknown_cost_count": 0
+          },
+          "view_entries": 70
+        }
+      },
+      "quality_comparison": {
+        "reason": "audit does not rank quality at finite early steps",
+        "status": "not_computed"
+      },
+      "queue_and_cancellation": {
+        "active_episode_cancels": {
+          "count": 84,
+          "evidence": [
+            "flash/async-output/rl-judge-ablation-flash-20261002/logs/attempt_1/orchestrator.log"
+          ],
+          "status": "observed"
+        },
+        "stale_queued_trace_drops": {
+          "count": 28,
+          "evidence": [
+            "flash/async-output/rl-judge-ablation-flash-20261002/logs/attempt_1/orchestrator.log"
+          ],
+          "status": "observed"
+        }
+      },
+      "render": {
+        "duration_seconds": {
+          "count": 432,
+          "max": 180.075,
+          "mean": 41.62813194444444,
+          "min": 4.45,
+          "p50": 20.284,
+          "p90": 145.183,
+          "unit": "seconds"
+        },
+        "invalid_receipts": 207,
+        "receipt_count": 432,
+        "timed_out_receipts": 37,
+        "timing_unknown_receipts": 0,
+        "unknown_receipts": 0,
+        "valid_receipts": 225
+      },
+      "saved_aggregate": {
+        "group_decisions": {
+          "admit": 20,
+          "reject_uncertain_or_error": 4
+        },
+        "invalid_render_elapsed": {
+          "max": 180.07,
+          "mean": 48.56,
+          "n": 207,
+          "p50": 13.95,
+          "p90": 180.03
+        },
+        "judge_consensus": {
+          "initial_agreement": 29,
+          "no_three_of_four": 6
+        },
+        "judge_status": {
+          "scored": 29,
+          "uncertain": 6
+        },
+        "render_elapsed": {
+          "max": 180.07,
+          "mean": 41.63,
+          "n": 432,
+          "p50": 20.3,
+          "p90": 145.18
+        },
+        "valid_render_elapsed": {
+          "max": 170.79,
+          "mean": 35.25,
+          "n": 225,
+          "p50": 24.4,
+          "p90": 71.2
+        }
+      },
+      "traces": {
+        "censor_caveat": "Counts and timing use completed trace records present in the extracted evidence; missing, unfinished, or operationally censored traces are excluded and are not inferred.",
+        "completed_trace_count": 106,
+        "denominator": {
+          "count": 106,
+          "episode_ok_false_count": 6,
+          "kind": "completed_trace_records",
+          "trace_ok_false_count": 6
+        },
+        "evidence": "flash/compact-traces-metrics.json",
+        "final_action_invalid_count": 71,
+        "final_action_invalid_split": {
+          "final_canvas_absent": 0,
+          "final_canvas_invalid": 35,
+          "retained_final_canvas_valid": 36
+        },
+        "reward_status_counts": {
+          "judge_uncertain": 6,
+          "model_invalid_final_action": 71,
+          "scored": 29
+        },
+        "source": "compact-traces-metrics",
+        "status": "ok",
+        "timing_seconds": {
+          "harness": {
+            "count": 106,
+            "max": 1257.6522769927979,
+            "mean": 737.9818706085097,
+            "min": 60.460431814193726,
+            "p50": 730.0447783470154,
+            "p90": 1023.0682120323181,
+            "unit": "seconds"
+          },
+          "model": {
+            "count": 106,
+            "max": 635.1420879364014,
+            "mean": 309.1325140089359,
+            "min": 111.97113370895386,
+            "p50": 288.3846364021301,
+            "p90": 477.8544065952301,
+            "unit": "seconds"
+          },
+          "scoring": {
+            "count": 106,
+            "max": 139.081538438797,
+            "mean": 18.33061175751236,
+            "min": 0.0004994869232177734,
+            "p50": 0.0008149147033691406,
+            "p90": 62.720011472702026,
+            "unit": "seconds"
+          }
+        }
+      },
+      "training": {
+        "completed_step_lines": 2,
+        "grad_norm": {
+          "count": 2,
+          "max": 0.0047,
+          "mean": 0.0046,
+          "min": 0.0045,
+          "p50": 0.0045,
+          "p90": 0.0047
+        },
+        "peak_memory": {
+          "count": 2,
+          "max": 73.6,
+          "mean": 73.55,
+          "min": 73.5,
+          "p50": 73.5,
+          "p90": 73.6,
+          "unit": "GiB"
+        },
+        "status": "ok"
+      }
+    },
+    "luna": {
+      "admission": {
+        "decision_counts": {
+          "admit": 23,
+          "reject_uncertain_or_error": 1
+        },
+        "evidence_rows": 24,
+        "groups_admitted": 23,
+        "groups_censored": 1,
+        "groups_observed": 24,
+        "status": "ok"
+      },
+      "budget": {
+        "elapsed_seconds": 3326.8320343494415,
+        "estimated_cap_headroom_usd": 5.198095912218093,
+        "estimated_elapsed_cost_usd": 8.501904087781906,
+        "finished_epoch": 1790960068.1908777,
+        "gpu_cap_usd": 13.7,
+        "price_usd_per_hour": 9.2,
+        "reserve_seconds": 1920.0,
+        "started_epoch": 1790956741.3588433
+      },
+      "completion": {
+        "admitted_batch_counter": 2,
+        "completed_optimizer_steps": 2,
+        "evidence": "luna/supervisor-state.json",
+        "orchestrator_batch_steps": 2,
+        "orchestrator_steps_observed": [
+          1,
+          2
+        ],
+        "supervisor_last_optimizer_step": 2
+      },
+      "evidence": [
+        {
+          "path": "luna/source-identity.json",
+          "sha256": "019f1c35d473c48847d157b921ef2d714036d2eaf1ad6bc91e6960107f92b1ed"
+        },
+        {
+          "path": "luna/evidence-manifest.json",
+          "sha256": "2cae1bcad5bccc6b94a99b171635394c4148ec9b70b500adc58dcb1c9ee376c5"
+        },
+        {
+          "path": "luna/supervisor-state.json",
+          "sha256": "8f5fb4c38fc8af676c67793f80e1fa2c3992e920da3a1192d55f85029b1bfe58"
+        },
+        {
+          "path": "luna/analysis-summary.json",
+          "sha256": "77888eadf3e82ecad6ebcf35b5747e99c0f1c26add0c5b8670466527412529af"
+        },
+        {
+          "path": "luna/gpu-summary.json",
+          "sha256": "9d44d2e4c57480d19551ba0910aa590237bcf31f9a5357f69ebcbd28b5682dfc"
+        },
+        {
+          "path": "luna/consistent-group-admission.jsonl",
+          "sha256": "94b00fccd6c8215620eab4849fa82c1d2306b939f90b903d195b8ee47c398791"
+        },
+        {
+          "path": "luna/async-output/rl-judge-ablation-luna-20261002/logs/attempt_1/trainer.log",
+          "sha256": "4017c3797617a80bac15175b4921adce0c684998129a41ca0bdc240a28d92128"
+        },
+        {
+          "path": "luna/async-output/rl-judge-ablation-luna-20261002/monitors/file/traces/annotations/orch.index.jsonl",
+          "sha256": "5084a01e2813d1db4dd5082f221225c06402d96d037c95c27f0cc23e212caee0"
+        },
+        {
+          "path": "luna/compact-traces-metrics.json",
+          "sha256": "736730139c3b414b10a0c4ae403d12cdd58a763de3787d6586d7fb83a26cc132"
+        },
+        {
+          "path": "luna/logs/gpu-telemetry-20261002T155912Z.csv",
+          "sha256": "0a2a3847883ae2433d93c3cc1df97d4ca4bd193d2d667ff7072749172c0914d4"
+        }
+      ],
+      "gpu": {
+        "evidence": "luna/logs/gpu-telemetry-20261002T155912Z.csv",
+        "roles": {
+          "inference": {
+            "busy_fraction_nonzero": 0.762936753648828,
+            "denominator_samples": 2261,
+            "gpu_util_mean_percent": 72.4453781512605,
+            "per_gpu_cadence_seconds": {
+              "0": 10.028,
+              "1": 10.028,
+              "2": 10.028,
+              "3": 10.028,
+              "4": 10.028,
+              "5": 10.028,
+              "6": 10.028
+            },
+            "physical_indices": [
+              0,
+              1,
+              2,
+              3,
+              4,
+              5,
+              6
+            ],
+            "samples": 2261,
+            "window_end": "2026-10-02T16:53:02.275000",
+            "window_seconds": 3229.183,
+            "window_start": "2026-10-02T15:59:13.092000"
+          },
+          "trainer": {
+            "busy_fraction_nonzero": 0.17337461300309598,
+            "denominator_samples": 323,
+            "gpu_util_mean_percent": 13.712074303405572,
+            "per_gpu_cadence_seconds": {
+              "7": 10.028
+            },
+            "physical_indices": [
+              7
+            ],
+            "samples": 323,
+            "window_end": "2026-10-02T16:53:02.278000",
+            "window_seconds": 3229.109,
+            "window_start": "2026-10-02T15:59:13.169000"
+          }
+        },
+        "sample_cadence_seconds": 10.028,
+        "status": "ok",
+        "window_end": "2026-10-02T16:53:02.278000",
+        "window_start": "2026-10-02T15:59:13.092000"
+      },
+      "judge": {
+        "malformed_receipts": 0,
+        "receipts": 58,
+        "recheck_views": {
+          "deduplicated_call_count": 14,
+          "exact_record_reuse_count": 0,
+          "failed_call_count": 0,
+          "latency_seconds": {
+            "count": 14,
+            "max": 14.859161108994158,
+            "mean": 10.162974083783151,
+            "min": 6.283204662999196,
+            "p50": 9.346834582996962,
+            "p90": 14.365763871996023,
+            "unit": "seconds"
+          },
+          "raw_call_count": 14,
+          "usage": {
+            "completion_tokens": 10537,
+            "cost_lower_bound_usd": 0.00552432,
+            "prompt_tokens": 25204,
+            "reasoning_tokens": 6505,
+            "recorded_cost_usd": 0.00552432,
+            "total_tokens": 35741,
+            "unknown_cost_count": 0
+          },
+          "view_entries": 14
+        },
+        "total_deduplicated_call_count": 130,
+        "total_failed_call_count": 0,
+        "total_latency_seconds": {
+          "count": 130,
+          "max": 21.580491443004576,
+          "mean": 10.109882472837993,
+          "min": 4.988460706998012,
+          "p50": 9.329629849999037,
+          "p90": 13.987943453001208,
+          "unit": "seconds"
+        },
+        "total_usage": {
+          "completion_tokens": 94288,
+          "cost_lower_bound_usd": 0.07347137,
+          "prompt_tokens": 233846,
+          "reasoning_tokens": 57043,
+          "recorded_cost_usd": 0.07347137,
+          "total_tokens": 328134,
+          "unknown_cost_count": 0
+        },
+        "views": {
+          "deduplicated_call_count": 116,
+          "exact_record_reuse_count": 0,
+          "failed_call_count": 0,
+          "latency_seconds": {
+            "count": 116,
+            "max": 21.580491443004576,
+            "mean": 10.103474864620473,
+            "min": 4.988460706998012,
+            "p50": 9.215955398001825,
+            "p90": 13.987943453001208,
+            "unit": "seconds"
+          },
+          "raw_call_count": 116,
+          "usage": {
+            "completion_tokens": 83751,
+            "cost_lower_bound_usd": 0.06794705,
+            "prompt_tokens": 208642,
+            "reasoning_tokens": 50538,
+            "recorded_cost_usd": 0.06794705,
+            "total_tokens": 292393,
+            "unknown_cost_count": 0
+          },
+          "view_entries": 116
+        }
+      },
+      "quality_comparison": {
+        "reason": "audit does not rank quality at finite early steps",
+        "status": "not_computed"
+      },
+      "queue_and_cancellation": {
+        "active_episode_cancels": {
+          "count": 80,
+          "evidence": [
+            "luna/async-output/rl-judge-ablation-luna-20261002/logs/attempt_1/orchestrator.log"
+          ],
+          "status": "observed"
+        },
+        "stale_queued_trace_drops": {
+          "count": 24,
+          "evidence": [
+            "luna/async-output/rl-judge-ablation-luna-20261002/logs/attempt_1/orchestrator.log"
+          ],
+          "status": "observed"
+        }
+      },
+      "render": {
+        "duration_seconds": {
+          "count": 509,
+          "max": 180.049,
+          "mean": 36.90919449901768,
+          "min": 4.651,
+          "p50": 19.973,
+          "p90": 84.037,
+          "unit": "seconds"
+        },
+        "invalid_receipts": 245,
+        "receipt_count": 509,
+        "timed_out_receipts": 31,
+        "timing_unknown_receipts": 0,
+        "unknown_receipts": 0,
+        "valid_receipts": 264
+      },
+      "saved_aggregate": {
+        "group_decisions": {
+          "admit": 23,
+          "reject_uncertain_or_error": 1
+        },
+        "invalid_render_elapsed": {
+          "max": 180.05,
+          "mean": 41.46,
+          "n": 245,
+          "p50": 14.76,
+          "p90": 180.03
+        },
+        "judge_consensus": {
+          "initial_agreement": 51,
+          "three_of_four": 7
+        },
+        "judge_status": {
+          "scored": 58
+        },
+        "render_elapsed": {
+          "max": 180.05,
+          "mean": 36.91,
+          "n": 509,
+          "p50": 19.97,
+          "p90": 84.04
+        },
+        "valid_render_elapsed": {
+          "max": 175.66,
+          "mean": 32.68,
+          "n": 264,
+          "p50": 24.64,
+          "p90": 62.15
+        }
+      },
+      "traces": {
+        "censor_caveat": "Counts and timing use completed trace records present in the extracted evidence; missing, unfinished, or operationally censored traces are excluded and are not inferred.",
+        "completed_trace_count": 145,
+        "denominator": {
+          "count": 145,
+          "episode_ok_false_count": 2,
+          "kind": "completed_trace_records",
+          "trace_ok_false_count": 2
+        },
+        "evidence": "luna/compact-traces-metrics.json",
+        "final_action_invalid_count": 85,
+        "final_action_invalid_split": {
+          "final_canvas_absent": 0,
+          "final_canvas_invalid": 37,
+          "retained_final_canvas_valid": 48
+        },
+        "reward_status_counts": {
+          "model_invalid_final_action": 85,
+          "scored": 58,
+          "unknown": 2
+        },
+        "source": "compact-traces-metrics",
+        "status": "ok",
+        "timing_seconds": {
+          "harness": {
+            "count": 145,
+            "max": 953.6932435035706,
+            "mean": 593.2596447829543,
+            "min": 236.20970845222473,
+            "p50": 600.7105736732483,
+            "p90": 752.9233219623566,
+            "unit": "seconds"
+          },
+          "model": {
+            "count": 145,
+            "max": 623.2428321838379,
+            "mean": 301.8964993509753,
+            "min": 51.2244918346405,
+            "p50": 291.36974024772644,
+            "p90": 456.800199508667,
+            "unit": "seconds"
+          },
+          "scoring": {
+            "count": 145,
+            "max": 33.9676034450531,
+            "mean": 5.741326803996645,
+            "min": 0.0004680156707763672,
+            "p50": 0.0009431838989257812,
+            "p90": 15.444920063018799,
+            "unit": "seconds"
+          }
+        }
+      },
+      "training": {
+        "completed_step_lines": 2,
+        "grad_norm": {
+          "count": 2,
+          "max": 0.0081,
+          "mean": 0.0066,
+          "min": 0.0051,
+          "p50": 0.0051,
+          "p90": 0.0081
+        },
+        "peak_memory": {
+          "count": 2,
+          "max": 65.7,
+          "mean": 65.65,
+          "min": 65.6,
+          "p50": 65.6,
+          "p90": 65.7,
+          "unit": "GiB"
+        },
+        "status": "ok"
+      }
+    },
+    "pro": {
+      "admission": {
+        "decision_counts": {
+          "admit": 17,
+          "reject_uncertain_or_error": 3
+        },
+        "evidence_rows": 20,
+        "groups_admitted": 17,
+        "groups_censored": 3,
+        "groups_observed": 20,
+        "status": "ok"
+      },
+      "budget": {
+        "elapsed_seconds": 3313.9039652347565,
+        "estimated_cap_headroom_usd": 5.231134311066734,
+        "estimated_elapsed_cost_usd": 8.468865688933265,
+        "finished_epoch": 1790956637.452641,
+        "gpu_cap_usd": 13.7,
+        "price_usd_per_hour": 9.2,
+        "reserve_seconds": 1920.0,
+        "started_epoch": 1790953323.5486758
+      },
+      "completion": {
+        "admitted_batch_counter": 2,
+        "completed_optimizer_steps": 2,
+        "evidence": "pro/supervisor-state.json",
+        "orchestrator_batch_steps": 2,
+        "orchestrator_steps_observed": [
+          1,
+          2
+        ],
+        "supervisor_last_optimizer_step": 2
+      },
+      "evidence": [
+        {
+          "path": "pro/source-identity.json",
+          "sha256": "a5d66477a1fd408189386c93347fcf95cfd54ed08fd13834f9767877134d5203"
+        },
+        {
+          "path": "pro/evidence-manifest.json",
+          "sha256": "74f93f0ff7cdc66ee6923136cf4c08c590380d900b431e4f1ac0cff4b28d49ca"
+        },
+        {
+          "path": "pro/supervisor-state.json",
+          "sha256": "6cb304fa745aaeef5aaec7755dbe2a0dcba591b6049db0d1e21316e27d8e0998"
+        },
+        {
+          "path": "pro/analysis-summary.json",
+          "sha256": "a3aa871ada915bea59000d97a5daf86a011441146dc15a08c774561f8f1dbe84"
+        },
+        {
+          "path": "pro/gpu-summary.json",
+          "sha256": "7852388163b8f575466ce3f4ac5031314797771a8fb3763caf795ae3cdfdff60"
+        },
+        {
+          "path": "pro/consistent-group-admission.jsonl",
+          "sha256": "f13950be938e4dc0d4694eab4f4c6a397c3f1b8e5709f351fddea1e3a761bc27"
+        },
+        {
+          "path": "pro/async-output/rl-judge-ablation-pro-20261002/logs/attempt_1/trainer.log",
+          "sha256": "2face9ad77c0059b22c3667965905731b01529244000819d7879d1b511ad080b"
+        },
+        {
+          "path": "pro/async-output/rl-judge-ablation-pro-20261002/monitors/file/traces/annotations/orch.index.jsonl",
+          "sha256": "573d4d6ad5d2483971fe40a97462bd420bea7d6f64dc8fcc84f0013d5ccd17ed"
+        },
+        {
+          "path": "pro/compact-traces-metrics.json",
+          "sha256": "54377472ce43c2ebef21dc924852c0a21b7edda5414485cf2fc6091e6c98c1b8"
+        },
+        {
+          "path": "pro/logs/gpu-telemetry-20261002T150217Z.csv",
+          "sha256": "bfc7067c2a8834e75dce135b529911db70eef51408c1acd9ca12261200304d34"
+        }
+      ],
+      "gpu": {
+        "evidence": "pro/logs/gpu-telemetry-20261002T150217Z.csv",
+        "roles": {
+          "inference": {
+            "busy_fraction_nonzero": 0.7559893522626442,
+            "denominator_samples": 2254,
+            "gpu_util_mean_percent": 71.31100266193434,
+            "per_gpu_cadence_seconds": {
+              "0": 10.028,
+              "1": 10.028,
+              "2": 10.028,
+              "3": 10.028,
+              "4": 10.028,
+              "5": 10.029,
+              "6": 10.029
+            },
+            "physical_indices": [
+              0,
+              1,
+              2,
+              3,
+              4,
+              5,
+              6
+            ],
+            "samples": 2254,
+            "window_end": "2026-10-02T15:55:58.681000",
+            "window_seconds": 3220.798,
+            "window_start": "2026-10-02T15:02:17.883000"
+          },
+          "trainer": {
+            "busy_fraction_nonzero": 0.18322981366459629,
+            "denominator_samples": 322,
+            "gpu_util_mean_percent": 12.211180124223603,
+            "per_gpu_cadence_seconds": {
+              "7": 10.028
+            },
+            "physical_indices": [
+              7
+            ],
+            "samples": 322,
+            "window_end": "2026-10-02T15:55:58.685000",
+            "window_seconds": 3220.716,
+            "window_start": "2026-10-02T15:02:17.969000"
+          }
+        },
+        "sample_cadence_seconds": 10.028,
+        "status": "ok",
+        "window_end": "2026-10-02T15:55:58.685000",
+        "window_start": "2026-10-02T15:02:17.883000"
+      },
+      "judge": {
+        "malformed_receipts": 0,
+        "receipts": 43,
+        "recheck_views": {
+          "deduplicated_call_count": 21,
+          "exact_record_reuse_count": 0,
+          "failed_call_count": 0,
+          "latency_seconds": {
+            "count": 21,
+            "max": 101.54092453300109,
+            "mean": 40.79884830404661,
+            "min": 24.302792859001784,
+            "p50": 35.483608654998534,
+            "p90": 57.98577361599746,
+            "unit": "seconds"
+          },
+          "raw_call_count": 21,
+          "usage": {
+            "completion_tokens": 22895,
+            "cost_lower_bound_usd": 0.0205644948,
+            "prompt_tokens": 30808,
+            "reasoning_tokens": 13727,
+            "recorded_cost_usd": 0.0205644948,
+            "total_tokens": 53703,
+            "unknown_cost_count": 0
+          },
+          "view_entries": 20
+        },
+        "total_deduplicated_call_count": 113,
+        "total_failed_call_count": 0,
+        "total_latency_seconds": {
+          "count": 113,
+          "max": 101.54092453300109,
+          "mean": 38.383805995628244,
+          "min": 17.994240986001387,
+          "p50": 36.02565891199629,
+          "p90": 58.87419192500238,
+          "unit": "seconds"
+        },
+        "total_usage": {
+          "completion_tokens": 123205,
+          "cost_lower_bound_usd": 0.1630221726,
+          "prompt_tokens": 166055,
+          "reasoning_tokens": 73881,
+          "recorded_cost_usd": 0.1630221726,
+          "total_tokens": 289260,
+          "unknown_cost_count": 0
+        },
+        "views": {
+          "deduplicated_call_count": 92,
+          "exact_record_reuse_count": 0,
+          "failed_call_count": 0,
+          "latency_seconds": {
+            "count": 92,
+            "max": 77.91394059899903,
+            "mean": 37.832546338271875,
+            "min": 17.994240986001387,
+            "p50": 36.02565891199629,
+            "p90": 58.87419192500238,
+            "unit": "seconds"
+          },
+          "raw_call_count": 92,
+          "usage": {
+            "completion_tokens": 100310,
+            "cost_lower_bound_usd": 0.1424576778,
+            "prompt_tokens": 135247,
+            "reasoning_tokens": 60154,
+            "recorded_cost_usd": 0.1424576778,
+            "total_tokens": 235557,
+            "unknown_cost_count": 0
+          },
+          "view_entries": 86
+        }
+      },
+      "quality_comparison": {
+        "reason": "audit does not rank quality at finite early steps",
+        "status": "not_computed"
+      },
+      "queue_and_cancellation": {
+        "active_episode_cancels": {
+          "count": 86,
+          "evidence": [
+            "pro/async-output/rl-judge-ablation-pro-20261002/logs/attempt_1/orchestrator.log"
+          ],
+          "status": "observed"
+        },
+        "stale_queued_trace_drops": {
+          "count": 16,
+          "evidence": [
+            "pro/async-output/rl-judge-ablation-pro-20261002/logs/attempt_1/orchestrator.log"
+          ],
+          "status": "observed"
+        }
+      },
+      "render": {
+        "duration_seconds": {
+          "count": 470,
+          "max": 180.041,
+          "mean": 39.1506,
+          "min": 4.551,
+          "p50": 19.874,
+          "p90": 114.742,
+          "unit": "seconds"
+        },
+        "invalid_receipts": 240,
+        "receipt_count": 470,
+        "timed_out_receipts": 31,
+        "timing_unknown_receipts": 0,
+        "unknown_receipts": 0,
+        "valid_receipts": 230
+      },
+      "saved_aggregate": {
+        "group_decisions": {
+          "admit": 17,
+          "reject_uncertain_or_error": 3
+        },
+        "invalid_render_elapsed": {
+          "max": 180.04,
+          "mean": 42.04,
+          "n": 240,
+          "p50": 14.39,
+          "p90": 180.03
+        },
+        "judge_consensus": {
+          "initial_agreement": 33,
+          "no_three_of_four": 7,
+          "three_of_four": 3
+        },
+        "judge_status": {
+          "scored": 36,
+          "uncertain": 7
+        },
+        "render_elapsed": {
+          "max": 180.04,
+          "mean": 39.15,
+          "n": 470,
+          "p50": 19.9,
+          "p90": 116.76
+        },
+        "valid_render_elapsed": {
+          "max": 173.46,
+          "mean": 36.13,
+          "n": 230,
+          "p50": 24.95,
+          "p90": 79.88
+        }
+      },
+      "traces": {
+        "censor_caveat": "Counts and timing use completed trace records present in the extracted evidence; missing, unfinished, or operationally censored traces are excluded and are not inferred.",
+        "completed_trace_count": 119,
+        "denominator": {
+          "count": 119,
+          "episode_ok_false_count": 8,
+          "kind": "completed_trace_records",
+          "trace_ok_false_count": 8
+        },
+        "evidence": "pro/compact-traces-metrics.json",
+        "final_action_invalid_count": 75,
+        "final_action_invalid_split": {
+          "final_canvas_absent": 0,
+          "final_canvas_invalid": 35,
+          "retained_final_canvas_valid": 40
+        },
+        "reward_status_counts": {
+          "judge_uncertain": 7,
+          "model_invalid_final_action": 75,
+          "scored": 36,
+          "unknown": 1
+        },
+        "source": "compact-traces-metrics",
+        "status": "ok",
+        "timing_seconds": {
+          "harness": {
+            "count": 119,
+            "max": 1132.8840537071228,
+            "mean": 646.3320864148501,
+            "min": 123.0686240196228,
+            "p50": 641.8457968235016,
+            "p90": 917.791966676712,
+            "unit": "seconds"
+          },
+          "model": {
+            "count": 119,
+            "max": 644.1643788814545,
+            "mean": 295.1162960569398,
+            "min": 69.20103859901428,
+            "p50": 288.98534870147705,
+            "p90": 431.786602973938,
+            "unit": "seconds"
+          },
+          "scoring": {
+            "count": 119,
+            "max": 153.19739031791687,
+            "mean": 22.823506838133355,
+            "min": 0.0004961490631103516,
+            "p50": 0.0009107589721679688,
+            "p90": 93.36522555351257,
+            "unit": "seconds"
+          }
+        }
+      },
+      "training": {
+        "completed_step_lines": 2,
+        "grad_norm": {
+          "count": 2,
+          "max": 0.0131,
+          "mean": 0.01125,
+          "min": 0.0094,
+          "p50": 0.0094,
+          "p90": 0.0131
+        },
+        "peak_memory": {
+          "count": 2,
+          "max": 65.8,
+          "mean": 65.75,
+          "min": 65.7,
+          "p50": 65.7,
+          "p90": 65.8,
+          "unit": "GiB"
+        },
+        "status": "ok"
+      }
+    }
+  },
+  "evidence_root": "painter/runs/rl-judge-ablation-20261002/private/offline-analysis",
+  "initializer": {
+    "arms": {
+      "flash": {
+        "base_model_revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+        "frozen_sft_initializer": {
+          "adapter_sha256": "bea72b066986faa1b92b9dc539c710093181ee916b99323e2b2498f318ac1740",
+          "prefix": "photo-curriculum-sft-20260922-balanced/step_512",
+          "revision": "adf687e5b321514eda7be6eab050434fdc8e44ff"
+        },
+        "frozen_sft_model_revision": "adf687e5b321514eda7be6eab050434fdc8e44ff",
+        "initializer_prefix": "text-pairwise-scaled-20260929/step_16",
+        "initializer_revision": "ac4d3eda8e5925e2d23992cfdc1a63620ebde573",
+        "initializer_sha256": "e5211706a23b46354aa269f2b9cfaaaad1b64eef1012b433b1887c149f5a927c"
+      },
+      "luna": {
+        "base_model_revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+        "frozen_sft_initializer": {
+          "adapter_sha256": "bea72b066986faa1b92b9dc539c710093181ee916b99323e2b2498f318ac1740",
+          "prefix": "photo-curriculum-sft-20260922-balanced/step_512",
+          "revision": "adf687e5b321514eda7be6eab050434fdc8e44ff"
+        },
+        "frozen_sft_model_revision": "adf687e5b321514eda7be6eab050434fdc8e44ff",
+        "initializer_prefix": "text-pairwise-scaled-20260929/step_16",
+        "initializer_revision": "ac4d3eda8e5925e2d23992cfdc1a63620ebde573",
+        "initializer_sha256": "e5211706a23b46354aa269f2b9cfaaaad1b64eef1012b433b1887c149f5a927c"
+      },
+      "pro": {
+        "base_model_revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+        "frozen_sft_initializer": {
+          "adapter_sha256": "bea72b066986faa1b92b9dc539c710093181ee916b99323e2b2498f318ac1740",
+          "prefix": "photo-curriculum-sft-20260922-balanced/step_512",
+          "revision": "adf687e5b321514eda7be6eab050434fdc8e44ff"
+        },
+        "frozen_sft_model_revision": "adf687e5b321514eda7be6eab050434fdc8e44ff",
+        "initializer_prefix": "text-pairwise-scaled-20260929/step_16",
+        "initializer_revision": "ac4d3eda8e5925e2d23992cfdc1a63620ebde573",
+        "initializer_sha256": "e5211706a23b46354aa269f2b9cfaaaad1b64eef1012b433b1887c149f5a927c"
+      }
+    },
+    "exact_match_across_arms": true,
+    "matching_hash": "d89f5f650ff9d556c5696ef90fbb9ed93357838f837fdfc81031f9c177f3a3ac",
+    "missing_fields": {}
+  },
+  "schema": "painter-pipeline-audit-v1"
+}

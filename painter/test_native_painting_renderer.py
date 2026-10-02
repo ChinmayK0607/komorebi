@@ -3,6 +3,7 @@ import json
 import os
 import subprocess
 import tempfile
+import threading
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
@@ -12,6 +13,34 @@ from PIL import Image
 
 
 from painter import native_painting_renderer as renderer_module
+
+
+class _StubProcess:
+    pid = 4242
+
+    def __init__(self):
+        self.returncode = None
+        self.wait_calls = []
+
+    def poll(self):
+        return self.returncode
+
+    def communicate(self, timeout=None):
+        if self.returncode is None:
+            raise subprocess.TimeoutExpired(["stub"], timeout)
+        return "", ""
+
+    def wait(self, timeout=None):
+        self.wait_calls.append(timeout)
+        if self.returncode is None:
+            raise subprocess.TimeoutExpired(["stub"], timeout)
+        return self.returncode
+
+    def send_signal(self, signum):
+        self.returncode = -signum
+
+    def kill(self):
+        self.returncode = -9
 
 
 class NativePaintingRendererTests(unittest.TestCase):
@@ -47,7 +76,7 @@ class NativePaintingRendererTests(unittest.TestCase):
                 return SimpleNamespace(returncode=0, stderr="")
 
             with patch.dict(os.environ, {"PAINTER_RENDER_TIMEOUT_SECONDS": "177"}, clear=False):
-                with patch.object(renderer_module.subprocess, "run", side_effect=fake_run) as run:
+                with patch.object(renderer_module, "_run_renderer_process", side_effect=fake_run) as run:
                     result = renderer_module.render_action(
                         root=root, folder=folder,
                         reply="```javascript\nfunction setup() {}\n```",
@@ -66,6 +95,77 @@ class NativePaintingRendererTests(unittest.TestCase):
             with self.subTest(value=value), patch.dict(os.environ, {"PAINTER_RENDER_TIMEOUT_SECONDS": value}, clear=False):
                 with self.assertRaises(ValueError):
                     renderer_module.render_timeout_seconds()
+
+    def test_cancelled_active_child_is_terminated_as_owned_group(self):
+        process = _StubProcess()
+        cancel_event = threading.Event()
+        cancel_event.set()
+        with patch.object(renderer_module.subprocess, "Popen", return_value=process):
+            with patch.object(renderer_module.os, "getpgid", return_value=process.pid):
+                with patch.object(renderer_module.os, "getsid", return_value=process.pid):
+                    with patch.object(renderer_module, "_session_has_member", return_value=False):
+                        with patch.object(
+                            renderer_module.os,
+                            "killpg",
+                            side_effect=lambda _pid, signum: setattr(process, "returncode", -signum),
+                        ) as killpg:
+                            with self.assertRaises(renderer_module.RenderCancelled):
+                                renderer_module._run_renderer_process(
+                                    ["stub-renderer"], env={}, timeout=10,
+                                    cancel_event=cancel_event,
+                                )
+        self.assertEqual(killpg.call_args.args[0], process.pid)
+        self.assertEqual(killpg.call_args.args[1], renderer_module.signal.SIGTERM)
+        self.assertTrue(process.wait_calls)
+
+    def test_renderer_timeout_is_cleaned_up_and_remains_operational_failure(self):
+        process = _StubProcess()
+        with patch.object(renderer_module.subprocess, "Popen", return_value=process):
+            with patch.object(renderer_module.os, "getpgid", return_value=process.pid):
+                with patch.object(renderer_module.os, "getsid", return_value=process.pid):
+                    with patch.object(renderer_module, "_session_has_member", return_value=False):
+                        with patch.object(
+                            renderer_module.os,
+                            "killpg",
+                            side_effect=lambda _pid, signum: setattr(process, "returncode", -signum),
+                        ) as killpg:
+                            with self.assertRaises(subprocess.TimeoutExpired):
+                                renderer_module._run_renderer_process(
+                                    ["stub-renderer"], env={}, timeout=0,
+                                    cancel_event=threading.Event(),
+                                )
+        self.assertEqual(killpg.call_args.args[1], renderer_module.signal.SIGTERM)
+
+    def test_receipt_finished_before_cancel_is_never_consumed(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            renderer = root / "renderer.py"
+            renderer_python = root / "python"
+            renderer.write_text("# test renderer\n")
+            renderer_python.write_text("# test python\n")
+
+            def stale_renderer(command, **kwargs):
+                source = Path(command[6])
+                output = Path(command[8])
+                Image.new("RGB", (600, 600), "#315b70").save(output)
+                output.with_suffix(".json").write_text(json.dumps({
+                    "valid": True,
+                    "source_sha256": hashlib.sha256(source.read_bytes()).hexdigest(),
+                    "png_sha256": hashlib.sha256(output.read_bytes()).hexdigest(),
+                }))
+                kwargs["cancel_event"].set()
+                return SimpleNamespace(returncode=0, stderr="", stdout="")
+
+            cancel_event = threading.Event()
+            with patch.object(renderer_module, "_run_renderer_process", side_effect=stale_renderer):
+                with self.assertRaises(renderer_module.RenderCancelled):
+                    renderer_module.render_action(
+                        root=root, folder=root / "episode",
+                        reply="```javascript\nfunction setup() {}\n```",
+                        initial_canvas=None, initial_program=None,
+                        renderer=renderer, renderer_python=renderer_python,
+                        cancel_event=cancel_event,
+                    )
 
     def test_syntax_error_skips_renderer_and_preserves_previous_canvas(self):
         with tempfile.TemporaryDirectory() as temp:
@@ -120,6 +220,9 @@ class NativePaintingRendererTests(unittest.TestCase):
             def fake_run(command, **kwargs):
                 if command[:2] == ["node", "--check"]:
                     return SimpleNamespace(returncode=0, stdout="", stderr="")
+                raise AssertionError("renderer process should use _run_renderer_process")
+
+            def fake_renderer(command, **kwargs):
                 source = Path(command[6])
                 output = Path(command[8])
                 image = Image.new("RGB", (600, 600), "white")
@@ -150,20 +253,21 @@ function draw(){
                 clear=False,
             ):
                 with patch.object(renderer_module.subprocess, "run", side_effect=fake_run) as run:
-                    result = renderer_module.render_action(
-                        root=root,
-                        folder=root / "episode",
-                        reply=reply,
-                        initial_canvas=None,
-                        initial_program=None,
-                        renderer=renderer,
-                        renderer_python=renderer_python,
-                    )
+                    with patch.object(renderer_module, "_run_renderer_process", side_effect=fake_renderer) as renderer_run:
+                        result = renderer_module.render_action(
+                            root=root,
+                            folder=root / "episode",
+                            reply=reply,
+                            initial_canvas=None,
+                            initial_program=None,
+                            renderer=renderer,
+                            renderer_python=renderer_python,
+                        )
 
             self.assertTrue(result["valid"])
-            self.assertEqual(run.call_count, 2)
+            self.assertEqual(run.call_count, 1)
             self.assertEqual(run.call_args_list[0].args[0][:2], ["node", "--check"])
-            self.assertEqual(run.call_args_list[1].args[0][0], "/usr/sbin/runuser")
+            self.assertEqual(renderer_run.call_args.args[0][0], "/usr/sbin/runuser")
 
     def test_missing_node_is_an_operational_failure(self):
         with tempfile.TemporaryDirectory() as temp:
@@ -232,7 +336,7 @@ function draw(){
                 }))
                 return SimpleNamespace(returncode=0, stderr="")
 
-            with patch.object(renderer_module.subprocess, "run", side_effect=fake_run):
+            with patch.object(renderer_module, "_run_renderer_process", side_effect=fake_run):
                 result = renderer_module.render_action(
                     root=root, folder=root / "episode",
                     reply="```javascript\nfunction setup() {}\n```",
@@ -261,7 +365,7 @@ function draw(){
                 }))
                 return SimpleNamespace(returncode=0, stderr="")
 
-            with patch.object(renderer_module.subprocess, "run", side_effect=fake_run):
+            with patch.object(renderer_module, "_run_renderer_process", side_effect=fake_run):
                 with self.assertRaisesRegex(RuntimeError, "renderer service failure.*playwright"):
                     renderer_module.render_action(
                         root=root, folder=folder,
@@ -289,7 +393,7 @@ function draw(){
                 }))
                 return SimpleNamespace(returncode=0, stderr="")
 
-            with patch.object(renderer_module.subprocess, "run", side_effect=fake_run):
+            with patch.object(renderer_module, "_run_renderer_process", side_effect=fake_run):
                 result = renderer_module.render_action(
                     root=root, folder=folder,
                     reply="```javascript\nfunction draw() {}\n```",

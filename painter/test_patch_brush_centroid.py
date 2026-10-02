@@ -16,26 +16,32 @@ import unittest
 try:  # Works both from the repository root and from ``painter/``.
     from painter.patch_brush_centroid import (
         COPIED_FILES,
+        DEFAULT_OUTPUT_ROOT,
         EXPECTED_SHA256,
         NEW_FALLBACK,
         OLD_FALLBACK,
         PatchError,
         SOURCE_ROOT,
         _patch_brush,
+        build_renderer_overlay,
         build_runtime,
         extract_centroid_function,
+        validate_renderer_overlay,
     )
 except ModuleNotFoundError:  # pragma: no cover - exercised by local test layout
     from patch_brush_centroid import (  # type: ignore[no-redef]
         COPIED_FILES,
+        DEFAULT_OUTPUT_ROOT,
         EXPECTED_SHA256,
         NEW_FALLBACK,
         OLD_FALLBACK,
         PatchError,
         SOURCE_ROOT,
         _patch_brush,
+        build_renderer_overlay,
         build_runtime,
         extract_centroid_function,
+        validate_renderer_overlay,
     )
 
 
@@ -109,6 +115,37 @@ class BrushCentroidPatchTests(unittest.TestCase):
             output.mkdir()
             with self.assertRaisesRegex(PatchError, "overwrite"):
                 build_runtime(SOURCE_ROOT, output)
+
+    def test_cancellable_overlay_is_explicit_and_reuses_verified_hash_manifest(self):
+        with tempfile.TemporaryDirectory() as folder:
+            output = Path(folder) / "watercolour-cancellable-v1"
+            metadata = build_renderer_overlay(SOURCE_ROOT, output)
+            self.assertEqual(metadata["schema"], "watercolour-cancellable-renderer-v1")
+            self.assertEqual(
+                metadata["frozen_baseline"]["sha256"],
+                EXPECTED_SHA256["renderer.py"],
+            )
+            self.assertEqual(
+                metadata["assets"]["assets/p5.brush.js"]["after_sha256"],
+                __import__("hashlib").sha256(
+                    _patch_brush((SOURCE_ROOT / "assets/p5.brush.js").read_bytes())
+                ).hexdigest(),
+            )
+            self.assertTrue((output / "cancellable_watercolour_renderer.py").is_file())
+            self.assertTrue((output / "frozen_watercolour_renderer.py").is_file())
+            reused = validate_renderer_overlay(output)
+            self.assertEqual(reused["selected_renderer"]["runtime_id"], "watercolour-cancellable-v1")
+
+            derivative = output / "cancellable_watercolour_renderer.py"
+            derivative.write_text(derivative.read_text() + "\n# changed\n")
+            with self.assertRaisesRegex(PatchError, "hash mismatch"):
+                validate_renderer_overlay(output)
+
+    def test_cancellable_overlay_requires_distinct_explicit_output_root(self):
+        with self.assertRaisesRegex(PatchError, "explicit output root"):
+            build_renderer_overlay(SOURCE_ROOT)
+        with self.assertRaisesRegex(PatchError, "distinct output root"):
+            build_renderer_overlay(SOURCE_ROOT, DEFAULT_OUTPUT_ROOT)
 
     @unittest.skipUnless(shutil.which("node"), "Node.js is required for the pure-function regression")
     def test_node_regression_covers_empty_short_zero_area_and_polygon(self):
