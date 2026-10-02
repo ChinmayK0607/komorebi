@@ -1,0 +1,23 @@
+{
+  "schema": "text-paint-rl-judge-ablation-attempt-result-v1",
+  "attempt": 3,
+  "source_commit": "8ef3c32dc1adc4e9dc0f5f9fd21e449d38818605",
+  "status": "failed_node_released",
+  "completed_optimizer_updates": 0,
+  "pro_and_luna_started": false,
+  "failure": "vLLM worker Inductor autotuning failed: referenced Triton cache JSON absent under shared inference compiler directory",
+  "root_cause_assessment": "Shared multi-worker compiler directory is the leading explanation; preserved error proves missing cache file, concurrency mechanism remains inferred until isolation replay.",
+  "public_evidence": {
+    "repo": "CK0607/komorebi-painter-experiments",
+    "revision": "bebefdd91d5333ac4895a22bd2939211fc2bdb47",
+    "remote_path": "runs/rl-judge-ablation-flash-20261002/evidence.tar.gz",
+    "bytes": 47020,
+    "sha256": "b885c0785be62c8df7ee8aab22c44d9f0ef0bfab0cbfece6e525e82eb8bcdb9f",
+    "anonymous_download": true
+  },
+  "release_utc": "2026-10-02T12:35:17.649402+00:00",
+  "gpu_clock_estimate_usd": 2.3123364950550926,
+  "combined_failed_setup_gpu_clock_estimate_usd": 9.717436495055093,
+  "cost_scope": "request-to-confirmed-release elapsed-clock estimate, not invoice",
+  "next_decision": "isolate spawned inference worker compiler caches; test child startup path before renting again; retain identical judge-arm configuration"
+}
