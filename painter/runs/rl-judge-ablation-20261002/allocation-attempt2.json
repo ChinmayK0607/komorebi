@@ -1,0 +1,32 @@
+{
+  "schema": "rl-judge-ablation-allocation-status-v1",
+  "source_commit": "a3ada6cb3c75879c6916af202f8af787d817cfe5",
+  "rental_request_epoch": 1790926144.0797818,
+  "price_usd_per_hour": 13.52,
+  "gpu_count": 8,
+  "gpu_memory_mib": [
+    97887,
+    97887,
+    97887,
+    97887,
+    97887,
+    97887,
+    97887,
+    97887
+  ],
+  "cpu_quota_cores": 128,
+  "topology": {
+    "trainer_gpus": 1,
+    "inference_gpus": 7,
+    "inflight": 96,
+    "renderer_workers": 8
+  },
+  "retry_gpu_cap_usd": 57.45,
+  "per_arm_retry_cap_usd": 19.15,
+  "failed_setup_gpu_clock_usd": 1.9389384231037563,
+  "combined_gpu_clock_ceiling_usd": 59.38893842310376,
+  "status": "shared_preparation_running",
+  "optimizer_updates_verified": 0,
+  "finite_exact_pod_controller_started": true,
+  "scheduling": "none; finite foreground campaign and bounded local controller only"
+}
