@@ -101,3 +101,7 @@ Inference workers completed compilation and CUDA graph capture; the earlier miss
 Public screened archive:50,745bytes, revision `e4163ae55abefe92ccd412fda4e93a86801b1f12`, SHA256 `b46df59741f920ba13eb869406aac701f61d5d6d0f93ccb0eb2b0f8588b50f7c`; anonymous retrieval verified. Node release13:02:55UTC (18:32:55IST). Attempt4 GPU-clock estimate$2.8732; cumulative failed starts$12.5907, not invoices. [Terminal record](allocation-attempt4-result.json).
 
 Next replay retains all registered arms and opts into a bounded1200-second initial server readiness allowance, instead of600; the historical default and120-second adapter load waits stay unchanged. Seven workers warmed close to the old cutoff, motivating this allowance; readiness and80-GiB trainer backward remain unproved. Parent37 scoped checks pass, including invalid/overlarge timeout rejection. Remaining totalcap$46.50 ($15.50/arm) plus prior failures gives combined per-arm ceiling$19.6969, below$20; provider299-minute expiry also bounds the rental. No GPU allocated during repair.
+
+## Allocation attempt5: bounded cold startup
+
+Allocated13:12UTC (18:42IST), reviewed source `2e560aa078e4d998845403d9b05ad5cfcd44839a`;37targetedtests and clean Gitbundleplan passed. Same8A10080/$9.20hour and matched three arms, startupallowance1200seconds, sidecarcachecompatibility included in fresh clone. Finite controller began immediately,cap$46.50 and299-minute providerexpiry. Current state preparation; no updates or quality gain yet. [Allocation](allocation-attempt5.json).

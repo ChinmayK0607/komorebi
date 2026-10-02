@@ -1,0 +1,25 @@
+{
+  "schema": "text-paint-rl-judge-ablation-allocation-attempt-v1",
+  "attempt": 5,
+  "source_commit": "2e560aa078e4d998845403d9b05ad5cfcd44839a",
+  "requested_utc": "2026-10-02T13:12:36.203763+00:00",
+  "status": "allocated_preparing_not_training",
+  "hardware": {
+    "gpu": "A100",
+    "gpu_count": 8,
+    "advertised_vram_gib_per_gpu": 80,
+    "trainer_gpus": 1,
+    "inference_gpus": 7,
+    "activation_cpu_offload": true
+  },
+  "price_usd_per_hour": 9.2,
+  "remaining_campaign_gpu_cap_usd": 46.5,
+  "remaining_per_arm_gpu_cap_usd": 15.5,
+  "prior_failed_setup_gpu_estimate_usd": 12.590663491503397,
+  "combined_per_arm_gpu_ceiling_usd": 19.696887830501133,
+  "provider_expiry_minutes": 299,
+  "initial_readiness_timeout_seconds": 1200,
+  "cache_protocol": "spawn plus independent worker cache roots; Torch compiler sidecars preserve parent roots",
+  "monitoring": "finite30-second observations and cost-controlled exact-pod release, no Codex recurring automation",
+  "cost_scope": "elapsed-clock estimate, not invoice"
+}
