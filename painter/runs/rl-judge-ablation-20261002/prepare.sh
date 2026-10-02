@@ -10,8 +10,21 @@ RETRY="${PAINTER_RETRY_RUN:-$REPO/painter/runs/text-rl16-retry-20261001}"
 SHARED="$RUN/../rl-judge-ablation-shared-20261002"
 FROZEN_SOURCE="${PAINTER_FROZEN_SFT_ADAPTER_SOURCE_FILE:-${PAINTER_FROZEN_SFT_ADAPTER_PATH_FILE:-$REPO/painter/runs/photo-curriculum-rl-20260922/initial-adapter-path.txt}}"
 BOOTSTRAP="${PAINTER_BOOTSTRAP_RUN:-$REPO/painter/runs/text-pairwise-rl-20260928}"
-PY="${PAINTER_PREPARE_PYTHON:-${PRIME_ROOT:-/root/painter/prime}/.venv/bin/python}"
-[[ -x "$PY" ]] || PY=python3
+PRIME_ROOT="${PRIME_ROOT:-/root/painter/prime}"
+# Contract tests may inject a small stand-in interpreter.  A real node uses
+# the pinned Prime interpreter after bootstrap; the system interpreter is only
+# allowed for the dependency-free plan check that must run before bootstrap.
+CUSTOM_PREPARE_PYTHON="${PAINTER_PREPARE_PYTHON:-}"
+if [[ -n "$CUSTOM_PREPARE_PYTHON" ]]; then
+  [[ -x "$CUSTOM_PREPARE_PYTHON" ]] || {
+    echo "custom preparation Python is not executable: $CUSTOM_PREPARE_PYTHON" >&2
+    exit 1
+  }
+  PLAN_PY="$CUSTOM_PREPARE_PYTHON"
+else
+  PLAN_PY="$PRIME_ROOT/.venv/bin/python"
+  [[ -x "$PLAN_PY" ]] || PLAN_PY=python3
+fi
 
 usage() {
   echo 'usage: prepare.sh [all|--plan-only]' >&2
@@ -21,7 +34,7 @@ MODE="${1:-all}"
 [[ "$MODE" == all || "$MODE" == --plan-only ]] || usage
 
 PYTHONPATH="$REPO:$REPO/painter:$RUN${PYTHONPATH:+:$PYTHONPATH}" \
-  "$PY" "$RUN/prepare_matrix.py" --plan >/dev/null
+  "$PLAN_PY" "$RUN/prepare_matrix.py" --plan >/dev/null
 if [[ "$MODE" == --plan-only ]]; then
   echo 'RL_JUDGE_ABLATION_PLAN_VALIDATED'
   exit 0
@@ -68,6 +81,19 @@ else
   PAINTER_FROZEN_SFT_ADAPTER_PATH_FILE="$SHARED/frozen-sft-adapter-path.txt" \
   bash "$RETRY/prepare_node.sh"
 fi
+
+# Bootstrap installs the pinned Prime environment on a fresh node.  Refresh
+# the interpreter binding after that step (and on reused shared preparation)
+# so config generation cannot continue with the pre-bootstrap system Python.
+if [[ -n "$CUSTOM_PREPARE_PYTHON" ]]; then
+  PY="$CUSTOM_PREPARE_PYTHON"
+else
+  PY="$PRIME_ROOT/.venv/bin/python"
+  [[ -x "$PY" ]] || {
+    echo "pinned Prime Python missing after preparation: $PY" >&2
+    exit 1
+  }
+fi
 for path_file in "$SHARED/policy-adapter-path.txt" "$SHARED/frozen-sft-adapter-path.txt"; do
   [[ -r "$path_file" ]] || {
     echo "shared preparation did not preserve verified adapter path: $path_file" >&2
@@ -78,7 +104,6 @@ PYTHONPATH="$REPO:$REPO/painter:$RUN${PYTHONPATH:+:$PYTHONPATH}" \
   "$PY" "$RUN/prepare_matrix.py" --materialize "$SHARED"
 
 MODEL_DIR="${MODEL_DIR:-/root/painter/model-cache/qwen/1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0}"
-PRIME_ROOT="${PRIME_ROOT:-/root/painter/prime}"
 CONFIG_TOOL="$REPO/painter/runs/text-pairwise-rl-20260928/prepare_config.py"
 GPU_COUNT=8
 TRAIN_GPU_COUNT=1

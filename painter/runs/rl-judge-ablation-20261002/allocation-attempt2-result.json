@@ -1,0 +1,17 @@
+{
+  "schema": "rl-judge-ablation-allocation-result-v1",
+  "source_commit": "a3ada6cb3c75879c6916af202f8af787d817cfe5",
+  "status": "failed_before_training_node_release_verified",
+  "release_verified_epoch": 1790927599.572743,
+  "rental_request_epoch": 1790926144.0797818,
+  "elapsed_seconds": 1455.4929611682892,
+  "price_usd_per_hour": 13.52,
+  "estimated_gpu_cost_usd": 5.4661846763875745,
+  "combined_failed_setup_gpu_cost_usd": 7.40512309949133,
+  "cost_basis": "request-to-verified-release elapsed clock, not provider invoice",
+  "optimizer_updates": 0,
+  "last_successful_stage": "Shared Prime/renderer runtime, pinned base model and adapters, hashed40/47 anchors, and three isolated arm roots were prepared.",
+  "failure": "Arm config validation invoked system Python chosen before bootstrap, without installed Prime dependencies; pydantic import failed.",
+  "evidence_path": "private/screened-prepare-tail.json",
+  "current_provider_active_pod_count": 0
+}

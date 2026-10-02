@@ -260,6 +260,118 @@ class AblationContractTests(unittest.TestCase):
             self.assertTrue(retry_marker.exists(), result.stderr)
             self.assertEqual(frozen.read_text().strip(), "/tmp/mock-frozen-adapter")
 
+    def test_fresh_node_refreshes_pinned_interpreter_for_config_generation(self):
+        """A bootstrap-created Prime venv must drive all three configs."""
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            repo = root / "repo"
+            run = repo / "painter" / "runs" / "rl-judge-ablation-20261002"
+            base = root / "base"
+            retry = root / "retry"
+            bootstrap = root / "bootstrap"
+            prime = root / "prime"
+            fake_bin = root / "bin"
+            config_tool = repo / "painter" / "runs" / "text-pairwise-rl-20260928" / "prepare_config.py"
+            run.mkdir(parents=True)
+            base.mkdir()
+            retry.mkdir()
+            bootstrap.mkdir()
+            fake_bin.mkdir()
+            config_tool.parent.mkdir(parents=True)
+            prepare = run / "prepare.sh"
+            prepare.write_text((RUN / "prepare.sh").read_text())
+            prepare.chmod(0o755)
+            # The plan and materialization calls are intentionally dependency
+            # free. Materialization only needs to create the three flat roots;
+            # the config stub below supplies the receipts the shell checks.
+            (run / "prepare_matrix.py").write_text(
+                "#!/usr/bin/env python3\n"
+                "import pathlib, sys\n"
+                "run = pathlib.Path(__file__).parent\n"
+                "if '--materialize' in sys.argv:\n"
+                "    for name in ('rl-judge-ablation-flash-20261002', 'rl-judge-ablation-pro-20261002', 'rl-judge-ablation-luna-20261002'):\n"
+                "        (run.parent / name).mkdir(parents=True, exist_ok=True)\n"
+                "raise SystemExit(0)\n"
+            )
+            (run / "matrix.json").write_text(json.dumps({"arms": [
+                {"id": "flash", "model": "xiaomi/mimo-v2.6-flash", "run_name": "rl-judge-ablation-flash-20261002", "output_root": "rl-rollouts"},
+                {"id": "pro", "model": "xiaomi/mimo-v2.6-pro", "run_name": "rl-judge-ablation-pro-20261002", "output_root": "rl-rollouts"},
+                {"id": "luna", "model": "openai/gpt-6-luna", "run_name": "rl-judge-ablation-luna-20261002", "output_root": "rl-rollouts"},
+            ]}))
+            (base / "prepare_node.sh").write_text("#!/usr/bin/env bash\nexit 0\n")
+            (base / "prepare_node.sh").chmod(0o644)
+            (retry / "prepare_node.sh").write_text(
+                "#!/usr/bin/env bash\n"
+                "set -eu\n"
+                "mkdir -p \"$(dirname \"$PAINTER_SFT_ADAPTER_PATH_FILE\")\"\n"
+                "printf '%s\\n' /tmp/mock-policy-adapter > \"$PAINTER_SFT_ADAPTER_PATH_FILE\"\n"
+                "printf '%s\\n' /tmp/mock-frozen-adapter > \"$PAINTER_FROZEN_SFT_ADAPTER_PATH_FILE\"\n"
+                "touch \"$PAINTER_RUN_ROOT/preparation-receipt.json\"\n"
+            )
+            (retry / "prepare_node.sh").chmod(0o644)
+            frozen = repo / "painter" / "runs" / "photo-curriculum-rl-20260922" / "initial-adapter-path.txt"
+            prime_log = root / "prime-invocations.log"
+            config_log = root / "config-invocations.log"
+            # Bootstrap creates the interpreter only after the initial plan
+            # check. The wrapper records every later invocation and delegates
+            # to the test process's real Python for the stubs.
+            bootstrap_python = prime / ".venv" / "bin" / "python"
+            bootstrap_python.parent.mkdir(parents=True)
+            bootstrap_python.write_text(
+                "#!/usr/bin/env bash\n"
+                f"printf '%s\\n' \"$*\" >> {str(prime_log)!r}\n"
+                f"exec {str(Path(sys.executable))!r} \"$@\"\n"
+            )
+            # Hide the interpreter until bootstrap is called.
+            bootstrap_python.unlink()
+            (bootstrap / "setup_node.sh").write_text(
+                "#!/usr/bin/env bash\n"
+                "set -eu\n"
+                f"mkdir -p {str(frozen.parent)!r} {str(bootstrap_python.parent)!r}\n"
+                f"printf '%s\\n' /tmp/mock-frozen-adapter > {str(frozen)!r}\n"
+                f"cat > {str(bootstrap_python)!r} <<'PYTHON_WRAPPER'\n"
+                "#!/usr/bin/env bash\n"
+                f"printf '%s\\n' \"$*\" >> {str(prime_log)!r}\n"
+                f"exec {str(Path(sys.executable))!r} \"$@\"\n"
+                "PYTHON_WRAPPER\n"
+                f"chmod 755 {str(bootstrap_python)!r}\n"
+            )
+            (bootstrap / "setup_node.sh").chmod(0o755)
+            # This stub is run through the bootstrap-created interpreter. It
+            # writes exactly the receipt fields prepare.sh validates.
+            config_tool.write_text(
+                "#!/usr/bin/env python3\n"
+                "import json, os, sys\n"
+                "from pathlib import Path\n"
+                f"Path({str(config_log)!r}).open('a').write('CONFIG\\n')\n"
+                "args = dict(zip(sys.argv[1::2], sys.argv[2::2]))\n"
+                "out = Path(args['--output'])\n"
+                "out.parent.mkdir(parents=True, exist_ok=True)\n"
+                "out.write_text('[deployment]\\ngpus_per_node = 8\\nnum_train_gpus = 1\\nnum_infer_gpus = 7\\n')\n"
+                "receipt = {'run_name': args['--run-name'], 'model_revision': '1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0', 'adapter_revision': 'ac4d3eda8e5925e2d23992cfdc1a63620ebde573', 'adapter_prefix': 'text-pairwise-scaled-20260929/step_16', 'deployment': {'gpus_per_node': 8, 'num_train_gpus': 1, 'num_infer_gpus': 7}}\n"
+                "out.with_name('rl-config-receipt.json').write_text(json.dumps(receipt))\n"
+            )
+            (config_tool.parent / "__init__.py").write_text("")
+            (fake_bin / "uname").write_text("#!/usr/bin/env bash\nprintf 'Linux\\n'\n")
+            (fake_bin / "uname").chmod(0o755)
+            env = {
+                **os.environ,
+                "PATH": f"{fake_bin}:{os.environ['PATH']}",
+                "PRIME_ROOT": str(prime),
+                "PAINTER_BASE_RUN": str(base),
+                "PAINTER_RETRY_RUN": str(retry),
+                "PAINTER_BOOTSTRAP_RUN": str(bootstrap),
+                "MODEL_DIR": "/tmp/model",
+                "PAINTER_TEST_CONFIG_LOG": str(config_log),
+            }
+            env.pop("PAINTER_PREPARE_PYTHON", None)
+            result = subprocess.run([str(prepare), "all"], env=env, text=True, capture_output=True)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(len(config_log.read_text().splitlines()), 3)
+            invocations = prime_log.read_text().splitlines()
+            self.assertEqual(sum("prepare_config.py" in line for line in invocations), 3)
+            self.assertTrue(all("prepare_matrix.py" not in line or "--plan" not in line for line in invocations), invocations)
+
     def test_clean_checkout_modes_match_bash_invocation_contract(self):
         repo = RUN.parents[2]
         paths = [
