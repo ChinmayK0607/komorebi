@@ -1,0 +1,67 @@
+{
+  "schema": "text-paint-rl-judge-ablation-attempt-result-v1",
+  "attempt": 6,
+  "source_commit": "68d5db6618a0264f26ec52248da0a1662727adff",
+  "released_ist": "2026-10-02T22:25:32+05:30",
+  "provider_exact_pod_absence_verified": true,
+  "gpu_cost_clock_estimate_usd": 27.315935775227015,
+  "campaign_gpu_cost_clock_estimate_usd": 45.74317965162065,
+  "campaign_failed_setup_gpu_clock_usd": 18.427243876393636,
+  "cost_is_invoice": false,
+  "gateway_cost_included": false,
+  "arms": [
+    {
+      "arm": "flash",
+      "completed_optimizer_steps": 2,
+      "stop_reason": "finite_cost_deadline",
+      "checkpoint_step": null,
+      "evaluation_completed": false,
+      "primary_step12_censored": true,
+      "painting_receipts": 432,
+      "judge_receipts": 35,
+      "public_evidence": {
+        "revision": "b7aa7cfcc1353fdbd5c403e37dea4f83eb6624c6",
+        "path": "runs/rl-judge-ablation-flash-20261002/evidence.tar.gz",
+        "bytes": 136318302,
+        "sha256": "5928a75e9766cc8f96667c4249db59801ba6c4516007f88d642e7e7afadbe3cc",
+        "hash_verified": true
+      }
+    },
+    {
+      "arm": "pro",
+      "completed_optimizer_steps": 2,
+      "stop_reason": "finite_cost_deadline",
+      "checkpoint_step": null,
+      "evaluation_completed": false,
+      "primary_step12_censored": true,
+      "painting_receipts": 470,
+      "judge_receipts": 43,
+      "public_evidence": {
+        "revision": "b7aa7cfcc1353fdbd5c403e37dea4f83eb6624c6",
+        "path": "runs/rl-judge-ablation-pro-20261002/evidence.tar.gz",
+        "bytes": 149830658,
+        "sha256": "315c1977ecdded2125c6da19c78982a6d5cdcdf01c79872dedbcdd19c811e5f8",
+        "hash_verified": true
+      }
+    },
+    {
+      "arm": "luna",
+      "completed_optimizer_steps": 2,
+      "stop_reason": "finite_cost_deadline",
+      "checkpoint_step": null,
+      "evaluation_completed": false,
+      "primary_step12_censored": true,
+      "painting_receipts": 509,
+      "judge_receipts": 58,
+      "public_evidence": {
+        "revision": "b7aa7cfcc1353fdbd5c403e37dea4f83eb6624c6",
+        "path": "runs/rl-judge-ablation-luna-20261002/evidence.tar.gz",
+        "bytes": 159651920,
+        "sha256": "da1a103a990afc041a2240ab03480de068f1f666e161ccfdbaf1b4312a058059",
+        "hash_verified": true
+      }
+    }
+  ],
+  "conclusion": "No matched quality result or judge ranking: all arms censored before step12, no step4 checkpoint saved.",
+  "next_decision": "No new GPU launch. Review saved generated-code/API failures, renderer concurrency/startup overhead, whole-group judgment censoring, and budget/evaluation reserve versus observed batch latency before another allocation."
+}
