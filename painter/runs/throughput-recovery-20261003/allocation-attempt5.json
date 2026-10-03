@@ -1,0 +1,40 @@
+{
+  "schema": "painter-finite-allocation-record-v1",
+  "status": "allocated-source-staging",
+  "source_commit": "ac5b9ea283ac969464d79f1e0b990056c9c621ad",
+  "source_bundle": {
+    "repo_id": "CK0607/komorebi-painter-teachers",
+    "revision": "55f6fb037b79e1b80e095a5f376198ce8c18f64a",
+    "path": "execution-source/throughput-recovery-20261003/source-ac5b9ea.bundle",
+    "sha256": "be42d9fc8c9fc63ad72a5a1d2b1655f47565e319e7272e5f7bfe1ede013c4743",
+    "bytes": 3232076,
+    "source_commit": "ac5b9ea283ac969464d79f1e0b990056c9c621ad",
+    "anonymous_hash_verified": true
+  },
+  "hardware": {
+    "gpu": "H100",
+    "count": 2,
+    "vram_gb_per_gpu": 80,
+    "whole_node_usd_hour": 3.8
+  },
+  "budget": {
+    "whole_pilot_gpu_ceiling_usd": 20,
+    "conservative_failed_attempt_reserve_usd": 2,
+    "this_attempt_gpu_ceiling_usd": 18,
+    "counts_from": "rental request before provider allocation through release; API expense separate"
+  },
+  "intended_scope": {
+    "initializer": "RL16",
+    "reward_opponent": "frozen SFT512",
+    "judge": "MiMo Flash via Vercel",
+    "actual_updates": 4,
+    "checkpoint_interval": 1,
+    "training_policy": "Qwen3.8-27B; judge never generates rollouts"
+  },
+  "known_limits": [
+    "No actual optimizer update verified yet",
+    "Fresh matched RL16 evaluation pending; current script compares trained samples to archived SFT512",
+    "Renderer lifecycle cleanup passed on Linux; general speedup not demonstrated"
+  ],
+  "recorded_utc": "2026-10-03T05:42:56.120417+00:00"
+}
