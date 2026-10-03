@@ -1,0 +1,20 @@
+{
+  "schema": "finite-recovery-startup-failure-v1",
+  "source_commit": "a9fe6c724f72f0da7bff48bb6e9aafceb33f2282",
+  "status": "released-config-not-yet-written-startup-race",
+  "optimizer_updates": 0,
+  "reason": "Absent config receipt expanded into nonempty all-None mapping and was incorrectly rejected before preparation",
+  "release_requested": true,
+  "exact_pod_absence_verified": true,
+  "gpu_count": 2,
+  "gpu": "H100",
+  "price_usd_hour": 3.8,
+  "rental_request_to_release_event_seconds": 138.181,
+  "gpu_clock_estimate_usd": 0.1459,
+  "conservative_spend_reserved_usd": 0.25,
+  "remaining_pilot_cap_usd": 19.75,
+  "invoice_not_available": true,
+  "implementation_fix": "Preserve absent config as{}; present malformed/incorrect config still rejected",
+  "regression": "staged absent -> valid -> malformed startup payloads",
+  "source_operations_log": "private/controller/operations-single.jsonl"
+}

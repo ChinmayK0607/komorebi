@@ -1,0 +1,32 @@
+{
+  "schema": "focused-chrome-measured-observation-v1",
+  "status": "observed-on-cloud-publication-pending",
+  "source_commit": "a9fe6c724f72f0da7bff48bb6e9aafceb33f2282",
+  "cloud_task_url": "https://chatgpt.com/codex/cloud/tasks/task_e_6ac0852e86c0832bb76f8d02e35b390f",
+  "linux_tests": {
+    "run": 14,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "total_elapsed_seconds": 118.785556,
+  "cancellation": {
+    "cleanup_seconds": 0.191658,
+    "returncode": 143,
+    "chain_observed": true,
+    "profiler_sigkill": false,
+    "owned_sessions_gone": true
+  },
+  "stable_control_png_sha256": "561c367390ffd490b3c86b8e288e1062dded1b55d43f18546cafe658bf948a55",
+  "stable_control_parity": true,
+  "other_controls": "expected invalid receipt preserved; slow case canceled",
+  "actual_arguments": {
+    "repeats": 2,
+    "pool_width": 4,
+    "total_limit_seconds": 240,
+    "cleanup_grace_seconds": 3
+  },
+  "prior_argument_failure": "Requested reduced repeats/pool width violate fixed profiler validation; no rendering in that attempt",
+  "publication_failure": "Single commit with binary PNGs failed LFS HTTP501 in Cloud; requested one JSON/text-only evidence commit",
+  "limits": "three unchanged controls only; full painter quality/throughput and native semaphore end-to-end not established"
+}

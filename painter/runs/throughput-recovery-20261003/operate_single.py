@@ -331,12 +331,19 @@ def _safe_event(path: Path, event: str, started: float, **fields: Any) -> None:
 def _remote_summary(sftp: Any, *, timeout: float) -> dict[str, Any]:
     state = _json_bytes(_sftp_read(sftp, str(REMOTE_RUN / "supervisor-state.json"), timeout=timeout)) or {}
     receipt = _json_bytes(_sftp_read(sftp, str(REMOTE_RUN / "terminal-receipt.json"), timeout=timeout)) or {}
-    config = _json_bytes(_sftp_read(sftp, str(REMOTE_RUN / "rl-config-receipt.json"), timeout=timeout)) or {}
+    config_raw = _sftp_read(sftp, str(REMOTE_RUN / "rl-config-receipt.json"), timeout=timeout)
+    config = _json_bytes(config_raw)
+    if config_raw is None:
+        config_summary: dict[str, Any] = {}
+    elif config is None:
+        config_summary = {"_malformed": True}
+    else:
+        config_summary = {key: config.get(key) for key in ("profile", "checkpoint_interval", "batch_size", "group_size", "initial_inflight", "max_inflight", "activation_cpu_offload", "deployment", "reward")}
     metrics = _sftp_read(sftp, str(REMOTE_RUN / f"async-output/{RUN_NAME}/monitors/file/metrics.jsonl"), timeout=timeout)
     return {
         "state": {key: state.get(key) for key in ("status", "reason", "completed_optimizer_steps", "last_optimizer_step", "last_admitted_batch", "max_updates")},
         "terminal": {key: receipt.get(key) for key in ("status", "pipeline_exit_code", "archive_exit_code", "public_archive_hash_verified", "checkpoint_step")},
-        "config": {key: config.get(key) for key in ("profile", "checkpoint_interval", "batch_size", "group_size", "initial_inflight", "max_inflight", "activation_cpu_offload", "deployment", "reward")},
+        "config": config_summary,
         "render": _queue_summary(metrics),
     }
 

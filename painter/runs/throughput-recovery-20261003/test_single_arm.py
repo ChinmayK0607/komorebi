@@ -11,6 +11,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
 
 RUN = Path(__file__).resolve().parent
@@ -205,6 +206,32 @@ class SingleArmTests(unittest.TestCase):
                 )
             self.assertEqual([pod.id for pod in api.removed], ["pod-test"])
             self.assertNotIn("pod-test", (root / "ops/operations-single.jsonl").read_text())
+
+    def test_controller_waits_for_absent_config_and_rejects_malformed_config(self):
+        valid = {
+            "profile": "rl-throughput-recovery-v1",
+            "checkpoint_interval": 1,
+            "batch_size": 16,
+            "group_size": 4,
+            "initial_inflight": 32,
+            "max_inflight": 32,
+            "activation_cpu_offload": True,
+            "deployment": {"type": "single_node", "gpus_per_node": 2, "num_train_gpus": 1, "num_infer_gpus": 1},
+        }
+
+        def summary_for(config_raw):
+            values = [b"{}", b"{}", config_raw, None]
+            with patch.object(operator, "_sftp_read", side_effect=values):
+                return operator._remote_summary(object(), timeout=1)
+
+        self.assertEqual(summary_for(None)["config"], {})
+        valid_summary = summary_for(json.dumps(valid).encode())
+        self.assertEqual(valid_summary["config"]["profile"], "rl-throughput-recovery-v1")
+        operator._validate_config_summary(valid_summary)
+        malformed = summary_for(b"{not-json")
+        self.assertEqual(malformed["config"], {"_malformed": True})
+        with self.assertRaises(operator.OperationError):
+            operator._validate_config_summary(malformed)
 
     def test_wrappers_keep_matched_panel_renderer_and_four_update_bindings(self):
         execute = (RUN / "execute_single.sh").read_text()
