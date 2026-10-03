@@ -1,0 +1,54 @@
+{
+  "schema": "painter-allocation-record-v1",
+  "status": "allocated-controller-active-preparation",
+  "source_commit": "b5fe079decce8fc45007c8ac74461a748f2f9a32",
+  "source_bundle": {
+    "source_commit": "b5fe079decce8fc45007c8ac74461a748f2f9a32",
+    "repo_id": "CK0607/komorebi-painter-teachers",
+    "revision": "0d879723e1d95f08a51d1a4035d7e757a5d1eb9b",
+    "path": "execution-source/throughput-recovery-20261003/source-b5fe079.bundle",
+    "bytes": 3221717,
+    "sha256": "25fb5932ff7c877da2f722f22bad3b1a2761b34f2ba8551d030f73fc903d29ba",
+    "anonymous_hash_verified": true
+  },
+  "gpu": {
+    "model": "H100",
+    "count": 2,
+    "vram_gb_each": 80,
+    "price_whole_node_usd_hour": 3.8,
+    "roles": {
+      "0": "inference",
+      "1": "trainer"
+    }
+  },
+  "gpu_budget": {
+    "whole_pilot_usd": 20,
+    "prior_attempt_clock_estimate_usd": 0.9799,
+    "conservative_prior_reserve_usd": 1.1,
+    "this_attempt_ceiling_usd": 18.9,
+    "API": "separate"
+  },
+  "configuration": {
+    "initializer": "historical RL16, fresh optimizer",
+    "frozen_opponent": "SFT512",
+    "updates": 4,
+    "checkpoint_interval": 1,
+    "batch_rollouts": 16,
+    "group_size": 4,
+    "inflight": 32,
+    "judge": "MiMo Flash, Vercel, medium, generic v2 rubric"
+  },
+  "validation": {
+    "clean_bundle_tests_run": 35,
+    "passed": 34,
+    "skipped": 1,
+    "skip": "Linux-only CPU profile entrypoint; real Chrome lifecycle previously measured on Linux",
+    "new_real_training_verified": false
+  },
+  "upstream_source_staging": "prime-source-staging.json",
+  "measurement": {
+    "actual_optimizer_updates": 0,
+    "training_utilization_window": null
+  },
+  "scope_limitation": "Current panel compares trained policy to archived SFT512. Fresh matched RL16 initializer panel remains pending; no initializer improvement claim."
+}
