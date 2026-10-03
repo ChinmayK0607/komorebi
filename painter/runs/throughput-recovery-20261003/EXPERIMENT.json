@@ -1,0 +1,78 @@
+{
+  "schema": "painter-experiment-record-v1",
+  "status": "cpu-profile-prepared-gpu-not-rented",
+  "hypothesis": "Bound speculative work, cancellation-safe rendering, and checkpoint every actual update will yield useful published updates within a short single-arm rental; visual benefit remains a separate matched evaluation.",
+  "matched_baseline": {
+    "policy": "historical RL16 initializer",
+    "evaluation_requirement": "same heldout briefs, seed, API reference v2, renderer and generation settings for initializer and trained adapter",
+    "frozen_reward_opponent": "SFT512"
+  },
+  "model": {
+    "repo": "Qwen/Qwen3.8-27B",
+    "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0"
+  },
+  "initializer": {
+    "repo": "CK0607/qwen3.8-27b-brush-painting",
+    "revision": "ac4d3eda8e5925e2d23992cfdc1a63620ebde573",
+    "prefix": "text-pairwise-scaled-20260929/step_16",
+    "adapter_sha256": "e5211706a23b46354aa269f2b9cfaaaad1b64eef1012b433b1887c149f5a927c"
+  },
+  "reward_opponent": {
+    "revision": "adf687e5b321514eda7be6eab050434fdc8e44ff",
+    "prefix": "photo-curriculum-sft-20260922-balanced/step_512",
+    "adapter_sha256": "bea72b066986faa1b92b9dc539c710093181ee916b99323e2b2498f318ac1740"
+  },
+  "data": {
+    "train_cases": 40,
+    "heldout_cases": 47,
+    "train_semantic_sha256": "13ac0eebb3595fbd931ee7864e69101abdc8b7c9c1faccf11dfcd9bd495c6501",
+    "anchors_archive_sha256": "ba4252251a54f9eeab16cff7cbf45939ee37e57730a8fa9191fe9121f235ccd3"
+  },
+  "judge": {
+    "model": "xiaomi/mimo-v2.6-flash",
+    "provider": "Vercel AI Gateway",
+    "requested_effort": "medium",
+    "format": "identity-joint-side-schema-v2-generic-v1",
+    "rubric_sha256": "d21e4644e7a3874a0694b2ad406420e733b7638222eb7717e7f5f91cbdf1613c",
+    "strict_final_action": true
+  },
+  "planned_configuration": {
+    "updates": 4,
+    "checkpoint_interval": 1,
+    "batch_size": 16,
+    "group_size": 4,
+    "inflight_episodes": 32,
+    "max_policy_age": 1,
+    "activation_cpu_offload": true,
+    "api_reference": "v2",
+    "topology": "one trainer GPU, one inference GPU"
+  },
+  "budget": {
+    "gpu_ceiling_usd": 20,
+    "counts_from": "rental request through provider release, including preparation/evaluation/upload",
+    "api_expense": "reported separately",
+    "target": "complete promptly below ceiling; no claim of measured speedup"
+  },
+  "cpu_profile": {
+    "saved_programs": 8,
+    "unchanged": true,
+    "seed": 0,
+    "backend": "swiftshader",
+    "repeats": 2,
+    "parallel_workers": 4,
+    "total_deadline_seconds": 900,
+    "paid_api_calls": 0,
+    "gpu_rentals": 0
+  },
+  "required_results": [
+    "actual optimizer updates and nonzero finite gradients",
+    "anonymous hash-verified public checkpoint per update",
+    "valid completed episodes/second",
+    "queue versus active render timings",
+    "cancelled and stale work fractions",
+    "GPU average and busy fractions over explicit measurement windows",
+    "matched initializer versus trained visual results with failures censored",
+    "rental elapsed-time estimate and recorded API usage"
+  ],
+  "next_decision": "Use measured useful throughput, publication success and matched visuals to decide whether to extend; four updates alone cannot establish a general upward reward trend."
+}
