@@ -1,6 +1,6 @@
 {
   "schema": "painter-experiment-record-v1",
-  "status": "finite-retry-allocated-source-staging",
+  "status": "profile-verified-finite-supervisor-running-first-update-pending",
   "hypothesis": "Bound speculative work, cancellation-safe rendering, and checkpoint every actual update will yield useful published updates within a short single-arm rental; visual benefit remains a separate matched evaluation.",
   "matched_baseline": {
     "policy": "historical RL16 initializer",
@@ -155,5 +155,6 @@
     },
     "implementation": "Luna xhigh; parent review and experiment operations",
     "not_proven": "Actual successful optimizer update and matched quality improvement remain unproven."
-  }
+  },
+  "runtime_storage_record": "runtime-storage-placement.json"
 }

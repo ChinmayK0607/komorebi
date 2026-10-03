@@ -1,0 +1,43 @@
+{
+  "schema": "painter-runtime-storage-placement-v1",
+  "source_commit": "ac5b9ea283ac969464d79f1e0b990056c9c621ad",
+  "change": "UV cache and Prime environment moved from encrypted root to local temporary disk, original directories preserved; lexical paths remain unchanged",
+  "storage_probe": [
+    {
+      "location": "local-temporary",
+      "mib": 32,
+      "write_kib": 16,
+      "seconds": 0.108
+    },
+    {
+      "location": "encrypted-root",
+      "mib": 32,
+      "write_kib": 16,
+      "seconds": 0.956
+    }
+  ],
+  "observed_installer_writes": {
+    "window_seconds": 10,
+    "uv_wchar_mib": 25.19,
+    "gocryptfs_write_bytes_mib": 25.38
+  },
+  "data_model_configuration_changed": false,
+  "installer_retry": "existing bounded bootstrap retry loop",
+  "migration_seconds": {
+    "cache_copy": 101.13,
+    "environment_copy": 0.02
+  },
+  "installer_retry_result": {
+    "remaining_packages_prepared": 2,
+    "prepare_seconds": 17.44,
+    "attempt_2_failure": "EMFILE during package linking",
+    "attempt_3": "completed; controller real profile config validated"
+  },
+  "descriptor_limit_adjustment": {
+    "processes_changed": 3,
+    "scope": "painter bootstrap shells",
+    "old_soft": 1024,
+    "new_soft": 131072,
+    "hard": 524288
+  }
+}
