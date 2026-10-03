@@ -1,0 +1,20 @@
+{
+  "source_commit": "a19b49f46a228f0ceff36ec24554002f2527f673",
+  "repo_id": "CK0607/komorebi-painter-experiments",
+  "files": [
+    {
+      "path": "runs/throughput-recovery-20261003/source-a19b49f.bundle",
+      "revision": "39f8bc5d4d7d7936bf6f6107692d6e6c40067435",
+      "sha256": "5ae57d1c08bbfb41695795415fb26b141ef61a2edccc923d61857745153dcb6e",
+      "bytes": 3200104,
+      "anonymous_hash_verified": true
+    },
+    {
+      "path": "runs/throughput-recovery-20261003/prelaunch-a19b49f.json",
+      "revision": "642afdfb6f5b181ad616704ef6b5c35ac885a622",
+      "sha256": "e0750aa46e29d9232dbbf6ec5800d16c9a2f4f91925c3937101c366de9302dfe",
+      "bytes": 5216,
+      "anonymous_hash_verified": true
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "schema": "finite-recovery-launch-validation-v1",
+  "source_commit": "a19b49f46a228f0ceff36ec24554002f2527f673",
+  "clean_bundle_replay": true,
+  "checks": {
+    "unittest_cases": 17,
+    "passed": 16,
+    "skipped": 1,
+    "skip_reason": "Linux lifecycle test unavailable on Mac; Cloud executes Linux version",
+    "shell_syntax": "all finite run shell scripts passed",
+    "preparation_plan": "dependency-free two-GPU binding check passed",
+    "operator_plan": "real Lium Python runtime plan passed without allocation"
+  },
+  "not_established": [
+    "actual GPU backward or checkpoint export",
+    "Linux rendering speed",
+    "matched initializer-relative quality improvement"
+  ],
+  "gpu_allocations": 0
+}
