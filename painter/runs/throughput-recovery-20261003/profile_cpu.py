@@ -910,7 +910,22 @@ def run_profile(args: argparse.Namespace) -> dict[str, Any]:
     # ANGLE backend is available.  Later receipts retain the contract fields but do not
     # silently change backend or rerun a separate probe.
     first_backend_receipt = next((row.get("renderer_receipt") for row in baseline_rows if row.get("renderer_receipt")), {})
-    report["backend_check"] = _backend_check(first_backend_receipt or {}, args.backend)
+    if first_backend_receipt:
+        report["backend_check"] = _backend_check(first_backend_receipt, args.backend)
+    else:
+        report["backend_check"] = {
+            "checked_once": False,
+            "backend": args.backend,
+            "available": None,
+            "errors": ["no renderer receipt was produced; backend was not reached"],
+            "startup_failure": True,
+        }
+        report["status"] = "startup_failure"
+        report["censored_cases"] = [{"id": control.id, "reason": "startup_failure"} for control in controls]
+        report["summary"] = {"backend_available": None, "startup_failure": True, "counts": {"total": 0, "valid": 0, "censored": len(controls)}}
+        _write_json(output_root / "profile.json", report)
+        build_review_html(report, output_root / "profile.html")
+        return report
     if not report["backend_check"]["available"]:
         report["status"] = "backend_unavailable"
         report["censored_cases"] = [{"id": control.id, "reason": "backend_unavailable"} for control in controls]

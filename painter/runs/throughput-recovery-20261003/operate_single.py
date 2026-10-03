@@ -45,6 +45,8 @@ TRANSFER_TIMEOUT_SECONDS = 600.0
 RELEASE_TIMEOUT_SECONDS = 90.0
 RELEASE_MARGIN_SECONDS = 180.0
 INVENTORY_TIMEOUT_SECONDS = 60.0
+DIAGNOSTIC_BYTES = 65_536
+DIAGNOSTIC_LINES = 8
 
 
 class OperationError(RuntimeError):
@@ -167,7 +169,38 @@ def _remaining(window: RentalWindow, now: Callable[[], float]) -> float:
     return remaining
 
 
-def _remote_exec_capture(ssh: Any, command: str, *, timeout: float, now: Callable[[], float], window: RentalWindow) -> tuple[int, str]:
+def _append_tail(buffer: bytearray, data: bytes, limit: int = DIAGNOSTIC_BYTES) -> None:
+    buffer.extend(data)
+    if len(buffer) > limit:
+        del buffer[:-limit]
+
+
+def _sanitized_diagnostics(*values: str, forbidden: Iterable[str] = ()) -> list[str]:
+    """Keep short failure context while removing secrets and connection IDs."""
+    patterns = (
+        (re.compile(r"(?i)(?:bearer\s+|hf_)[A-Za-z0-9._:-]+"), "<redacted-token>"),
+        (re.compile(r"\bvck_[A-Za-z0-9._:-]+\b"), "<redacted-token>"),
+        (re.compile(r"\bsk-or-v1-[A-Za-z0-9._:-]+\b"), "<redacted-token>"),
+        (re.compile(r"(?i)([A-Za-z0-9_-]*(?:key|token|password|secret)[A-Za-z0-9_-]*)\s*[=:]\s*[^\s,;]+"), r"\1=<redacted>"),
+        (re.compile(r"\b(?:\d{1,3}\.){3}\d{1,3}\b"), "<redacted-address>"),
+    )
+    blocked = tuple(item for item in forbidden if item)
+    lines: list[str] = []
+    for raw in values:
+        for line in raw.splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            for item in blocked:
+                line = line.replace(item, "<redacted-id>")
+            for pattern, replacement in patterns:
+                line = pattern.sub(replacement, line)
+            line = "".join(character if character.isprintable() else " " for character in line)
+            lines.append(line[:320])
+    return lines[-DIAGNOSTIC_LINES:]
+
+
+def _remote_exec_capture(ssh: Any, command: str, *, timeout: float, now: Callable[[], float], window: RentalWindow) -> tuple[int, str, str]:
     _remaining(window, now)
     try:
         _stdin, stdout, _stderr = ssh.exec_command(command, timeout=min(timeout, SSH_TIMEOUT_SECONDS))
@@ -175,7 +208,8 @@ def _remote_exec_capture(ssh: Any, command: str, *, timeout: float, now: Callabl
         raise OperationError("SSH command could not be started") from exc
     channel = stdout.channel
     deadline = time.monotonic() + timeout
-    chunks: list[bytes] = []
+    stdout_tail = bytearray()
+    stderr_tail = bytearray()
     while not channel.exit_status_ready():
         if time.monotonic() >= deadline or window.release_deadline_epoch <= now():
             try:
@@ -183,19 +217,27 @@ def _remote_exec_capture(ssh: Any, command: str, *, timeout: float, now: Callabl
             finally:
                 raise OperationError("SSH command exceeded its finite deadline")
         if channel.recv_ready():
-            chunks.append(channel.recv(65536))
+            _append_tail(stdout_tail, channel.recv(65536))
         if channel.recv_stderr_ready():
-            channel.recv_stderr(65536)
+            _append_tail(stderr_tail, channel.recv_stderr(65536))
         time.sleep(0.1)
     while channel.recv_ready():
-        chunks.append(channel.recv(65536))
-    return int(channel.recv_exit_status()), b"".join(chunks).decode("utf-8", "replace")
+        _append_tail(stdout_tail, channel.recv(65536))
+    while channel.recv_stderr_ready():
+        _append_tail(stderr_tail, channel.recv_stderr(65536))
+    return (
+        int(channel.recv_exit_status()),
+        bytes(stdout_tail).decode("utf-8", "replace"),
+        bytes(stderr_tail).decode("utf-8", "replace"),
+    )
 
 
 def _remote_exec(ssh: Any, command: str, *, timeout: float, now: Callable[[], float], window: RentalWindow) -> str:
-    code, output = _remote_exec_capture(ssh, command, timeout=timeout, now=now, window=window)
+    code, output, error = _remote_exec_capture(ssh, command, timeout=timeout, now=now, window=window)
     if code != 0:
-        raise OperationError("remote command failed")
+        diagnostics = _sanitized_diagnostics(error, output)
+        detail = "; ".join(diagnostics)
+        raise OperationError("remote command failed" + (f": {detail}" if detail else ""))
     return output
 
 
@@ -337,6 +379,9 @@ def operate(*, window: RentalWindow, source_bundle: Path, source_commit: str, hf
     sftp = None
     channel_error: BaseException | None = None
     command_code: int | None = None
+    remote_diagnostics: list[str] = []
+    remote_stdout_tail = bytearray()
+    remote_stderr_tail = bytearray()
     try:
         _remaining(window, now)
         pod = _bounded_call(
@@ -354,7 +399,11 @@ def operate(*, window: RentalWindow, source_bundle: Path, source_commit: str, hf
             _safe_event(events, "inputs_transferred", started, source_bundle_bytes=source_bundle.stat().st_size)
 
             verify = "set -Eeuo pipefail; %s; nvidia-smi --query-gpu=memory.total --format=csv,noheader,nounits" % _source_checkout_command(str(REMOTE_BUNDLE), str(REMOTE_REPO), source_commit)
-            _, gpu_raw = _remote_exec_capture(ssh, verify, timeout=min(TRANSFER_TIMEOUT_SECONDS, _remaining(window, now)), now=now, window=window)
+            verify_code, gpu_raw, verify_error = _remote_exec_capture(ssh, verify, timeout=min(TRANSFER_TIMEOUT_SECONDS, _remaining(window, now)), now=now, window=window)
+            if verify_code != 0:
+                remote_diagnostics = _sanitized_diagnostics(verify_error, gpu_raw, forbidden=(window.pod_id,))
+                detail = "; ".join(remote_diagnostics)
+                raise OperationError("source or GPU verification failed" + (f": {detail}" if detail else ""))
             memories = _gpu_memory(gpu_raw)
             if len(memories) != GPU_COUNT or min(memories, default=0) < MIN_GPU_MEMORY_MIB:
                 raise OperationError("remote GPU inventory is not exactly two 80GB-class devices")
@@ -368,13 +417,15 @@ def operate(*, window: RentalWindow, source_bundle: Path, source_commit: str, hf
             )
             _stdin, stdout, _stderr = ssh.exec_command(command, timeout=SSH_TIMEOUT_SECONDS)
             channel = stdout.channel
+            remote_stdout_tail = bytearray()
+            remote_stderr_tail = bytearray()
             _safe_event(events, "remote_execute_started", started)
             checked_config = False
             while not channel.exit_status_ready():
                 if channel.recv_ready():
-                    channel.recv(65536)
+                    _append_tail(remote_stdout_tail, channel.recv(65536))
                 if channel.recv_stderr_ready():
-                    channel.recv_stderr(65536)
+                    _append_tail(remote_stderr_tail, channel.recv_stderr(65536))
                 if not checked_config:
                     summary = _remote_summary(sftp, timeout=min(SSH_TIMEOUT_SECONDS, _remaining(window, now)))
                     config = summary.get("config", {})
@@ -393,13 +444,35 @@ def operate(*, window: RentalWindow, source_bundle: Path, source_commit: str, hf
                 _safe_event(events, "poll", started, state_status=state.get("status"), state_reason=state.get("reason"), completed_optimizer_steps=state.get("completed_optimizer_steps"), last_admitted_batch=state.get("last_admitted_batch"), render=summary.get("render"))
                 sleep(min(POLL_SECONDS, max(0.0, window.release_deadline_epoch - now())))
             while channel.recv_ready():
-                channel.recv(65536)
+                _append_tail(remote_stdout_tail, channel.recv(65536))
+            while channel.recv_stderr_ready():
+                _append_tail(remote_stderr_tail, channel.recv_stderr(65536))
             command_code = int(channel.recv_exit_status())
             summary = _remote_summary(sftp, timeout=min(SSH_TIMEOUT_SECONDS, max(1.0, window.release_deadline_epoch - now())))
-            _safe_event(events, "remote_execute_finished", started, exit_code=command_code, state=summary.get("state"), terminal=summary.get("terminal"), render=summary.get("render"))
+            if command_code != 0:
+                remote_diagnostics = _sanitized_diagnostics(
+                    bytes(remote_stderr_tail).decode("utf-8", "replace"),
+                    bytes(remote_stdout_tail).decode("utf-8", "replace"),
+                    forbidden=(window.pod_id,),
+                )
+            finished_fields = {
+                "exit_code": command_code,
+                "state": summary.get("state"),
+                "terminal": summary.get("terminal"),
+                "render": summary.get("render"),
+            }
+            if remote_diagnostics:
+                finished_fields["failure_diagnostics"] = remote_diagnostics
+            _safe_event(events, "remote_execute_finished", started, **finished_fields)
     except BaseException as exc:
         channel_error = exc
-        _safe_event(events, "operation_error", started, error_type=type(exc).__name__)
+        diagnostics = remote_diagnostics or _sanitized_diagnostics(
+            bytes(remote_stderr_tail).decode("utf-8", "replace"),
+            bytes(remote_stdout_tail).decode("utf-8", "replace"),
+            str(exc),
+            forbidden=(window.pod_id,),
+        )
+        _safe_event(events, "operation_error", started, error_type=type(exc).__name__, failure_diagnostics=diagnostics)
     finally:
         if sftp is not None:
             try:

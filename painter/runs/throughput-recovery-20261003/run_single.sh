@@ -116,6 +116,7 @@ cleanup_telemetry() {
   [[ -x "$telemetry_python" ]] || telemetry_python=python3
   "$telemetry_python" - "$RUN" "$TELEMETRY_STARTED" "$(date +%s)" <<'PY'
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -125,17 +126,22 @@ cpu = run / "logs/cpu-telemetry.txt"
 gpu_rows = 0
 gpu_devices = set()
 gpu_busy = []
+per_device = {}
+inference_gpu_count = int(os.environ.get("PAINTER_NUM_INFER_GPUS", "1"))
 if gpu.is_file():
     for raw in gpu.read_text(errors="replace").splitlines():
         columns = [part.strip() for part in raw.split(",")]
         if len(columns) < 4 or not columns[1].isdigit():
             continue
         try:
-            gpu_busy.append(float(columns[2].split()[0]))
+            index = int(columns[1])
+            utilization = float(columns[2].split()[0])
         except (ValueError, IndexError):
             continue
         gpu_rows += 1
-        gpu_devices.add(int(columns[1]))
+        gpu_devices.add(index)
+        gpu_busy.append(utilization)
+        per_device.setdefault(index, []).append(utilization)
 cpu_rows = 0
 if cpu.is_file():
     cpu_rows = sum(1 for line in cpu.read_text(errors="replace").splitlines() if line.strip() and line.split()[0].isdigit())
@@ -146,8 +152,20 @@ report = {
         "path": "logs/gpu-telemetry.csv",
         "sample_rows": gpu_rows,
         "device_count_observed": len(gpu_devices),
-        "busy_fraction_or_average_percent": sum(gpu_busy) / len(gpu_busy) if gpu_busy else None,
-        "denominator": "all device samples emitted by nvidia-smi during the run window",
+        "average_utilization_percent": sum(gpu_busy) / len(gpu_busy) if gpu_busy else None,
+        "sampled_busy_fraction": sum(value > 0 for value in gpu_busy) / len(gpu_busy) if gpu_busy else None,
+        "denominator": "all per-device nvidia-smi samples emitted during the run window",
+        "devices": {
+            str(index): {
+                "role_index": 0 if index < inference_gpu_count else 1,
+                "role": "inference" if index < inference_gpu_count else "trainer",
+                "sample_rows": len(values),
+                "average_utilization_percent": sum(values) / len(values) if values else None,
+                "sampled_busy_fraction": sum(value > 0 for value in values) / len(values) if values else None,
+                "denominator": "samples for this GPU index in logs/gpu-telemetry.csv",
+            }
+            for index, values in sorted(per_device.items())
+        },
     },
     "cpu": {
         "path": "logs/cpu-telemetry.txt",

@@ -1,6 +1,6 @@
 {
   "schema": "painter-experiment-record-v1",
-  "status": "cpu-cloud-submitted-gpu-not-rented",
+  "status": "cpu-cloud-startup-failure-retry-submitted-gpu-not-rented",
   "hypothesis": "Bound speculative work, cancellation-safe rendering, and checkpoint every actual update will yield useful published updates within a short single-arm rental; visual benefit remains a separate matched evaluation.",
   "matched_baseline": {
     "policy": "historical RL16 initializer",
@@ -63,7 +63,7 @@
     "total_deadline_seconds": 900,
     "paid_api_calls": 0,
     "gpu_rentals": 0,
-    "cloud_task_url": "https://chatgpt.com/codex/tasks/task_e_6ac07a3ce710832b88fc75b34a74662a",
+    "cloud_task_url": "https://chatgpt.com/codex/cloud/tasks/task_e_6ac07d25edb4832b87ffb9d24abc2d8b",
     "source_commit": "3f7f4cfe57fb02fdc2adbae87480c4ebaa989aa1",
     "source_bundle": {
       "repo_id": "CK0607/komorebi-painter-experiments",
@@ -81,6 +81,17 @@
       "sha256": "591ca53d0749208df0367a364acf2c22a2afeeb8e0f28671c64ba10950fd96eb",
       "bytes": 11562,
       "anonymous_hash_verified": true
+    },
+    "prior_startup_failure": {
+      "task_id": "task_e_6ac07a3ce710832b88fc75b34a74662a",
+      "classification": "startup_failure",
+      "reason": "Frozen renderer HERE.parents[3] failed for shallow temporary runtime root before Chrome or backend initialization. v2 uses explicit deep runtime paths. Frozen renderer bytes unchanged.",
+      "speed_measured": false,
+      "gpu_spend_usd": 0,
+      "public_profile_revision": "7a70748d80cf7db8bae3601525eb0b5bcc52be2f",
+      "public_profile_sha256": "c4b9b6a0ad1bf872a745f9841ce3b283bc0ad60d16a981bc6e52e92e0e47317e",
+      "public_archive_revision": "7233967e4472ba76146fbc7d1527f68599e66be7",
+      "public_archive_sha256": "3bff61ef075793bc7f1ea210e18fb14198e7407eca2fc3c1c84d9586ec5f7950"
     }
   },
   "required_results": [

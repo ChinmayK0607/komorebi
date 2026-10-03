@@ -209,12 +209,29 @@ class SingleArmTests(unittest.TestCase):
     def test_wrappers_keep_matched_panel_renderer_and_four_update_bindings(self):
         execute = (RUN / "execute_single.sh").read_text()
         evaluate = (RUN / "evaluate.sh").read_text()
+        telemetry = (RUN / "run_single.sh").read_text()
         self.assertIn("PAINTER_RL_MAX_STEPS=4", execute)
         self.assertIn("PAINTER_EVAL_PREFERRED_STEP=4", execute)
         self.assertIn("balanced16", evaluate)
         self.assertIn("PAINTER_EVAL_EXPECTED_COUNT=47", evaluate)
         self.assertIn("cancellable_watercolour_renderer.py", evaluate)
         self.assertIn("ADAPTER_ONLY_CHECKPOINTS=1", execute)
+        self.assertIn('"average_utilization_percent"', telemetry)
+        self.assertIn('"sampled_busy_fraction"', telemetry)
+        self.assertIn('"role": "inference" if index < inference_gpu_count else "trainer"', telemetry)
+
+    def test_remote_failure_diagnostics_are_scrubbed(self):
+        diagnostics = operator._sanitized_diagnostics(
+            "pod-test bootstrap failed API_GATEWAY_KEY=secret vck_live sk-or-v1-secret 10.1.2.3",
+            forbidden=("pod-test",),
+        )
+        joined = " ".join(diagnostics)
+        self.assertNotIn("pod-test", joined)
+        self.assertNotIn("secret", joined)
+        self.assertNotIn("vck_live", joined)
+        self.assertNotIn("sk-or-v1-secret", joined)
+        self.assertNotIn("10.1.2.3", joined)
+        self.assertIn("bootstrap failed", joined)
 
 
 if __name__ == "__main__":

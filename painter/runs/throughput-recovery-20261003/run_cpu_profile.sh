@@ -134,14 +134,21 @@ fi
 # materialized runtime identities are never overwritten.
 if [[ ! -f "$RUNTIME_ROOT/renderer.py" && ! -f "$RUNTIME_ROOT/frozen_watercolour_renderer.py" ]]; then
   TEMP_ROOT="${TEMP_ROOT:-$(mktemp -d "${TMPDIR:-/tmp}/painter-cpu-profile.XXXXXX")}"
-  RUNTIME_ROOT="$TEMP_ROOT/watercolour-p5-brush-2.2.1-centroid-fix-v1"
+  RUNTIME_ROOT="$TEMP_ROOT/painter/runtime/watercolour-p5-brush-2.2.1-centroid-fix-v1"
   "$PYTHON_BIN" "$PAINTER_ROOT/patch_brush_centroid.py" --output-root "$RUNTIME_ROOT" >/dev/null
 fi
 if [[ -z "$DERIVATIVE_RUNTIME_ROOT" || ! -f "$DERIVATIVE_RUNTIME_ROOT/cancellable_watercolour_renderer.py" ]]; then
   TEMP_ROOT="${TEMP_ROOT:-$(mktemp -d "${TMPDIR:-/tmp}/painter-cpu-profile.XXXXXX")}"
-  DERIVATIVE_RUNTIME_ROOT="$TEMP_ROOT/watercolour-cancellable-centroid-v1"
+  DERIVATIVE_RUNTIME_ROOT="$TEMP_ROOT/painter/runtime/watercolour-cancellable-centroid-v1"
   "$PYTHON_BIN" "$PAINTER_ROOT/patch_brush_centroid.py" --renderer-overlay --source-root "$PAINTER_ROOT/vendor/integrations/watercolour" --output-root "$DERIVATIVE_RUNTIME_ROOT" >/dev/null
 fi
+
+# Import/CLI smoke only: this exercises the copied runtime layout and hash
+# guards without opening a browser or rendering a control.
+BASELINE_SMOKE="$RUNTIME_ROOT/renderer.py"
+[[ -f "$BASELINE_SMOKE" ]] || BASELINE_SMOKE="$RUNTIME_ROOT/frozen_watercolour_renderer.py"
+"$PYTHON_BIN" "$BASELINE_SMOKE" --help >/dev/null
+"$PYTHON_BIN" "$DERIVATIVE_RUNTIME_ROOT/cancellable_watercolour_renderer.py" --help >/dev/null
 
 # When the cloud launcher is root, the renderer still runs as the unprivileged
 # painter account.  Make only setup-owned temporary paths traversable/readable
