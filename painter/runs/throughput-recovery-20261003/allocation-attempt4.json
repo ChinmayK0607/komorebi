@@ -1,0 +1,64 @@
+{
+  "schema": "painter-allocation-record-v1",
+  "status": "allocated-controller-active-preparation",
+  "source_commit": "d9f9a02dac44de35c7a8955eb0588d3308115d4a",
+  "source_bundle": {
+    "source_commit": "d9f9a02dac44de35c7a8955eb0588d3308115d4a",
+    "repo_id": "CK0607/komorebi-painter-teachers",
+    "revision": "d94391ddc304e56d29d706354a41c034c9bc5851",
+    "path": "execution-source/throughput-recovery-20261003/source-d9f9a02.bundle",
+    "bytes": 3288928,
+    "sha256": "7a14c12e1230a1d279d7dc0bbfece5a6b633d0574f28aa652a551937f2a2917e",
+    "anonymous_hash_verified": true,
+    "clean_bundle_clone_and_fsck": true,
+    "implementation_unchanged_from_tested_b5fe079": true
+  },
+  "gpu": {
+    "model": "H100",
+    "count": 2,
+    "vram_gb_each": 80,
+    "price_whole_node_usd_hour": 3.8,
+    "roles": {
+      "0": "inference",
+      "1": "trainer"
+    }
+  },
+  "gpu_budget": {
+    "whole_pilot_usd": 20,
+    "prior_attempt_clock_estimate_usd": 1.1211,
+    "conservative_prior_reserve_usd": 1.25,
+    "this_attempt_ceiling_usd": 18.75,
+    "API": "separate"
+  },
+  "configuration": {
+    "initializer": "historical RL16, fresh optimizer",
+    "frozen_opponent": "SFT512",
+    "updates": 4,
+    "checkpoint_interval": 1,
+    "batch_rollouts": 16,
+    "group_size": 4,
+    "inflight": 32,
+    "judge": "MiMo Flash, Vercel, medium, generic v2 rubric"
+  },
+  "validation": {
+    "clean_bundle_tests_run": 35,
+    "passed": 34,
+    "skipped": 1,
+    "skip": "Linux-only CPU profile entrypoint; real Chrome lifecycle previously measured on Linux",
+    "new_real_training_verified": false,
+    "implementation_unchanged_from_tested_source": "b5fe079decce8fc45007c8ac74461a748f2f9a32"
+  },
+  "upstream_source_staging": "prime-source-staging.json",
+  "measurement": {
+    "actual_optimizer_updates": 0,
+    "training_utilization_window": null
+  },
+  "scope_limitation": "Current panel compares trained policy to archived SFT512. Fresh matched RL16 initializer panel remains pending; no initializer improvement claim.",
+  "upstream_validation": {
+    "complete_history": true,
+    "bundle_bytes": 18183769,
+    "bundle_sha256": "64b035e176df1aa850280f9bcdad5cedef8108636b59a5c29f2af8b014cf3dbe",
+    "local_clone_fsck_and_actual_pinned_fetch": true,
+    "remote_SHA_checkout_no_shallow_and_fsck": true
+  }
+}
