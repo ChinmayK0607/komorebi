@@ -51,3 +51,11 @@ python3 -m painter.pipeline_audit \
 The command reads metadata and reports actual optimizer updates, admissions, canceled/stale work, render validity, completed-trace reward paths, judge usage, and GPU sample windows. It emits aggregate fields and relative evidence hashes, excluding program/response payloads. The extracted metadata directory is ignored by Git; retrieve raw evidence from the immutable public archives linked in `ANALYSIS.md`.
 
 Next report: completed valid episodes, published updates per dollar, queue/active render timing, cancellation fraction, and a matched held-out visual panel. Offline checks do not establish throughput or visual improvement. Do not launch a full three-arm campaign merely because unit tests pass.
+
+## Recovery bootstrap after the zero-output failure
+
+The recovery-only wrapper places dependency caches, the new Prime virtualenv and pinned browser tree on local temporary storage. It preserves existing caches and refuses to move a live real virtualenv. Descriptor and installer concurrency settings adapt to the host hard limit and are applied by the execution parent. Historical shared setup defaults remain unchanged unless the recovery override is supplied.
+
+The renderer helper binds the Node shipped by locked Playwright into the worker PATH and runs syntax checking. It installs hash-matching, root-owned Chromium sandbox helpers beside both matching full-browser and headless executables, rejecting symlink or untrusted destinations before mutation. Browser startup is tested as the unprivileged painter account with sandboxing enabled and a credential-free environment before GPU policy initialization; reused preparation also rechecks the runtime.
+
+Parent metadata/lifecycle verification: 22 single-arm tests and eight profile tests passed. These Mac fixtures do not render, train, call a provider, or prove target-host Chrome compatibility. The Linux target must pass the executable checks before policy launch. [Review and remaining proof](bootstrap-review.json). The failure and source history remain in [attempt five](allocation-attempt5-result.json); the same pilot retains a $20 GPU ceiling, with a conservative $6 prior-start reserve and $14 for any retry.

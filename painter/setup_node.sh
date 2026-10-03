@@ -18,7 +18,9 @@ rm -f ready.json
 # test_contract.py is the dependency-light suite shipped in the eval bundle.
 python3 foundation_lock.py > foundation-check.json
 python3 -m unittest test_contract > foundation-tests.log 2>&1
-export UV_CACHE_DIR="$ROOT/cache/uv" PLAYWRIGHT_BROWSERS_PATH="$ROOT/browsers"
+export UV_CACHE_DIR="${PAINTER_RENDER_UV_CACHE_DIR:-$ROOT/cache/uv}"
+export PLAYWRIGHT_BROWSERS_PATH="${PAINTER_RENDER_BROWSERS_PATH:-$ROOT/browsers}"
+mkdir -p "$UV_CACHE_DIR" "$PLAYWRIGHT_BROWSERS_PATH"
 if [[ ! -x bootstrap/bin/uv ]]; then
  python3 -m venv bootstrap
  bootstrap/bin/pip -q install 'uv==0.11.1'
@@ -30,7 +32,7 @@ id painter >/dev/null 2>&1 || useradd --create-home --shell /bin/bash painter
 # Permit the unprivileged browser account to traverse this workspace's parents.
 cursor="$ROOT"
 while [[ "$cursor" != / ]]; do chmod o+x "$cursor"; cursor=$(dirname "$cursor"); done
-chmod -R a+rX renderer-env browsers vendor
+chmod -R a+rX renderer-env "$PLAYWRIGHT_BROWSERS_PATH" vendor
 if [[ -d data ]]; then chown -R painter:painter data; chmod -R a+rX data; fi
 python3 hardware.py > hardware-plan.json
 if [[ "$PROFILE" == learning ]]; then

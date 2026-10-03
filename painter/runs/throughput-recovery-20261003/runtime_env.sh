@@ -74,6 +74,45 @@ export PAINTER_GATEWAY_ENV_FILE="${PAINTER_GATEWAY_ENV_FILE:-$PAINTER_SINGLE_NOD
 export HF_TOKEN_PATH="${HF_TOKEN_PATH:-$PAINTER_SINGLE_NODE_ROOT/private/hf-token}"
 export PYTHONPATH="$PAINTER_SINGLE_REPO_ROOT:$PAINTER_SINGLE_REPO_ROOT/painter:$PAINTER_SINGLE_RUN_ROOT${PYTHONPATH:+:$PYTHONPATH}"
 
+# Keep the descriptor and uv installer settings bounded on both preparation
+# and execution processes.  The hard limit may be below the preferred target
+# on a smaller host, so use the largest safe value available there.
+apply_recovery_resource_limits() {
+  local hard soft target cpu default_limit chosen
+  hard="$(ulimit -H -n)"
+  if [[ "$hard" == unlimited ]]; then
+    hard=131072
+  fi
+  [[ "$hard" =~ ^[0-9]+$ && "$hard" -ge 1 ]] || {
+    echo "could not read hard nofile limit: $hard" >&2
+    return 1
+  }
+  target="$hard"
+  (( target > 131072 )) && target=131072
+  ulimit -S -n "$target" 2>/dev/null || {
+    echo "could not set soft nofile limit to $target" >&2
+    return 1
+  }
+  soft="$(ulimit -S -n)"
+  [[ "$soft" =~ ^[0-9]+$ && "$soft" -ge 1 ]] || {
+    echo "could not read soft nofile limit after setting it: $soft" >&2
+    return 1
+  }
+  cpu="$(getconf _NPROCESSORS_ONLN 2>/dev/null || true)"
+  [[ "$cpu" =~ ^[1-9][0-9]*$ ]] || cpu=1
+  default_limit=$(( soft / 64 ))
+  (( default_limit < 1 )) && default_limit=1
+  (( chosen=cpu < 32 ? cpu : 32 ))
+  (( chosen > default_limit )) && chosen="$default_limit"
+  UV_CONCURRENT_INSTALLS="${UV_CONCURRENT_INSTALLS:-$chosen}"
+  [[ "$UV_CONCURRENT_INSTALLS" =~ ^[1-9][0-9]*$ && "$UV_CONCURRENT_INSTALLS" -le "$chosen" ]] || {
+    echo "UV_CONCURRENT_INSTALLS must be between 1 and $chosen for soft nofile=$soft" >&2
+    return 1
+  }
+  export PAINTER_NOFILE_HARD="$hard" PAINTER_NOFILE_SOFT="$soft" PAINTER_NOFILE_TARGET="$target"
+  export PAINTER_UV_CPU_COUNT="$cpu" PAINTER_UV_CONCURRENCY_LIMIT="$chosen" UV_CONCURRENT_INSTALLS
+}
+
 validate_recovery_bindings() {
   [[ "$PAINTER_RUN_NAME" == throughput-recovery-20261003 ]] || {
     echo 'PAINTER_RUN_NAME is fixed to throughput-recovery-20261003' >&2

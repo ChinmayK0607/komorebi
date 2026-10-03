@@ -47,6 +47,20 @@ def load_profile_preparer():
 profile_preparer = load_profile_preparer()
 
 
+def load_fast_storage():
+    spec = importlib.util.spec_from_file_location(
+        "single_fast_storage", RUN / "prepare_fast_storage.py"
+    )
+    assert spec and spec.loader
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+    return module
+
+
+fast_storage = load_fast_storage()
+
+
 class FakeSSHFailure:
     def __enter__(self):
         raise RuntimeError("transport unavailable")
@@ -209,6 +223,179 @@ class SummaryAPI(FakeAPI):
 
 
 class SingleArmTests(unittest.TestCase):
+    def test_fast_storage_links_are_profile_bound_and_idempotent(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            run = root / "run"
+            home = root / "home"
+            fast = root / "fast"
+            uv_source = home / ".cache/uv"
+            cache_receipt = fast_storage.prepare(
+                phase="cache",
+                run_root=run,
+                fast_root=fast,
+                uv_source=uv_source,
+                system="Linux",
+                nofile_soft=131072,
+                nofile_hard=524288,
+            )
+            self.assertFalse(uv_source.is_symlink())
+            self.assertFalse(cache_receipt["credentials_touched"])
+            self.assertEqual(cache_receipt["nofile"]["soft"], 131072)
+            reused = fast_storage.prepare(
+                phase="cache", run_root=run, fast_root=fast, uv_source=uv_source, system="Linux"
+            )
+            self.assertEqual(reused["uv_cache"]["status"], "selected_fast_target")
+            prime = root / "prime"
+            prime_receipt = fast_storage.prepare(
+                phase="prime", run_root=run, fast_root=fast, uv_source=uv_source,
+                prime_root=prime, system="Linux",
+            )
+            self.assertTrue((prime / ".venv").is_symlink())
+            self.assertEqual(prime_receipt["uv_cache"]["status"], "selected_fast_target")
+            self.assertEqual(prime_receipt["prime_venv"]["status"], "created_symlink")
+            render_receipt = fast_storage.prepare(
+                phase="render", run_root=run, fast_root=fast, uv_source=uv_source, system="Linux"
+            )
+            self.assertEqual(render_receipt["renderer"]["status"], "public_traversal_root")
+            self.assertTrue((fast / "renderer-browsers").is_dir())
+            self.assertTrue(fast.stat().st_mode & 0o111)
+
+    def test_fast_storage_refuses_nonempty_live_paths_and_nonlinux(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            uv_source = root / "home/.cache/uv"
+            uv_source.mkdir(parents=True)
+            (uv_source / "active-cache-entry").write_text("preserve\n")
+            cache_receipt = fast_storage.prepare(
+                phase="cache", run_root=root / "run", fast_root=root / "fast",
+                uv_source=uv_source, system="Linux", nofile_soft=65536,
+                nofile_hard=65536, nofile_target=65536, uv_concurrent_installs=16,
+            )
+            self.assertEqual(cache_receipt["uv_cache"]["status"], "selected_fast_target")
+            self.assertTrue(cache_receipt["uv_cache"]["existing_preserved"])
+            self.assertEqual((uv_source / "active-cache-entry").read_text(), "preserve\n")
+            self.assertEqual(cache_receipt["nofile"]["target"], 65536)
+            self.assertEqual(cache_receipt["uv_concurrent_installs"], 16)
+            with self.assertRaisesRegex(RuntimeError, "Linux"):
+                fast_storage.prepare(
+                    phase="cache", run_root=root / "run", fast_root=root / "fast2",
+                    uv_source=root / "other-cache", system="Darwin",
+                )
+            prime = root / "prime"
+            (prime / ".venv").mkdir(parents=True)
+            (prime / ".venv/active").write_text("preserve\n")
+            with self.assertRaisesRegex(RuntimeError, "live migration"):
+                fast_storage.prepare(
+                    phase="prime", run_root=root / "run", fast_root=root / "fast3",
+                    uv_source=root / "other-cache", prime_root=prime, system="Linux",
+                )
+
+    def test_fast_storage_binding_is_limited_to_recovery_bootstrap(self):
+        prepare = (RUN / "prepare_single.sh").read_text()
+        runtime = (REPO / "painter/runs/photo-curriculum-rl-20260922/setup_rl_runtime.sh").read_text()
+        self.assertIn('FAST_STORAGE_MODE="${PAINTER_FAST_STORAGE_MODE:-profile_default}"', prepare)
+        self.assertIn("ulimit -S -n", runtime_env_text := (RUN / "runtime_env.sh").read_text())
+        self.assertIn("apply_recovery_resource_limits", prepare)
+        self.assertIn("soft / 64", runtime_env_text)
+        self.assertIn("PAINTER_RENDERER_RUNTIME_HELPER", runtime)
+        self.assertIn("PAINTER_UV_CONCURRENCY_LIMIT", runtime_env_text)
+        self.assertIn('PAINTER_FAST_STORAGE_HELPER', prepare)
+        self.assertIn('PAINTER_FAST_STORAGE_HELPER', runtime)
+        self.assertIn('apply_recovery_resource_limits', (RUN / "execute_single.sh").read_text())
+        self.assertIn('--sandbox-only', runtime)
+        self.assertIn('retained base preparation may skip', prepare)
+        self.assertIn('prepare_renderer_runtime.py', prepare)
+
+    def test_resource_limits_adapt_to_lower_hard_descriptor_limit(self):
+        runtime = RUN / "runtime_env.sh"
+        result = subprocess.run(
+            ["bash", "-c", f"ulimit -S -n 1024; ulimit -H -n 65536; source {runtime!s}; unset UV_CONCURRENT_INSTALLS; apply_recovery_resource_limits; printf '%s %s %s %s' \"$PAINTER_NOFILE_HARD\" \"$PAINTER_NOFILE_TARGET\" \"$PAINTER_NOFILE_SOFT\" \"$UV_CONCURRENT_INSTALLS\""],
+            text=True, capture_output=True,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        hard, target, soft, concurrency = map(int, result.stdout.split())
+        self.assertEqual((hard, target, soft), (65536, 65536, 65536))
+        self.assertGreaterEqual(concurrency, 1)
+        self.assertLessEqual(concurrency, min(32, soft // 64))
+
+    def test_renderer_runtime_binds_bundled_node_and_records_metadata(self):
+        renderer_runtime_spec = importlib.util.spec_from_file_location(
+            "single_renderer_runtime", RUN / "prepare_renderer_runtime.py"
+        )
+        assert renderer_runtime_spec and renderer_runtime_spec.loader
+        renderer_runtime = importlib.util.module_from_spec(renderer_runtime_spec)
+        renderer_runtime_spec.loader.exec_module(renderer_runtime)
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            renderer = root / "renderer"
+            node = renderer / "renderer-env/lib/python3.12/site-packages/playwright/driver/node"
+            node.parent.mkdir(parents=True)
+            node.write_text("#!/bin/sh\nif [ \"$1\" = \"--version\" ]; then echo v-test; else exit 0; fi\n")
+            node.chmod(0o755)
+            asset = renderer / "vendor/integrations/watercolour/assets/p5.brush.js"
+            asset.parent.mkdir(parents=True)
+            asset.write_text("const brush = 1;\n")
+            prime = root / "prime/.venv"
+            browsers = root / "browsers"
+            browsers.mkdir(parents=True)
+            helper = browsers / "chrome-sandbox"
+            helper.write_text("sandbox\n")
+            helper.chmod(0o4755)
+            with patch.object(renderer_runtime, "platform") as platform_mock:
+                platform_mock.system.return_value = "Linux"
+                with patch.object(renderer_runtime, "_sandbox_helpers", return_value=[helper]):
+                    receipt = renderer_runtime.prepare(
+                        run_root=root / "run", renderer_root=renderer,
+                        renderer_python=Path(sys.executable), browsers=browsers,
+                        prime_venv=prime, smoke=False,
+                    )
+            self.assertTrue((prime / "bin/node").is_symlink())
+            self.assertEqual(receipt["node_check"], "passed")
+            self.assertEqual(receipt["sandbox_smoke"], "not-run")
+
+    def test_renderer_sandbox_matches_full_helper_to_headless_fixture(self):
+        renderer_runtime_spec = importlib.util.spec_from_file_location(
+            "single_renderer_runtime_headless", RUN / "prepare_renderer_runtime.py"
+        )
+        assert renderer_runtime_spec and renderer_runtime_spec.loader
+        renderer_runtime = importlib.util.module_from_spec(renderer_runtime_spec)
+        renderer_runtime_spec.loader.exec_module(renderer_runtime)
+        with tempfile.TemporaryDirectory() as temp:
+            browsers = Path(temp) / "browsers"
+            full = browsers / "chromium-1208/chrome-linux64"
+            headless = browsers / "chromium_headless_shell-1208/chrome-headless-shell-linux64"
+            full.mkdir(parents=True)
+            headless.mkdir(parents=True)
+            source = full / "chrome_sandbox"
+            source.write_text("trusted helper\n")
+            executable = headless / "chrome-headless-shell"
+            executable.write_text("headless\n")
+            targets = renderer_runtime._headless_targets(browsers, [source])
+            self.assertEqual(targets, [(headless / "chrome-sandbox", source)])
+
+    def test_renderer_sandbox_rejects_symlink_and_untrusted_destination_before_copy(self):
+        renderer_runtime_spec = importlib.util.spec_from_file_location(
+            "single_renderer_runtime_guards", RUN / "prepare_renderer_runtime.py"
+        )
+        assert renderer_runtime_spec and renderer_runtime_spec.loader
+        renderer_runtime = importlib.util.module_from_spec(renderer_runtime_spec)
+        renderer_runtime_spec.loader.exec_module(renderer_runtime)
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            source = root / "trusted/chrome_sandbox"
+            source.parent.mkdir(parents=True)
+            source.write_text("trusted helper\n")
+            symlink_target = root / "trusted/chrome-sandbox"
+            symlink_target.symlink_to(root / "missing")
+            with self.assertRaisesRegex(RuntimeError, "symlink target"):
+                renderer_runtime._install_helper(source, symlink_target, root / "trusted")
+            untrusted = root / "untrusted"
+            untrusted.mkdir()
+            destination = untrusted / "chrome-sandbox"
+            with patch.object(renderer_runtime, "_trusted", return_value=False):
+                with self.assertRaisesRegex(RuntimeError, "destination parent"):
+                    renderer_runtime._install_helper(source, destination, root)
     def test_plan_only_uses_fake_interpreter_without_pydantic(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)

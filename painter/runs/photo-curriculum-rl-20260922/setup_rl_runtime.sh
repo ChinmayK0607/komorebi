@@ -24,11 +24,32 @@ chmod 700 "$ROOT/private"
 # launch_rl.sh still fails closed if those paths are absent.
 if [[ -n "${PAINTER_RENDER_ROOT:-}" ]]; then
   RENDER_ROOT="$(cd "$PAINTER_RENDER_ROOT" && pwd -P)"
+  if [[ -n "${PAINTER_FAST_STORAGE_HELPER:-}" ]]; then
+    python3 "$PAINTER_FAST_STORAGE_HELPER" --phase render --run-root "$ROOT" \
+      --fast-root "$PAINTER_FAST_STORAGE_ROOT" --uv-source "${PAINTER_UV_CACHE_SOURCE:-$HOME/.cache/uv}"
+    export PAINTER_RENDER_UV_CACHE_DIR="$PAINTER_FAST_STORAGE_ROOT/uv-cache"
+    if [[ -e "$RENDER_ROOT/browsers" && ! -L "$RENDER_ROOT/browsers" ]]; then
+      echo 'existing renderer browser tree preserved; using its original path' >&2
+    else
+      export PAINTER_RENDER_BROWSERS_PATH="$PAINTER_FAST_STORAGE_ROOT/renderer-browsers"
+    fi
+  fi
   # The staged source may be copied with mode 0644.  Invoke it explicitly
   # through bash; requiring an executable bit makes a valid renderer bundle
   # fail before any setup work begins.
   [[ -f "$RENDER_ROOT/setup_node.sh" ]] || { echo "render setup_node.sh is missing: $RENDER_ROOT" >&2; exit 1; }
   bash "$RENDER_ROOT/setup_node.sh" "$RENDER_ROOT" render >"$ROOT/logs/render-setup.log" 2>&1
+  if [[ -n "${PAINTER_RENDER_BROWSERS_PATH:-}" ]]; then
+    if [[ -L "$RENDER_ROOT/browsers" ]]; then
+      [[ "$(readlink -f "$RENDER_ROOT/browsers")" == "$(readlink -f "$PAINTER_RENDER_BROWSERS_PATH")" ]] || {
+        echo 'renderer browser link points to an unexpected path' >&2; exit 1;
+      }
+    elif [[ -e "$RENDER_ROOT/browsers" ]]; then
+      echo 'renderer browser path appeared during setup; refusing replacement' >&2; exit 1
+    else
+      ln -s "$PAINTER_RENDER_BROWSERS_PATH" "$RENDER_ROOT/browsers"
+    fi
+  fi
   for item in vendor renderer-env browsers; do
     [[ -e "$RENDER_ROOT/$item" ]] || { echo "render asset is missing: $RENDER_ROOT/$item" >&2; exit 1; }
     if [[ ! -e "$ROOT/$item" ]]; then
@@ -38,6 +59,15 @@ if [[ -n "${PAINTER_RENDER_ROOT:-}" ]]; then
       exit 1
     fi
   done
+  if [[ "${PAINTER_JS_SYNTAX_PREFLIGHT:-0}" == 1 && -n "${PAINTER_RENDERER_RUNTIME_HELPER:-}" ]]; then
+    [[ -f "$PAINTER_RENDERER_RUNTIME_HELPER" ]] || {
+      echo "renderer runtime helper is missing: $PAINTER_RENDERER_RUNTIME_HELPER" >&2; exit 1;
+    }
+    python3 "$PAINTER_RENDERER_RUNTIME_HELPER" --sandbox-only --run-root "$ROOT" \
+      --renderer-root "$RENDER_ROOT" --renderer-python "$RENDER_ROOT/renderer-env/bin/python" \
+      --browsers "${PAINTER_RENDER_BROWSERS_PATH:-$RENDER_ROOT/browsers}" \
+      --prime-venv "$PRIME_ROOT/.venv"
+  fi
 fi
 # Repair a partially completed bootstrap over HTTPS when the pinned checkout's
 # submodule URLs use SSH.  This does not write credentials or mutate git config.
@@ -64,6 +94,25 @@ for submodule in "${!EXPECTED_SUBMODULES[@]}"; do
   fi
 done
 
+# The throughput recovery arm may place the Prime virtualenv on local scratch
+# after this checkout and its pinned submodules are verified.  The hook is
+# opt-in and absent for every historical setup path.
+if [[ -n "${PAINTER_FAST_STORAGE_HELPER:-}" ]]; then
+  [[ -f "$PAINTER_FAST_STORAGE_HELPER" && -n "${PAINTER_FAST_STORAGE_ROOT:-}" ]] || {
+    echo 'fast-storage hook is incomplete' >&2
+    exit 1
+  }
+  FAST_STORAGE_ARGS=(
+    --phase prime --run-root "$ROOT" --fast-root "$PAINTER_FAST_STORAGE_ROOT"
+    --prime-root "$PRIME_ROOT"
+  )
+  [[ -n "${PAINTER_NOFILE_SOFT:-}" ]] && FAST_STORAGE_ARGS+=(--nofile-soft "$PAINTER_NOFILE_SOFT")
+  [[ -n "${PAINTER_NOFILE_HARD:-}" ]] && FAST_STORAGE_ARGS+=(--nofile-hard "$PAINTER_NOFILE_HARD")
+  [[ -n "${PAINTER_NOFILE_TARGET:-}" ]] && FAST_STORAGE_ARGS+=(--nofile-target "$PAINTER_NOFILE_TARGET")
+  [[ -n "${UV_CONCURRENT_INSTALLS:-}" ]] && FAST_STORAGE_ARGS+=(--uv-concurrent-installs "$UV_CONCURRENT_INSTALLS")
+  python3 "$PAINTER_FAST_STORAGE_HELPER" "${FAST_STORAGE_ARGS[@]}"
+fi
+
 EXTRAS=(--extra gpu --extra flash-attn --extra kernels --extra quack --extra disagg)
 if command -v nvidia-smi >/dev/null 2>&1 \
   && nvidia-smi --query-gpu=compute_cap --format=csv,noheader 2>/dev/null | head -1 | grep -q '^9\.'; then
@@ -86,6 +135,19 @@ cp "$ROOT/logs/prime-rl-install-attempt-${attempt}.log" "$ROOT/logs/prime-rl-ins
   echo "pinned Prime environment lacks vllm-router after disagg install" >&2
   exit 1
 }
+
+if [[ "${PAINTER_JS_SYNTAX_PREFLIGHT:-0}" == 1 ]]; then
+  [[ -n "${PAINTER_RENDER_ROOT:-}" ]] || { echo 'renderer root is required for JS preflight' >&2; exit 1; }
+  [[ -n "${PAINTER_RENDERER_RUNTIME_HELPER:-}" && -f "$PAINTER_RENDERER_RUNTIME_HELPER" ]] || {
+    echo 'renderer runtime helper is required for JS preflight' >&2; exit 1;
+  }
+  RENDER_ROOT="$(cd "$PAINTER_RENDER_ROOT" && pwd -P)"
+  BROWSER_ROOT="${PAINTER_RENDER_BROWSERS_PATH:-$RENDER_ROOT/browsers}"
+  python3 "$PAINTER_RENDERER_RUNTIME_HELPER" \
+    --run-root "$ROOT" --renderer-root "$RENDER_ROOT" \
+    --renderer-python "$RENDER_ROOT/renderer-env/bin/python" \
+    --browsers "$BROWSER_ROOT" --prime-venv "$PRIME_ROOT/.venv"
+fi
 
 "$PRIME_ROOT/.venv/bin/python" - "$ROOT" "$PRIME_ROOT" <<'PY'
 import json

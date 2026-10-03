@@ -1,0 +1,31 @@
+{
+  "schema": "painter-bootstrap-review-v1",
+  "status": "reviewed-metadata-tests-passed-target-linux-execution-pending",
+  "scope": "Future recovery setup only; model, data, judge, reward and four-update configuration unchanged",
+  "checks": {
+    "parent_single_arm_tests": 22,
+    "parent_profile_tests": 8,
+    "shell_syntax": "passed",
+    "git_diff_check": "passed",
+    "actual_new_helper_linux_execution": "pending"
+  },
+  "repairs": [
+    "Bound uv install concurrency using CPU and descriptor limits; carry limits from finite execution parent.",
+    "Use temporary storage for dependency cache, Prime virtualenv and browser tree; preserve existing real environments and caches.",
+    "Reuse pinned Playwright Node and check syntax before policy launch.",
+    "Install identical root-owned sandbox helpers beside matching full/headless browser executables and verify sandbox startup as unprivileged painter.",
+    "Recheck retained preparation instead of trusting a stale receipt."
+  ],
+  "security": "Sandbox remains enabled; helper copies match bundled source; symlink/untrusted destinations rejected before privileged mutation; browser worker environment excludes credentials.",
+  "implementation": "gpt-5.6-luna xhigh; parent review and operations",
+  "next_attempt_budget": {
+    "gpu_cap_usd": 14.0,
+    "prior_failed_start_reserve_usd": 6.0,
+    "same_whole_pilot_cap_usd": 20.0
+  },
+  "not_proven": [
+    "Useful training throughput",
+    "Finite gradient and public per-update checkpoint",
+    "Quality improvement over fresh matched RL16 initializer"
+  ]
+}

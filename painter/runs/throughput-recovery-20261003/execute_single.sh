@@ -8,6 +8,7 @@ source "$RUN/runtime_env.sh"
 validate_recovery_bindings
 [[ $# == 3 ]] || { echo 'usage: execute_single.sh RENTAL_START_EPOCH PRICE_USD_PER_HOUR MAX_GPU_USD' >&2; exit 2; }
 [[ -f "$BASE/execute_pipeline.sh" ]] || { echo "base finite pipeline missing: $BASE/execute_pipeline.sh" >&2; exit 1; }
+apply_recovery_resource_limits
 
 # The base pipeline owns preparation, finite supervision, preferred verified
 # checkpoint selection, matched-panel evaluation, finalization, and the

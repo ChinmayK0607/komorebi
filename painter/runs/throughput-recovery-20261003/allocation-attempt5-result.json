@@ -47,5 +47,17 @@
     "busy_definition": "utilization > 0 per sampled GPU; includes model warmup/startup in this window",
     "conclusion": "Trainer idle waiting for admitted rollouts; pipeline not saturated."
   },
-  "next_decision": "Repair bootstrap, test Node and sandbox-enabled Chromium on the target host before GPU loading; do not weaken zero-output admission guard or infer judge/policy failure. Any continuation shares the original whole-pilot $20 ceiling."
+  "next_decision": "Repair bootstrap, test Node and sandbox-enabled Chromium on the target host before GPU loading; do not weaken zero-output admission guard or infer judge/policy failure. Any continuation shares the original whole-pilot $20 ceiling.",
+  "render_receipt_audit": {
+    "painting_receipts": 83,
+    "valid": 0,
+    "sandbox_startup_failures": 83,
+    "scope": "all saved painting.json receipts in the public archive; Node preflight failures occur before this receipt exists"
+  },
+  "api_usage": {
+    "judge_smoke_provider_calls": 2,
+    "recorded_gateway_cost_usd": 0.00101976,
+    "scope": "saved judge-probe-summary.json only; no successfully rendered training paintings were scored",
+    "separate_from_gpu_cap": true
+  }
 }

@@ -10,6 +10,9 @@ PRIME_ROOT="${PRIME_ROOT:-$NODE_ROOT/prime}"
 FROZEN_RENDERER_ROOT="${PAINTER_FROZEN_RENDERER_ROOT:-$RUN/runtime/watercolour-p5-brush-2.2.1-centroid-fix-v1}"
 OVERLAY_ROOT="${PAINTER_CANCELLABLE_RENDERER_ROOT:-$RUN/runtime/watercolour-cancellable-centroid-v1}"
 CUSTOM_PREPARE_PYTHON="${PAINTER_PREPARE_PYTHON:-}"
+FAST_STORAGE_MODE="${PAINTER_FAST_STORAGE_MODE:-profile_default}"
+FAST_STORAGE_ROOT="${PAINTER_FAST_STORAGE_ROOT:-/tmp/painter-runtime-fast}"
+FAST_STORAGE_HELPER="$RUN/prepare_fast_storage.py"
 
 export PAINTER_RUN_ROOT="$RUN"
 source "$RUN/runtime_env.sh"
@@ -73,6 +76,31 @@ fi
 [[ "$(uname -s)" == Linux ]] || { echo 'Linux GPU node required for single-arm preparation' >&2; exit 1; }
 [[ -f "$BASE/prepare_node.sh" ]] || { echo "base preparation missing: $BASE/prepare_node.sh" >&2; exit 1; }
 [[ -f "$BOOTSTRAP/setup_node.sh" ]] || { echo "reviewed bootstrap setup missing: $BOOTSTRAP/setup_node.sh" >&2; exit 1; }
+
+apply_recovery_resource_limits
+
+case "$FAST_STORAGE_MODE" in
+  off)
+    unset PAINTER_FAST_STORAGE_HELPER PAINTER_FAST_STORAGE_ROOT
+    ;;
+  profile_default)
+    [[ -f "$FAST_STORAGE_HELPER" ]] || { echo "fast-storage helper missing: $FAST_STORAGE_HELPER" >&2; exit 1; }
+    python3 "$FAST_STORAGE_HELPER" --phase cache --run-root "$RUN" \
+      --fast-root "$FAST_STORAGE_ROOT" \
+      --uv-source "${PAINTER_UV_CACHE_SOURCE:-$HOME/.cache/uv}" \
+      --nofile-soft "$PAINTER_NOFILE_SOFT" --nofile-hard "$PAINTER_NOFILE_HARD" \
+      --nofile-target "$PAINTER_NOFILE_TARGET" \
+      --uv-concurrent-installs "$UV_CONCURRENT_INSTALLS"
+    export UV_CACHE_DIR="$FAST_STORAGE_ROOT/uv-cache"
+    export PAINTER_FAST_STORAGE_HELPER="$FAST_STORAGE_HELPER"
+    export PAINTER_FAST_STORAGE_ROOT="$FAST_STORAGE_ROOT"
+    ;;
+  *)
+    echo 'PAINTER_FAST_STORAGE_MODE must be profile_default or off' >&2
+    exit 1
+    ;;
+esac
+export PAINTER_RENDERER_RUNTIME_HELPER="$RUN/prepare_renderer_runtime.py"
 mkdir -p "$RUN/runtime"
 
 if [[ -f "$FROZEN_RENDERER_ROOT/PATCH-MANIFEST.json" ]]; then
@@ -128,10 +156,34 @@ else
   bash "$BASE/prepare_node.sh"
 fi
 
+if [[ "$FAST_STORAGE_MODE" == profile_default ]]; then
+  # The shared Prime setup calls this again after checkout and submodule
+  # verification; this idempotent call also covers a reused prepared node.
+  python3 "$FAST_STORAGE_HELPER" --phase prime --run-root "$RUN" \
+    --fast-root "$FAST_STORAGE_ROOT" --prime-root "$PRIME_ROOT" \
+    --uv-source "${PAINTER_UV_CACHE_SOURCE:-$HOME/.cache/uv}" \
+    --nofile-soft "$PAINTER_NOFILE_SOFT" --nofile-hard "$PAINTER_NOFILE_HARD" \
+    --nofile-target "$PAINTER_NOFILE_TARGET" \
+    --uv-concurrent-installs "$UV_CONCURRENT_INSTALLS"
+fi
+
 PY="$PRIME_ROOT/.venv/bin/python"
 [[ -x "$PY" ]] || { echo "pinned Prime Python missing after bootstrap: $PY" >&2; exit 1; }
 export PAINTER_RUNTIME_VALIDATE_PYTHON="$PY"
 validate_recovery_profile_environment "$PY"
+
+# A retained base preparation may skip setup_rl_runtime.sh.  Re-run the small
+# renderer Node/sandbox preflight before handing the node to the profile writer
+# so a stale browser tree cannot reach the training process.
+if [[ "${PAINTER_JS_SYNTAX_PREFLIGHT:-0}" == 1 ]]; then
+  [[ -f "$PAINTER_RENDERER_RUNTIME_HELPER" ]] || {
+    echo "renderer runtime helper is missing: $PAINTER_RENDERER_RUNTIME_HELPER" >&2; exit 1;
+  }
+  python3 "$PAINTER_RENDERER_RUNTIME_HELPER" \
+    --run-root "$RUN" --renderer-root "$REPO/painter" \
+    --renderer-python "$PAINTER_RENDERER_PYTHON_PATH" \
+    --browsers "$REPO/painter/browsers" --prime-venv "$PRIME_ROOT/.venv"
+fi
 
 # Make the opt-in renderer explicit in every run-local fixed manifest.
 "$PY" - "$RUN" "$OVERLAY_ROOT/cancellable_watercolour_renderer.py" "$PAINTER_RENDERER_PYTHON_PATH" <<'PY'
