@@ -1,6 +1,6 @@
 {
   "schema": "focused-chrome-measured-observation-v1",
-  "status": "observed-on-cloud-publication-pending",
+  "status": "public-anonymously-hash-verified",
   "source_commit": "a9fe6c724f72f0da7bff48bb6e9aafceb33f2282",
   "cloud_task_url": "https://chatgpt.com/codex/cloud/tasks/task_e_6ac0852e86c0832bb76f8d02e35b390f",
   "linux_tests": {
@@ -28,5 +28,14 @@
   },
   "prior_argument_failure": "Requested reduced repeats/pool width violate fixed profiler validation; no rendering in that attempt",
   "publication_failure": "Single commit with binary PNGs failed LFS HTTP501 in Cloud; requested one JSON/text-only evidence commit",
-  "limits": "three unchanged controls only; full painter quality/throughput and native semaphore end-to-end not established"
+  "limits": "three unchanged controls only; full painter quality/throughput and native semaphore end-to-end not established",
+  "public_evidence": {
+    "repo_id": "CK0607/komorebi-painter-teachers",
+    "repo_type": "dataset",
+    "revision": "b8d7266a8590bb69789d77641dea8a338d08591c",
+    "prefix": "execution-evidence/throughput-recovery-20261003/cpu-focused-v4-corrected-args",
+    "profile_sha256": "2e568f5e72c2e0189546cfed06d139bd1b50fc529826697d92f8ee39fddafc3f",
+    "completion_sha256": "eb8369221983496e8e81bfdf19fc739b039aed5d7fb1c7ae4fec5c7a14c74873",
+    "anonymous_verified": true
+  }
 }

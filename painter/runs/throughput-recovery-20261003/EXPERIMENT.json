@@ -1,11 +1,12 @@
 {
   "schema": "painter-experiment-record-v1",
-  "status": "focused-chrome-cleanup-passed-startup-poll-guard-fixed-retry-prepared",
+  "status": "gpu-retry-active-preparation-no-optimizer-update-yet",
   "hypothesis": "Bound speculative work, cancellation-safe rendering, and checkpoint every actual update will yield useful published updates within a short single-arm rental; visual benefit remains a separate matched evaluation.",
   "matched_baseline": {
     "policy": "historical RL16 initializer",
     "evaluation_requirement": "same heldout briefs, seed, API reference v2, renderer and generation settings for initializer and trained adapter",
-    "frozen_reward_opponent": "SFT512"
+    "frozen_reward_opponent": "SFT512",
+    "fresh_initializer_evaluation_status": "pending; current finite script evaluates trained versus archived SFT512 only, so quality improvement over RL16 is not yet identifiable"
   },
   "model": {
     "repo": "Qwen/Qwen3.8-27B",
@@ -118,7 +119,8 @@
     "vram_gb_per_gpu": 80,
     "host_ram_gb": 503,
     "price_usd_hour": 3.8,
-    "allocated": false,
+    "allocated": true,
     "availability_recheck_required": true
-  }
+  },
+  "source_commit": "fcacfcf517f29b2bf128d768b748455b93ddd231"
 }
