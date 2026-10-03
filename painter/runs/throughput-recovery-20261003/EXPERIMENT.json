@@ -1,6 +1,6 @@
 {
   "schema": "painter-experiment-record-v1",
-  "status": "profile-verified-finite-supervisor-running-first-update-pending",
+  "status": "qwen-rl16-rollouts-active-first-batch-collecting",
   "hypothesis": "Bound speculative work, cancellation-safe rendering, and checkpoint every actual update will yield useful published updates within a short single-arm rental; visual benefit remains a separate matched evaluation.",
   "matched_baseline": {
     "policy": "historical RL16 initializer",
@@ -156,5 +156,14 @@
     "implementation": "Luna xhigh; parent review and experiment operations",
     "not_proven": "Actual successful optimizer update and matched quality improvement remain unproven."
   },
-  "runtime_storage_record": "runtime-storage-placement.json"
+  "runtime_storage_record": "runtime-storage-placement.json",
+  "observed_launch": {
+    "inference_ready": true,
+    "trainer_max_steps": 4,
+    "startup_policy_broadcast": "v0",
+    "first_batch_target": 16,
+    "inflight_episodes": 32,
+    "first_optimizer_update": "pending",
+    "evidence": "remote trainer/orchestrator logs; no improvement claim"
+  }
 }
