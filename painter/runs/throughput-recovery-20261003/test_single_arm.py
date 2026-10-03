@@ -15,6 +15,9 @@ from unittest.mock import patch
 
 
 RUN = Path(__file__).resolve().parent
+REPO = RUN.parents[2]
+if str(REPO) not in sys.path:
+    sys.path.insert(0, str(REPO))
 
 
 def load_operator():
@@ -27,6 +30,20 @@ def load_operator():
 
 
 operator = load_operator()
+
+
+def load_profile_preparer():
+    spec = importlib.util.spec_from_file_location(
+        "single_profile_preparer", RUN / "prepare_profile_single.py"
+    )
+    assert spec and spec.loader
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+    return module
+
+
+profile_preparer = load_profile_preparer()
 
 
 class FakeSSHFailure:
@@ -259,6 +276,160 @@ class SingleArmTests(unittest.TestCase):
         self.assertNotIn("sk-or-v1-secret", joined)
         self.assertNotIn("10.1.2.3", joined)
         self.assertIn("bootstrap failed", joined)
+
+    def test_remote_diagnostics_keep_stderr_tail_when_stdout_is_verbose(self):
+        stdout = "\n".join(f"progress-{index}" for index in range(32))
+        diagnostics = operator._sanitized_diagnostics(
+            "fatal profile bootstrap error",
+            stdout,
+            labels=("stderr", "stdout"),
+        )
+        self.assertIn("stderr: fatal profile bootstrap error", diagnostics)
+        self.assertTrue(any(line.startswith("stdout: progress-") for line in diagnostics))
+
+    def test_profile_stage_replaces_existing_bootstrap_config_only_after_validation(self):
+        from painter import throughput_recovery_profile as profile
+
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            manifest = root / "train-manifest.json"
+            manifest.write_text(json.dumps({"rows": [
+                {"id": f"brief-{index}", "reference_kind": "text", "opponent_sha256": "a" * 64}
+                for index in range(40)
+            ]}) + "\n")
+            source = profile_preparer.load_config_tool(REPO)
+            native = root / "native.toml"
+            receipt = root / "rl-config-receipt.json"
+            native.write_text("bootstrap config\n")
+            receipt.write_text(json.dumps({"stage": "base"}) + "\n")
+            (root / "frozen-opponent-config.json").write_text(json.dumps({
+                "schema": "photo-curriculum-rl-frozen-limits-v1",
+                "operational_limits": {
+                    "episode_timeout_seconds": 3600,
+                    "render_timeout_seconds": 180,
+                },
+            }, indent=2) + "\n")
+            frozen_before = (root / "frozen-opponent-config.json").read_bytes()
+            kwargs = {
+                "model": root / "model",
+                "manifest": manifest,
+                "prime_root": None,
+                "run_name": "throughput-recovery-20261003",
+                "output_root": "rl-rollouts",
+                "expected_count": 40,
+                "max_steps": 4,
+                "learning_rate": 1e-6,
+                "renderer": str(root / "renderer.py"),
+                "renderer_python": str(root / "renderer.py"),
+                "gpus_per_node": 2,
+                "num_train_gpus": 1,
+                "num_infer_gpus": 1,
+            }
+            with self.assertRaises(FileExistsError):
+                profile.prepare_profile(
+                    source.prepare,
+                    output=native,
+                    run_root=root,
+                    **kwargs,
+                )
+            self.assertEqual(native.read_text(), "bootstrap config\n")
+            profile_preparer.prepare_staged_profile(profile, source, run_root=root, **kwargs)
+            self.assertIn("batch_size = 16", native.read_text())
+            self.assertEqual(json.loads(receipt.read_text())["batch_size"], 16)
+            self.assertEqual((root / "frozen-opponent-config.json").read_bytes(), frozen_before)
+            guarded = root / "guarded"
+            guarded.mkdir()
+            guarded_native = guarded / "native.toml"
+            guarded_receipt = guarded / "rl-config-receipt.json"
+            guarded_native.write_text("bootstrap config\n")
+            guarded_receipt.write_text(json.dumps({"stage": "base"}) + "\n")
+            (guarded / "async-output").mkdir()
+            with self.assertRaisesRegex(RuntimeError, "pretraining-only"):
+                profile_preparer.prepare_staged_profile(profile, source, run_root=guarded, **kwargs)
+            self.assertEqual(guarded_native.read_text(), "bootstrap config\n")
+            self.assertEqual(json.loads(guarded_receipt.read_text())["stage"], "base")
+
+    def test_profile_main_replays_existing_bootstrap_fixture(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            prime = root / "prime"
+            (prime / "src/prime_rl/configs").mkdir(parents=True)
+            (prime / "src/prime_rl/__init__.py").write_text("")
+            (prime / "src/prime_rl/configs/__init__.py").write_text("")
+            (prime / "src/prime_rl/configs/rl.py").write_text(
+                "class RLConfig:\n"
+                "    @classmethod\n"
+                "    def model_validate(cls, config):\n"
+                "        return config\n"
+            )
+            (root / "runtime/watercolour-cancellable-centroid-v1").mkdir(parents=True)
+            (root / "native.toml").write_text("bootstrap config\n")
+            (root / "rl-config-receipt.json").write_text(json.dumps({"stage": "base"}) + "\n")
+            (root / "frozen-opponent-config.json").write_text(json.dumps({
+                "schema": "photo-curriculum-rl-frozen-limits-v1",
+                "operational_limits": {
+                    "episode_timeout_seconds": 3600,
+                    "render_timeout_seconds": 180,
+                },
+            }, indent=2) + "\n")
+            (root / "preparation-receipt.json").write_text(
+                json.dumps({"schema": "text-paint-consistent-preparation-v2"}) + "\n"
+            )
+            manifest = root / "train-manifest.json"
+            manifest.write_text(json.dumps({"rows": [
+                {"id": f"brief-{index}", "reference_kind": "text", "opponent_sha256": "a" * 64}
+                for index in range(40)
+            ]}) + "\n")
+            (root / "runtime/watercolour-cancellable-centroid-v1/PATCH-MANIFEST.json").write_text(
+                json.dumps({
+                    "runtime_id": "test-runtime",
+                    "selected_renderer": {"sha256": "b" * 64},
+                    "frozen_baseline": {"sha256": "c" * 64},
+                    "centroid_patch": {"after_sha256": "d" * 64},
+                }) + "\n"
+            )
+            env = {
+                **os.environ,
+                "PAINTER_RUN_NAME": "throughput-recovery-20261003",
+                "PAINTER_EXPERIMENT_NAME": "throughput-recovery-flash-20261003",
+                "PAINTER_JUDGE_MODEL": "xiaomi/mimo-v2.6-flash",
+                "PAINTER_JUDGE_EFFORT": "medium",
+                "PAINTER_JUDGE_FORMAT": "identity-joint-side-schema-v2-generic-v1",
+                "PAINTER_JUDGE_PROTOCOL": "text-paint-sft-pairwise-consistent-v1",
+                "PAINTER_BASE_MODEL_REVISION": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+                "PAINTER_POLICY_REVISION": "ac4d3eda8e5925e2d23992cfdc1a63620ebde573",
+                "PAINTER_POLICY_PREFIX": "text-pairwise-scaled-20260929/step_16",
+                "PAINTER_POLICY_SHA256": "e5211706a23b46354aa269f2b9cfaaaad1b64eef1012b433b1887c149f5a927c",
+                "PAINTER_FROZEN_SFT_MODEL_REVISION": "adf687e5b321514eda7be6eab050434fdc8e44ff",
+                "PAINTER_FROZEN_SFT_ADAPTER_SHA256": "bea72b066986faa1b92b9dc539c710093181ee916b99323e2b2498f318ac1740",
+                "PAINTER_RL_CHECKPOINT_INTERVAL": "1",
+                "ADAPTER_ONLY_CHECKPOINTS": "1",
+                "PAINTER_ACTIVATION_CPU_OFFLOAD": "1",
+                "PAINTER_GPUS_PER_NODE": "2",
+                "PAINTER_NUM_TRAIN_GPUS": "1",
+                "PAINTER_NUM_INFER_GPUS": "1",
+                "PYTHONPATH": f"{REPO}:{REPO / 'painter'}",
+            }
+            command = [
+                sys.executable,
+                str(RUN / "prepare_profile_single.py"),
+                "--repo", str(REPO),
+                "--run-root", str(root),
+                "--model", str(root / "model"),
+                "--prime-root", str(prime),
+                "--manifest", str(manifest),
+                "--renderer", str(root / "runtime/watercolour-cancellable-centroid-v1/cancellable_watercolour_renderer.py"),
+                "--renderer-python", str(root / "runtime/watercolour-cancellable-centroid-v1/cancellable_watercolour_renderer.py"),
+            ]
+            result = subprocess.run(command, cwd=REPO, env=env, text=True, capture_output=True)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(json.loads((root / "rl-config-receipt.json").read_text())["batch_size"], 16)
+            self.assertEqual(
+                json.loads((root / "preparation-receipt.json").read_text())["schema"],
+                "throughput-recovery-single-arm-preparation-v1",
+            )
+            self.assertTrue((root / "source-identity.json").is_file())
+            self.assertTrue((root / "renderer-receipt.json").is_file())
 
 
 if __name__ == "__main__":

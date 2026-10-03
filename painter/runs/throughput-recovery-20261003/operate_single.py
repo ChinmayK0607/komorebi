@@ -175,8 +175,17 @@ def _append_tail(buffer: bytearray, data: bytes, limit: int = DIAGNOSTIC_BYTES) 
         del buffer[:-limit]
 
 
-def _sanitized_diagnostics(*values: str, forbidden: Iterable[str] = ()) -> list[str]:
-    """Keep short failure context while removing secrets and connection IDs."""
+def _sanitized_diagnostics(
+    *values: str,
+    forbidden: Iterable[str] = (),
+    labels: Sequence[str] | None = None,
+) -> list[str]:
+    """Keep per-stream failure tails while removing secrets and connection IDs.
+
+    Each input is trimmed independently.  Keeping the stderr tail separate
+    from a verbose stdout stream prevents a useful bootstrap error from being
+    discarded when the remote command emits many progress lines.
+    """
     patterns = (
         (re.compile(r"(?i)(?:bearer\s+|hf_)[A-Za-z0-9._:-]+"), "<redacted-token>"),
         (re.compile(r"\bvck_[A-Za-z0-9._:-]+\b"), "<redacted-token>"),
@@ -186,7 +195,10 @@ def _sanitized_diagnostics(*values: str, forbidden: Iterable[str] = ()) -> list[
     )
     blocked = tuple(item for item in forbidden if item)
     lines: list[str] = []
-    for raw in values:
+    if labels is not None and len(labels) != len(values):
+        raise ValueError("diagnostic labels must match diagnostic streams")
+    for index, raw in enumerate(values):
+        stream_lines: list[str] = []
         for line in raw.splitlines():
             line = line.strip()
             if not line:
@@ -196,8 +208,10 @@ def _sanitized_diagnostics(*values: str, forbidden: Iterable[str] = ()) -> list[
             for pattern, replacement in patterns:
                 line = pattern.sub(replacement, line)
             line = "".join(character if character.isprintable() else " " for character in line)
-            lines.append(line[:320])
-    return lines[-DIAGNOSTIC_LINES:]
+            stream_lines.append(line[:320])
+        prefix = f"{labels[index]}: " if labels is not None else ""
+        lines.extend(prefix + line for line in stream_lines[-DIAGNOSTIC_LINES:])
+    return lines
 
 
 def _remote_exec_capture(ssh: Any, command: str, *, timeout: float, now: Callable[[], float], window: RentalWindow) -> tuple[int, str, str]:
@@ -235,7 +249,7 @@ def _remote_exec_capture(ssh: Any, command: str, *, timeout: float, now: Callabl
 def _remote_exec(ssh: Any, command: str, *, timeout: float, now: Callable[[], float], window: RentalWindow) -> str:
     code, output, error = _remote_exec_capture(ssh, command, timeout=timeout, now=now, window=window)
     if code != 0:
-        diagnostics = _sanitized_diagnostics(error, output)
+        diagnostics = _sanitized_diagnostics(error, output, labels=("stderr", "stdout"))
         detail = "; ".join(diagnostics)
         raise OperationError("remote command failed" + (f": {detail}" if detail else ""))
     return output
@@ -408,7 +422,12 @@ def operate(*, window: RentalWindow, source_bundle: Path, source_commit: str, hf
             verify = "set -Eeuo pipefail; %s; nvidia-smi --query-gpu=memory.total --format=csv,noheader,nounits" % _source_checkout_command(str(REMOTE_BUNDLE), str(REMOTE_REPO), source_commit)
             verify_code, gpu_raw, verify_error = _remote_exec_capture(ssh, verify, timeout=min(TRANSFER_TIMEOUT_SECONDS, _remaining(window, now)), now=now, window=window)
             if verify_code != 0:
-                remote_diagnostics = _sanitized_diagnostics(verify_error, gpu_raw, forbidden=(window.pod_id,))
+                remote_diagnostics = _sanitized_diagnostics(
+                    verify_error,
+                    gpu_raw,
+                    forbidden=(window.pod_id,),
+                    labels=("stderr", "stdout"),
+                )
                 detail = "; ".join(remote_diagnostics)
                 raise OperationError("source or GPU verification failed" + (f": {detail}" if detail else ""))
             memories = _gpu_memory(gpu_raw)
@@ -461,6 +480,7 @@ def operate(*, window: RentalWindow, source_bundle: Path, source_commit: str, hf
                     bytes(remote_stderr_tail).decode("utf-8", "replace"),
                     bytes(remote_stdout_tail).decode("utf-8", "replace"),
                     forbidden=(window.pod_id,),
+                    labels=("stderr", "stdout"),
                 )
             finished_fields = {
                 "exit_code": command_code,
@@ -478,6 +498,7 @@ def operate(*, window: RentalWindow, source_bundle: Path, source_commit: str, hf
             bytes(remote_stdout_tail).decode("utf-8", "replace"),
             str(exc),
             forbidden=(window.pod_id,),
+            labels=("stderr", "stdout", "controller"),
         )
         _safe_event(events, "operation_error", started, error_type=type(exc).__name__, failure_diagnostics=diagnostics)
     finally:

@@ -13,6 +13,7 @@ import importlib.util
 import json
 import os
 from pathlib import Path
+import tempfile
 import tomllib
 
 
@@ -28,6 +29,60 @@ def load_config_tool(repo: Path):
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
+
+
+def _require_pretraining_handoff(run_root: Path) -> None:
+    """Refuse profile replacement once a training launch has started."""
+    started_markers = (
+        run_root / "async-output",
+        run_root / "rl-rollouts",
+        run_root / "supervisor-state.json",
+        run_root / "terminal-receipt.json",
+        run_root / "logs/gpu-telemetry.csv",
+    )
+    present = [str(path.relative_to(run_root)) for path in started_markers if path.exists()]
+    if present:
+        raise RuntimeError(
+            "profile handoff is pretraining-only; training artifacts already exist: "
+            + ", ".join(present)
+        )
+
+
+def prepare_staged_profile(profile, config_tool, *, run_root: Path, **kwargs):
+    """Prepare the profile beside the bootstrap config, then publish it.
+
+    The shared config writer deliberately refuses to overwrite an existing
+    ``native.toml``.  ``prepare_node.sh`` has already written that path by the
+    time this recovery profile is selected, so call the writer in a private
+    staging directory and replace both profile artifacts only after the
+    profile wrapper has validated them.  A failed profile preparation leaves
+    the bootstrap artifacts intact.
+    """
+    _require_pretraining_handoff(run_root)
+    output = run_root / "native.toml"
+    receipt_path = run_root / "rl-config-receipt.json"
+    with tempfile.TemporaryDirectory(prefix=".profile-config-", dir=str(run_root)) as staged:
+        staged_output = Path(staged) / "native.toml"
+        receipt = profile.prepare_profile(
+            config_tool.prepare,
+            output=staged_output,
+            run_root=run_root,
+            **kwargs,
+        )
+        staged_receipt = staged_output.with_name("rl-config-receipt.json")
+        if not staged_receipt.is_file():
+            raise ValueError("profile preparation did not write staged rl-config-receipt.json")
+        staged_limits = Path(staged) / "frozen-opponent-config.json"
+        existing_limits = run_root / "frozen-opponent-config.json"
+        if not existing_limits.is_file():
+            raise RuntimeError("base preparation did not create frozen-opponent-config.json")
+        if not staged_limits.is_file() or staged_limits.read_bytes() != existing_limits.read_bytes():
+            raise ValueError("profile preparation changed frozen opponent limits")
+        # prepare_profile validates the staged TOML and receipt before either
+        # existing bootstrap artifact is replaced.
+        os.replace(staged_output, output)
+        os.replace(staged_receipt, receipt_path)
+    return receipt
 
 
 def main() -> int:
@@ -48,11 +103,11 @@ def main() -> int:
 
     config_tool = load_config_tool(args.repo)
     profile.validate_runtime_environment(os.environ)
-    receipt = profile.prepare_profile(
-        config_tool.prepare,
-        output=args.run_root / "native.toml",
-        model=args.model,
+    receipt = prepare_staged_profile(
+        profile,
+        config_tool,
         run_root=args.run_root,
+        model=args.model,
         manifest=args.manifest,
         prime_root=args.prime_root,
         run_name=os.environ["PAINTER_RUN_NAME"],

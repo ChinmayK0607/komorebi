@@ -1,0 +1,34 @@
+{
+  "schema": "painter-rental-attempt-result-v1",
+  "source_commit": "fcacfcf517f29b2bf128d768b748455b93ddd231",
+  "status": "failed_before_training-node-release-confirmed",
+  "optimizer_updates": 0,
+  "checkpoint_count": 0,
+  "failure": "shared base preparation creates native.toml; recovery profile writer tries to create same existing file and shared writer refuses overwrite. Reproduced source-path conflict; fatal stderr lost from retained diagnostics.",
+  "evidence": {
+    "repo_id": "CK0607/komorebi-painter-experiments",
+    "revision": "7fdd059fc73f7a08038a3c0f060f1ed314388df3",
+    "path": "runs/throughput-recovery-20261003/evidence.tar.gz",
+    "bytes": 61914216,
+    "sha256": "d423fd9b7b42f546a632938ea423f1a5a72fe15d9879d562741da786cc0d02d1",
+    "anonymous_hash_verified": true
+  },
+  "rental_clock_estimate": {
+    "price_usd_hour": 3.8,
+    "elapsed_seconds": 790.13,
+    "usd": 0.834,
+    "basis": "request epoch to local release event file mtime; provider invoice unavailable"
+  },
+  "release": {
+    "exact_target_absent": true,
+    "active_pods": 0
+  },
+  "utilization": {
+    "training_measurement_window": null,
+    "note": "no training or inference launched; GPU setup time only"
+  },
+  "censored": [
+    "all training and evaluation outcomes"
+  ],
+  "next_decision": "Reproduce complete two-stage preparation and repair atomic config handoff before allocating again."
+}
