@@ -1,0 +1,18 @@
+{
+  "schema": "painter-rental-attempt-result-v1",
+  "status": "pre-controller-ssh-readiness-error-node-released",
+  "source_commit": "bfd08c684749aa795476c943a89c5980d016140e",
+  "optimizer_updates": 0,
+  "checkpoint_count": 0,
+  "failure": "Parent staging tried SSH immediately after allocation, before provider SSH metadata was ready. The parent released the exact node. No renderer, model or training process started.",
+  "release": {
+    "exact_target_absent": true,
+    "active_pods": 0
+  },
+  "rental_clock_conservative_upper_bound": {
+    "seconds": 98.82,
+    "usd": 0.1043,
+    "basis": "request through this later absence confirmation; includes time after actual release, so this is an upper bound, not a bill"
+  },
+  "next_decision": "Use Lium wait_ready in bounded intervals before staging; retain source bfd08c6 and share the same whole-pilot $20 ceiling."
+}

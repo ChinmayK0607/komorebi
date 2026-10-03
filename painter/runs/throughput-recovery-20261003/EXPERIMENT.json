@@ -1,6 +1,6 @@
 {
   "schema": "painter-experiment-record-v1",
-  "status": "infra-failed-zero-updates-node-released",
+  "status": "provider-readiness-then-corrected-runtime-preflight",
   "hypothesis": "Bound speculative work, cancellation-safe rendering, and checkpoint every actual update will yield useful published updates within a short single-arm rental; visual benefit remains a separate matched evaluation.",
   "matched_baseline": {
     "policy": "historical RL16 initializer",
@@ -55,14 +55,16 @@
     "api_expense": "reported separately",
     "target": "complete promptly below ceiling; no claim of measured speedup",
     "prior_attempt_result": "allocation-attempt1-result.json",
-    "remaining_gpu_ceiling_usd": 18.0,
+    "remaining_gpu_ceiling_usd": 14.0,
     "prior_attempt_results": [
       "allocation-attempt1-result.json",
       "allocation-attempt2-result.json",
       "allocation-attempt3-result.json",
-      "allocation-attempt4-result.json"
+      "allocation-attempt4-result.json",
+      "allocation-attempt5-result.json",
+      "allocation-attempt6-result.json"
     ],
-    "conservative_failed_attempt_reserve_usd": 2.0
+    "conservative_failed_attempt_reserve_usd": 6.0
   },
   "cpu_profile": {
     "saved_programs": 8,
@@ -130,7 +132,7 @@
     "allocated": true,
     "availability_recheck_required": true
   },
-  "source_commit": "ac5b9ea283ac969464d79f1e0b990056c9c621ad",
+  "source_commit": "bfd08c684749aa795476c943a89c5980d016140e",
   "configuration_handoff_repair": {
     "strategy": "staged config/receipt validation and frozen-limit comparison before pretraining replacement; shared no-overwrite writer unchanged",
     "parent_checks": {
@@ -141,7 +143,7 @@
     },
     "scope": "metadata and lifecycle contracts only; main replay uses Prime validator stub. Actual pinned Prime accepted base profile on failed Linux setup; no successful training yet."
   },
-  "allocation_record": "allocation-attempt5.json",
+  "allocation_record": "allocation-attempt7.json",
   "upstream_source_staging": "prime-source-staging.json",
   "status_observation_repair": {
     "scope": "A bounded transient SFTP observation failure does not terminate a healthy remote command. Completed preparation receipt identifies the profile; base preparation is not interpreted as final. The SSH exit code and hard rental deadline remain authoritative.",
@@ -158,17 +160,14 @@
   },
   "runtime_storage_record": "runtime-storage-placement.json",
   "observed_launch": {
-    "inference_ready": true,
-    "trainer_max_steps": 4,
-    "startup_policy_broadcast": "v0",
-    "first_batch_target": 16,
-    "inflight_episodes": 32,
-    "first_optimizer_update": "not reached",
-    "evidence": "remote trainer/orchestrator logs; no improvement claim"
+    "attempt": 7,
+    "policy_launch": "pending target Node and sandbox preflight",
+    "optimizer_updates": 0
   },
-  "allocation_result": "allocation-attempt5-result.json",
   "runtime_repairs": [
     "node-syntax-runtime-repair.json",
     "browser-sandbox-placement.json"
-  ]
+  ],
+  "prior_allocation_result": "allocation-attempt6-result.json",
+  "bootstrap_review": "bootstrap-review.json"
 }

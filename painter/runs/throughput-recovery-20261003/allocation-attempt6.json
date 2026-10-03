@@ -1,0 +1,26 @@
+{
+  "schema": "painter-rental-allocation-v1",
+  "status": "staging-runtime-preflight-before-policy-launch",
+  "source_commit": "bfd08c684749aa795476c943a89c5980d016140e",
+  "source_bundle": {
+    "repo_id": "CK0607/komorebi-painter-teachers",
+    "revision": "23ba3728018a4bc7d7f3e5b53c0f96eb248f5a20",
+    "path": "execution-source/throughput-recovery-20261003/source-bfd08c6.bundle",
+    "sha256": "5302aed0f3b8c1005dd9a3a737149da57f644be702fe0bc25be9c206774f2828",
+    "bytes": 3676480,
+    "anonymous_hash_verified": true,
+    "source_commit": "bfd08c684749aa795476c943a89c5980d016140e"
+  },
+  "hardware": {
+    "gpu": "H100",
+    "count": 2,
+    "memory_gb_per_gpu": 80,
+    "whole_node_usd_hour": 3.8
+  },
+  "gpu_cap_usd": 14.0,
+  "prior_start_reserve_usd": 6.0,
+  "whole_pilot_gpu_cap_usd": 20.0,
+  "updates": 4,
+  "experiment_identity": "unchanged RL16/Flash/SFT512 recovery pilot",
+  "hypothesis": "Verified Node and sandbox-enabled browser startup plus local runtime storage remove prior infrastructure rejection before policy loading. Learning and visual quality require actual update and evaluation evidence."
+}
