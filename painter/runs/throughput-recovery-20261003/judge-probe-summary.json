@@ -1,0 +1,72 @@
+{
+  "status": "scored",
+  "preference": "slight",
+  "score": 0.6666666666666666,
+  "consensus": "initial_agreement",
+  "acceptance": "two_of_two",
+  "requested_model": "xiaomi/mimo-v2.6-flash",
+  "returned_models": [
+    "xiaomi/mimo-v2.6-flash"
+  ],
+  "reasoning_effort": "medium",
+  "prompt_sha256": "d21e4644e7a3874a0694b2ad406420e733b7638222eb7717e7f5f91cbdf1613c",
+  "schema": "pre-rental-judge-service-probe-v1",
+  "elapsed_seconds": 24.00075854198076,
+  "purpose": "service availability and strict parsing; not judge quality validation",
+  "source_pair": "previously public t600-516 frozen gallery",
+  "provider_call_count": 2,
+  "usage": [
+    {
+      "prompt_tokens": 1464,
+      "completion_tokens": 853,
+      "total_tokens": 2317,
+      "cost": 0.0004438,
+      "is_byok": false,
+      "prompt_tokens_details": {
+        "cached_tokens": 0,
+        "audio_tokens": 0,
+        "video_tokens": 0
+      },
+      "cost_details": {
+        "upstream_inference_cost": null,
+        "upstream_inference_prompt_cost": 0,
+        "upstream_inference_completions_cost": 0
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 484,
+        "image_tokens": 0
+      },
+      "cache_creation_input_tokens": 0,
+      "market_cost": 0.0004438,
+      "gateway_cost": 0.0004438
+    },
+    {
+      "prompt_tokens": 1464,
+      "completion_tokens": 1325,
+      "total_tokens": 2789,
+      "cost": 0.00057596,
+      "is_byok": false,
+      "prompt_tokens_details": {
+        "cached_tokens": 0,
+        "audio_tokens": 0,
+        "video_tokens": 0
+      },
+      "cost_details": {
+        "upstream_inference_cost": null,
+        "upstream_inference_prompt_cost": 0,
+        "upstream_inference_completions_cost": 0
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 920,
+        "image_tokens": 0
+      },
+      "cache_creation_input_tokens": 0,
+      "market_cost": 0.00057596,
+      "gateway_cost": 0.00057596
+    }
+  ],
+  "recorded_costs": [
+    null,
+    null
+  ]
+}

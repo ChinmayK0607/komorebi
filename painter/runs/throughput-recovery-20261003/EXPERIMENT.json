@@ -1,6 +1,6 @@
 {
   "schema": "painter-experiment-record-v1",
-  "status": "cpu-profile-prepared-gpu-not-rented",
+  "status": "cpu-cloud-submitted-gpu-not-rented",
   "hypothesis": "Bound speculative work, cancellation-safe rendering, and checkpoint every actual update will yield useful published updates within a short single-arm rental; visual benefit remains a separate matched evaluation.",
   "matched_baseline": {
     "policy": "historical RL16 initializer",
@@ -62,7 +62,26 @@
     "parallel_workers": 4,
     "total_deadline_seconds": 900,
     "paid_api_calls": 0,
-    "gpu_rentals": 0
+    "gpu_rentals": 0,
+    "cloud_task_url": "https://chatgpt.com/codex/tasks/task_e_6ac07a3ce710832b88fc75b34a74662a",
+    "source_commit": "3f7f4cfe57fb02fdc2adbae87480c4ebaa989aa1",
+    "source_bundle": {
+      "repo_id": "CK0607/komorebi-painter-experiments",
+      "revision": "8be0cfd9862b952d8c1c7bea15fd3a71a0a08835",
+      "path": "runs/throughput-recovery-20261003/cpu-source-3f7f4cf.bundle",
+      "sha256": "862ace540c5f78a77e7ec8db573c951248b74d5355396a10d3d3f841ed40cf73",
+      "bytes": 3168587,
+      "anonymous_hash_verified": true,
+      "source_commit": "3f7f4cfe57fb02fdc2adbae87480c4ebaa989aa1"
+    },
+    "input_bundle": {
+      "repo_id": "CK0607/komorebi-painter-experiments",
+      "revision": "f46dd8c3fb78e3d8a9204d8af5f866fc59c996e5",
+      "path": "runs/throughput-recovery-20261003/cpu-input.tar.gz",
+      "sha256": "591ca53d0749208df0367a364acf2c22a2afeeb8e0f28671c64ba10950fd96eb",
+      "bytes": 11562,
+      "anonymous_hash_verified": true
+    }
   },
   "required_results": [
     "actual optimizer updates and nonzero finite gradients",
@@ -74,5 +93,14 @@
     "matched initializer versus trained visual results with failures censored",
     "rental elapsed-time estimate and recorded API usage"
   ],
-  "next_decision": "Use measured useful throughput, publication success and matched visuals to decide whether to extend; four updates alone cannot establish a general upward reward trend."
+  "next_decision": "Use measured useful throughput, publication success and matched visuals to decide whether to extend; four updates alone cannot establish a general upward reward trend.",
+  "planned_hardware_offer": {
+    "gpu": "H100",
+    "count": 2,
+    "vram_gb_per_gpu": 80,
+    "host_ram_gb": 503,
+    "price_usd_hour": 3.8,
+    "allocated": false,
+    "availability_recheck_required": true
+  }
 }
