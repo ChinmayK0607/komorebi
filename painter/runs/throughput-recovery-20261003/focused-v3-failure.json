@@ -1,0 +1,86 @@
+{
+  "schema": "painter-cpu-focused-completion-v1",
+  "status": "failed_preflight",
+  "source_status": {
+    "bundle_sha256": "1d8de8a240ec8eadfe6f4171d2018ce9b0a668a17403fe00c9463600f5a15e72",
+    "verified": true,
+    "commit": "67a92e59c60940c262e63ed30c60002087d18a08",
+    "head_verified": true,
+    "input_sha256": "591ca53d0749208df0367a364acf2c22a2afeeb8e0f28671c64ba10950fd96eb",
+    "input_verified": true,
+    "safe_extract_verified": true,
+    "controls_manifest_copied": true,
+    "selected_controls": [
+      "control-01",
+      "control-07",
+      "control-08"
+    ]
+  },
+  "test_status": {
+    "status": "failed",
+    "command": "python -m unittest painter.test_cancellable_watercolour_renderer painter.test_patch_brush_centroid",
+    "tests_run": 14,
+    "failures": 1,
+    "errors": 1,
+    "skips": 0,
+    "retry_count": 0,
+    "linux_independent_session_cli_surrogate": "failed"
+  },
+  "measurement_status": {
+    "status": "censored_by_test_gate",
+    "started": false,
+    "runs": 0,
+    "model_calls": 0,
+    "judge_calls": 0,
+    "gpu_used": false
+  },
+  "failures": [
+    {
+      "test": "test_leader_exit_with_live_child_is_cleaned_by_recorded_session",
+      "kind": "error",
+      "summary": "owned renderer process group survived bounded cleanup"
+    },
+    {
+      "test": "test_normal_cli_single_input_forwards_sigterm_to_independent_browser_session",
+      "kind": "failure",
+      "summary": "stub process did not publish child pid"
+    }
+  ],
+  "censors": [
+    {
+      "stage": "measurement",
+      "reason": "required preflight failed; stop-on-failure requirement applied"
+    }
+  ],
+  "deadlines": {
+    "unit_test_observed_seconds": 4.894,
+    "outer_timeout_seconds": 270,
+    "renderer_timeout_seconds": 180,
+    "total_limit_seconds": 240,
+    "cancel_after_seconds": 15,
+    "cleanup_grace_seconds": 3
+  },
+  "requested_runtime_hashes": {
+    "derivative_sha256": "374296922790f02e3ba42ee16930488dbf61a686a3cee18c1e74f55d8826d3a7",
+    "frozen_sha256": "6181fb904a0c5dcd580f5c3cb01eaf341a14b7a15479e811d99ebb10b70bc841"
+  },
+  "runtime_materialization_status": "not_started_due_to_test_gate",
+  "render_checks": {
+    "stable_control01_png_parity": "not_run",
+    "invalid_receipt": "not_run",
+    "worker_chrome_observed": "not_run",
+    "exit143_without_profiler_sigkill": "not_run",
+    "groups_dead_within_native_3sec_grace": "not_run"
+  },
+  "public_evidence": {
+    "repo_id": "CK0607/komorebi-painter-teachers",
+    "revision": "52a55f397c5009449b29ba3fcff8b7bed739ae33",
+    "prefix": "execution-evidence/throughput-recovery-20261003/cpu-focused-v3",
+    "completion_sha256": "6a33b94ecfa4773114c272c21eff028ac0a87e60df3d1fb559d17f0c6218672a",
+    "anonymous_hash_verified": true
+  },
+  "parent_diagnosis": [
+    "Strict anchor check rejects owned orphaned process-group children after leader exit",
+    "CLI test reads marker from sys.argv after replacing it, so fake worker writes to program path instead of marker"
+  ]
+}

@@ -1,7 +1,7 @@
 {
   "schema": "renderer-cli-repair-review-v1",
   "status": "reviewed-local-dummy-checks-linux-chrome-retest-pending",
-  "derivative_sha256": "374296922790f02e3ba42ee16930488dbf61a686a3cee18c1e74f55d8826d3a7",
+  "derivative_sha256": "dc6b9d837ed7be382784a6c84de1b64911506b17a19b499ce054c0c572e75794",
   "frozen_renderer_sha256": "6181fb904a0c5dcd580f5c3cb01eaf341a14b7a15479e811d99ebb10b70bc841",
   "changes": [
     "single-output CLI calls render on main thread",
@@ -34,5 +34,10 @@
     "normal CLI exit143 without profiler SIGKILL",
     "all observed owned groups dead within native3second grace"
   ],
-  "gpu_allocated": false
+  "gpu_allocated": false,
+  "prior_linux_failure": "focused-v3-failure.json",
+  "followup_fix": [
+    "preserve recorded session continuity after leader exits",
+    "capture test marker before CLI sys.argv rewrite"
+  ]
 }

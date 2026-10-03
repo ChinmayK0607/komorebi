@@ -232,15 +232,17 @@ class CancellableRendererProcessTests(unittest.TestCase):
             "marker.write_text(str(driver.pid))\n"
             "time.sleep(30)\n"
         )
+        compile(driver_code, "<cancellable-cli-driver>", "exec")
         compile(controller_code, "<cancellable-cli-controller>", "exec")
         return (
             "import pathlib, subprocess, sys\n"
             "from painter import cancellable_watercolour_renderer as renderer\n"
+            "worker_marker=sys.argv[1]\nsource_path=sys.argv[2]\noutput_path=sys.argv[3]\n"
             f"real_popen=renderer.subprocess.Popen\ncontroller_code={controller_code!r}\n"
             "def fake_popen(_command, **_kwargs):\n"
-            "    return real_popen([sys.executable, '-c', controller_code, sys.argv[1]], start_new_session=True)\n"
+            "    return real_popen([sys.executable, '-c', controller_code, worker_marker], start_new_session=True)\n"
             "renderer.subprocess.Popen=fake_popen\n"
-            "sys.argv=[str(pathlib.Path(renderer.__file__)), sys.argv[2], '--output', sys.argv[3], '--timeout', '30']\n"
+            "sys.argv=[str(pathlib.Path(renderer.__file__)), source_path, '--output', output_path, '--timeout', '30']\n"
             "renderer.main()\n"
         )
 
@@ -268,8 +270,15 @@ class CancellableRendererProcessTests(unittest.TestCase):
                     [sys.executable, "-c", launcher_code, str(marker), str(source), str(output)],
                     cwd=Path(__file__).resolve().parents[1],
                     start_new_session=True,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    text=True,
                 )
-                driver_pid = self._wait_for_pid(marker)
+                try:
+                    driver_pid = self._wait_for_pid(marker)
+                except AssertionError as error:
+                    stdout, stderr = controller.communicate(timeout=3)
+                    self.fail(f"CLI surrogate did not publish worker pid: {error}; stdout={stdout!r}; stderr={stderr!r}")
                 browser_pid = self._wait_for_pid(browser_marker)
                 controller.send_signal(signal.SIGTERM)
                 self.assertEqual(controller.wait(timeout=8), 143)

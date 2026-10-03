@@ -206,11 +206,20 @@ def _signal_owned_process(
 def _signal_owned_group(identity: _OwnedProcessGroup, signum: int) -> bool:
     snapshot = _proc_snapshot()
     if snapshot:
+        mismatched_anchor = any(
+            pid in snapshot and snapshot[pid][1:3] != (identity.pgid, identity.sid)
+            for pid in identity.anchor_pids
+        )
+        if mismatched_anchor:
+            return False
         owned_anchor = any(
             pid in snapshot and snapshot[pid][1:3] == (identity.pgid, identity.sid)
             for pid in identity.anchor_pids
         )
-        if not owned_anchor:
+        # A recorded leader may have exited and been reaped while its
+        # descendant remains in the same proven session.  Keep that session
+        # continuity; reject only an anchor that is visibly reused elsewhere.
+        if not owned_anchor and not _session_has_member(identity):
             return False
     elif not _session_has_member(identity):
         return False

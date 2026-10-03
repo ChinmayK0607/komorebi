@@ -1,0 +1,36 @@
+{
+  "schema": "finite-recovery-reviewed-source-receipt-v2",
+  "repo_id": "CK0607/komorebi-painter-teachers",
+  "revision": "6694fe2820a48a2be395cd13b07963d19acb7ff1",
+  "path": "execution-source/throughput-recovery-20261003/source-67a92e5.bundle",
+  "sha256": "1d8de8a240ec8eadfe6f4171d2018ce9b0a668a17403fe00c9463600f5a15e72",
+  "bytes": 3207361,
+  "anonymous_hash_verified": true,
+  "source_commit": "67a92e59c60940c262e63ed30c60002087d18a08",
+  "focused_cpu_task": "https://chatgpt.com/codex/cloud/tasks/task_e_6ac0852e86c0832bb76f8d02e35b390f",
+  "clean_bundle_checks": {
+    "renderer_patch_cases": 14,
+    "renderer_patch_skipped_on_mac": 2,
+    "finite_operator_cases": 17,
+    "finite_operator_skipped_on_mac": 1,
+    "native_contract_checks": 37,
+    "gpu_allocated": false,
+    "actual_chrome_result": "pending"
+  },
+  "operational_incidents": [
+    {
+      "type": "empty_cloud_submission",
+      "task_id": "task_e_6ac08504c4c8832b97b90471b2d847ba",
+      "cause": "relative metadata path used from clone cwd; shell lacked fail-fast",
+      "outcome": "canceled during setup, CLI ERROR and UI Cancelled verified, no source diff",
+      "prevention": "dispatch uses absolute prompt path, set-e and minimum prompt length guard"
+    },
+    {
+      "type": "hf_commit_rate_limit",
+      "scope": "experiment dataset",
+      "cause": "earlier CPU task publication used many small per-segment commits",
+      "outcome": "source bundle published once in public teachers dataset; retest instructed one small-folder commit",
+      "gpu_cost_usd": 0
+    }
+  ]
+}
