@@ -1,6 +1,6 @@
 {
   "schema": "painter-experiment-record-v1",
-  "status": "cpu-cloud-startup-failure-retry-submitted-gpu-not-rented",
+  "status": "linux-cli-cancellation-defect-found-repair-active-gpu-not-rented",
   "hypothesis": "Bound speculative work, cancellation-safe rendering, and checkpoint every actual update will yield useful published updates within a short single-arm rental; visual benefit remains a separate matched evaluation.",
   "matched_baseline": {
     "policy": "historical RL16 initializer",
@@ -92,7 +92,9 @@
       "public_profile_sha256": "c4b9b6a0ad1bf872a745f9841ce3b283bc0ad60d16a981bc6e52e92e0e47317e",
       "public_archive_revision": "7233967e4472ba76146fbc7d1527f68599e66be7",
       "public_archive_sha256": "3bff61ef075793bc7f1ea210e18fb14198e7407eca2fc3c1c84d9586ec5f7950"
-    }
+    },
+    "measured_result": "cpu-measured-result.json",
+    "cancellation_passed": false
   },
   "required_results": [
     "actual optimizer updates and nonzero finite gradients",

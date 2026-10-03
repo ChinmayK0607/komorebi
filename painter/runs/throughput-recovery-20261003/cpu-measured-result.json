@@ -1,0 +1,62 @@
+{
+  "schema": "cpu-recovery-measured-result-v1",
+  "source_commit": null,
+  "profile_revision": "23da1bec7ac240c85fca40d3a093b13a3815099c",
+  "profile_path": "runs/throughput-recovery-20261003/cpu-cloud-v2/profile.json",
+  "profile_sha256": "5e5f46b10d1acfc219143a549c201ef66eb2755ee90ee03d7b1a548ef3d46a07",
+  "anonymous_download_verified": true,
+  "gpu_spend_usd": 0,
+  "measurement_elapsed_seconds": 702.653148,
+  "cpu_quota_cores": 2,
+  "summary": {
+    "backend_available": true,
+    "baseline": {
+      "censored": 0,
+      "invalid": 2,
+      "timed_out": 0,
+      "total": 14,
+      "unexpected_invalid": 0,
+      "unexpected_valid": 0,
+      "valid": 12
+    },
+    "cancellation": {
+      "chain_observed": true,
+      "cleanup_seconds": 5.115611,
+      "completed": false,
+      "owned_processes_gone": true,
+      "requested": true,
+      "speedup_claim": null
+    },
+    "derivative": {
+      "censored": 0,
+      "invalid": 2,
+      "timed_out": 0,
+      "total": 14,
+      "unexpected_invalid": 0,
+      "unexpected_valid": 0,
+      "valid": 12
+    },
+    "parity": {
+      "censored_count": 0,
+      "different_count": 10,
+      "eligible_cases": 6,
+      "equal_count": 2,
+      "repeats": 2
+    },
+    "pool_censored": false,
+    "pool_useful_valid_count": 6,
+    "total_elapsed_seconds": 702.653148
+  },
+  "sequential_and_pool_throughput": {
+    "basis": "valid outputs completed per elapsed wall second; same derivative, source, seed and backend; cancellation excluded",
+    "pool_valid_per_second": 0.05061333620412176,
+    "sequential_valid_per_second": 0.0500263880859422,
+    "speedup": 1.0117327702565937
+  },
+  "interpretation": {
+    "throughput": "Four workers yielded about1.012x valid completion rate on2CPUquota; no useful parallel speedup established.",
+    "parity": "control01 repeat hashes match across botharms. Controls02-06 vary between unchanged baseline repeats and between derivative repeats, so cross-arm hash differences are not attribution evidence. General bitwise parity remains unestablished.",
+    "cancellation": "Actual normal CLI runs frozen ThreadPoolExecutor, disabling derivative main-thread-only SIGTERM handler. Chrome also starts its own session separate from worker. Profiler SIGKILL was required; cleanup passed only with profiler intervention. Production cancellation repair and focused real-Chrome retest required before GPU allocation."
+  },
+  "next_decision": "Repair real CLI signal dispatch and independently-sessioned browser cleanup; rerun stablecontrol01 plus knownslowcancel only, then approved finite GPU pilot."
+}
