@@ -1,0 +1,38 @@
+{
+  "schema": "painter-rental-attempt-result-v1",
+  "status": "ssh-disconnect-before-learning-node-released",
+  "source_commit": "bfd08c684749aa795476c943a89c5980d016140e",
+  "optimizer_updates": 0,
+  "checkpoint_count": 0,
+  "failure": "SSH transport became inactive during dependency/model downloads. Channel returned -1 (no process exit status). The controller treated that as completion and released the exact node; a remote pipeline failure was not confirmed.",
+  "controller_observations": {
+    "remote_execute_elapsed_seconds": 373.18,
+    "last_observed_phase": "cold setup",
+    "durable_remote_terminal_receipt": false,
+    "exit_status_received": -1,
+    "archive_verified": false
+  },
+  "evidence": {
+    "controller_events": "private/controller-attempt7/operations-single.jsonl",
+    "controller_events_sha256": "6770586fdf14237c05814515282fb7a3a1ecb9540b07a0650f172199634da410",
+    "remote_evidence_recovery": "Not obtained before release; missing remote failure evidence is a limitation."
+  },
+  "release": {
+    "exact_target_absent": true,
+    "confirmed_date": "2026-10-03",
+    "controller_release_event_utc": "2026-10-03T07:11:25.282611+00:00"
+  },
+  "gpu_rental_clock_estimate": {
+    "seconds": 451.38,
+    "usd": 0.4765,
+    "basis": "request through controller release-request event; not provider invoice"
+  },
+  "prior_failed_attempts_clock_estimate_or_upper_bounds_usd": 5.7713,
+  "cumulative_pilot_clock_estimate_or_upper_bounds_usd": 6.2478,
+  "gpu_ceiling_usd": 20,
+  "utilization": {
+    "measured": false,
+    "reason": "Training telemetry had not started; no run-level GPU utilization or learning claim."
+  },
+  "next_decision": "Do not rent again with foreground SSH lifetime as the completion signal. Review a detached finite execution/exit receipt and reconnect path, retain remote budget watchdog, and test disconnect recovery before a further allocation. Same pilot cap includes every failed start."
+}

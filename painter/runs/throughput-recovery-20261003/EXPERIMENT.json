@@ -1,6 +1,6 @@
 {
   "schema": "painter-experiment-record-v1",
-  "status": "provider-readiness-then-corrected-runtime-preflight",
+  "status": "ssh-disconnect-before-learning-node-released",
   "hypothesis": "Bound speculative work, cancellation-safe rendering, and checkpoint every actual update will yield useful published updates within a short single-arm rental; visual benefit remains a separate matched evaluation.",
   "matched_baseline": {
     "policy": "historical RL16 initializer",
@@ -55,16 +55,17 @@
     "api_expense": "reported separately",
     "target": "complete promptly below ceiling; no claim of measured speedup",
     "prior_attempt_result": "allocation-attempt1-result.json",
-    "remaining_gpu_ceiling_usd": 14.0,
+    "remaining_gpu_ceiling_usd": 13.5,
     "prior_attempt_results": [
       "allocation-attempt1-result.json",
       "allocation-attempt2-result.json",
       "allocation-attempt3-result.json",
       "allocation-attempt4-result.json",
       "allocation-attempt5-result.json",
-      "allocation-attempt6-result.json"
+      "allocation-attempt6-result.json",
+      "allocation-attempt7-result.json"
     ],
-    "conservative_failed_attempt_reserve_usd": 6.0
+    "conservative_failed_attempt_reserve_usd": 6.5
   },
   "cpu_profile": {
     "saved_programs": 8,
@@ -122,14 +123,14 @@
     "matched initializer versus trained visual results with failures censored",
     "rental elapsed-time estimate and recorded API usage"
   ],
-  "next_decision": "Repair bootstrap, test Node and sandbox-enabled Chromium on the target host before GPU loading; do not weaken zero-output admission guard or infer judge/policy failure. Any continuation shares the original whole-pilot $20 ceiling.",
+  "next_decision": "Do not rent again with foreground SSH lifetime as the completion signal. Review a detached finite execution/exit receipt and reconnect path, retain remote budget watchdog, and test disconnect recovery before a further allocation. Same pilot cap includes every failed start.",
   "planned_hardware_offer": {
     "gpu": "H100",
     "count": 2,
     "vram_gb_per_gpu": 80,
     "host_ram_gb": 503,
     "price_usd_hour": 3.8,
-    "allocated": true,
+    "allocated": false,
     "availability_recheck_required": true
   },
   "source_commit": "bfd08c684749aa795476c943a89c5980d016140e",
@@ -161,13 +162,13 @@
   "runtime_storage_record": "runtime-storage-placement.json",
   "observed_launch": {
     "attempt": 7,
-    "policy_launch": "pending target Node and sandbox preflight",
+    "policy_launch": "not observed; cold setup",
     "optimizer_updates": 0
   },
   "runtime_repairs": [
     "node-syntax-runtime-repair.json",
     "browser-sandbox-placement.json"
   ],
-  "prior_allocation_result": "allocation-attempt6-result.json",
+  "prior_allocation_result": "allocation-attempt7-result.json",
   "bootstrap_review": "bootstrap-review.json"
 }
