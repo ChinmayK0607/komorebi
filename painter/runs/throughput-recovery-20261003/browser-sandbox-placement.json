@@ -1,0 +1,14 @@
+{
+  "schema": "painter-browser-sandbox-placement-v1",
+  "sandbox_smoke_passed": true,
+  "variants": [
+    "Playwright headless shell",
+    "full Chromium headless"
+  ],
+  "sandbox_enabled": true,
+  "operation": "same pinned browser copied from nosuid encrypted root to local temporary overlay; root-owned helper installed under Chromium expected chrome-sandbox filename with mode 4755; logical browser paths redirected; originals retained",
+  "code_changed": false,
+  "helper_sha256": "206aa30eeb399b1d10fdf345106b315be01deded548243eb7263c8af2773ab88",
+  "early_service_failure_groups": "excluded from visual rewards",
+  "first_optimizer_update": "pending"
+}

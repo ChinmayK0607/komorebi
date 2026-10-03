@@ -1,6 +1,6 @@
 {
   "schema": "painter-experiment-record-v1",
-  "status": "qwen-rl16-rollouts-active-first-batch-collecting",
+  "status": "infra-failed-zero-updates-node-released",
   "hypothesis": "Bound speculative work, cancellation-safe rendering, and checkpoint every actual update will yield useful published updates within a short single-arm rental; visual benefit remains a separate matched evaluation.",
   "matched_baseline": {
     "policy": "historical RL16 initializer",
@@ -120,7 +120,7 @@
     "matched initializer versus trained visual results with failures censored",
     "rental elapsed-time estimate and recorded API usage"
   ],
-  "next_decision": "Use measured useful throughput, publication success and matched visuals to decide whether to extend; four updates alone cannot establish a general upward reward trend.",
+  "next_decision": "Repair bootstrap, test Node and sandbox-enabled Chromium on the target host before GPU loading; do not weaken zero-output admission guard or infer judge/policy failure. Any continuation shares the original whole-pilot $20 ceiling.",
   "planned_hardware_offer": {
     "gpu": "H100",
     "count": 2,
@@ -163,7 +163,12 @@
     "startup_policy_broadcast": "v0",
     "first_batch_target": 16,
     "inflight_episodes": 32,
-    "first_optimizer_update": "pending",
+    "first_optimizer_update": "not reached",
     "evidence": "remote trainer/orchestrator logs; no improvement claim"
-  }
+  },
+  "allocation_result": "allocation-attempt5-result.json",
+  "runtime_repairs": [
+    "node-syntax-runtime-repair.json",
+    "browser-sandbox-placement.json"
+  ]
 }

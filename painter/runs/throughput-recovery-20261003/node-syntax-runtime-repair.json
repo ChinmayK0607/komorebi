@@ -1,0 +1,8 @@
+{
+  "schema": "painter-node-syntax-runtime-repair-v1",
+  "source": "Node bundled in the locked Playwright renderer package",
+  "version": "v24.13.0",
+  "syntax_preflight_smoke_passed": true,
+  "operation": "system PATH symlink installed without dependency download",
+  "affected_cases": "early rollout renderer service failures are excluded from visual rewards; first optimizer update still pending"
+}

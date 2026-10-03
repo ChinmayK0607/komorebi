@@ -1,0 +1,51 @@
+{
+  "schema": "painter-rental-attempt-result-v1",
+  "status": "zero-output-infra-failure-node-released",
+  "source_commit": "ac5b9ea283ac969464d79f1e0b990056c9c621ad",
+  "optimizer_updates": 0,
+  "checkpoint_count": 0,
+  "admitted_batches": 0,
+  "rejected_group_events": 36,
+  "terminal_failure": "Prime orchestrator aborted after 10 consecutive zero-output batch equivalents",
+  "causes": [
+    "JS syntax preflight required Node.js but it was missing from worker PATH. Existing pinned Playwright Node was exposed and node --check passed.",
+    "Chromium sandbox failed on encrypted root mounted nosuid. Same pinned browser on local overlay with its root-owned chrome-sandbox helper mode 4755 passed trusted sandbox-enabled launch for both headless shell and full Chromium."
+  ],
+  "repair_scope": "Operational runtime placement only. Sandbox remained enabled and source bytes unchanged. Repairs landed after early failed traces; orchestrator already exhausted zero-output tolerance before a recovered rollout batch.",
+  "quality_result": "Not measured; infrastructure failures were excluded from visual rewards, not interpreted as poor paintings.",
+  "rental_clock_estimate": {
+    "seconds": 3757.91,
+    "usd": 3.9667,
+    "whole_node_usd_hour": 3.8,
+    "basis": "source staging 48.3 seconds plus controller-to-release request clock; not provider invoice"
+  },
+  "prior_attempt_clock_estimate_usd": 1.7006,
+  "release": {
+    "exact_target_absent": true
+  },
+  "evidence": {
+    "repo_id": "CK0607/komorebi-painter-experiments",
+    "revision": "7b5de0d7cafb5af1c55a44cac0b643f6c2a2ee37",
+    "path": "runs/throughput-recovery-20261003/evidence.tar.gz",
+    "bytes": 65224547,
+    "sha256": "fad51424573a200539064c2f4f08b0b8c72efb12d11fe05b944a6dc71e2e7340",
+    "remote_terminal_public_archive_hash_verified": true,
+    "parent_anonymous_hash_verified": true,
+    "archive_terminal_receipt": "pre-upload receipt necessarily has archive status unset; final verified terminal observed by controller"
+  },
+  "utilization": {
+    "window_utc": [
+      "2026-10-03T06:22:37Z",
+      "2026-10-03T06:43:04Z"
+    ],
+    "sample_interval_seconds": 10,
+    "samples_per_gpu": 123,
+    "inference_mean_percent": 57.15447154471545,
+    "trainer_mean_percent": 0.07317073170731707,
+    "inference_busy_fraction": 0.6422764227642277,
+    "trainer_busy_fraction": 0.06504065040650407,
+    "busy_definition": "utilization > 0 per sampled GPU; includes model warmup/startup in this window",
+    "conclusion": "Trainer idle waiting for admitted rollouts; pipeline not saturated."
+  },
+  "next_decision": "Repair bootstrap, test Node and sandbox-enabled Chromium on the target host before GPU loading; do not weaken zero-output admission guard or infer judge/policy failure. Any continuation shares the original whole-pilot $20 ceiling."
+}
