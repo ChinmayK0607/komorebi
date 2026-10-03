@@ -1,6 +1,6 @@
 {
   "schema": "painter-experiment-record-v1",
-  "status": "gpu-attempt4-active-preparation-complete-source-staged",
+  "status": "status-observation-repair-reviewed-ready-for-finite-retry",
   "hypothesis": "Bound speculative work, cancellation-safe rendering, and checkpoint every actual update will yield useful published updates within a short single-arm rental; visual benefit remains a separate matched evaluation.",
   "matched_baseline": {
     "policy": "historical RL16 initializer",
@@ -46,7 +46,8 @@
     "max_policy_age": 1,
     "activation_cpu_offload": true,
     "api_reference": "v2",
-    "topology": "one trainer GPU, one inference GPU"
+    "topology": "one trainer GPU, one inference GPU",
+    "learning_rate": 1e-06
   },
   "budget": {
     "gpu_ceiling_usd": 20,
@@ -54,13 +55,14 @@
     "api_expense": "reported separately",
     "target": "complete promptly below ceiling; no claim of measured speedup",
     "prior_attempt_result": "allocation-attempt1-result.json",
-    "remaining_gpu_ceiling_usd": 18.75,
+    "remaining_gpu_ceiling_usd": 18.0,
     "prior_attempt_results": [
       "allocation-attempt1-result.json",
       "allocation-attempt2-result.json",
-      "allocation-attempt3-result.json"
+      "allocation-attempt3-result.json",
+      "allocation-attempt4-result.json"
     ],
-    "conservative_failed_attempt_reserve_usd": 1.25
+    "conservative_failed_attempt_reserve_usd": 2.0
   },
   "cpu_profile": {
     "saved_programs": 8,
@@ -125,7 +127,7 @@
     "vram_gb_per_gpu": 80,
     "host_ram_gb": 503,
     "price_usd_hour": 3.8,
-    "allocated": true,
+    "allocated": false,
     "availability_recheck_required": true
   },
   "source_commit": "d9f9a02dac44de35c7a8955eb0588d3308115d4a",
@@ -140,5 +142,18 @@
     "scope": "metadata and lifecycle contracts only; main replay uses Prime validator stub. Actual pinned Prime accepted base profile on failed Linux setup; no successful training yet."
   },
   "allocation_record": "allocation-attempt4.json",
-  "upstream_source_staging": "prime-source-staging.json"
+  "upstream_source_staging": "prime-source-staging.json",
+  "status_observation_repair": {
+    "scope": "A bounded transient SFTP observation failure does not terminate a healthy remote command. Completed preparation receipt identifies the profile; base preparation is not interpreted as final. The SSH exit code and hard rental deadline remain authoritative.",
+    "tests": {
+      "single_arm": 15,
+      "profile": 8,
+      "failures": 0,
+      "real_prepare_receipt_replayed": true,
+      "blocked_sftp_read_cancelled": true,
+      "actual_runtime_scope": "metadata/controller fixtures only; Linux rendering cancellation verified separately"
+    },
+    "implementation": "Luna xhigh; parent review and experiment operations",
+    "not_proven": "Actual successful optimizer update and matched quality improvement remain unproven."
+  }
 }

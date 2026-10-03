@@ -1,0 +1,32 @@
+{
+  "schema": "painter-rental-attempt-result-v1",
+  "status": "status-observation-timeout-before-training-node-released",
+  "source_commit": "d9f9a02dac44de35c7a8955eb0588d3308115d4a",
+  "optimizer_updates": 0,
+  "checkpoint_count": 0,
+  "failure": "A bounded parent status read timed out while remote setup was active. The controller released the node before preparation completed. No remote setup error was observed. Last successful poll: 404.3 seconds; operation error: 494.3 seconds. The precise failed read was not retained.",
+  "observed_before_timeout": {
+    "model_download_mebibytes": 51303,
+    "renderer_package_cache_mebibytes": 78,
+    "renderer_package_written_bytes": 80925513,
+    "config_ready": false
+  },
+  "rental_clock_estimate": {
+    "seconds": 548.95,
+    "usd": 0.5795,
+    "whole_node_usd_hour": 3.8,
+    "basis": "request to release-event localmtime, not provider invoice"
+  },
+  "release": {
+    "exact_target_absent": true,
+    "active_pods": 0
+  },
+  "evidence_publication": "remote command interrupted during setup; no terminal/archive verification. Sanitized controller event log retained. No generated training/evaluation artifacts existed.",
+  "censored": [
+    "all training",
+    "evaluation",
+    "useful throughput",
+    "utilization"
+  ],
+  "next_decision": "Review and test bounded status-read recovery before another rental. Keep the whole pilot under $20: $2 conservative failed-start reserve, $18 remaining."
+}

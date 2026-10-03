@@ -343,9 +343,19 @@ def _safe_event(path: Path, event: str, started: float, **fields: Any) -> None:
 
 
 def _remote_summary(sftp: Any, *, timeout: float) -> dict[str, Any]:
-    state = _json_bytes(_sftp_read(sftp, str(REMOTE_RUN / "supervisor-state.json"), timeout=timeout)) or {}
-    receipt = _json_bytes(_sftp_read(sftp, str(REMOTE_RUN / "terminal-receipt.json"), timeout=timeout)) or {}
-    config_raw = _sftp_read(sftp, str(REMOTE_RUN / "rl-config-receipt.json"), timeout=timeout)
+    deadline = time.monotonic() + max(0.0, float(timeout))
+
+    def read(remote: str) -> bytes | None:
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            raise OperationError("status observation budget exhausted")
+        return _sftp_read(sftp, remote, timeout=remaining)
+
+    state = _json_bytes(read(str(REMOTE_RUN / "supervisor-state.json"))) or {}
+    receipt = _json_bytes(read(str(REMOTE_RUN / "terminal-receipt.json"))) or {}
+    preparation_raw = read(str(REMOTE_RUN / "preparation-receipt.json"))
+    preparation = _json_bytes(preparation_raw)
+    config_raw = read(str(REMOTE_RUN / "rl-config-receipt.json"))
     config = _json_bytes(config_raw)
     if config_raw is None:
         config_summary: dict[str, Any] = {}
@@ -353,19 +363,127 @@ def _remote_summary(sftp: Any, *, timeout: float) -> dict[str, Any]:
         config_summary = {"_malformed": True}
     else:
         config_summary = {key: config.get(key) for key in ("profile", "checkpoint_interval", "batch_size", "group_size", "initial_inflight", "max_inflight", "activation_cpu_offload", "deployment", "reward")}
-    metrics = _sftp_read(sftp, str(REMOTE_RUN / f"async-output/{RUN_NAME}/monitors/file/metrics.jsonl"), timeout=timeout)
+    preparation_summary = {} if preparation is None else {
+        key: preparation.get(key)
+        for key in ("schema", "profile", "config_sha256", "train_manifest_sha256")
+    }
+    metrics = read(str(REMOTE_RUN / f"async-output/{RUN_NAME}/monitors/file/metrics.jsonl"))
     return {
         "state": {key: state.get(key) for key in ("status", "reason", "completed_optimizer_steps", "last_optimizer_step", "last_admitted_batch", "max_updates")},
         "terminal": {key: receipt.get(key) for key in ("status", "pipeline_exit_code", "archive_exit_code", "public_archive_hash_verified", "checkpoint_step")},
         "config": config_summary,
+        "preparation": preparation_summary,
+        "phase_ready": preparation is not None and preparation.get("schema") == "throughput-recovery-single-arm-preparation-v1",
         "render": _queue_summary(metrics),
     }
 
 
+def _observe_summary(
+    ssh: Any,
+    sftp: Any | None,
+    *,
+    timeout: float,
+    now: Callable[[], float],
+    window: RentalWindow,
+    events: Path,
+    started: float,
+    phase: str,
+) -> tuple[Any | None, dict[str, Any] | None]:
+    """Read status without making a transient SFTP failure fatal.
+
+    The SSH command channel remains the source of truth for execution and its
+    finite deadline.  Status reads get one bounded retry on a fresh SFTP
+    session; a failed observation is recorded and the command loop continues.
+    """
+    try:
+        observation_budget = min(float(timeout), _remaining(window, now))
+        observation_deadline = time.monotonic() + observation_budget
+    except BaseException as exc:
+        _safe_event(
+            events,
+            "observation_error",
+            started,
+            phase=phase,
+            attempt=0,
+            failure_diagnostics=_sanitized_diagnostics(str(exc), labels=("controller",)),
+        )
+        return sftp, None
+
+    def remaining_budget() -> float:
+        hard_remaining = _remaining(window, now)
+        remaining = min(observation_deadline - time.monotonic(), hard_remaining)
+        if remaining <= 0:
+            raise OperationError("status observation budget exhausted")
+        return remaining
+
+    def close_quickly(handle: Any) -> None:
+        """Close a timed-out SFTP channel without consuming its read budget."""
+        try:
+            hard_remaining = window.release_deadline_epoch - now()
+            if hard_remaining > 0:
+                _bounded_call(handle.close, min(5.0, hard_remaining))
+        except BaseException:
+            pass
+
+    first_error: BaseException | None = None
+    if sftp is not None:
+        try:
+            # Reserve half of this observation window for a fresh SFTP retry
+            # if one read blocks.  A single status file must not consume the
+            # entire poll deadline and strand the replacement attempt.
+            return sftp, _remote_summary(sftp, timeout=min(remaining_budget(), observation_budget / 2))
+        except BaseException as exc:
+            first_error = exc
+            _safe_event(
+                events,
+                "observation_error",
+                started,
+                phase=phase,
+                attempt=1,
+                failure_diagnostics=_sanitized_diagnostics(str(exc), labels=("controller",)),
+            )
+            close_quickly(sftp)
+
+    try:
+        fresh = _bounded_call(
+            ssh.open_sftp,
+            min(SSH_TIMEOUT_SECONDS, remaining_budget()),
+        )
+    except BaseException as exc:
+        _safe_event(
+            events,
+            "observation_error",
+            started,
+            phase=phase,
+            attempt=2,
+            failure_diagnostics=_sanitized_diagnostics(str(exc), labels=("controller",)),
+        )
+        return None, None
+    try:
+        summary = _remote_summary(fresh, timeout=remaining_budget())
+    except BaseException as exc:
+        _safe_event(
+            events,
+            "observation_error",
+            started,
+            phase=phase,
+            attempt=2,
+            failure_diagnostics=_sanitized_diagnostics(str(exc), labels=("controller",)),
+        )
+        close_quickly(fresh)
+        return None, None
+    if first_error is not None:
+        _safe_event(events, "observation_recovered", started, phase=phase)
+    return fresh, summary
+
+
 def _validate_config_summary(summary: dict[str, Any]) -> None:
+    preparation = summary.get("preparation", {})
+    if preparation.get("schema") != "throughput-recovery-single-arm-preparation-v1":
+        raise OperationError("remote preparation is not profile-ready")
+    if preparation.get("profile") != "rl-throughput-recovery-v1":
+        raise OperationError("remote preparation did not use the recovery profile")
     config = summary.get("config", {})
-    if config.get("profile") != "rl-throughput-recovery-v1":
-        raise OperationError("remote config did not use the recovery profile")
     if any(config.get(key) != expected for key, expected in (("checkpoint_interval", 1), ("batch_size", 16), ("group_size", 4), ("initial_inflight", 32), ("max_inflight", 32))):
         raise OperationError("remote config shape does not match the single-arm profile")
     deployment = config.get("deployment") or {}
@@ -452,29 +570,55 @@ def operate(*, window: RentalWindow, source_bundle: Path, source_commit: str, hf
                     _append_tail(remote_stdout_tail, channel.recv(65536))
                 if channel.recv_stderr_ready():
                     _append_tail(remote_stderr_tail, channel.recv_stderr(65536))
-                if not checked_config:
-                    summary = _remote_summary(sftp, timeout=min(SSH_TIMEOUT_SECONDS, _remaining(window, now)))
-                    config = summary.get("config", {})
-                    if config:
-                        _validate_config_summary(summary)
-                        checked_config = True
-                        _safe_event(events, "profile_verified", started, profile=config.get("profile"), topology=config.get("deployment"))
                 current = now()
                 if current >= window.release_deadline_epoch:
                     try:
                         channel.close()
                     finally:
                         raise OperationError("remote execute reached the finite release deadline")
-                summary = _remote_summary(sftp, timeout=min(SSH_TIMEOUT_SECONDS, window.release_deadline_epoch - current))
-                state = summary.get("state", {})
-                _safe_event(events, "poll", started, state_status=state.get("status"), state_reason=state.get("reason"), completed_optimizer_steps=state.get("completed_optimizer_steps"), last_admitted_batch=state.get("last_admitted_batch"), render=summary.get("render"))
+                sftp, summary = _observe_summary(
+                    ssh,
+                    sftp,
+                    timeout=min(SSH_TIMEOUT_SECONDS, window.release_deadline_epoch - current),
+                    now=now,
+                    window=window,
+                    events=events,
+                    started=started,
+                    phase="poll",
+                )
+                if not checked_config and summary is not None and summary.get("phase_ready"):
+                    _validate_config_summary(summary)
+                    checked_config = True
+                    _safe_event(
+                        events,
+                        "profile_verified",
+                        started,
+                        profile=summary.get("preparation", {}).get("profile"),
+                        topology=summary.get("config", {}).get("deployment"),
+                    )
+                state = summary.get("state", {}) if summary is not None else {}
+                _safe_event(events, "poll", started, observation_available=summary is not None, state_status=state.get("status"), state_reason=state.get("reason"), completed_optimizer_steps=state.get("completed_optimizer_steps"), last_admitted_batch=state.get("last_admitted_batch"), render=summary.get("render") if summary is not None else None)
                 sleep(min(POLL_SECONDS, max(0.0, window.release_deadline_epoch - now())))
             while channel.recv_ready():
                 _append_tail(remote_stdout_tail, channel.recv(65536))
             while channel.recv_stderr_ready():
                 _append_tail(remote_stderr_tail, channel.recv_stderr(65536))
             command_code = int(channel.recv_exit_status())
-            summary = _remote_summary(sftp, timeout=min(SSH_TIMEOUT_SECONDS, max(1.0, window.release_deadline_epoch - now())))
+            final_remaining = window.release_deadline_epoch - now()
+            if final_remaining > 0:
+                sftp, summary = _observe_summary(
+                    ssh,
+                    sftp,
+                    timeout=min(SSH_TIMEOUT_SECONDS, final_remaining),
+                    now=now,
+                    window=window,
+                    events=events,
+                    started=started,
+                    phase="final",
+                )
+                summary = summary or {}
+            else:
+                summary = {}
             if command_code != 0:
                 remote_diagnostics = _sanitized_diagnostics(
                     bytes(remote_stderr_tail).decode("utf-8", "replace"),

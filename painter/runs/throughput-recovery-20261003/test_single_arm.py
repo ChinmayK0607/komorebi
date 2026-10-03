@@ -10,6 +10,7 @@ import stat
 import subprocess
 import sys
 import tempfile
+import threading
 import unittest
 from unittest.mock import patch
 
@@ -76,6 +77,135 @@ class FakeAPI:
 class InventoryFailureAPI(FakeAPI):
     def ps(self):
         raise RuntimeError("inventory unavailable")
+
+
+class SummaryChannel:
+    def __init__(self, *, output: bytes = b"", running: bool = False):
+        self.output = output
+        self.running = running
+        self.polls = 0
+        self.closed = False
+
+    def exit_status_ready(self):
+        if self.running:
+            self.polls += 1
+            return self.polls >= 2
+        return True
+
+    def recv_ready(self):
+        return bool(self.output)
+
+    def recv_stderr_ready(self):
+        return False
+
+    def recv(self, _size):
+        value, self.output = self.output, b""
+        return value
+
+    def recv_stderr(self, _size):
+        return b""
+
+    def recv_exit_status(self):
+        return 0
+
+    def close(self):
+        self.closed = True
+
+
+class SummaryStream:
+    def __init__(self, payload: bytes):
+        self.payload = payload
+
+    def seek(self, offset, whence=0):
+        if whence == 2:
+            self.position = len(self.payload) + offset
+        else:
+            self.position = offset
+
+    def tell(self):
+        return getattr(self, "position", 0)
+
+    def read(self):
+        return self.payload
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *_args):
+        return False
+
+
+class SummarySFTP:
+    def __init__(self, contents, *, fail_reads=False, block_reads=False):
+        self.contents = contents
+        self.fail_reads = fail_reads
+        self.block_reads = block_reads
+        self.closed_event = threading.Event()
+        self.closed = False
+
+    def put(self, _local, _remote):
+        return None
+
+    def chmod(self, _remote, _mode):
+        return None
+
+    def open(self, remote, _mode):
+        if self.block_reads:
+            self.closed_event.wait(5.0)
+            raise operator.OperationError("blocked status read cancelled")
+        if self.fail_reads:
+            raise operator.OperationError("bounded status read timed out")
+        for suffix, payload in self.contents.items():
+            if remote.endswith(suffix):
+                return SummaryStream(payload)
+        return SummaryStream(b"{}")
+
+    def close(self):
+        self.closed = True
+        self.closed_event.set()
+
+
+class SummarySSH:
+    def __init__(self, contents, *, block_first_read=False):
+        self.contents = contents
+        self.sftp_calls = 0
+        self.stale = SummarySFTP(contents, fail_reads=not block_first_read, block_reads=block_first_read)
+        self.healthy = SummarySFTP(contents)
+        self.execute_channel = SummaryChannel(running=True)
+        self.closed = False
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *_args):
+        self.close()
+        return False
+
+    def exec_command(self, command, timeout=None):
+        if "nvidia-smi" in command:
+            channel = SummaryChannel(output=b"81920\n81920\n")
+        elif "execute_single.sh" in command:
+            channel = self.execute_channel
+        else:
+            channel = SummaryChannel()
+        return None, type("Stdout", (), {"channel": channel})(), None
+
+    def open_sftp(self):
+        self.sftp_calls += 1
+        return self.stale if self.sftp_calls == 1 else self.healthy
+
+    def close(self):
+        self.closed = True
+
+
+class SummaryAPI(FakeAPI):
+    def __init__(self, contents, *, block_first_read=False):
+        super().__init__()
+        self.ssh = SummarySSH(contents, block_first_read=block_first_read)
+
+    def ssh_connection(self, _pod, timeout):
+        self.timeout = timeout
+        return self.ssh
 
 
 class SingleArmTests(unittest.TestCase):
@@ -226,7 +356,6 @@ class SingleArmTests(unittest.TestCase):
 
     def test_controller_waits_for_absent_config_and_rejects_malformed_config(self):
         valid = {
-            "profile": "rl-throughput-recovery-v1",
             "checkpoint_interval": 1,
             "batch_size": 16,
             "group_size": 4,
@@ -236,19 +365,127 @@ class SingleArmTests(unittest.TestCase):
             "deployment": {"type": "single_node", "gpus_per_node": 2, "num_train_gpus": 1, "num_infer_gpus": 1},
         }
 
-        def summary_for(config_raw):
-            values = [b"{}", b"{}", config_raw, None]
+        def summary_for(config_raw, *, ready=False):
+            preparation = (
+                b'{"schema":"throughput-recovery-single-arm-preparation-v1","profile":"rl-throughput-recovery-v1"}'
+                if ready else b"{}"
+            )
+            values = [b"{}", b"{}", preparation, config_raw, None]
             with patch.object(operator, "_sftp_read", side_effect=values):
                 return operator._remote_summary(object(), timeout=1)
 
         self.assertEqual(summary_for(None)["config"], {})
-        valid_summary = summary_for(json.dumps(valid).encode())
-        self.assertEqual(valid_summary["config"]["profile"], "rl-throughput-recovery-v1")
+        valid_summary = summary_for(json.dumps(valid).encode(), ready=True)
+        self.assertIsNone(valid_summary["config"]["profile"])
         operator._validate_config_summary(valid_summary)
+        wrong_profile = dict(valid_summary, preparation={
+            "schema": "throughput-recovery-single-arm-preparation-v1",
+            "profile": "wrong-profile",
+        })
+        with self.assertRaises(operator.OperationError):
+            operator._validate_config_summary(wrong_profile)
+        malformed_ready = summary_for(b"{not-json", ready=True)
+        with self.assertRaises(operator.OperationError):
+            operator._validate_config_summary(malformed_ready)
         malformed = summary_for(b"{not-json")
         self.assertEqual(malformed["config"], {"_malformed": True})
+        self.assertFalse(malformed["phase_ready"])
         with self.assertRaises(operator.OperationError):
             operator._validate_config_summary(malformed)
+
+    def test_controller_survives_transient_sftp_observation_timeout(self):
+        config = {
+            "checkpoint_interval": 1,
+            "batch_size": 16,
+            "group_size": 4,
+            "initial_inflight": 32,
+            "max_inflight": 32,
+            "activation_cpu_offload": True,
+            "deployment": {"type": "single_node", "gpus_per_node": 2, "num_train_gpus": 1, "num_infer_gpus": 1},
+        }
+        contents = {
+            "supervisor-state.json": b'{"status":"running","completed_optimizer_steps":0}',
+            "terminal-receipt.json": b"{}",
+            "preparation-receipt.json": b'{"schema":"throughput-recovery-single-arm-preparation-v1","profile":"rl-throughput-recovery-v1"}',
+            "rl-config-receipt.json": json.dumps(config).encode(),
+            "metrics.jsonl": b'{"render_queue_seconds":0.1,"render_active_seconds":0.2}\n',
+        }
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            bundle = root / "source.bundle"
+            bundle.write_bytes(b"git bundle fixture")
+            token = root / "token"
+            gateway = root / "gateway.env"
+            token.write_text("opaque-token\n")
+            gateway.write_text("opaque\n")
+            token.chmod(0o600)
+            gateway.chmod(0o600)
+            api = SummaryAPI(contents)
+            window = operator.make_window(
+                pod_id="pod-test",
+                rental_start_epoch=1000.0,
+                price_usd_per_hour=3.8,
+                cap_usd=20.0,
+            )
+            result = operator.operate(
+                window=window,
+                source_bundle=bundle,
+                source_commit="a" * 40,
+                hf_token_file=token,
+                gateway_env_file=gateway,
+                output_root=root / "ops",
+                api=api,
+                now=lambda: 1000.0,
+                sleep=lambda _seconds: None,
+            )
+            self.assertEqual(result, 0)
+            self.assertEqual([pod.id for pod in api.removed], ["pod-test"])
+            events = [json.loads(line) for line in (root / "ops/operations-single.jsonl").read_text().splitlines()]
+            self.assertTrue(any(event["event"] == "observation_error" for event in events))
+            self.assertTrue(any(event["event"] == "observation_recovered" for event in events))
+            self.assertTrue(any(event["event"] == "remote_execute_finished" and event["exit_code"] == 0 for event in events))
+            self.assertFalse(any(event["event"] == "operation_error" for event in events))
+
+    def test_observation_timeout_closes_blocked_sftp_before_retry(self):
+        config = {
+            "checkpoint_interval": 1,
+            "batch_size": 16,
+            "group_size": 4,
+            "initial_inflight": 32,
+            "max_inflight": 32,
+            "activation_cpu_offload": True,
+            "deployment": {"type": "single_node", "gpus_per_node": 2, "num_train_gpus": 1, "num_infer_gpus": 1},
+        }
+        contents = {
+            "supervisor-state.json": b'{"status":"running"}',
+            "terminal-receipt.json": b"{}",
+            "preparation-receipt.json": b'{"schema":"throughput-recovery-single-arm-preparation-v1","profile":"rl-throughput-recovery-v1"}',
+            "rl-config-receipt.json": json.dumps(config).encode(),
+            "metrics.jsonl": b"{}\n",
+        }
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            ssh = SummarySSH(contents, block_first_read=True)
+            stale = ssh.open_sftp()
+            window = operator.make_window(
+                pod_id="pod-test",
+                rental_start_epoch=1000.0,
+                price_usd_per_hour=3.8,
+                cap_usd=20.0,
+            )
+            fresh, summary = operator._observe_summary(
+                ssh,
+                stale,
+                timeout=0.3,
+                now=lambda: 1000.0,
+                window=window,
+                events=root / "events.jsonl",
+                started=1000.0,
+                phase="poll",
+            )
+            self.assertIs(fresh, ssh.healthy)
+            self.assertEqual(summary["preparation"]["profile"], "rl-throughput-recovery-v1")
+            self.assertTrue(ssh.stale.closed)
 
     def test_wrappers_keep_matched_panel_renderer_and_four_update_bindings(self):
         execute = (RUN / "execute_single.sh").read_text()
@@ -430,6 +667,14 @@ class SingleArmTests(unittest.TestCase):
             )
             self.assertTrue((root / "source-identity.json").is_file())
             self.assertTrue((root / "renderer-receipt.json").is_file())
+            config_receipt = (root / "rl-config-receipt.json").read_bytes()
+            self.assertNotIn("profile", json.loads(config_receipt))
+            with patch.object(operator, "_sftp_read", side_effect=[
+                b"{}", b"{}", (root / "preparation-receipt.json").read_bytes(), config_receipt, None
+            ]):
+                summary = operator._remote_summary(object(), timeout=1)
+            self.assertTrue(summary["phase_ready"])
+            operator._validate_config_summary(summary)
 
 
 if __name__ == "__main__":
