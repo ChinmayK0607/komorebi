@@ -2,9 +2,19 @@
   "schema": "painter-prime-source-staging-v1",
   "source_repo": "https://github.com/PrimeIntellect-ai/prime-rl.git",
   "revision": "26b3131d2716a4f8210b165df584b83b4bc54f61",
-  "bundle_bytes": 7027218,
-  "bundle_sha256": "044c9c7acf599674947c5b5242fa82377ca4b05ec1afad6bc498cf111a9cb79a",
-  "strategy": "Stage clean official pinned Git bundle before unchanged node bootstrap; restore official origin for pinned fetch/submodules. Excludes local changes.",
-  "measurement": "bundle prepared, next-rental clone time unmeasured",
-  "purpose": "avoid downloading full repository history during paid preparation"
+  "bundle_bytes": 18183769,
+  "bundle_sha256": "64b035e176df1aa850280f9bcdad5cedef8108636b59a5c29f2af8b014cf3dbe",
+  "is_shallow": false,
+  "checks": [
+    "clean clone and exact pinned checkout",
+    "git fsck --full --no-dangling",
+    "actual official-origin fetch of pinned revision"
+  ],
+  "scope": "source metadata operations only, no rendering or ML",
+  "prior_failed_bundle": {
+    "bytes": 7027218,
+    "sha256": "044c9c7acf599674947c5b5242fa82377ca4b05ec1afad6bc498cf111a9cb79a",
+    "failure": "shallow boundary metadata lost; missing parent prevented bootstrap fetch"
+  },
+  "strategy": "Prestage complete reviewed official source bundle; retain official origin for pinned fetch/submodules."
 }

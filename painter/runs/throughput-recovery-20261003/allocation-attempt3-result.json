@@ -1,0 +1,29 @@
+{
+  "schema": "painter-rental-attempt-result-v1",
+  "status": "failed-before-training-node-released",
+  "source_commit": "b5fe079decce8fc45007c8ac74461a748f2f9a32",
+  "optimizer_updates": 0,
+  "checkpoint_count": 0,
+  "failure": "Parent-staged Prime Git bundle came from shallow checkout without preserving the shallow boundary; unchanged bootstrap fetch could not traverse missing parent object. Source staging error, configuration handoff not reached.",
+  "error_evidence": [
+    "Could not read ad3134ac032cc9b4358a94e64ea2325736a5c584",
+    "Failed to traverse parents of commit 4dcf86f0ea797db76d29d83601c6ac5939803007"
+  ],
+  "rental_clock_estimate": {
+    "seconds": 133.8,
+    "usd": 0.1412,
+    "whole_node_usd_hour": 3.8,
+    "basis": "request to release-event localmtime, not invoice"
+  },
+  "release": {
+    "exact_target_absent": true,
+    "active_pods": 0
+  },
+  "evidence_publication": "archive exit2, no public completion proof; sanitized controller diagnostics retained, no generated training/evaluation artifacts existed",
+  "censored": [
+    "training",
+    "evaluation",
+    "utilization measurement"
+  ],
+  "next_decision": "Use complete official Prime history, verify object integrity and actual pinned fetch before staging or allocating. Remaining pilotcap18.75 with1.25reserve."
+}
