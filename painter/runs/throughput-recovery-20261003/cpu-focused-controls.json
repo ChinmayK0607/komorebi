@@ -1,0 +1,41 @@
+{
+  "schema": "cpu-renderer-controls-v1",
+  "rows": [
+    {
+      "id": "control-01",
+      "program_path": "control-01.js",
+      "program_sha256": "6d9b02454f77913d58534af606d932aa98883c14e9965856bc2ef448e7a332d6",
+      "kind": "valid",
+      "saved_elapsed_seconds": 6.165,
+      "saved_valid": true,
+      "source_archive_revision": "b7aa7cfcc1353fdbd5c403e37dea4f83eb6624c6",
+      "source_archive_sha256": "5928a75e9766cc8f96667c4249db59801ba6c4516007f88d642e7e7afadbe3cc",
+      "source_archive_member": "rl-rollouts/training/t600-570/f7710e8b-ac3c-446a-8832-b98bacfc1dcc/turn-3/program.js"
+    },
+    {
+      "id": "control-07",
+      "program_path": "control-07.js",
+      "program_sha256": "bb1b439e0c67948d011ca47e7374d13a2ccbaeebd28b035d785768fff265927b",
+      "kind": "invalid",
+      "saved_elapsed_seconds": 15.095,
+      "saved_valid": false,
+      "source_archive_revision": "b7aa7cfcc1353fdbd5c403e37dea4f83eb6624c6",
+      "source_archive_sha256": "5928a75e9766cc8f96667c4249db59801ba6c4516007f88d642e7e7afadbe3cc",
+      "source_archive_member": "rl-rollouts/training/t600-437/8817c4b5-b18b-4793-b540-b233f1ec6e8a/turn-1/program.js"
+    },
+    {
+      "id": "control-08",
+      "program_path": "control-08.js",
+      "program_sha256": "6888ad7a54293123656a060f1beb1d472518ddd5a03954973cf319ec0dbad91e",
+      "kind": "slow_cancel",
+      "saved_elapsed_seconds": 180.035,
+      "saved_valid": false,
+      "source_archive_revision": "b7aa7cfcc1353fdbd5c403e37dea4f83eb6624c6",
+      "source_archive_sha256": "5928a75e9766cc8f96667c4249db59801ba6c4516007f88d642e7e7afadbe3cc",
+      "source_archive_member": "rl-rollouts/training/t600-524/99e3d2ef-f74e-4cf3-bb34-09e2938273ab/turn-1/program.js"
+    }
+  ],
+  "seed": 0,
+  "programs_unchanged": true,
+  "parent_manifest_sha256": "14971aa431151a1a7ea367b54a622cee894c63bcdf31f5eb7fc89724b49c8f0d"
+}

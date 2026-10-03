@@ -1,0 +1,38 @@
+{
+  "schema": "renderer-cli-repair-review-v1",
+  "status": "reviewed-local-dummy-checks-linux-chrome-retest-pending",
+  "derivative_sha256": "374296922790f02e3ba42ee16930488dbf61a686a3cee18c1e74f55d8826d3a7",
+  "frozen_renderer_sha256": "6181fb904a0c5dcd580f5c3cb01eaf341a14b7a15479e811d99ebb10b70bc841",
+  "changes": [
+    "single-output CLI calls render on main thread",
+    "snapshot and stop independently sessioned owned browser descendants",
+    "one shared TERM grace then KILL and verify all observed groups stopped",
+    "batch registry retained during cleanup and repeated-signal guard"
+  ],
+  "local_validation": {
+    "test_cases": 14,
+    "skips": 2,
+    "rendering_performed": false
+  },
+  "focused_linux_scope": {
+    "controls": [
+      "control-01",
+      "control-07",
+      "control-08"
+    ],
+    "repeats": 1,
+    "pool_width": 1,
+    "timeout_seconds": 180,
+    "total_limit_seconds": 240,
+    "cancel_after_seconds": 15,
+    "cleanup_grace_seconds": 3
+  },
+  "required_linux_result": [
+    "control-01 PNG matches baseline",
+    "expected invalid receipt preserved",
+    "actual worker and Chromium observed",
+    "normal CLI exit143 without profiler SIGKILL",
+    "all observed owned groups dead within native3second grace"
+  ],
+  "gpu_allocated": false
+}

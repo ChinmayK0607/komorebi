@@ -8,6 +8,7 @@ cancelled native render can clean up a nested browser process safely.
 
 from __future__ import annotations
 
+import argparse
 import importlib.util
 import json
 import os
@@ -42,6 +43,14 @@ WORKER_CLEANUP_GRACE_SECONDS = 2.0
 class _OwnedProcessGroup:
     pgid: int
     sid: int
+    anchor_pids: tuple[int, ...] = ()
+
+
+_BATCH_REGISTRY_LOCK = threading.RLock()
+_BATCH_REGISTRY: dict[int, tuple[subprocess.Popen, _OwnedProcessGroup | None]] = {}
+_BATCH_MODE = False
+_BATCH_CANCELLED = threading.Event()
+_BATCH_CLEANUP_STARTED = False
 
 
 def _record_owned_process_group(process: subprocess.Popen) -> _OwnedProcessGroup | None:
@@ -52,7 +61,61 @@ def _record_owned_process_group(process: subprocess.Popen) -> _OwnedProcessGroup
         return None
     if pgid != process.pid or sid != process.pid:
         return None
-    return _OwnedProcessGroup(pgid=pgid, sid=sid)
+    return _OwnedProcessGroup(pgid=pgid, sid=sid, anchor_pids=(process.pid,))
+
+
+def _proc_snapshot() -> dict[int, tuple[int, int, int, str]]:
+    """Return pid -> (ppid, process-group, session, state) for live /proc rows."""
+    root = Path("/proc")
+    if not root.is_dir():
+        return {}
+    snapshot: dict[int, tuple[int, int, int, str]] = {}
+    for entry in root.iterdir():
+        if not entry.name.isdigit():
+            continue
+        try:
+            value = (entry / "stat").read_text()
+            prefix, fields = value.rsplit(") ", 1)
+            pid = int(prefix.split("(", 1)[0])
+            columns = fields.split()
+            # After comm: state=0, ppid=1, pgrp=2, session=3.
+            state = columns[0]
+            if state in {"Z", "X"}:
+                continue
+            snapshot[pid] = (int(columns[1]), int(columns[2]), int(columns[3]), state)
+        except (FileNotFoundError, PermissionError, OSError, ValueError, IndexError):
+            continue
+    return snapshot
+
+
+def _discover_owned_process_groups(
+    process: subprocess.Popen,
+    identity: _OwnedProcessGroup | None,
+) -> tuple[_OwnedProcessGroup, ...]:
+    """Capture descendant sessions before cleanup, including fresh browser sessions."""
+    if identity is None:
+        return ()
+    snapshot = _proc_snapshot()
+    descendants = {process.pid}
+    pending = [process.pid]
+    while pending:
+        parent = pending.pop()
+        for pid, (ppid, _pgid, _sid, _state) in snapshot.items():
+            if ppid == parent and pid not in descendants:
+                descendants.add(pid)
+                pending.append(pid)
+    groups: dict[tuple[int, int], set[int]] = {(identity.pgid, identity.sid): {process.pid}}
+    for pid in descendants:
+        row = snapshot.get(pid)
+        if row is None:
+            continue
+        _ppid, pgid, sid, _state = row
+        groups.setdefault((pgid, sid), set()).add(pid)
+    ordered = sorted(groups.items(), key=lambda item: item[0] == (identity.pgid, identity.sid))
+    return tuple(
+        _OwnedProcessGroup(pgid=pgid, sid=sid, anchor_pids=tuple(sorted(anchors)))
+        for (pgid, sid), anchors in ordered
+    )
 
 
 def _session_has_member(identity: _OwnedProcessGroup) -> bool:
@@ -129,16 +192,30 @@ def _signal_owned_process(
     identity: _OwnedProcessGroup | None,
 ) -> bool:
     group = _owned_process_group(process, identity)
-    if group is not None:
-        try:
-            os.killpg(group, signum)
-            return True
-        except (ProcessLookupError, PermissionError, OSError):
-            return False
+    if group is not None and identity is not None:
+        return _signal_owned_group(identity, signum)
     if process.poll() is not None:
         return False
     try:
         process.send_signal(signum)
+        return True
+    except (ProcessLookupError, PermissionError, OSError):
+        return False
+
+
+def _signal_owned_group(identity: _OwnedProcessGroup, signum: int) -> bool:
+    snapshot = _proc_snapshot()
+    if snapshot:
+        owned_anchor = any(
+            pid in snapshot and snapshot[pid][1:3] == (identity.pgid, identity.sid)
+            for pid in identity.anchor_pids
+        )
+        if not owned_anchor:
+            return False
+    elif not _session_has_member(identity):
+        return False
+    try:
+        os.killpg(identity.pgid, signum)
         return True
     except (ProcessLookupError, PermissionError, OSError):
         return False
@@ -161,27 +238,140 @@ def _terminate_owned_process(
 ) -> None:
     """Escalate cleanup while retaining ownership proof and slot lifetime."""
 
-    if process.poll() is not None and not (identity and _session_has_member(identity)):
+    _terminate_owned_processes(((process, identity),), grace=grace)
+
+
+def _terminate_owned_processes(
+    processes: tuple[tuple[subprocess.Popen, _OwnedProcessGroup | None], ...],
+    *,
+    grace: float = WORKER_CLEANUP_GRACE_SECONDS,
+) -> None:
+    """Signal all observed owned sessions under one shared bounded grace."""
+    groups_by_key: dict[tuple[int, int], set[int]] = {}
+    for process, identity in processes:
+        for group in _discover_owned_process_groups(process, identity):
+            groups_by_key.setdefault((group.pgid, group.sid), set()).update(group.anchor_pids)
+    groups = tuple(
+        _OwnedProcessGroup(pgid, sid, tuple(sorted(anchors)))
+        for (pgid, sid), anchors in groups_by_key.items()
+    )
+    if not groups and all(process.poll() is not None for process, _identity in processes):
         return
-    _signal_owned_process(process, signal.SIGTERM, identity)
-    try:
-        process.wait(timeout=grace)
-    except subprocess.TimeoutExpired:
-        pass
-    if identity and _wait_for_group_exit(identity, grace):
-        return
-    _signal_owned_process(process, signal.SIGKILL, identity)
-    try:
-        process.wait(timeout=grace)
-    except subprocess.TimeoutExpired:
-        # A final blocking reap is intentional: if the OS cannot reap an
-        # owned child after SIGKILL, this worker stays blocked and its native
-        # semaphore slot is retained instead of reporting normal completion.
-        try:
+    deadline = time.monotonic() + grace
+    for group in groups:
+        _signal_owned_group(group, signal.SIGTERM)
+    for process, _identity in processes:
+        if not groups and process.poll() is None:
+            process.send_signal(signal.SIGTERM)
+    while True:
+        process_done = all(process.poll() is not None for process, _identity in processes)
+        groups_done = all(not _session_has_member(group) for group in groups)
+        if process_done and groups_done:
+            return
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            break
+        time.sleep(min(0.05, remaining))
+    for group in groups:
+        if _session_has_member(group):
+            _signal_owned_group(group, signal.SIGKILL)
+    for process, _identity in processes:
+        if process.poll() is None and not groups:
             process.kill()
-        except ProcessLookupError:
-            pass
-        process.wait()
+    kill_deadline = time.monotonic() + max(0.1, grace * 0.25)
+    while True:
+        process_done = all(process.poll() is not None for process, _identity in processes)
+        groups_done = all(not _session_has_member(group) for group in groups)
+        if process_done and groups_done:
+            return
+        remaining = kill_deadline - time.monotonic()
+        if remaining <= 0:
+            break
+        time.sleep(min(0.05, remaining))
+    for process, _identity in processes:
+        if process.poll() is None:
+            try:
+                process.kill()
+            except ProcessLookupError:
+                pass
+            process.wait()
+    if any(_session_has_member(group) for group in groups):
+        raise RuntimeError("owned renderer process group survived bounded cleanup")
+
+
+def _register_batch_process(process: subprocess.Popen, identity: _OwnedProcessGroup | None) -> bool:
+    with _BATCH_REGISTRY_LOCK:
+        if not _BATCH_MODE:
+            return True
+        if _BATCH_CANCELLED.is_set():
+            return False
+        _BATCH_REGISTRY[process.pid] = (process, identity)
+        return True
+
+
+def _unregister_batch_process(process: subprocess.Popen) -> None:
+    with _BATCH_REGISTRY_LOCK:
+        _BATCH_REGISTRY.pop(process.pid, None)
+
+
+def _cleanup_batch_on_sigterm(signum: int, _frame: object) -> None:
+    global _BATCH_CLEANUP_STARTED
+    _BATCH_CANCELLED.set()
+    with _BATCH_REGISTRY_LOCK:
+        if _BATCH_CLEANUP_STARTED:
+            return
+        _BATCH_CLEANUP_STARTED = True
+        active = tuple(_BATCH_REGISTRY.values())
+    try:
+        _terminate_owned_processes(active, grace=WORKER_CLEANUP_GRACE_SECONDS)
+    except BaseException:
+        # The main process still exits with the signal status.  Each worker's
+        # finally block retries bounded cleanup and reaps it.
+        pass
+    raise SystemExit(128 + signum)
+
+
+def _cli_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description=_BASE.__doc__)
+    parser.add_argument("sources", nargs="+", type=Path)
+    parser.add_argument("--output", type=Path)
+    parser.add_argument("--output-dir", type=Path)
+    parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument("--timeout", type=float, default=90)
+    parser.add_argument("--workers", type=int, default=2)
+    parser.add_argument("--telemetry", action="store_true", help="Opt in to runtime diagnostics; never enables an efficiency reward")
+    parser.add_argument("--backend", choices=["swiftshader", "metal"], help="Explicit ANGLE backend; defaults to BRUSH_RENDER_BACKEND or swiftshader")
+    parser.add_argument("--worker", action="store_true", help=argparse.SUPPRESS)
+    return parser
+
+
+def _run_single_cli(args: argparse.Namespace, parser: argparse.ArgumentParser) -> None:
+    if not 1 <= args.workers <= 16 or not 1 <= args.timeout <= 180:
+        parser.error("Use 1..16 workers and a 1..180 second deadline")
+    if bool(args.output) == bool(args.output_dir) or (args.output and len(args.sources) != 1):
+        parser.error("Use --output for one source or --output-dir for a batch")
+    result = render(args.sources[0], args.output, args.seed, args.timeout, args.telemetry, args.backend)
+    print(json.dumps([result], indent=2))
+    if not result["valid"]:
+        raise SystemExit(1)
+
+
+def _run_batch_cli() -> None:
+    global _BATCH_CLEANUP_STARTED, _BATCH_MODE
+    _BATCH_CANCELLED.clear()
+    with _BATCH_REGISTRY_LOCK:
+        _BATCH_MODE = True
+    previous_sigterm = signal.signal(signal.SIGTERM, _cleanup_batch_on_sigterm)
+    try:
+        _BASE.render = render
+        _BASE.main()
+    finally:
+        signal.signal(signal.SIGTERM, previous_sigterm)
+        with _BATCH_REGISTRY_LOCK:
+            _BATCH_MODE = False
+            _BATCH_CLEANUP_STARTED = False
+            _BATCH_REGISTRY.clear()
+        _BATCH_CANCELLED.clear()
 
 
 def render(source, output, seed=0, timeout=90, telemetry=False, backend=None):
@@ -270,10 +460,18 @@ def render(source, output, seed=0, timeout=90, telemetry=False, backend=None):
                     start_new_session=True,
                 )
                 identity = _record_owned_process_group(process)
+                registered = _register_batch_process(process, identity)
                 try:
-                    code = process.wait(timeout=timeout)
+                    if not registered:
+                        _terminate_owned_process(process, identity)
+                        result.update(error="Batch cancellation requested", error_code="render_cancelled")
+                        code = None
+                    else:
+                        code = process.wait(timeout=timeout)
                     metadata = scratch / "image.json"
-                    if code == 0 and metadata.exists():
+                    if not registered:
+                        pass
+                    elif code == 0 and metadata.exists():
                         result.update(json.loads(metadata.read_text()))
                         if (scratch / "image.png").exists():
                             output.write_bytes((scratch / "image.png").read_bytes())
@@ -286,7 +484,10 @@ def render(source, output, seed=0, timeout=90, telemetry=False, backend=None):
                     result.update(timed_out=True, error_code="render_timeout")
             finally:
                 if process is not None:
-                    _terminate_owned_process(process, identity)
+                    try:
+                        _terminate_owned_process(process, identity)
+                    finally:
+                        _unregister_batch_process(process)
                 if install_handler:
                     signal.signal(signal.SIGTERM, previous_sigterm)
     result["elapsed_seconds"] = round(time.monotonic() - started, 3)
@@ -296,7 +497,16 @@ def render(source, output, seed=0, timeout=90, telemetry=False, backend=None):
 
 def main():
     _BASE.render = render
-    _BASE.main()
+    argv = sys.argv[1:]
+    if "--worker" in argv or "--help" in argv or "-h" in argv:
+        _BASE.main()
+        return
+    parser = _cli_parser()
+    args = parser.parse_args(argv)
+    if args.output is not None and args.output_dir is None and len(args.sources) == 1:
+        _run_single_cli(args, parser)
+        return
+    _run_batch_cli()
 
 
 if __name__ == "__main__":

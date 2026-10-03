@@ -33,7 +33,7 @@ DEFAULT_OUTPUT_ROOT = (
 )
 CANCELLABLE_RENDERER_SOURCE = REPOSITORY_ROOT / "painter/cancellable_watercolour_renderer.py"
 CANCELLABLE_RENDERER_RUNTIME_ID = "watercolour-cancellable-v1"
-CANCELLABLE_RENDERER_SHA256 = "c25f837bad1dddeb63be9043328c964f0f9db78eec887e97a3df703e980d752e"
+CANCELLABLE_RENDERER_SHA256 = "374296922790f02e3ba42ee16930488dbf61a686a3cee18c1e74f55d8826d3a7"
 
 # These are the complete frozen inputs copied by this helper.  Keeping the
 # list explicit makes an unexpected upstream file or silently added asset a

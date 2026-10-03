@@ -216,6 +216,75 @@ class CancellableRendererProcessTests(unittest.TestCase):
             child_pid = self._wait_for_pid(marker)
             self._wait_dead(child_pid)
 
+    def _cli_surrogate_launcher(self) -> str:
+        driver_code = (
+            "import pathlib, subprocess, sys, time\n"
+            "marker=pathlib.Path(sys.argv[1])\n"
+            "browser=subprocess.Popen([sys.executable, '-c', 'import time; time.sleep(30)'], start_new_session=True)\n"
+            "marker.write_text(str(browser.pid))\n"
+            "time.sleep(30)\n"
+        )
+        controller_code = (
+            "import pathlib, subprocess, sys, time\n"
+            "marker=pathlib.Path(sys.argv[1])\n"
+            f"driver_code={driver_code!r}\n"
+            "driver=subprocess.Popen([sys.executable, '-c', driver_code, str(marker.with_suffix('.browser'))], start_new_session=True)\n"
+            "marker.write_text(str(driver.pid))\n"
+            "time.sleep(30)\n"
+        )
+        compile(controller_code, "<cancellable-cli-controller>", "exec")
+        return (
+            "import pathlib, subprocess, sys\n"
+            "from painter import cancellable_watercolour_renderer as renderer\n"
+            f"real_popen=renderer.subprocess.Popen\ncontroller_code={controller_code!r}\n"
+            "def fake_popen(_command, **_kwargs):\n"
+            "    return real_popen([sys.executable, '-c', controller_code, sys.argv[1]], start_new_session=True)\n"
+            "renderer.subprocess.Popen=fake_popen\n"
+            "sys.argv=[str(pathlib.Path(renderer.__file__)), sys.argv[2], '--output', sys.argv[3], '--timeout', '30']\n"
+            "renderer.main()\n"
+        )
+
+    def test_cli_surrogate_snippets_compile(self):
+        compile(self._cli_surrogate_launcher(), "<cancellable-cli-launcher>", "exec")
+
+    @unittest.skipUnless(Path("/proc").is_dir(), "independent session lifecycle requires Linux /proc")
+    def test_normal_cli_single_input_forwards_sigterm_to_independent_browser_session(self):
+        """The real CLI single-input path must clean worker, driver, and browser sessions."""
+        launcher_code = self._cli_surrogate_launcher()
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            source = root / "control.js"
+            source.write_text("function setup(){createCanvas(600,600)}\n")
+            marker = root / "worker.pid"
+            browser_marker = marker.with_suffix(".browser")
+            output = root / "out.png"
+            unrelated = subprocess.Popen(
+                [sys.executable, "-c", "import time; time.sleep(30)"],
+                start_new_session=True,
+            )
+            controller = None
+            try:
+                controller = subprocess.Popen(
+                    [sys.executable, "-c", launcher_code, str(marker), str(source), str(output)],
+                    cwd=Path(__file__).resolve().parents[1],
+                    start_new_session=True,
+                )
+                driver_pid = self._wait_for_pid(marker)
+                browser_pid = self._wait_for_pid(browser_marker)
+                controller.send_signal(signal.SIGTERM)
+                self.assertEqual(controller.wait(timeout=8), 143)
+                self._wait_dead(driver_pid)
+                self._wait_dead(browser_pid)
+                self.assertTrue(self._pid_live(unrelated.pid))
+            finally:
+                if controller is not None and controller.poll() is None:
+                    controller.kill()
+                if controller is not None:
+                    controller.wait()
+                if unrelated.poll() is None:
+                    unrelated.terminate()
+                unrelated.wait()
+
 
 if __name__ == "__main__":
     unittest.main()

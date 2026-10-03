@@ -1,6 +1,6 @@
 {
   "schema": "cpu-recovery-measured-result-v1",
-  "source_commit": null,
+  "source_commit": "3f7f4cfe57fb02fdc2adbae87480c4ebaa989aa1",
   "profile_revision": "23da1bec7ac240c85fca40d3a093b13a3815099c",
   "profile_path": "runs/throughput-recovery-20261003/cpu-cloud-v2/profile.json",
   "profile_sha256": "5e5f46b10d1acfc219143a549c201ef66eb2755ee90ee03d7b1a548ef3d46a07",
