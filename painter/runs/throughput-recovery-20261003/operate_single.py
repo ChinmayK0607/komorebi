@@ -32,6 +32,12 @@ REMOTE_RUN = REMOTE_REPO / "painter/runs/throughput-recovery-20261003"
 REMOTE_TOKEN = REMOTE_ROOT / "private/hf-token"
 REMOTE_GATEWAY = REMOTE_ROOT / "private/gateway.env"
 REMOTE_BUNDLE = REMOTE_ROOT / "source.bundle"
+REMOTE_JOB_DIR = REMOTE_ROOT / "private"
+REMOTE_JOB_START = REMOTE_JOB_DIR / "throughput-recovery-remote-job-start.json"
+REMOTE_JOB_PID = REMOTE_JOB_DIR / "throughput-recovery-remote-job.pid"
+REMOTE_JOB_EXIT = REMOTE_JOB_DIR / "throughput-recovery-remote-job-exit.json"
+REMOTE_JOB_STDOUT = REMOTE_JOB_DIR / "throughput-recovery-remote-job.stdout.log"
+REMOTE_JOB_STDERR = REMOTE_JOB_DIR / "throughput-recovery-remote-job.stderr.log"
 POD_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
 COMMIT_RE = re.compile(r"^[0-9a-fA-F]{40,64}$")
 MIN_GPU_MEMORY_MIB = 80_000
@@ -289,6 +295,49 @@ def _source_checkout_command(source_bundle: str, repo: str, source_commit: str) 
     ).format(target=target, bundle=bundle, commit=checkout)
 
 
+def _detached_job_command(*, source_commit: str, rental_start_epoch: float, price_usd_per_hour: float, cap_usd: float) -> str:
+    """Start execute_single in a new session with durable exit evidence."""
+    env = " ".join(
+        f"{key}={shlex.quote(value)}"
+        for key, value in {
+            "PAINTER_SOURCE_COMMIT": source_commit,
+            "PAINTER_NODE_ROOT": str(REMOTE_ROOT),
+            "HF_TOKEN_PATH": str(REMOTE_TOKEN),
+            "PAINTER_GATEWAY_ENV_FILE": str(REMOTE_GATEWAY),
+            "PAINTER_GPUS_PER_NODE": "2",
+            "PAINTER_NUM_TRAIN_GPUS": "1",
+            "PAINTER_NUM_INFER_GPUS": "1",
+        }.items()
+    )
+    execute = shlex.quote(str(REMOTE_RUN / "execute_single.sh"))
+    args = " ".join(shlex.quote(str(value)) for value in (rental_start_epoch, price_usd_per_hour, cap_usd))
+    exit_tmp = shlex.quote(str(REMOTE_JOB_EXIT) + ".tmp")
+    inner = (
+        f"set +e; env {env} bash {execute} {args} >{shlex.quote(str(REMOTE_JOB_STDOUT))} "
+        f"2>{shlex.quote(str(REMOTE_JOB_STDERR))}; rc=$?; "
+        f"printf '{{\"schema\":\"throughput-recovery-remote-job-v1\",\"exit_code\":%s}}\\n' \"$rc\" >{exit_tmp}; "
+        f"mv -f {exit_tmp} {shlex.quote(str(REMOTE_JOB_EXIT))}; exit \"$rc\""
+    )
+    return (
+        "set -Eeuo pipefail; "
+        f"rm -f {shlex.quote(str(REMOTE_JOB_START))} {shlex.quote(str(REMOTE_JOB_PID))} "
+        f"{shlex.quote(str(REMOTE_JOB_EXIT))} {exit_tmp}; "
+        f"nohup setsid bash -c {shlex.quote(inner)} </dev/null >/dev/null 2>&1 & pid=$!; "
+        f"printf '%s\\n' \"$pid\" >{shlex.quote(str(REMOTE_JOB_PID))}; "
+        f"printf '%s\\n' '{{\"schema\":\"throughput-recovery-remote-job-v1\",\"status\":\"started\"}}' >{shlex.quote(str(REMOTE_JOB_START))}"
+    )
+
+
+def _detached_stop_command() -> str:
+    pid = shlex.quote(str(REMOTE_JOB_PID))
+    return (
+        "set -Eeuo pipefail; "
+        f"if test -s {pid}; then p=$(cat {pid}); case \"$p\" in "
+        "(*[!0-9]*|'') exit 0;; esac; "
+        "kill -TERM -- -$p 2>/dev/null || kill -TERM $p 2>/dev/null || true; fi"
+    )
+
+
 def _json_bytes(raw: bytes | None) -> dict[str, Any] | None:
     if raw is None:
         return None
@@ -353,6 +402,8 @@ def _remote_summary(sftp: Any, *, timeout: float) -> dict[str, Any]:
 
     state = _json_bytes(read(str(REMOTE_RUN / "supervisor-state.json"))) or {}
     receipt = _json_bytes(read(str(REMOTE_RUN / "terminal-receipt.json"))) or {}
+    job_start = _json_bytes(read(str(REMOTE_JOB_START))) or {}
+    job_exit = _json_bytes(read(str(REMOTE_JOB_EXIT))) or {}
     preparation_raw = read(str(REMOTE_RUN / "preparation-receipt.json"))
     preparation = _json_bytes(preparation_raw)
     config_raw = read(str(REMOTE_RUN / "rl-config-receipt.json"))
@@ -369,6 +420,10 @@ def _remote_summary(sftp: Any, *, timeout: float) -> dict[str, Any]:
     }
     metrics = read(str(REMOTE_RUN / f"async-output/{RUN_NAME}/monitors/file/metrics.jsonl"))
     return {
+        "job": {
+            "started": job_start.get("status") == "started",
+            "exit_code": job_exit.get("exit_code") if isinstance(job_exit.get("exit_code"), int) and not isinstance(job_exit.get("exit_code"), bool) else None,
+        },
         "state": {key: state.get(key) for key in ("status", "reason", "completed_optimizer_steps", "last_optimizer_step", "last_admitted_batch", "max_updates")},
         "terminal": {key: receipt.get(key) for key in ("status", "pipeline_exit_code", "archive_exit_code", "public_archive_hash_verified", "checkpoint_step")},
         "config": config_summary,
@@ -521,6 +576,7 @@ def operate(*, window: RentalWindow, source_bundle: Path, source_commit: str, hf
     remote_diagnostics: list[str] = []
     remote_stdout_tail = bytearray()
     remote_stderr_tail = bytearray()
+    extra_ssh_contexts: list[Any] = []
     try:
         _remaining(window, now)
         pod = _bounded_call(
@@ -553,31 +609,95 @@ def operate(*, window: RentalWindow, source_bundle: Path, source_commit: str, hf
                 raise OperationError("remote GPU inventory is not exactly two 80GB-class devices")
             _safe_event(events, "source_and_gpu_verified", started, source_commit=source_commit, gpu_count=len(memories), gpu_memory_min_mib=min(memories))
 
-            command = "exec env PAINTER_SOURCE_COMMIT=%s PAINTER_NODE_ROOT=/root/painter HF_TOKEN_PATH=/root/painter/private/hf-token PAINTER_GATEWAY_ENV_FILE=/root/painter/private/gateway.env PAINTER_GPUS_PER_NODE=2 PAINTER_NUM_TRAIN_GPUS=1 PAINTER_NUM_INFER_GPUS=1 bash /root/painter/repo/painter/runs/throughput-recovery-20261003/execute_single.sh %s %s %s" % (
-                shlex.quote(source_commit),
-                shlex.quote(str(window.rental_start_epoch)),
-                shlex.quote(str(window.price_usd_per_hour)),
-                shlex.quote(str(window.cap_usd)),
+            def reconnect(deadline_window: RentalWindow = window) -> Any:
+                context = _bounded_call(
+                    lambda: api.ssh_connection(pod, timeout=min(30.0, _remaining(deadline_window, now))),
+                    min(30.0, _remaining(deadline_window, now)),
+                )
+                reopened = _bounded_call(
+                    context.__enter__,
+                    min(30.0, _remaining(deadline_window, now)),
+                )
+                extra_ssh_contexts.append(context)
+                _safe_event(events, "remote_transport_reconnected", started)
+                return reopened
+
+            command = _detached_job_command(
+                source_commit=source_commit,
+                rental_start_epoch=window.rental_start_epoch,
+                price_usd_per_hour=window.price_usd_per_hour,
+                cap_usd=window.cap_usd,
             )
-            _stdin, stdout, _stderr = ssh.exec_command(command, timeout=SSH_TIMEOUT_SECONDS)
-            channel = stdout.channel
-            remote_stdout_tail = bytearray()
-            remote_stderr_tail = bytearray()
-            _safe_event(events, "remote_execute_started", started)
+            active_ssh = ssh
+            launch_code = -1
+            launch_stdout = ""
+            launch_stderr = ""
+            launch_ambiguous = False
+            try:
+                launch_code, launch_stdout, launch_stderr = _remote_exec_capture(
+                    ssh,
+                    command,
+                    timeout=min(SSH_TIMEOUT_SECONDS, _remaining(window, now)),
+                    now=now,
+                    window=window,
+                )
+            except Exception as exc:
+                # The remote command may have forked the durable job before
+                # its SSH wrapper disconnected. Never retry the launch: read
+                # the start/exit receipts after reconnecting instead.
+                launch_ambiguous = True
+                _safe_event(events, "remote_launch_ambiguous", started, error_type=type(exc).__name__)
+            if launch_code not in {0, -1}:
+                remote_diagnostics = _sanitized_diagnostics(
+                    launch_stderr,
+                    launch_stdout,
+                    forbidden=(window.pod_id,),
+                    labels=("stderr", "stdout"),
+                )
+                raise OperationError("remote finite job could not be started")
+            if launch_code == -1 and not launch_ambiguous:
+                _safe_event(events, "remote_transport_dropped", started, phase="launch")
+            _safe_event(events, "remote_execute_started", started, detached=True, launch_ambiguous=launch_ambiguous)
             checked_config = False
-            while not channel.exit_status_ready():
-                if channel.recv_ready():
-                    _append_tail(remote_stdout_tail, channel.recv(65536))
-                if channel.recv_stderr_ready():
-                    _append_tail(remote_stderr_tail, channel.recv_stderr(65536))
+            summary: dict[str, Any] = {}
+
+            while True:
                 current = now()
                 if current >= window.release_deadline_epoch:
+                    stop_window = RentalWindow(
+                        pod_id=window.pod_id,
+                        rental_start_epoch=window.rental_start_epoch,
+                        price_usd_per_hour=window.price_usd_per_hour,
+                        cap_usd=window.cap_usd,
+                        release_margin_seconds=0.0,
+                    )
+                    stop_sent = False
                     try:
-                        channel.close()
-                    finally:
-                        raise OperationError("remote execute reached the finite release deadline")
+                        _remote_exec(
+                            active_ssh,
+                            _detached_stop_command(),
+                            timeout=min(SSH_TIMEOUT_SECONDS, max(1.0, stop_window.rental_deadline_epoch - now())),
+                            now=now,
+                            window=stop_window,
+                        )
+                        stop_sent = True
+                    except BaseException:
+                        try:
+                            active_ssh = reconnect(stop_window)
+                            _remote_exec(
+                                active_ssh,
+                                _detached_stop_command(),
+                                timeout=min(SSH_TIMEOUT_SECONDS, max(1.0, stop_window.rental_deadline_epoch - now())),
+                                now=now,
+                                window=stop_window,
+                            )
+                            stop_sent = True
+                        except BaseException:
+                            pass
+                    _safe_event(events, "remote_hard_deadline_action", started, stop_sent=stop_sent)
+                    raise OperationError("remote execute reached the finite release deadline")
                 sftp, summary = _observe_summary(
-                    ssh,
+                    active_ssh,
                     sftp,
                     timeout=min(SSH_TIMEOUT_SECONDS, window.release_deadline_epoch - current),
                     now=now,
@@ -586,6 +706,23 @@ def operate(*, window: RentalWindow, source_bundle: Path, source_commit: str, hf
                     started=started,
                     phase="poll",
                 )
+                if summary is None:
+                    try:
+                        active_ssh = reconnect()
+                        sftp = None
+                        sftp, summary = _observe_summary(
+                            active_ssh,
+                            sftp,
+                            timeout=min(SSH_TIMEOUT_SECONDS, window.release_deadline_epoch - now()),
+                            now=now,
+                            window=window,
+                            events=events,
+                            started=started,
+                            phase="reconnect",
+                        )
+                    except BaseException as exc:
+                        _safe_event(events, "remote_reconnect_error", started, error_type=type(exc).__name__)
+                        summary = None
                 if not checked_config and summary is not None and summary.get("phase_ready"):
                     _validate_config_summary(summary)
                     checked_config = True
@@ -597,35 +734,39 @@ def operate(*, window: RentalWindow, source_bundle: Path, source_commit: str, hf
                         topology=summary.get("config", {}).get("deployment"),
                     )
                 state = summary.get("state", {}) if summary is not None else {}
-                _safe_event(events, "poll", started, observation_available=summary is not None, state_status=state.get("status"), state_reason=state.get("reason"), completed_optimizer_steps=state.get("completed_optimizer_steps"), last_admitted_batch=state.get("last_admitted_batch"), render=summary.get("render") if summary is not None else None)
+                job = summary.get("job", {}) if summary is not None else {}
+                _safe_event(events, "poll", started, observation_available=summary is not None, job_started=job.get("started"), job_exit_code=job.get("exit_code"), state_status=state.get("status"), state_reason=state.get("reason"), completed_optimizer_steps=state.get("completed_optimizer_steps"), last_admitted_batch=state.get("last_admitted_batch"), render=summary.get("render") if summary is not None else None)
+                if isinstance(job.get("exit_code"), int) and not isinstance(job.get("exit_code"), bool):
+                    command_code = int(job["exit_code"])
+                    if command_code < 0:
+                        raise OperationError("durable remote job exit receipt is invalid")
+                    if summary.get("terminal", {}).get("status") is None:
+                        _safe_event(events, "remote_archive_unconfirmed", started)
+                    else:
+                        _safe_event(events, "remote_archive_observed", started, status=summary["terminal"].get("status"))
+                    break
                 sleep(min(POLL_SECONDS, max(0.0, window.release_deadline_epoch - now())))
-            while channel.recv_ready():
-                _append_tail(remote_stdout_tail, channel.recv(65536))
-            while channel.recv_stderr_ready():
-                _append_tail(remote_stderr_tail, channel.recv_stderr(65536))
-            command_code = int(channel.recv_exit_status())
-            final_remaining = window.release_deadline_epoch - now()
-            if final_remaining > 0:
-                sftp, summary = _observe_summary(
-                    ssh,
-                    sftp,
-                    timeout=min(SSH_TIMEOUT_SECONDS, final_remaining),
-                    now=now,
-                    window=window,
-                    events=events,
-                    started=started,
-                    phase="final",
-                )
-                summary = summary or {}
-            else:
-                summary = {}
-            if command_code != 0:
-                remote_diagnostics = _sanitized_diagnostics(
-                    bytes(remote_stderr_tail).decode("utf-8", "replace"),
-                    bytes(remote_stdout_tail).decode("utf-8", "replace"),
-                    forbidden=(window.pod_id,),
-                    labels=("stderr", "stdout"),
-                )
+
+            if command_code != 0 and sftp is not None:
+                try:
+                    stderr_raw = _sftp_read(
+                        sftp,
+                        str(REMOTE_JOB_STDERR),
+                        timeout=min(SSH_TIMEOUT_SECONDS, max(1.0, _remaining(window, now))),
+                    )
+                    stdout_raw = _sftp_read(
+                        sftp,
+                        str(REMOTE_JOB_STDOUT),
+                        timeout=min(SSH_TIMEOUT_SECONDS, max(1.0, _remaining(window, now))),
+                    )
+                    remote_diagnostics = _sanitized_diagnostics(
+                        (stderr_raw or b"").decode("utf-8", "replace"),
+                        (stdout_raw or b"").decode("utf-8", "replace"),
+                        forbidden=(window.pod_id,),
+                        labels=("stderr", "stdout"),
+                    )
+                except BaseException:
+                    pass
             finished_fields = {
                 "exit_code": command_code,
                 "state": summary.get("state"),
@@ -654,6 +795,11 @@ def operate(*, window: RentalWindow, source_bundle: Path, source_commit: str, hf
         if ssh is not None:
             try:
                 _bounded_call(ssh.close, min(SSH_TIMEOUT_SECONDS, max(1.0, window.release_deadline_epoch - now())))
+            except BaseException:
+                pass
+        for context in reversed(extra_ssh_contexts):
+            try:
+                _bounded_call(lambda context=context: context.__exit__(None, None, None), min(SSH_TIMEOUT_SECONDS, max(1.0, window.release_deadline_epoch - now())))
             except BaseException:
                 pass
         # Release is deliberately in the outer finally: SSH failures, source

@@ -10,6 +10,7 @@ import stat
 import subprocess
 import sys
 import tempfile
+import time
 import threading
 import unittest
 from unittest.mock import patch
@@ -212,6 +213,52 @@ class SummarySSH:
         self.closed = True
 
 
+class DropoutChannel(SummaryChannel):
+    def exit_status_ready(self):
+        return True
+
+    def recv_exit_status(self):
+        return -1
+
+
+class DropoutSFTP(SummarySFTP):
+    def open(self, _remote, _mode):
+        raise operator.OperationError("SSH inactive")
+
+
+class DropoutSSH(SummarySSH):
+    def __init__(self, contents, *, inactive):
+        super().__init__(contents)
+        self.inactive = inactive
+
+    def exec_command(self, command, timeout=None):
+        if "execute_single.sh" in command:
+            return None, type("Stdout", (), {"channel": DropoutChannel()})(), None
+        return super().exec_command(command, timeout=timeout)
+
+    def open_sftp(self):
+        if self.inactive:
+            self.sftp_calls += 1
+            return DropoutSFTP(self.contents)
+        return super().open_sftp()
+
+
+class AmbiguousLaunchSSH(SummarySSH):
+    def __init__(self, contents):
+        super().__init__(contents)
+        self.execute_attempts = 0
+
+    def exec_command(self, command, timeout=None):
+        if "execute_single.sh" in command:
+            self.execute_attempts += 1
+            raise RuntimeError("SSH disconnected after remote fork")
+        return super().exec_command(command, timeout=timeout)
+
+    def open_sftp(self):
+        self.sftp_calls += 1
+        return DropoutSFTP(self.contents)
+
+
 class SummaryAPI(FakeAPI):
     def __init__(self, contents, *, block_first_read=False):
         super().__init__()
@@ -222,7 +269,131 @@ class SummaryAPI(FakeAPI):
         return self.ssh
 
 
+class DropoutAPI(FakeAPI):
+    def __init__(self, contents):
+        super().__init__()
+        self.connections = [DropoutSSH(contents, inactive=True), DropoutSSH(contents, inactive=False)]
+        self.connection_calls = 0
+
+    def ssh_connection(self, _pod, timeout):
+        self.timeout = timeout
+        connection = self.connections[min(self.connection_calls, len(self.connections) - 1)]
+        self.connection_calls += 1
+        return connection
+
+
+class DeadlineClock:
+    def __init__(self, deadline):
+        self.deadline = deadline
+        self.launched = False
+        self.stop_reads = 0
+
+    def __call__(self):
+        if not self.launched:
+            return 1000.0
+        self.stop_reads += 1
+        if self.stop_reads <= 2:
+            return self.deadline + 1.0 if self.stop_reads == 1 else self.deadline - 1.0
+        return self.deadline + 1.0
+
+
+class DeadlineLaunchChannel(SummaryChannel):
+    def __init__(self, clock):
+        super().__init__()
+        self.clock = clock
+
+    def exit_status_ready(self):
+        self.clock.launched = True
+        return True
+
+
+class DeadlineSSH(SummarySSH):
+    def __init__(self, contents, clock):
+        super().__init__(contents)
+        self.clock = clock
+        self.commands = []
+
+    def exec_command(self, command, timeout=None):
+        self.commands.append(command)
+        if "execute_single.sh" in command:
+            return None, type("Stdout", (), {"channel": DeadlineLaunchChannel(self.clock)})(), None
+        return super().exec_command(command, timeout=timeout)
+
+
+class DeadlineAPI(FakeAPI):
+    def __init__(self, contents, clock):
+        super().__init__()
+        self.ssh = DeadlineSSH(contents, clock)
+
+    def ssh_connection(self, _pod, timeout):
+        self.timeout = timeout
+        return self.ssh
+
+
+class AmbiguousLaunchAPI(FakeAPI):
+    def __init__(self, contents):
+        super().__init__()
+        self.connections = [AmbiguousLaunchSSH(contents), SummarySSH(contents)]
+        self.connection_calls = 0
+
+    def ssh_connection(self, _pod, timeout):
+        self.timeout = timeout
+        connection = self.connections[min(self.connection_calls, len(self.connections) - 1)]
+        self.connection_calls += 1
+        return connection
+
+
 class SingleArmTests(unittest.TestCase):
+    def test_detached_job_real_subprocess_writes_valid_zero_and_nonzero_receipts(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            shim_dir = root / "shim-bin"
+            shim_dir.mkdir()
+            setsid = shim_dir / "setsid"
+            setsid.write_text(
+                "#!/usr/bin/env python3\n"
+                "import os, sys\n"
+                "os.setsid()\n"
+                "os.execvp(sys.argv[1], sys.argv[1:])\n"
+            )
+            setsid.chmod(0o755)
+            for exit_code in (0, 17):
+                case = root / f"case-{exit_code}"
+                execute = case / "repo/painter/runs/throughput-recovery-20261003/execute_single.sh"
+                execute.parent.mkdir(parents=True)
+                execute.write_text(f"#!/usr/bin/env bash\nsleep 0.05\nexit {exit_code}\n")
+                execute.chmod(0o755)
+                (case / "private").mkdir(parents=True)
+                command = operator._detached_job_command(
+                    source_commit="a" * 40,
+                    rental_start_epoch=1000.0,
+                    price_usd_per_hour=3.8,
+                    cap_usd=14.0,
+                ).replace("/root/painter", str(case))
+                environment = {**os.environ, "PATH": f"{shim_dir}:{os.environ.get('PATH', '')}"}
+                result = subprocess.run(["bash", "-Eeuo", "pipefail", "-c", command], env=environment, text=True, capture_output=True)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                receipt = case / "private/throughput-recovery-remote-job-exit.json"
+                deadline = time.monotonic() + 5.0
+                while not receipt.exists() and time.monotonic() < deadline:
+                    time.sleep(0.01)
+                self.assertTrue(receipt.is_file())
+                self.assertEqual(json.loads(receipt.read_text())["exit_code"], exit_code)
+                self.assertEqual(json.loads((case / "private/throughput-recovery-remote-job-start.json").read_text())["status"], "started")
+
+    def test_detached_job_command_is_shell_valid_and_durable(self):
+        command = operator._detached_job_command(
+            source_commit="a" * 40,
+            rental_start_epoch=1000.0,
+            price_usd_per_hour=3.8,
+            cap_usd=14.0,
+        )
+        result = subprocess.run(["bash", "-n", "-c", command], text=True, capture_output=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("nohup setsid bash -c", command)
+        self.assertIn("throughput-recovery-remote-job-exit.json", command)
+        self.assertIn("throughput-recovery-remote-job.stderr.log", command)
+
     def test_fast_storage_links_are_profile_bound_and_idempotent(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
@@ -479,6 +650,176 @@ class SingleArmTests(unittest.TestCase):
             self.assertNotIn("pod-test", receipt)
             self.assertNotIn("AI_GATEWAY_API_KEY", receipt)
 
+    def test_controller_reconnects_after_detached_launch_channel_minus_one(self):
+        contents = {
+            "throughput-recovery-remote-job-start.json": b'{"status":"started"}',
+            "throughput-recovery-remote-job-exit.json": b'{"exit_code":0}',
+            "supervisor-state.json": b'{"status":"completed","completed_optimizer_steps":1}',
+            "terminal-receipt.json": b'{"status":"complete","pipeline_exit_code":0,"archive_exit_code":0}',
+            "preparation-receipt.json": b'{"schema":"throughput-recovery-single-arm-preparation-v1","profile":"rl-throughput-recovery-v1"}',
+            "rl-config-receipt.json": json.dumps({
+                "checkpoint_interval": 1,
+                "batch_size": 16,
+                "group_size": 4,
+                "initial_inflight": 32,
+                "max_inflight": 32,
+                "deployment": {"type": "single_node", "gpus_per_node": 2, "num_train_gpus": 1, "num_infer_gpus": 1},
+            }).encode(),
+            "metrics.jsonl": b'{"render_queue_seconds":0.1,"render_active_seconds":0.2}\n',
+        }
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            bundle = root / "source.bundle"
+            bundle.write_bytes(b"git bundle fixture")
+            token = root / "token"
+            gateway = root / "gateway.env"
+            token.write_text("opaque-token\n")
+            gateway.write_text("opaque\n")
+            token.chmod(0o600)
+            gateway.chmod(0o600)
+            api = DropoutAPI(contents)
+            window = operator.make_window(pod_id="pod-test", rental_start_epoch=1000.0, price_usd_per_hour=3.8, cap_usd=20.0)
+            result = operator.operate(
+                window=window,
+                source_bundle=bundle,
+                source_commit="a" * 40,
+                hf_token_file=token,
+                gateway_env_file=gateway,
+                output_root=root / "ops",
+                api=api,
+                now=lambda: 1000.0,
+                sleep=lambda _seconds: None,
+            )
+            self.assertEqual(result, 0)
+            events = [json.loads(line) for line in (root / "ops/operations-single.jsonl").read_text().splitlines()]
+            self.assertTrue(any(event["event"] == "remote_transport_dropped" for event in events))
+            self.assertTrue(any(event["event"] == "remote_transport_reconnected" for event in events))
+            finished = [event for event in events if event["event"] == "remote_execute_finished"]
+            self.assertEqual(finished[-1]["exit_code"], 0)
+            self.assertFalse(any(event.get("exit_code") == -1 for event in events))
+            self.assertEqual([pod.id for pod in api.removed], ["pod-test"])
+
+    def test_controller_returns_durable_nonzero_job_exit(self):
+        contents = {
+            "throughput-recovery-remote-job-start.json": b'{"status":"started"}',
+            "throughput-recovery-remote-job-exit.json": b'{"exit_code":17}',
+            "supervisor-state.json": b'{"status":"failed"}',
+            "terminal-receipt.json": b'{"status":"failed","pipeline_exit_code":17,"archive_exit_code":0}',
+            "preparation-receipt.json": b'{}',
+            "rl-config-receipt.json": b'{}',
+            "metrics.jsonl": b'{}\n',
+        }
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            bundle = root / "source.bundle"
+            bundle.write_bytes(b"git bundle fixture")
+            token = root / "token"
+            gateway = root / "gateway.env"
+            token.write_text("opaque-token\n")
+            gateway.write_text("opaque\n")
+            token.chmod(0o600)
+            gateway.chmod(0o600)
+            api = SummaryAPI(contents)
+            window = operator.make_window(pod_id="pod-test", rental_start_epoch=1000.0, price_usd_per_hour=3.8, cap_usd=20.0)
+            result = operator.operate(
+                window=window,
+                source_bundle=bundle,
+                source_commit="a" * 40,
+                hf_token_file=token,
+                gateway_env_file=gateway,
+                output_root=root / "ops",
+                api=api,
+                now=lambda: 1000.0,
+                sleep=lambda _seconds: None,
+            )
+            self.assertEqual(result, 17)
+            events = [json.loads(line) for line in (root / "ops/operations-single.jsonl").read_text().splitlines()]
+            finished = [event for event in events if event["event"] == "remote_execute_finished"]
+            self.assertEqual(finished[-1]["exit_code"], 17)
+            self.assertEqual([pod.id for pod in api.removed], ["pod-test"])
+
+    def test_controller_reconnects_after_ambiguous_launch_without_relaunching(self):
+        contents = {
+            "throughput-recovery-remote-job-start.json": b'{"status":"started"}',
+            "throughput-recovery-remote-job-exit.json": b'{"exit_code":0}',
+            "supervisor-state.json": b'{"status":"completed"}',
+            "terminal-receipt.json": b'{"status":"complete","pipeline_exit_code":0,"archive_exit_code":0}',
+            "preparation-receipt.json": b'{}',
+            "rl-config-receipt.json": b'{}',
+            "metrics.jsonl": b'{}\n',
+        }
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            bundle = root / "source.bundle"
+            bundle.write_bytes(b"git bundle fixture")
+            token = root / "token"
+            gateway = root / "gateway.env"
+            token.write_text("opaque-token\n")
+            gateway.write_text("opaque\n")
+            token.chmod(0o600)
+            gateway.chmod(0o600)
+            api = AmbiguousLaunchAPI(contents)
+            window = operator.make_window(pod_id="pod-test", rental_start_epoch=1000.0, price_usd_per_hour=3.8, cap_usd=20.0)
+            result = operator.operate(
+                window=window,
+                source_bundle=bundle,
+                source_commit="a" * 40,
+                hf_token_file=token,
+                gateway_env_file=gateway,
+                output_root=root / "ops",
+                api=api,
+                now=lambda: 1000.0,
+                sleep=lambda _seconds: None,
+            )
+            self.assertEqual(result, 0)
+            self.assertEqual(api.connections[0].execute_attempts, 1)
+            self.assertGreaterEqual(api.connection_calls, 2)
+            events = [json.loads(line) for line in (root / "ops/operations-single.jsonl").read_text().splitlines()]
+            self.assertTrue(any(event["event"] == "remote_launch_ambiguous" for event in events))
+            self.assertTrue(any(event["event"] == "remote_transport_reconnected" for event in events))
+            self.assertEqual([pod.id for pod in api.removed], ["pod-test"])
+
+    def test_controller_requests_remote_stop_at_hard_deadline_before_release(self):
+        contents = {
+            "throughput-recovery-remote-job-start.json": b'{"status":"started"}',
+            "supervisor-state.json": b'{"status":"running"}',
+            "terminal-receipt.json": b'{}',
+            "preparation-receipt.json": b'{}',
+            "rl-config-receipt.json": b'{}',
+            "metrics.jsonl": b'{}\n',
+        }
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            bundle = root / "source.bundle"
+            bundle.write_bytes(b"git bundle fixture")
+            token = root / "token"
+            gateway = root / "gateway.env"
+            token.write_text("opaque-token\n")
+            gateway.write_text("opaque\n")
+            token.chmod(0o600)
+            gateway.chmod(0o600)
+            window = operator.make_window(pod_id="pod-test", rental_start_epoch=1000.0, price_usd_per_hour=3.8, cap_usd=20.0)
+            clock = DeadlineClock(window.release_deadline_epoch)
+            api = DeadlineAPI(contents, clock)
+            with self.assertRaises(operator.OperationError):
+                operator.operate(
+                    window=window,
+                    source_bundle=bundle,
+                    source_commit="a" * 40,
+                    hf_token_file=token,
+                    gateway_env_file=gateway,
+                    output_root=root / "ops",
+                    api=api,
+                    now=clock,
+                    sleep=lambda _seconds: None,
+                )
+            events = [json.loads(line) for line in (root / "ops/operations-single.jsonl").read_text().splitlines()]
+            deadline_events = [event for event in events if event["event"] == "remote_hard_deadline_action"]
+            self.assertEqual(len(deadline_events), 1)
+            self.assertTrue(deadline_events[0]["stop_sent"])
+            self.assertTrue(any("kill -TERM" in command for command in api.ssh.commands))
+            self.assertEqual([pod.id for pod in api.removed], ["pod-test"])
+
     def test_controller_budget_rejects_cap_above_twenty(self):
         with self.assertRaises(ValueError):
             operator.make_window(
@@ -557,7 +898,7 @@ class SingleArmTests(unittest.TestCase):
                 b'{"schema":"throughput-recovery-single-arm-preparation-v1","profile":"rl-throughput-recovery-v1"}'
                 if ready else b"{}"
             )
-            values = [b"{}", b"{}", preparation, config_raw, None]
+            values = [b"{}", b"{}", None, None, preparation, config_raw, None]
             with patch.object(operator, "_sftp_read", side_effect=values):
                 return operator._remote_summary(object(), timeout=1)
 
@@ -591,6 +932,8 @@ class SingleArmTests(unittest.TestCase):
             "deployment": {"type": "single_node", "gpus_per_node": 2, "num_train_gpus": 1, "num_infer_gpus": 1},
         }
         contents = {
+            "throughput-recovery-remote-job-start.json": b'{"status":"started"}',
+            "throughput-recovery-remote-job-exit.json": b'{"exit_code":0}',
             "supervisor-state.json": b'{"status":"running","completed_optimizer_steps":0}',
             "terminal-receipt.json": b"{}",
             "preparation-receipt.json": b'{"schema":"throughput-recovery-single-arm-preparation-v1","profile":"rl-throughput-recovery-v1"}',
@@ -644,6 +987,8 @@ class SingleArmTests(unittest.TestCase):
             "deployment": {"type": "single_node", "gpus_per_node": 2, "num_train_gpus": 1, "num_infer_gpus": 1},
         }
         contents = {
+            "throughput-recovery-remote-job-start.json": b'{"status":"started"}',
+            "throughput-recovery-remote-job-exit.json": b'{"exit_code":0}',
             "supervisor-state.json": b'{"status":"running"}',
             "terminal-receipt.json": b"{}",
             "preparation-receipt.json": b'{"schema":"throughput-recovery-single-arm-preparation-v1","profile":"rl-throughput-recovery-v1"}',
@@ -857,7 +1202,7 @@ class SingleArmTests(unittest.TestCase):
             config_receipt = (root / "rl-config-receipt.json").read_bytes()
             self.assertNotIn("profile", json.loads(config_receipt))
             with patch.object(operator, "_sftp_read", side_effect=[
-                b"{}", b"{}", (root / "preparation-receipt.json").read_bytes(), config_receipt, None
+                b"{}", b"{}", None, None, (root / "preparation-receipt.json").read_bytes(), config_receipt, None
             ]):
                 summary = operator._remote_summary(object(), timeout=1)
             self.assertTrue(summary["phase_ready"])

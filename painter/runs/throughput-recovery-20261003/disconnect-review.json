@@ -1,0 +1,30 @@
+{
+  "schema": "painter-controller-review-v1",
+  "status": "reviewed-local-lifecycle-tests-passed-linux-pilot-pending",
+  "implementation": "gpt-5.6-luna xhigh; parent review",
+  "parent_checks": {
+    "single_arm_mock_tests_passed": 26,
+    "allocator_tests_passed": 9,
+    "real_painter_and_complete_prime_bundle_plan_only": "passed; immutable source bfd08c6; no provider mutation",
+    "active_gpu_pods": 0,
+    "single_arm_tests_passed_after_corrections": 28,
+    "allocator_tests_passed_after_corrections": 10
+  },
+  "review_findings": [
+    "Generated exit receipt printf format produced invalid JSON in an actual shell reproduction; syntax-only/mock receipt tests failed to catch this.",
+    "Deadline stop passed through a helper whose remaining-window guard prevents command execution once the release deadline is reached.",
+    "Launch transport exception can be ambiguous; reconnect and durable job evidence must resolve it instead of treating SSH failure as remote process failure."
+  ],
+  "requested_tests": "Execute generated wrapper/receipt against dummy POSIX processes, plus ambiguous launch and real deadline boundaries. No rendering or ML on the Mac.",
+  "gpu_rental_spend_change_usd": 0,
+  "next_decision": "A finite four-update retry can use this reviewed controller after publishing a new immutable source bundle. Linux Node/browser checks still precede model launch. The remaining rental ceiling is $13.50 plus $6.50 reserved for prior failed starts under the same $20 pilot cap.",
+  "corrections_reviewed": [
+    "Generated completion receipts are valid JSON for dummy-process exits 0 and 17.",
+    "SSH launch disconnect/exception is ambiguous; controller reconnects to durable receipts without duplicating the launch.",
+    "Stop command executes in the release-reserve window; regression asserts command dispatch and stop_sent true.",
+    "Deliberate KeyboardInterrupt/SystemExit is not swallowed by ambiguous-launch handling.",
+    "Allocator requires the registered two-H100 pilot topology before cheapest-offer selection; provider metadata and credentials stay private."
+  ],
+  "remaining_review": null,
+  "proof_limit": "Actual Linux GPU-host bootstrap, useful optimizer updates, complete public evidence archive, and matched visual improvement remain unproven."
+}
