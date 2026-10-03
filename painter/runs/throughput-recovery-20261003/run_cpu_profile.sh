@@ -133,12 +133,12 @@ fi
 # centroid helper to build both into the temporary setup root.  Existing
 # materialized runtime identities are never overwritten.
 if [[ ! -f "$RUNTIME_ROOT/renderer.py" && ! -f "$RUNTIME_ROOT/frozen_watercolour_renderer.py" ]]; then
-  TEMP_ROOT="${TEMP_ROOT:-$(mktemp -d "${TMPDIR:-/tmp}/painter-cpu-profile.XXXXXX")}" 
+  TEMP_ROOT="${TEMP_ROOT:-$(mktemp -d "${TMPDIR:-/tmp}/painter-cpu-profile.XXXXXX")}"
   RUNTIME_ROOT="$TEMP_ROOT/watercolour-p5-brush-2.2.1-centroid-fix-v1"
   "$PYTHON_BIN" "$PAINTER_ROOT/patch_brush_centroid.py" --output-root "$RUNTIME_ROOT" >/dev/null
 fi
 if [[ -z "$DERIVATIVE_RUNTIME_ROOT" || ! -f "$DERIVATIVE_RUNTIME_ROOT/cancellable_watercolour_renderer.py" ]]; then
-  TEMP_ROOT="${TEMP_ROOT:-$(mktemp -d "${TMPDIR:-/tmp}/painter-cpu-profile.XXXXXX")}" 
+  TEMP_ROOT="${TEMP_ROOT:-$(mktemp -d "${TMPDIR:-/tmp}/painter-cpu-profile.XXXXXX")}"
   DERIVATIVE_RUNTIME_ROOT="$TEMP_ROOT/watercolour-cancellable-centroid-v1"
   "$PYTHON_BIN" "$PAINTER_ROOT/patch_brush_centroid.py" --renderer-overlay --source-root "$PAINTER_ROOT/vendor/integrations/watercolour" --output-root "$DERIVATIVE_RUNTIME_ROOT" >/dev/null
 fi

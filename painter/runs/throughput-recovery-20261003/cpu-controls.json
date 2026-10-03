@@ -1,0 +1,95 @@
+{
+  "schema": "cpu-renderer-controls-v1",
+  "rows": [
+    {
+      "id": "control-01",
+      "program_path": "control-01.js",
+      "program_sha256": "6d9b02454f77913d58534af606d932aa98883c14e9965856bc2ef448e7a332d6",
+      "kind": "valid",
+      "saved_elapsed_seconds": 6.165,
+      "saved_valid": true,
+      "source_archive_revision": "b7aa7cfcc1353fdbd5c403e37dea4f83eb6624c6",
+      "source_archive_sha256": "5928a75e9766cc8f96667c4249db59801ba6c4516007f88d642e7e7afadbe3cc",
+      "source_archive_member": "rl-rollouts/training/t600-570/f7710e8b-ac3c-446a-8832-b98bacfc1dcc/turn-3/program.js"
+    },
+    {
+      "id": "control-02",
+      "program_path": "control-02.js",
+      "program_sha256": "3f9cdd6baf06b2815e4a63eee492399fa0d6a7cdc44b74aeaa1727e4faff5e4a",
+      "kind": "valid",
+      "saved_elapsed_seconds": 10.177,
+      "saved_valid": true,
+      "source_archive_revision": "b7aa7cfcc1353fdbd5c403e37dea4f83eb6624c6",
+      "source_archive_sha256": "5928a75e9766cc8f96667c4249db59801ba6c4516007f88d642e7e7afadbe3cc",
+      "source_archive_member": "rl-rollouts/training/t600-581/15988323-9990-426a-9416-e06d07b2bb60/turn-1/program.js"
+    },
+    {
+      "id": "control-03",
+      "program_path": "control-03.js",
+      "program_sha256": "98285c840ba6020d49305ab26f9ef0e32efe9c73bb358adda0f9bb93ce384638",
+      "kind": "valid",
+      "saved_elapsed_seconds": 15.007,
+      "saved_valid": true,
+      "source_archive_revision": "b7aa7cfcc1353fdbd5c403e37dea4f83eb6624c6",
+      "source_archive_sha256": "5928a75e9766cc8f96667c4249db59801ba6c4516007f88d642e7e7afadbe3cc",
+      "source_archive_member": "rl-rollouts/training/t600-427/25605238-e580-498a-a5df-e868ec490970/turn-2/program.js"
+    },
+    {
+      "id": "control-04",
+      "program_path": "control-04.js",
+      "program_sha256": "2911a1f2adbadceb802e2c83ca878c51e417e1eef1937e59b4fa99510c8f9b60",
+      "kind": "valid",
+      "saved_elapsed_seconds": 20.076,
+      "saved_valid": true,
+      "source_archive_revision": "b7aa7cfcc1353fdbd5c403e37dea4f83eb6624c6",
+      "source_archive_sha256": "5928a75e9766cc8f96667c4249db59801ba6c4516007f88d642e7e7afadbe3cc",
+      "source_archive_member": "rl-rollouts/training/t600-530/80315f9f-1a41-46ca-b139-e2f0b911e0b4/turn-1/program.js"
+    },
+    {
+      "id": "control-05",
+      "program_path": "control-05.js",
+      "program_sha256": "04cbe97a302f71ac0eb4c72df6ed43497c629082f45a0924a8bf8f7ef54cfa5b",
+      "kind": "valid",
+      "saved_elapsed_seconds": 29.617,
+      "saved_valid": true,
+      "source_archive_revision": "b7aa7cfcc1353fdbd5c403e37dea4f83eb6624c6",
+      "source_archive_sha256": "5928a75e9766cc8f96667c4249db59801ba6c4516007f88d642e7e7afadbe3cc",
+      "source_archive_member": "rl-rollouts/training/t600-431/0daec009-430f-4de3-a2d1-4cc96bf064d4/turn-1/program.js"
+    },
+    {
+      "id": "control-06",
+      "program_path": "control-06.js",
+      "program_sha256": "30467d02f699d1c10bb88c8ade03ddfa0dbdbe1d27c5ae3fb4994c4919122647",
+      "kind": "valid",
+      "saved_elapsed_seconds": 40.111,
+      "saved_valid": true,
+      "source_archive_revision": "b7aa7cfcc1353fdbd5c403e37dea4f83eb6624c6",
+      "source_archive_sha256": "5928a75e9766cc8f96667c4249db59801ba6c4516007f88d642e7e7afadbe3cc",
+      "source_archive_member": "rl-rollouts/training/t600-324/a5e5f858-ef85-4703-b9b4-a0a9608a18f9/turn-2/program.js"
+    },
+    {
+      "id": "control-07",
+      "program_path": "control-07.js",
+      "program_sha256": "bb1b439e0c67948d011ca47e7374d13a2ccbaeebd28b035d785768fff265927b",
+      "kind": "invalid",
+      "saved_elapsed_seconds": 15.095,
+      "saved_valid": false,
+      "source_archive_revision": "b7aa7cfcc1353fdbd5c403e37dea4f83eb6624c6",
+      "source_archive_sha256": "5928a75e9766cc8f96667c4249db59801ba6c4516007f88d642e7e7afadbe3cc",
+      "source_archive_member": "rl-rollouts/training/t600-437/8817c4b5-b18b-4793-b540-b233f1ec6e8a/turn-1/program.js"
+    },
+    {
+      "id": "control-08",
+      "program_path": "control-08.js",
+      "program_sha256": "6888ad7a54293123656a060f1beb1d472518ddd5a03954973cf319ec0dbad91e",
+      "kind": "slow_cancel",
+      "saved_elapsed_seconds": 180.035,
+      "saved_valid": false,
+      "source_archive_revision": "b7aa7cfcc1353fdbd5c403e37dea4f83eb6624c6",
+      "source_archive_sha256": "5928a75e9766cc8f96667c4249db59801ba6c4516007f88d642e7e7afadbe3cc",
+      "source_archive_member": "rl-rollouts/training/t600-524/99e3d2ef-f74e-4cf3-bb34-09e2938273ab/turn-1/program.js"
+    }
+  ],
+  "seed": 0,
+  "programs_unchanged": true
+}
