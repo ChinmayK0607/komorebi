@@ -1,7 +1,7 @@
 {
   "schema": "matched-campaign-allocation-record-v1",
   "attempt": 3,
-  "status": "detached_shared_preparation",
+  "status": "failed_before_training_node_released",
   "rental_request_utc": "2026-10-04T10:17:53.705698+00:00",
   "source_commit": "7cf8845b60a55967cb1849ffd1ef2cb9429f36c5",
   "source_bundle_sha256": "7d7261685feb831afb440dca6259587d2a451307e01b2cf3663d928101aa31db",
@@ -14,5 +14,8 @@
   "completed_optimizer_updates": 0,
   "detached_campaign_started": true,
   "scheduled_task_created": false,
-  "source_and_gpu_verified": true
+  "source_and_gpu_verified": true,
+  "baseline_evaluated": true,
+  "node_released": true,
+  "active_pods": 0
 }

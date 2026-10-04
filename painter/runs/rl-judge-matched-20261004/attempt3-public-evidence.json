@@ -1,0 +1,26 @@
+{
+  "campaign": {
+    "repo_id": "CK0607/komorebi-painter-experiments",
+    "revision": "b82dc03e4490bb399ecfa56cfd4a1cee397b9586",
+    "path": "runs/rl-judge-matched-20261004/campaign-evidence.tar.gz",
+    "sha256": "6a3fea100b02ee184c9dc988372d8acb5745dcc6ac77b519bb9101288eba0b37",
+    "bytes": 685892,
+    "anonymous_hash_verified": true
+  },
+  "flash": {
+    "repo_id": "CK0607/komorebi-painter-experiments",
+    "revision": "b82dc03e4490bb399ecfa56cfd4a1cee397b9586",
+    "path": "runs/rl-judge-matched-20261004-flash/evidence.tar.gz",
+    "sha256": "204c948cab515c8c47f3880f621182fd36ab5c189942e6ed300433d45e659c31",
+    "bytes": 19484,
+    "anonymous_hash_verified": true
+  },
+  "baseline": {
+    "repo_id": "CK0607/komorebi-painter-experiments",
+    "revision": "b82dc03e4490bb399ecfa56cfd4a1cee397b9586",
+    "path": "runs/rl-judge-matched-20261004/baseline-evidence.tar.gz",
+    "sha256": "a526ef7b31431a81c742c6f27bfa9c8f82f3c42033a2c122198c76f3dde7ce69",
+    "bytes": 20592785,
+    "anonymous_hash_verified": true
+  }
+}

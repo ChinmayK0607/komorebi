@@ -1,0 +1,58 @@
+{
+  "schema": "matched-baseline-render-audit-v1",
+  "scope": "saved painting receipts only; terminal actions without painting receipt cannot be assessed by this audit",
+  "case_count": 16,
+  "case_ids_with_receipts": 16,
+  "receipts": 32,
+  "valid_render_receipts": 28,
+  "invalid_render_receipts": 4,
+  "latest_saved_receipt_valid_case_count": 16,
+  "valid_render_elapsed_seconds": {
+    "count": 28,
+    "median": 13.4505,
+    "maximum": 135.499
+  },
+  "invalid_render_cases": [
+    {
+      "case": "t600-512",
+      "turn": 1,
+      "valid": false,
+      "elapsed_seconds": 4.246,
+      "errors": [
+        "scale is not a function",
+        "TypeError: scale is not a function"
+      ]
+    },
+    {
+      "case": "t600-316",
+      "turn": 2,
+      "valid": false,
+      "elapsed_seconds": 74.068,
+      "errors": [
+        "No brush or color set. Call brush.set('brushName', color) before drawing.",
+        "Error: No brush or color set. Call brush.set('brushName', color) before drawing."
+      ]
+    },
+    {
+      "case": "t600-309",
+      "turn": 2,
+      "valid": false,
+      "elapsed_seconds": 14.833,
+      "errors": [
+        "rand is not defined",
+        "ReferenceError: rand is not defined"
+      ]
+    },
+    {
+      "case": "t600-309",
+      "turn": 1,
+      "valid": false,
+      "elapsed_seconds": 1.782,
+      "errors": [
+        "Cannot redefine property: square",
+        "TypeError: Cannot redefine property: square",
+        "No canvas produced"
+      ]
+    }
+  ]
+}

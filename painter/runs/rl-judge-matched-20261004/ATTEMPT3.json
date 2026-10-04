@@ -1,0 +1,33 @@
+{
+  "schema": "matched-campaign-attempt-result-v1",
+  "attempt": 3,
+  "status": "flash_launcher_preflight_failed_node_released",
+  "completed_optimizer_updates": 0,
+  "baseline_evaluated": true,
+  "judge_arms_started": [
+    "flash_preflight_only"
+  ],
+  "failure": "Matched arm config is recovered_policy, but PAINTER_RL_MODE was missing from common runtime; actual launcher defaulted fresh and rejected the receipt mismatch.",
+  "passed": [
+    "shared bootstrap",
+    "all three isolated native configs and equality",
+    "actual fresh RL16 baseline generation and public hash-verified archive",
+    "actual whole-group admission guard activation"
+  ],
+  "gpu_clock_estimate_upper_bound_usd": 1.9498,
+  "campaign_gpu_clock_estimate_upper_bound_usd": 3.5482,
+  "cost_scope": "rental request to local released receipt write; conservative GPU clock estimate, not invoice",
+  "active_pods": 0,
+  "evidence_manifest": "attempt3-public-evidence.json",
+  "next_decision": "Fix explicit recovered-policy launcher binding and exercise actual arm-to-launcher preflight for all judges under a clean environment before considering any further rental.",
+  "baseline_evidence": {
+    "repo_id": "CK0607/komorebi-painter-experiments",
+    "revision": "b82dc03e4490bb399ecfa56cfd4a1cee397b9586",
+    "path": "runs/rl-judge-matched-20261004/baseline-evidence.tar.gz",
+    "sha256": "a526ef7b31431a81c742c6f27bfa9c8f82f3c42033a2c122198c76f3dde7ce69",
+    "bytes": 20592785,
+    "anonymous_hash_verified": true
+  },
+  "baseline_render_audit": "attempt3-baseline-render-audit.json",
+  "baseline_render_scope": "16 cases have a valid latest saved render receipt; four earlier invalid render actions among32 receipts remain censored; terminal actions without saved receipts require separate rollout review."
+}
