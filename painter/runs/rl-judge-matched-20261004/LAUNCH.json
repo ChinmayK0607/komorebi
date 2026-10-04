@@ -1,0 +1,33 @@
+{
+  "schema": "matched-judge-launch-record-v1",
+  "status": "reviewed-ready-for-one-allocation",
+  "created_utc": "2026-10-04T08:15:23.797233+00:00",
+  "source": {
+    "schema": "matched-judge-public-source-v1",
+    "repo_id": "CK0607/komorebi-painter-teachers",
+    "revision": "d2750b87e64ca0c918b34bc0359dd539184b23a0",
+    "path": "execution-source/rl-judge-matched-20261004/source-9e644e2c.bundle",
+    "source_commit": "9e644e2c038e656d29c1c21396fa214d413a63ca",
+    "sha256": "6178fdf0ea637f14a15fb94edaa345e7b3b55ec9cd9c8b85a9f0d7f5cea3d295",
+    "bytes": 3411172,
+    "anonymous_hash_verified": true,
+    "private": false
+  },
+  "protocol_sha256": "3c897211a8181b38965e32025a3cc1c50fd0e348a3fe6e6866dc7c4055d04fb8",
+  "prime_revision": "26b3131d2716a4f8210b165df584b83b4bc54f61",
+  "prime_bundle_sha256": "64b035e176df1aa850280f9bcdad5cedef8108636b59a5c29f2af8b014cf3dbe",
+  "clean_git_bundle_replay_tests": 6,
+  "gpu_topology": {
+    "count": 2,
+    "type": "H100",
+    "inference": 1,
+    "trainer": 1
+  },
+  "max_whole_node_usd_hour": 3.8,
+  "gpu_cap_per_arm_usd": 19.5,
+  "gpu_cap_campaign_usd": 58.5,
+  "retry_policy": "No unbounded rental retry; failed starts count against this campaign.",
+  "training": "Three independent RL16 starts, fresh optimizers,12actualupdates each; judges only score Qwen generated rollouts.",
+  "evaluation": "Fresh RL16 baseline and three step12 checkpoints, samebalanced16cases; include frozen SFT512 renders.",
+  "scheduled_task_created": false
+}
