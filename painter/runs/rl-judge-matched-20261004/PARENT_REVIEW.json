@@ -1,6 +1,6 @@
 {
   "schema": "matched-judge-prelaunch-review-v1",
-  "status": "baseline-public-download-and-matched-evaluation-fixed-parent-reviewed",
+  "status": "actual-launcher-mode-and-early-preflight-fixed-parent-reviewed",
   "checked": [
     {
       "check": "actual prepare_config generator: three normalized native TOMLs equal",
@@ -52,6 +52,21 @@
       "check": "anonymous public HF initializer metadata",
       "result": "passed",
       "scope": "actual anonymous metadata call confirms pinned revision/public status/LFS SHA; proof in initializer-public-proof.json"
+    },
+    {
+      "check": "All three real arm wrappers through actual launch_rl.sh under clean subprocess environment",
+      "result": "passed",
+      "scope": "dummy adapter bytes/native configs, fake Prime package and stub VF task serializer; actual launcher identity/mode/roles/receipt checks exercised. No ML, provider, paid API or rendering."
+    },
+    {
+      "check": "Negative fresh-mode launcher mismatch and early campaign failure ordering",
+      "result": "passed",
+      "scope": "wrong mode rejected; failed first preflight prevents baseline/training and records failed terminal/status. Existing failure status is published before public archive."
+    },
+    {
+      "check": "Final parent regression and source checks",
+      "result": "passed",
+      "scope": "12 campaign and5 inherited evaluator tests; shell syntax, diff whitespace and undefined-name Ruff checks. Actual optimizer/evaluation quality still pending."
     }
   ],
   "review_findings": [
@@ -62,10 +77,12 @@
     "Fresh baseline paintings must be publicly hash-verified before release.",
     "Prior tests exercised the native writer but not materialize(); this missed an undefined sys name and caused attempt1 to fail after shared preparation. A full subprocess materialization regression test is required before the single bounded retry.",
     "A publicly downloaded initializer has download provenance, not necessarily hf-upload.json. Do not fabricate upload history or modify cached weights.",
-    "Preparation shell exports do not propagate to its parent; baseline must source the same common runtime as arm evaluations."
+    "Preparation shell exports do not propagate to its parent; baseline must source the same common runtime as arm evaluations.",
+    "The actual launcher consumes PAINTER_RL_MODE, not PAINTER_POLICY_MODE. Bind both to recovered_policy and test the real wrapper chain under a clean environment.",
+    "Preflight all three prepared arms before the expensive baseline, bounded at180seconds perarm; it must not create training output or start models."
   ],
   "runtime_assertions_pending": [
-    "fresh RL16 baseline generation on Linux",
+    "corrected early arm launcher preflight on Linux",
     "actual optimizer updates and finite nonzero gradients",
     "matched heldout visual preference"
   ],
@@ -80,5 +97,11 @@
     "optimizer_updates": 0,
     "gpu_clock_estimate_usd": 0.8174,
     "node_released": true
+  },
+  "attempt3": {
+    "optimizer_updates": 0,
+    "fresh_baseline_evaluated": true,
+    "node_released": true,
+    "gpu_clock_estimate_upper_bound_usd": 1.9498
   }
 }

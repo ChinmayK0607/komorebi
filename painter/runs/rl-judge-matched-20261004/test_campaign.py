@@ -6,7 +6,9 @@ import importlib.util
 import json
 from pathlib import Path
 import os
+import shutil
 import subprocess
+import sys
 import tempfile
 import textwrap
 import unittest
@@ -462,9 +464,9 @@ class MatchedCampaignTests(unittest.TestCase):
             for arm in ("flash", "pro", "luna"):
                 arm_root = root / f"repo/painter/runs/rl-judge-matched-20261004-{arm}"
                 self.assertTrue((arm_root / "native.toml").is_file())
-                self.assertTrue((arm_root / "rl-config-receipt.json").is_file())
-                self.assertEqual(prepare.normalized_native_config(arm_root / "native.toml")["max_steps"], 12)
-                self.assertEqual(json.loads((arm_root / "rl-config-receipt.json").read_text())["batch_size"], 16)
+            self.assertTrue((arm_root / "rl-config-receipt.json").is_file())
+            self.assertEqual(prepare.normalized_native_config(arm_root / "native.toml")["max_steps"], 12)
+            self.assertEqual(json.loads((arm_root / "rl-config-receipt.json").read_text())["batch_size"], 16)
             # A prepared arm may be rematerialized while it has no training
             # output, but any existing async output must stop the handoff.
             (root / "repo/painter/runs/rl-judge-matched-20261004-flash/async-output").mkdir()
@@ -473,6 +475,228 @@ class MatchedCampaignTests(unittest.TestCase):
                     shared_root=shared, prime_root=prime, model_dir=model,
                     prepare_config=prepare_config, source_root=source_root,
                 )
+
+    def test_actual_three_arm_run_preflight_propagates_recovered_mode(self):
+        """Run each real arm wrapper through the real Prime launcher preflight."""
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            repo = root / "painter"
+            source_root = repo / "runs/rl-judge-matched-20261004"
+            source_root.mkdir(parents=True)
+            for name in ("arm_env.sh", "run.sh", "run_arm.sh", "runtime_env.sh",
+                         "prepare_arm.sh", "prepare_node.sh", "evaluate.sh", "finalize.sh",
+                         "finite_supervisor.py"):
+                shutil.copy2(RUN / name, source_root / name)
+            shared = repo / "runs/rl-judge-matched-20261004-shared"
+            (shared / "anchors-frozen").mkdir(parents=True)
+            train_rows = [
+                {"id": f"train-{index}", "reference_kind": "text", "opponent_sha256": "a" * 64}
+                for index in range(40)
+            ]
+            validation_cases = (
+                [{"id": f"simple-{index}", "family": "simple"} for index in range(4)] +
+                [{"id": f"intermediate-{index}", "family": "intermediate"} for index in range(4)] +
+                [{"id": f"complex-{index}", "family": "complex"} for index in range(39)]
+            )
+            (shared / "anchors-frozen/train-manifest.json").write_text(json.dumps({"rows": train_rows}))
+            (shared / "anchors-frozen/validation-manifest.json").write_text(
+                json.dumps({"cases": validation_cases})
+            )
+            (shared / "preparation-receipt.json").write_text("{}\n")
+            for name in ("anchors-all", "vendor", "renderer-env", "browsers", "runtime"):
+                (shared / name).mkdir()
+            (shared / "runtime/watercolour-cancellable-centroid-v1").mkdir(parents=True)
+            (shared / "runtime/watercolour-cancellable-centroid-v1/cancellable_watercolour_renderer.py").write_text("# fixture\n")
+            (shared / "vendor/integrations/watercolour").mkdir(parents=True)
+            (shared / "vendor/integrations/watercolour/renderer.py").write_text("# fixture\n")
+            renderer_python = shared / "renderer-env/bin/python"
+            renderer_python.parent.mkdir(parents=True)
+            renderer_python.write_text("#!/bin/sh\nexec /usr/bin/python3 \"$@\"\n")
+            renderer_python.chmod(0o755)
+            (shared / "sitecustomize.py").write_text("# fixture\n")
+            for name in ("run_from_sft.py", "train_from_sft.py", "completion_relay.py", "safe_archive.py"):
+                (shared / name).write_text("# fixture\n")
+            (shared / "launch_rl.sh").write_text(
+                (RUN.parent / "photo-curriculum-rl-20260922/launch_rl.sh").read_text()
+            )
+
+            initial = root / "adapters/initializer"
+            frozen = root / "adapters/frozen"
+            initial.mkdir(parents=True)
+            frozen.mkdir(parents=True)
+            adapter_config = {
+                "r": 16, "lora_alpha": 32,
+                "target_modules": [
+                    "q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj",
+                    "in_proj_qkv", "in_proj_z", "in_proj_b", "in_proj_a", "out_proj",
+                ],
+                "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+            }
+            initial_weight = b"fixture-initializer"
+            frozen_weight = b"fixture-frozen"
+            import hashlib
+            initial_sha = hashlib.sha256(initial_weight).hexdigest()
+            frozen_sha = hashlib.sha256(frozen_weight).hexdigest()
+            arm_env_path = source_root / "arm_env.sh"
+            arm_env_path.write_text(arm_env_path.read_text().replace(
+                "e5211706a23b46354aa269f2b9cfaaaad1b64eef1012b433b1887c149f5a927c", initial_sha
+            ))
+            for path, weight in ((initial, initial_weight), (frozen, frozen_weight)):
+                (path / "adapter_model.safetensors").write_bytes(weight)
+                (path / "adapter_config.json").write_text(json.dumps(adapter_config))
+            (shared / "policy-adapter-path.txt").write_text(str(initial) + "\n")
+            (shared / "frozen-sft-adapter-path.txt").write_text(str(frozen) + "\n")
+
+            prime = root / "prime"
+            (prime / "src/prime_rl/configs").mkdir(parents=True)
+            (prime / "src/prime_rl/configs/__init__.py").write_text("")
+            (prime / "src/prime_rl/__init__.py").write_text("")
+            (prime / "src/prime_rl/configs/rl.py").write_text(
+                "class RLConfig:\n"
+                "    @classmethod\n"
+                "    def model_validate(cls, value):\n"
+                "        return value\n"
+            )
+            cuda = root / "fake-cuda"
+            (cuda / "bin").mkdir(parents=True)
+            python = prime / ".venv/bin/python"
+            python.parent.mkdir(parents=True)
+            python.write_text(
+                "#!/bin/sh\n"
+                f"if [ \"$1\" = -c ] && echo \"$2\" | grep -q sysconfig; then echo {cuda!s}; exit 0; fi\n"
+                f"exec {sys.executable} \"$@\"\n"
+            )
+            python.chmod(0o755)
+            model = root / "node/model-cache/qwen/1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0"
+            model.mkdir(parents=True)
+            (model / "config.json").write_text("{}\n")
+            (root / "painter/final_action_credit.py").parent.mkdir(parents=True, exist_ok=True)
+            (root / "painter/final_action_credit.py").write_text("# fixture\n")
+            brush = root / "painter/rl_helpers"
+            for name in (
+                "integrations/prime/watercolour_sft/init_adapter.py",
+                "integrations/prime/watercolour_sft/export_adapter.py",
+                "integrations/prime/watercolour_sft/model_profiles.py",
+                "scripts/upload_checkpoints.py",
+            ):
+                path = brush / name
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text("# fixture\n")
+            private = root / "node/private"
+            private.mkdir(parents=True)
+            (private / "gateway.env").write_text("GATEWAY_TEST=1\n")
+            (private / "gateway.env").chmod(0o600)
+            (private / "hf-token").write_text("token-test\n")
+
+            # The test adapters are small fixtures, so substitute their hashes
+            # in copied launch/config receipts while retaining every launcher
+            # identity and mode check.
+            launch = shared / "launch_rl.sh"
+            launch.write_text(launch.read_text().replace(
+                "e5211706a23b46354aa269f2b9cfaaaad1b64eef1012b433b1887c149f5a927c", initial_sha
+            ).replace(
+                "bea72b066986faa1b92b9dc539c710093181ee916b99323e2b2498f318ac1740", frozen_sha
+            ))
+            old_prepare_config = prepare.INITIALIZER["sha256"]
+            try:
+                receipt = prepare.materialize(
+                    shared_root=shared, prime_root=prime, model_dir=model,
+                    prepare_config=RUN.parent / "text-pairwise-rl-20260928/prepare_config.py",
+                    source_root=source_root,
+                )
+            finally:
+                self.assertEqual(prepare.INITIALIZER["sha256"], old_prepare_config)
+            self.assertEqual(len(receipt["arms"]), 3)
+            for arm in ("flash", "pro", "luna"):
+                arm_root = repo / f"runs/rl-judge-matched-20261004-{arm}"
+                for path in (arm_root / "native.toml", arm_root / "rl-config-receipt.json"):
+                    path.write_text(path.read_text().replace(
+                        "e5211706a23b46354aa269f2b9cfaaaad1b64eef1012b433b1887c149f5a927c", initial_sha
+                    ).replace(
+                        "bea72b066986faa1b92b9dc539c710093181ee916b99323e2b2498f318ac1740", frozen_sha
+                    ))
+
+            # Keep the launcher dependency-free in this preflight: the actual
+            # serializer round-trip runs against a tiny test stub, and no
+            # Prime package or renderer is loaded.
+            (root / "painter/native_painting_rl.py").write_text(textwrap.dedent("""
+                class _DataType:
+                    @classmethod
+                    def model_validate(cls, value):
+                        return cls()
+                    def model_dump(self, mode='json', exclude_none=True):
+                        return {'task_id': 'fixture-task'}
+                class _Data:
+                    task_id = 'fixture-task'
+                    def model_dump(self, mode='json', exclude_none=True):
+                        return {'task_id': self.task_id}
+                class _Task:
+                    def __init__(self, data=None, config=None):
+                        self.data = data or _Data()
+                        self.config = config
+                        self.key = 'fixture-key'
+                    def data_type(self):
+                        return _DataType
+                class NativePaintingRLConfig:
+                    @classmethod
+                    def model_validate(cls, value):
+                        return value
+                class NativePaintingRLTaskset:
+                    def __init__(self, config):
+                        self.config = config
+                    def load(self):
+                        return iter((_Task(config=self.config),))
+            """), encoding="utf-8")
+            command_bin = root / "bin"
+            command_bin.mkdir()
+            (command_bin / "uname").write_text("#!/bin/sh\nprintf 'Linux\\n'\n")
+            (command_bin / "stat").write_text("#!/bin/sh\nif [ \"$1\" = -c ]; then printf '600\\n'; else exit 1; fi\n")
+            (command_bin / "git").write_text(
+                "#!/bin/sh\n"
+                "if [ \"$1\" = -C ]; then shift 2; fi\n"
+                "if [ \"$1\" = rev-parse ]; then printf '26b3131d2716a4f8210b165df584b83b4bc54f61\\n'; exit 0; fi\n"
+                "exit 1\n"
+            )
+            for path in command_bin.iterdir():
+                path.chmod(0o755)
+            env = {
+                "PATH": str(command_bin) + os.pathsep + os.environ["PATH"],
+                "PAINTER_NODE_ROOT": str(root / "node"),
+                "PRIME_ROOT": str(prime),
+                "PAINTER_MATCHED_ARM_ROOT_BASE": str(repo / "runs"),
+                "PYTHONPATH": os.pathsep.join((str(root), str(prime / "src"))),
+            }
+            for arm in ("flash", "pro", "luna"):
+                arm_root = repo / f"runs/rl-judge-matched-20261004-{arm}"
+                command = (
+                    f"source {source_root / 'arm_env.sh'} {arm}; "
+                    f"PAINTER_RL_SUPERVISED=1 bash {arm_root / 'run.sh'} --preflight"
+                )
+                result = subprocess.run(["bash", "-c", command], env=env, cwd=arm_root,
+                                        text=True, capture_output=True)
+                self.assertEqual(result.returncode, 0, result.stderr + result.stdout)
+                self.assertIn('"status":"preflight_passed"', result.stdout)
+                self.assertEqual(
+                    json.loads((arm_root / "initial-adapter-receipt.json").read_text())["mode"],
+                    "recovered_policy",
+                )
+            mismatch = (
+                f"source {source_root / 'arm_env.sh'} flash; "
+                f"BRUSH_ROOT={root / 'painter/rl_helpers'} "
+                f"WATERCOLOUR_INIT_ADAPTER={initial} PAINTER_FROZEN_SFT_ADAPTER={frozen} "
+                f"PAINTER_RL_CONFIG={repo / 'runs/rl-judge-matched-20261004-flash/native.toml'} "
+                f"PAINTER_RL_MANIFEST={repo / 'runs/rl-judge-matched-20261004-flash/anchors-frozen/train-manifest.json'} "
+                f"PAINTER_RL_ADAPTER_REVISION=ac4d3eda8e5925e2d23992cfdc1a63620ebde573 "
+                f"PAINTER_RL_ADAPTER_PREFIX=text-pairwise-scaled-20260929/step_16 "
+                f"PAINTER_RL_ADAPTER_SHA256={initial_sha} PAINTER_RL_FIXED_OPPONENT=1 "
+                f"PAINTER_RL_MODE=fresh PAINTER_RL_PREFLIGHT_ONLY=1 "
+                f"PAINTER_RL_SKIP_EDITABLE_INSTALL=1 bash {repo / 'runs/rl-judge-matched-20261004-flash/launch_rl.sh'} "
+                f"{repo / 'runs/rl-judge-matched-20261004-flash'}"
+            )
+            result = subprocess.run(["bash", "-c", mismatch], env=env, cwd=source_root,
+                                    text=True, capture_output=True)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("config receipt mode does not match launcher", result.stderr)
 
     def _fake_scripts(self, root: Path, *, bad_step: bool = False) -> tuple[Path, Path, Path]:
         prepare_script = root / "prepare-fake.sh"
@@ -543,6 +767,7 @@ PY
                 "PAINTER_CAMPAIGN_STATE_ROOT": str(state),
                 "PAINTER_CAMPAIGN_ALLOW_NON_LINUX": "1",
                 "PAINTER_CAMPAIGN_SKIP_ARCHIVE": "1",
+                "PAINTER_CAMPAIGN_SKIP_PREFLIGHT": "1",
                 "PAINTER_CAMPAIGN_PYTHON": "python3",
             })
             result = subprocess.run([str(RUN / "campaign.sh"), "1000", "3.8", "57"], cwd=RUN,
@@ -568,6 +793,7 @@ PY
                 "PAINTER_CAMPAIGN_STATE_ROOT": str(root / "state"),
                 "PAINTER_CAMPAIGN_ALLOW_NON_LINUX": "1",
                 "PAINTER_CAMPAIGN_SKIP_ARCHIVE": "1",
+                "PAINTER_CAMPAIGN_SKIP_PREFLIGHT": "1",
             })
             too_expensive = subprocess.run([str(RUN / "campaign.sh"), "1000", "3.8", "60"], cwd=RUN,
                                            env=env, text=True, capture_output=True)
@@ -578,6 +804,64 @@ PY
             log = (root / "state/campaign/arms.jsonl").read_text().splitlines()
             self.assertEqual(len(log), 1)
             self.assertFalse(json.loads(log[0])["primary_success"])
+            status = json.loads((root / "state/campaign/status.json").read_text())
+            self.assertEqual(status["status"], "failed")
+
+    def test_campaign_preflight_failure_stops_before_baseline_or_training(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            arm_base = root / "arms"
+            marker = root / "calls.log"
+            prepare = root / "prepare.sh"
+            prepare.write_text(textwrap.dedent(f"""\
+                #!/bin/sh
+                set -eu
+                mkdir -p "{arm_base}/rl-judge-matched-20261004-flash" \\
+                         "{arm_base}/rl-judge-matched-20261004-pro" \\
+                         "{arm_base}/rl-judge-matched-20261004-luna"
+                for arm in flash pro luna; do
+                  cat > "{arm_base}/rl-judge-matched-20261004-$arm/run.sh" <<'EOF'
+                #!/bin/sh
+                printf 'preflight:%s\\n' "$PAINTER_ARM_ID" >> "{marker}"
+                [ "$PAINTER_ARM_ID" != flash ]
+                EOF
+                  chmod +x "{arm_base}/rl-judge-matched-20261004-$arm/run.sh"
+                done
+                printf 'prepare\\n' >> "{marker}"
+            """), encoding="utf-8")
+            arm_env = root / "arm_env.sh"
+            arm_env.write_text('export PAINTER_ARM_ID="$1"\n', encoding="utf-8")
+            baseline = root / "baseline.sh"
+            baseline.write_text(f"printf 'baseline\\n' >> '{marker}'\\nexit 0\\n", encoding="utf-8")
+            execute = root / "execute.sh"
+            execute.write_text(f"printf 'execute\\n' >> '{marker}'\\nexit 0\\n", encoding="utf-8")
+            for path in (prepare, arm_env, baseline, execute):
+                path.chmod(0o755)
+            state = root / "state"
+            env = os.environ.copy()
+            env.update({
+                "PAINTER_MATCHED_PREPARE_SCRIPT": str(prepare),
+                "PAINTER_MATCHED_BASELINE_SCRIPT": str(baseline),
+                "PAINTER_MATCHED_EXECUTE_SCRIPT": str(execute),
+                "PAINTER_MATCHED_ARM_ENV_SCRIPT": str(arm_env),
+                "PAINTER_MATCHED_ARM_ROOT_BASE": str(arm_base),
+                "PAINTER_CAMPAIGN_STATE_ROOT": str(state),
+                "PAINTER_CAMPAIGN_ALLOW_NON_LINUX": "1",
+                "PAINTER_CAMPAIGN_SKIP_ARCHIVE": "1",
+                "PAINTER_MATCHED_PREFLIGHT_TIMEOUT_SECONDS": "5",
+            })
+            result = subprocess.run([str(RUN / "campaign.sh"), "1000", "3.8", "57"], cwd=RUN,
+                                    env=env, text=True, capture_output=True)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertEqual(
+                marker.read_text().splitlines(), ["prepare", "preflight:flash"],
+                (state / "campaign/preflight-flash.log").read_text(),
+            )
+            status = json.loads((state / "campaign/status.json").read_text())
+            self.assertEqual(status["status"], "failed")
+            self.assertEqual(status["reason"], "campaign_failed")
+            terminal = json.loads((state / "campaign/terminal-receipt.json").read_text())
+            self.assertEqual(terminal["status"], "failed")
 
 
 if __name__ == "__main__":

@@ -16,6 +16,7 @@ export PAINTER_INITIAL_INFLIGHT=32
 export PAINTER_MAX_INFLIGHT=32
 export PAINTER_RL_MAX_STEPS=12
 export PAINTER_MAX_UPDATES=12
+export PAINTER_RL_MODE=recovered_policy
 export PAINTER_RL_CHECKPOINT_INTERVAL=4
 export PAINTER_CHECKPOINT_INTERVAL=4
 export ADAPTER_ONLY_CHECKPOINTS=1
@@ -74,6 +75,9 @@ apply_matched_resource_limits() {
 
 validate_matched_bindings() {
   [[ "${PAINTER_RUN_NAME:-}" == rl-judge-matched-20261004-* ]] || { echo 'matched run name is not bound' >&2; return 1; }
+  [[ "$PAINTER_RL_MODE" == recovered_policy && "${PAINTER_POLICY_MODE:-}" == recovered_policy ]] || {
+    echo 'matched campaign requires the recovered RL16 policy mode' >&2; return 1;
+  }
   [[ "$PAINTER_JUDGE_EFFORT" == medium && "$PAINTER_JUDGE_FORMAT" == identity-joint-side-schema-v2-generic-v1 ]] || {
     echo 'matched judge effort/format binding is invalid' >&2; return 1;
   }

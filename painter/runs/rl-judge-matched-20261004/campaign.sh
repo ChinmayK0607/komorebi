@@ -10,6 +10,7 @@ STATE_ROOT="${PAINTER_CAMPAIGN_STATE_ROOT:-$ROOT}"
 PREPARE="${PAINTER_MATCHED_PREPARE_SCRIPT:-$ROOT/prepare.sh}"
 BASELINE="${PAINTER_MATCHED_BASELINE_SCRIPT:-$ROOT/baseline.sh}"
 EXECUTE="${PAINTER_MATCHED_EXECUTE_SCRIPT:-$ROOT/execute_arm.sh}"
+ARM_ENV="${PAINTER_MATCHED_ARM_ENV_SCRIPT:-$ROOT/arm_env.sh}"
 
 if [[ "${1:-}" == --plan-only ]]; then
   "$PY" "$ROOT/prepare_campaign.py" --plan
@@ -91,6 +92,13 @@ temporary.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n")
 temporary.replace(terminal)
 PY
   fi
+  if [[ "$original_rc" != 0 ]]; then
+    # Publish the failed state before archiving so a public evidence bundle
+    # cannot retain the transient running status after a failed arm or
+    # preflight.  The terminal receipt above still preserves the original
+    # exit code and arm evidence.
+    write_status failed campaign_failed
+  fi
   local archive_rc=0
   if [[ "${PAINTER_CAMPAIGN_SKIP_ARCHIVE:-0}" != 1 ]]; then
     local archive_root="${PAINTER_MATCHED_ARCHIVE_ROOT:-$ROOT}"
@@ -140,6 +148,32 @@ write_status running shared_preparation
 prep_started="$(date +%s.%N)"
 if ! "$PREPARE" all >"$STATE_ROOT/campaign/prepare.log" 2>&1; then
   write_status failed shared_preparation_failed; exit 1
+fi
+
+# Run the real launcher preflight for every materialized arm before paying for
+# the baseline evaluation.  This follows the same arm_env -> run.sh ->
+# run_arm.sh path used by training, but launch_rl.sh exits before model,
+# renderer, or judge work when PAINTER_RL_PREFLIGHT_ONLY is set.  Keep this
+# bounded so a malformed prepared arm cannot consume the campaign reserve.
+if [[ "${PAINTER_CAMPAIGN_SKIP_PREFLIGHT:-0}" != 1 ]]; then
+  PREFLIGHT_TIMEOUT="${PAINTER_MATCHED_PREFLIGHT_TIMEOUT_SECONDS:-180}"
+  [[ "$PREFLIGHT_TIMEOUT" =~ ^[1-9][0-9]*$ ]] || {
+    write_status failed arm_preflight_invalid_timeout; exit 1
+  }
+  write_status running arm_preflight
+  for ARM in flash pro luna; do
+    ARM_ROOT="${PAINTER_MATCHED_ARM_ROOT_BASE:-$ROOT/..}/rl-judge-matched-20261004-$ARM"
+    PREFLIGHT_LOG="$STATE_ROOT/campaign/preflight-$ARM.log"
+    if ! timeout --signal=TERM --kill-after=30 "$PREFLIGHT_TIMEOUT" \
+      bash -c 'set -Eeuo pipefail
+        source "$1" "$2"
+        export PAINTER_RL_SUPERVISED=1
+        exec bash "$3/run.sh" --preflight
+      ' _ "$ARM_ENV" "$ARM" "$ARM_ROOT" >"$PREFLIGHT_LOG" 2>&1; then
+      write_status failed "arm_preflight_${ARM}_failed"
+      exit 1
+    fi
+  done
 fi
 write_status running fresh_rl16_baseline
 if ! "$BASELINE" >"$STATE_ROOT/campaign/baseline.log" 2>&1; then
