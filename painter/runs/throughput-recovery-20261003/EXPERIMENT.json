@@ -1,6 +1,6 @@
 {
   "schema": "painter-experiment-record-v1",
-  "status": "inference-ready-trainer-loading-weights-no-observed-optimizer-update",
+  "status": "qwen-rollouts-active-first-optimizer-update-pending",
   "hypothesis": "Bound speculative work, cancellation-safe rendering, and checkpoint every actual update will yield useful published updates within a short single-arm rental; visual benefit remains a separate matched evaluation.",
   "matched_baseline": {
     "policy": "historical RL16 initializer",
@@ -199,5 +199,30 @@
       "trainer_busy_fraction_gt0": 0.0,
       "saturated": false
     }
+  },
+  "rollout_observation": {
+    "observed_utc": "2026-10-04 06:38:40",
+    "groups_observed": 4,
+    "groups_admitted": 4,
+    "groups_rejected": 0,
+    "optimizer_updates_observed": 0,
+    "first_batch_last_logged_episodes": 8,
+    "batch_size": 16,
+    "gpu_clock_estimate_attempt_usd": 1.8187,
+    "gpu_clock_prior_attempts_estimate_or_upper_bound_usd": 6.2478,
+    "cost_note": "Rental-clock estimates and prior upper bounds, not an invoice.",
+    "utilization": {
+      "first_utc": "2026-10-04 06:22:14",
+      "last_utc": "2026-10-04 06:38:34",
+      "samples_per_gpu": 99,
+      "sampling_seconds": 10,
+      "inference_mean_percent": 50.90909090909091,
+      "inference_busy_fraction_gt0": 0.6060606060606061,
+      "trainer_mean_percent": 0.1111111111111111,
+      "trainer_busy_fraction_gt0": 0.09090909090909091,
+      "scope": "startup plus initial rollout collection",
+      "saturated": false
+    },
+    "controller_issue": "Reading the full growing metrics.jsonl caused repeated bounded SFTP observation timeouts; reconnects preserved the detached live job. Bounded-tail implementation requested; no live source mutation."
   }
 }
