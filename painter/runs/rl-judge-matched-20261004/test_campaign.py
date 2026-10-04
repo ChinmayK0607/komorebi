@@ -91,6 +91,17 @@ class MatchedCampaignTests(unittest.TestCase):
         self.assertIn('timeout --signal=TERM --kill-after=30 "$SHARED_PREPARE_TIMEOUT"', script)
         self.assertIn('PAINTER_FAST_STORAGE_HELPER', script)
 
+    def test_shared_prepare_rehomes_verified_frozen_sft_path_after_bootstrap(self):
+        script = (RUN / "prepare.sh").read_text(encoding="utf-8")
+        bootstrap_path = script.index('FROZEN_SFT_BOOTSTRAP_PATH_FILE=')
+        inherited_export = script.index('export PAINTER_FROZEN_SFT_ADAPTER_PATH_FILE="$FROZEN_SFT_BOOTSTRAP_PATH_FILE"')
+        base_prepare = script.index('bash "$BASE/prepare_node.sh"')
+        shared_copy = script.index('mv -f "$temporary" "$SHARED/frozen-sft-adapter-path.txt"')
+        self.assertLess(bootstrap_path, inherited_export)
+        self.assertLess(inherited_export, base_prepare)
+        self.assertGreater(shared_copy, base_prepare)
+        self.assertIn('adapter_model.safetensors', script[shared_copy - 600:shared_copy])
+
     def test_baseline_wrapper_uses_flat_shared_manifest_and_public_archive(self):
         """Exercise the generated baseline shell lifecycle without a node."""
         with tempfile.TemporaryDirectory() as temp:

@@ -10,6 +10,7 @@ PRIME_ROOT="${PRIME_ROOT:-$NODE_ROOT/prime}"
 FAST_STORAGE_MODE="${PAINTER_FAST_STORAGE_MODE:-profile_default}"
 FAST_STORAGE_ROOT="${PAINTER_FAST_STORAGE_ROOT:-/tmp/painter-runtime-fast}"
 FAST_STORAGE_HELPER="$THROUGHPUT/prepare_fast_storage.py"
+FROZEN_SFT_BOOTSTRAP_PATH_FILE="$REPO/painter/runs/photo-curriculum-rl-20260922/initial-adapter-path.txt"
 # Keep the shared root flat as well: inherited base scripts derive REPO from
 # RUN/../../.. and must resolve it to the checkout's parent repository.
 SHARED="$RUN/../rl-judge-matched-20261004-shared"
@@ -77,7 +78,10 @@ if [[ ! -f "$SHARED/preparation-receipt.json" ]]; then
   export PAINTER_POLICY_DOWNLOAD_SCRIPT="$REPO/painter/runs/text-pairwise-rl-20260928/download_public_adapter.py"
   export PAINTER_POLICY_DOWNLOAD_RECEIPT="$SHARED/policy-adapter-receipt.json"
   export PAINTER_SFT_ADAPTER_PATH_FILE="$SHARED/policy-adapter-path.txt"
-  export PAINTER_FROZEN_SFT_ADAPTER_PATH_FILE="$SHARED/frozen-sft-adapter-path.txt"
+  # setup_node.sh downloads the frozen SFT adapter through its historical
+  # sibling path. Point the inherited base check there during bootstrap, then
+  # copy the verified path into this campaign's shared receipt below.
+  export PAINTER_FROZEN_SFT_ADAPTER_PATH_FILE="$FROZEN_SFT_BOOTSTRAP_PATH_FILE"
   export PAINTER_GROUP_SIZE=4 PAINTER_INITIAL_INFLIGHT=32 PAINTER_MAX_INFLIGHT=32
   export PAINTER_GPUS_PER_NODE=2 PAINTER_NUM_TRAIN_GPUS=1 PAINTER_NUM_INFER_GPUS=1
   export PAINTER_ACTIVATION_CPU_OFFLOAD=1 PAINTER_JUDGE_PROTOCOL=text-paint-sft-pairwise-consistent-v1
@@ -99,6 +103,18 @@ if [[ ! -f "$SHARED/preparation-receipt.json" ]]; then
 fi
 
 [[ -f "$SHARED/preparation-receipt.json" ]] || { echo 'shared preparation did not produce a receipt' >&2; exit 1; }
+if [[ ! -r "$SHARED/frozen-sft-adapter-path.txt" ]]; then
+  [[ -r "$FROZEN_SFT_BOOTSTRAP_PATH_FILE" ]] || {
+    echo "verified frozen SFT path file is missing: $FROZEN_SFT_BOOTSTRAP_PATH_FILE" >&2; exit 1;
+  }
+  FROZEN_SFT_ADAPTER="$(tr -d '\r\n' < "$FROZEN_SFT_BOOTSTRAP_PATH_FILE")"
+  [[ -f "$FROZEN_SFT_ADAPTER/adapter_model.safetensors" && -f "$FROZEN_SFT_ADAPTER/adapter_config.json" ]] || {
+    echo 'downloaded frozen SFT adapter is incomplete' >&2; exit 1;
+  }
+  temporary="$SHARED/.frozen-sft-adapter-path.txt.tmp"
+  printf '%s\n' "$FROZEN_SFT_ADAPTER" >"$temporary"
+  mv -f "$temporary" "$SHARED/frozen-sft-adapter-path.txt"
+fi
 [[ -e "$SHARED/runtime" ]] || ln -s "$RUN/runtime" "$SHARED/runtime"
 if [[ "$FAST_STORAGE_MODE" == profile_default ]]; then
   python3 "$FAST_STORAGE_HELPER" --phase prime --run-root "$RUN" \
