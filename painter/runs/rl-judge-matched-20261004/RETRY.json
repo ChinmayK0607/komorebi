@@ -8,5 +8,20 @@
   "maximum_hourly_price_usd": 3.8,
   "retry_scope": "Same3judges/12updates/RL16/data/rubric/config; only missingimport and previouslyrecorded pathhandoff corrected.",
   "retry_authorization": "Continuation of approved campaign, no unbounded repeated allocation.",
-  "tests": "8focused metadata/dummy lifecycle tests passed, includingactualsubprocess materialization."
+  "tests": "8focused metadata/dummy lifecycle tests passed, includingactualsubprocess materialization.",
+  "source": {
+    "schema": "matched-judge-public-source-v1",
+    "attempt": 2,
+    "repo_id": "CK0607/komorebi-painter-teachers",
+    "revision": "0f46440e5ed76bee112c48aac006dde9f6367d6d",
+    "path": "execution-source/rl-judge-matched-20261004/source-5eff2912.bundle",
+    "source_commit": "5eff291263d49f4ba81a1694973f2e8ce0de9e16",
+    "sha256": "c4a695f79f27ea5470045e5be64d5bfcf7f96af840710837bdf6b0efb42ce0cd",
+    "bytes": 3421876,
+    "anonymous_hash_verified": true,
+    "private": false
+  },
+  "clean_bundle_replay_tests": 8,
+  "undefined_name_static_checks": "passed F821,F822,F823",
+  "rental_request_utc": "2026-10-04T09:03:36.143159+00:00"
 }
