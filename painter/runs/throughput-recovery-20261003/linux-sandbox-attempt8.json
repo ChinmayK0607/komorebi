@@ -1,0 +1,17 @@
+{
+  "browser_root": "/tmp/painter-runtime-fast/renderer-browsers",
+  "credentials_touched": false,
+  "sandbox_helper": "/tmp/painter-runtime-fast/renderer-browsers/chromium-1208/chrome-linux64/chrome-sandbox",
+  "sandbox_helper_mode": 2541,
+  "sandbox_helper_sha256": "206aa30eeb399b1d10fdf345106b315be01deded548243eb7263c8af2773ab88",
+  "sandbox_helper_sha256s": {
+    "/tmp/painter-runtime-fast/renderer-browsers/chromium-1208/chrome-linux64/chrome-sandbox": "206aa30eeb399b1d10fdf345106b315be01deded548243eb7263c8af2773ab88",
+    "/tmp/painter-runtime-fast/renderer-browsers/chromium_headless_shell-1208/chrome-headless-shell-linux64/chrome-sandbox": "206aa30eeb399b1d10fdf345106b315be01deded548243eb7263c8af2773ab88"
+  },
+  "sandbox_helpers": [
+    "/tmp/painter-runtime-fast/renderer-browsers/chromium-1208/chrome-linux64/chrome-sandbox",
+    "/tmp/painter-runtime-fast/renderer-browsers/chromium_headless_shell-1208/chrome-headless-shell-linux64/chrome-sandbox"
+  ],
+  "sandbox_smoke": "passed",
+  "schema": "throughput-recovery-renderer-runtime-v1"
+}

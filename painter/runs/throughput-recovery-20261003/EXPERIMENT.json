@@ -1,6 +1,6 @@
 {
   "schema": "painter-experiment-record-v1",
-  "status": "reviewed-durable-controller-finite-retry-prepared",
+  "status": "linux-sandbox-preflight-passed-prime-runtime-installing",
   "hypothesis": "Bound speculative work, cancellation-safe rendering, and checkpoint every actual update will yield useful published updates within a short single-arm rental; visual benefit remains a separate matched evaluation.",
   "matched_baseline": {
     "policy": "historical RL16 initializer",
@@ -162,7 +162,7 @@
   "runtime_storage_record": "runtime-storage-placement.json",
   "observed_launch": {
     "attempt": 8,
-    "policy_launch": "not started",
+    "policy_launch": "not yet started",
     "optimizer_updates": 0
   },
   "runtime_repairs": [
@@ -170,5 +170,12 @@
     "browser-sandbox-placement.json"
   ],
   "prior_allocation_result": "allocation-attempt7-result.json",
-  "bootstrap_review": "bootstrap-review.json"
+  "bootstrap_review": "bootstrap-review.json",
+  "linux_runtime_check": {
+    "first_sandbox_smoke": "passed",
+    "sandbox_enabled": true,
+    "credentials_touched": false,
+    "evidence": "linux-sandbox-attempt8.json",
+    "final_node_and_browser_check": "pending after Prime installation"
+  }
 }
