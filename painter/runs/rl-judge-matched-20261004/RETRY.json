@@ -1,0 +1,12 @@
+{
+  "schema": "matched-campaign-bounded-retry-v1",
+  "attempt": 2,
+  "prior_gpu_clock_estimate_usd": 0.781,
+  "prior_failed_start_reserve_usd": 1.0,
+  "this_rental_cap_usd": 57.5,
+  "original_campaign_cap_usd": 58.5,
+  "maximum_hourly_price_usd": 3.8,
+  "retry_scope": "Same3judges/12updates/RL16/data/rubric/config; only missingimport and previouslyrecorded pathhandoff corrected.",
+  "retry_authorization": "Continuation of approved campaign, no unbounded repeated allocation.",
+  "tests": "8focused metadata/dummy lifecycle tests passed, includingactualsubprocess materialization."
+}

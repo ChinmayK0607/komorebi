@@ -221,6 +221,80 @@ class MatchedCampaignTests(unittest.TestCase):
             self.assertEqual(normalized["ckpt"]["interval"], 4)
             self.assertEqual(normalized["orchestrator"]["concurrency"]["max_inflight"], 32)
 
+    def test_materialize_runs_actual_config_writer_for_three_flat_arms(self):
+        """Exercise materialize's subprocess handoff with a fake Prime validator."""
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            source_root = root / "repo/painter/runs/rl-judge-matched-20261004"
+            source_root.mkdir(parents=True)
+            shared = root / "repo/painter/runs/rl-judge-matched-20261004-shared"
+            (shared / "anchors-frozen").mkdir(parents=True)
+            train_rows = [
+                {"id": f"train-{index}", "reference_kind": "text", "opponent_sha256": "a" * 64}
+                for index in range(40)
+            ]
+            validation_cases = (
+                [{"id": f"simple-{index}", "family": "simple"} for index in range(4)] +
+                [{"id": f"intermediate-{index}", "family": "intermediate"} for index in range(4)] +
+                [{"id": f"complex-{index}", "family": "complex"} for index in range(39)]
+            )
+            (shared / "anchors-frozen/train-manifest.json").write_text(json.dumps({"rows": train_rows}))
+            (shared / "anchors-frozen/validation-manifest.json").write_text(json.dumps({"cases": validation_cases}))
+            (shared / "preparation-receipt.json").write_text("{}\n")
+            for name in ("anchors-all", "vendor", "renderer-env", "browsers", "runtime"):
+                (shared / name).mkdir()
+            (shared / "runtime/watercolour-cancellable-centroid-v1").mkdir(parents=True)
+            adapter = root / "adapters/initializer"
+            adapter.mkdir(parents=True)
+            (shared / "policy-adapter-path.txt").write_text(str(adapter) + "\n")
+            (shared / "frozen-sft-adapter-path.txt").write_text(str(adapter) + "\n")
+            for name in ("prepare_arm.sh", "prepare_node.sh", "run.sh", "evaluate.sh", "finalize.sh",
+                         "runtime_env.sh", "finite_supervisor.py"):
+                (source_root / name).write_text("#!/bin/sh\n")
+            prime = root / "prime"
+            module_root = prime / "src/prime_rl/configs"
+            module_root.mkdir(parents=True)
+            (module_root / "__init__.py").write_text("")
+            (module_root.parent / "__init__.py").write_text("")
+            (module_root / "rl.py").write_text(
+                "class RLConfig:\n"
+                "    @classmethod\n"
+                "    def model_validate(cls, value):\n"
+                "        return value\n"
+            )
+            model = root / "model"
+            model.mkdir()
+            prepare_config = RUN.parent / "text-pairwise-rl-20260928/prepare_config.py"
+            old_pythonpath = os.environ.get("PYTHONPATH")
+            os.environ["PYTHONPATH"] = os.pathsep.join(
+                item for item in (str(root / "repo"), str(prime / "src"), old_pythonpath) if item
+            )
+            try:
+                receipt = prepare.materialize(
+                    shared_root=shared, prime_root=prime, model_dir=model,
+                    prepare_config=prepare_config, source_root=source_root,
+                )
+            finally:
+                if old_pythonpath is None:
+                    os.environ.pop("PYTHONPATH", None)
+                else:
+                    os.environ["PYTHONPATH"] = old_pythonpath
+            self.assertEqual(len(receipt["arms"]), 3)
+            for arm in ("flash", "pro", "luna"):
+                arm_root = root / f"repo/painter/runs/rl-judge-matched-20261004-{arm}"
+                self.assertTrue((arm_root / "native.toml").is_file())
+                self.assertTrue((arm_root / "rl-config-receipt.json").is_file())
+                self.assertEqual(prepare.normalized_native_config(arm_root / "native.toml")["max_steps"], 12)
+                self.assertEqual(json.loads((arm_root / "rl-config-receipt.json").read_text())["batch_size"], 16)
+            # A prepared arm may be rematerialized while it has no training
+            # output, but any existing async output must stop the handoff.
+            (root / "repo/painter/runs/rl-judge-matched-20261004-flash/async-output").mkdir()
+            with self.assertRaises(ValueError):
+                prepare.materialize(
+                    shared_root=shared, prime_root=prime, model_dir=model,
+                    prepare_config=prepare_config, source_root=source_root,
+                )
+
     def _fake_scripts(self, root: Path, *, bad_step: bool = False) -> tuple[Path, Path, Path]:
         prepare_script = root / "prepare-fake.sh"
         prepare_script.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")

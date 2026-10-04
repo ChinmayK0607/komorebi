@@ -7,14 +7,19 @@
   "schema": "matched-three-judge-allocation-v1",
   "source_bundle_sha256": "6178fdf0ea637f14a15fb94edaa345e7b3b55ec9cd9c8b85a9f0d7f5cea3d295",
   "source_commit": "9e644e2c038e656d29c1c21396fa214d413a63ca",
-  "status": "prime_staged_detached_job_running",
+  "status": "failed_node_released",
   "topology": {
     "gpus_per_node": 2,
     "num_infer_gpus": 1,
     "num_train_gpus": 1
   },
   "recorded_utc": "2026-10-04T08:16:26.876181+00:00",
-  "claim": "Source/GPU identities verified and finite detached Linux campaign active in shared preparation; zero observed optimizer updates.",
+  "claim": "No training or evaluation results. Public screened failure evidence anonymously hash-verified.",
   "bootstrap_path_correction": "Frozen SFT512 downloaded path mirrored into shared root after on-node SHA verification; live source code unchanged.",
-  "updated_utc": "2026-10-04T08:19:17.091753+00:00"
+  "updated_utc": "2026-10-04T08:19:17.091753+00:00",
+  "completed_optimizer_steps": 0,
+  "failure": "NameError: sys not imported in prepare_campaign.materialize; shared bootstrap and Prime config validation had passed.",
+  "gpu_clock_estimate_usd": 0.781,
+  "estimate_basis": "allocation start to final release receipt timestamp; not provider invoice",
+  "active_pods_confirmed": 0
 }

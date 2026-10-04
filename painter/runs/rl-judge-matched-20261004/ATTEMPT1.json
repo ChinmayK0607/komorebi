@@ -1,0 +1,28 @@
+{
+  "schema": "matched-campaign-attempt-result-v1",
+  "attempt": 1,
+  "status": "preparation_failed_node_released",
+  "completed_optimizer_updates": 0,
+  "baseline_evaluated": false,
+  "judge_arms_started": [],
+  "failure_stage": "create isolated arm configurations",
+  "failure": "missing sys import in prepare_campaign.materialize",
+  "passed_runtime_scope": [
+    "pinned model and public adapter download",
+    "renderer setup",
+    "pinned Prime setup",
+    "fixed anchor semantic SHA and40/47 counts",
+    "Prime native configuration validation"
+  ],
+  "gpu_clock_estimate_usd": 0.781,
+  "active_pods": 0,
+  "evidence": {
+    "repo_id": "CK0607/komorebi-painter-experiments",
+    "revision": "2a46d81dc747800726bf60357cdff2c9a6f2a2c2",
+    "path": "runs/rl-judge-matched-20261004/campaign-evidence.tar.gz",
+    "sha256": "b06105cdd868714fa3502864cbaebbbf8759375848fee97cc834c07e10e24a7e",
+    "bytes": 681892,
+    "anonymous_hash_verified": true
+  },
+  "next_decision": "Fix import and exercise actual materialize subprocess path before bounded retry; count this attempt in original campaign cap."
+}
