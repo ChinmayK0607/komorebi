@@ -1,0 +1,21 @@
+{
+  "cap_usd": 57.5,
+  "price_usd_per_hour": 3.8,
+  "prime_bundle_sha256": "64b035e176df1aa850280f9bcdad5cedef8108636b59a5c29f2af8b014cf3dbe",
+  "prime_commit": "26b3131d2716a4f8210b165df584b83b4bc54f61",
+  "rental_start_epoch": 1791104627.539766,
+  "schema": "matched-three-judge-allocation-v1",
+  "source_bundle_sha256": "c4a695f79f27ea5470045e5be64d5bfcf7f96af840710837bdf6b0efb42ce0cd",
+  "source_commit": "5eff291263d49f4ba81a1694973f2e8ce0de9e16",
+  "status": "prime_staged",
+  "topology": {
+    "gpus_per_node": 2,
+    "num_infer_gpus": 1,
+    "num_train_gpus": 1
+  },
+  "attempt": 2,
+  "prior_failed_start_reserve_usd": 1.0,
+  "original_campaign_cap_usd": 58.5,
+  "claim": "Allocated for corrected finite campaign; waiting for readiness, zero optimizer updates confirmed.",
+  "recorded_utc": "2026-10-04T09:04:47.637727+00:00"
+}
