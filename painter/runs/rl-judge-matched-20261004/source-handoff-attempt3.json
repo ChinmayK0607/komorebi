@@ -1,0 +1,12 @@
+{
+  "schema": "matched-judge-public-source-v1",
+  "attempt": 3,
+  "repo_id": "CK0607/komorebi-painter-teachers",
+  "revision": "1ef40e09272333062fdd0c1707ef0a1adc8d69ea",
+  "path": "execution-source/rl-judge-matched-20261004/source-7cf8845b.bundle",
+  "source_commit": "7cf8845b60a55967cb1849ffd1ef2cb9429f36c5",
+  "sha256": "7d7261685feb831afb440dca6259587d2a451307e01b2cf3663d928101aa31db",
+  "bytes": 3429360,
+  "anonymous_hash_verified": true,
+  "private": false
+}

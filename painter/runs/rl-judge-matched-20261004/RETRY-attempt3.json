@@ -1,0 +1,26 @@
+{
+  "schema": "matched-campaign-bounded-retry-v1",
+  "attempt": 3,
+  "prior_gpu_clock_estimate_usd": 1.5984,
+  "prior_failed_start_reserve_usd": 2.0,
+  "this_rental_cap_usd": 56.5,
+  "original_campaign_cap_usd": 58.5,
+  "maximum_hourly_price_usd": 3.8,
+  "retry_scope": "Identical independent RL16/three judges/12 updates/data/rubric/training. Correct downloaded baseline provenance and common evaluation flags.",
+  "retry_authorization": "Continuation of approved campaign; one bounded allocation, no recursive rental retries.",
+  "clean_bundle_replay_campaign_tests": 10,
+  "existing_evaluator_tests": 5,
+  "undefined_name_static_checks": "passed F821,F822,F823",
+  "source": {
+    "schema": "matched-judge-public-source-v1",
+    "attempt": 3,
+    "repo_id": "CK0607/komorebi-painter-teachers",
+    "revision": "1ef40e09272333062fdd0c1707ef0a1adc8d69ea",
+    "path": "execution-source/rl-judge-matched-20261004/source-7cf8845b.bundle",
+    "source_commit": "7cf8845b60a55967cb1849ffd1ef2cb9429f36c5",
+    "sha256": "7d7261685feb831afb440dca6259587d2a451307e01b2cf3663d928101aa31db",
+    "bytes": 3429360,
+    "anonymous_hash_verified": true,
+    "private": false
+  }
+}
