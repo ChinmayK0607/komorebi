@@ -1,0 +1,31 @@
+{
+  "schema": "frozen-three-judge-parent-review-v1",
+  "status": "reviewed-prepared-not-paid-launched",
+  "pair_count": 24,
+  "models": [
+    "xiaomi/mimo-v2.6-flash",
+    "xiaomi/mimo-v2.6-pro",
+    "openai/gpt-6-luna"
+  ],
+  "requested_effort": "medium",
+  "orders": 2,
+  "repeats": 2,
+  "planned_calls": 288,
+  "offline_tests_passed": 3,
+  "checks": [
+    "real rubric parser and image identity mapping",
+    "minimum agreed preference magnitude",
+    "winner-specific weaknesses across reversed orders",
+    "resume rejects stale receipts",
+    "truncated answers censored",
+    "owner-only nonsymlink credential loader reused",
+    "generated evidence excluded from Git"
+  ],
+  "limitations": [
+    "Only three explicit historical human labels; two fan preferences correlated.",
+    "Historical checkpoint images are not complete same-policy rollout groups.",
+    "Fixed two-order repeat protocol differs from live adaptive rechecks.",
+    "Provider reasoning effort and returned model identity require actual paid receipts."
+  ],
+  "launch_condition": "Live finite recovery pilot fails to produce useful updates; no additional GPU retry cycle."
+}
