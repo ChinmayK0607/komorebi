@@ -1,0 +1,29 @@
+{
+  "schema": "painter-rental-allocation-v1",
+  "status": "prime_staged",
+  "source_commit": "782053ce2f032bb6b98c903d8f0f8d4dcd4e92b6",
+  "source_bundle": {
+    "repo_id": "CK0607/komorebi-painter-teachers",
+    "revision": "16e390e811d37d427be571e0dc7460e0a99b0dfb",
+    "path": "execution-source/throughput-recovery-20261004/source-782053c.bundle",
+    "sha256": "a730a25b9da34f74e0c5d104bf0b04884cf1b0ae74d9ea76c509fbcebd5d39d3",
+    "bytes": 3338783,
+    "anonymous_hash_verified": true,
+    "source_commit": "782053ce2f032bb6b98c903d8f0f8d4dcd4e92b6"
+  },
+  "hardware": {
+    "gpu": "H100",
+    "count": 2,
+    "memory_gb_per_gpu": 80,
+    "max_whole_node_usd_hour": 3.8,
+    "whole_node_usd_hour": 3.8
+  },
+  "gpu_cap_usd": 13.5,
+  "prior_start_reserve_usd": 6.5,
+  "whole_pilot_gpu_cap_usd": 20,
+  "updates": 4,
+  "hypothesis": "Reviewed durable execution will survive SSH transport drops and produce four real Qwen RL16 updates with unchanged Flash judge and frozen SFT512 opponents.",
+  "matched_baseline": "RL16 initializer; same frozen SFT512 reward anchors. No fresh RL16 heldout evaluation yet; trained versus archived SFT gallery cannot establish RL16 improvement.",
+  "fallback": "If useful optimizer updates remain unavailable, stop/release and compare Flash, Pro and Luna on the same saved paintings with no GPU rental.",
+  "rental_request_utc": "2026-10-04T06:09:27.024108+00:00"
+}

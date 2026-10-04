@@ -1,6 +1,6 @@
 {
   "schema": "painter-experiment-record-v1",
-  "status": "ssh-disconnect-before-learning-node-released",
+  "status": "reviewed-durable-controller-finite-retry-prepared",
   "hypothesis": "Bound speculative work, cancellation-safe rendering, and checkpoint every actual update will yield useful published updates within a short single-arm rental; visual benefit remains a separate matched evaluation.",
   "matched_baseline": {
     "policy": "historical RL16 initializer",
@@ -123,7 +123,7 @@
     "matched initializer versus trained visual results with failures censored",
     "rental elapsed-time estimate and recorded API usage"
   ],
-  "next_decision": "Do not rent again with foreground SSH lifetime as the completion signal. Review a detached finite execution/exit receipt and reconnect path, retain remote budget watchdog, and test disconnect recovery before a further allocation. Same pilot cap includes every failed start.",
+  "next_decision": "Reviewed durable execution will survive SSH transport drops and produce four real Qwen RL16 updates with unchanged Flash judge and frozen SFT512 opponents. If useful optimizer updates remain unavailable, stop/release and compare Flash, Pro and Luna on the same saved paintings with no GPU rental.",
   "planned_hardware_offer": {
     "gpu": "H100",
     "count": 2,
@@ -133,7 +133,7 @@
     "allocated": false,
     "availability_recheck_required": true
   },
-  "source_commit": "bfd08c684749aa795476c943a89c5980d016140e",
+  "source_commit": "782053ce2f032bb6b98c903d8f0f8d4dcd4e92b6",
   "configuration_handoff_repair": {
     "strategy": "staged config/receipt validation and frozen-limit comparison before pretraining replacement; shared no-overwrite writer unchanged",
     "parent_checks": {
@@ -144,7 +144,7 @@
     },
     "scope": "metadata and lifecycle contracts only; main replay uses Prime validator stub. Actual pinned Prime accepted base profile on failed Linux setup; no successful training yet."
   },
-  "allocation_record": "allocation-attempt7.json",
+  "allocation_record": "allocation-attempt8.json",
   "upstream_source_staging": "prime-source-staging.json",
   "status_observation_repair": {
     "scope": "A bounded transient SFTP observation failure does not terminate a healthy remote command. Completed preparation receipt identifies the profile; base preparation is not interpreted as final. The SSH exit code and hard rental deadline remain authoritative.",
@@ -161,8 +161,8 @@
   },
   "runtime_storage_record": "runtime-storage-placement.json",
   "observed_launch": {
-    "attempt": 7,
-    "policy_launch": "not observed; cold setup",
+    "attempt": 8,
+    "policy_launch": "not started",
     "optimizer_updates": 0
   },
   "runtime_repairs": [
