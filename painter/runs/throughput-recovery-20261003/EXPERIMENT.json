@@ -1,6 +1,6 @@
 {
   "schema": "painter-experiment-record-v1",
-  "status": "linux-runtime-passed-inference-loading-no-observed-optimizer-update",
+  "status": "inference-ready-trainer-loading-weights-no-observed-optimizer-update",
   "hypothesis": "Bound speculative work, cancellation-safe rendering, and checkpoint every actual update will yield useful published updates within a short single-arm rental; visual benefit remains a separate matched evaluation.",
   "matched_baseline": {
     "policy": "historical RL16 initializer",
@@ -178,5 +178,26 @@
     "evidence": "linux-sandbox-attempt8.json",
     "final_node_and_browser_check": "pending after Prime installation"
   },
-  "target_runtime_receipt": "linux-runtime-attempt8.json"
+  "target_runtime_receipt": "linux-runtime-attempt8.json",
+  "startup_observation": {
+    "observed_utc": "2026-10-04 06:29:02",
+    "inference_health": "HTTP 200",
+    "train_environment_tasks": 40,
+    "orchestrator": "waiting for trainer startup weight broadcast v0",
+    "trainer": "loading pinned weights via HF DCP",
+    "optimizer_updates_observed": 0,
+    "quality_result": null,
+    "gpu_utilization_window": {
+      "scope": "startup only",
+      "first_utc": "2026-10-04 06:22:14",
+      "last_utc": "2026-10-04 06:28:14",
+      "sampling_seconds": 10,
+      "samples_per_gpu": 37,
+      "inference_mean_percent": 9.567567567567568,
+      "inference_busy_fraction_gt0": 0.32432432432432434,
+      "trainer_mean_percent": 0.0,
+      "trainer_busy_fraction_gt0": 0.0,
+      "saturated": false
+    }
+  }
 }
