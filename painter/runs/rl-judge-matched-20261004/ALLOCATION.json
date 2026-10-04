@@ -1,0 +1,18 @@
+{
+  "cap_usd": 58.5,
+  "price_usd_per_hour": 3.8,
+  "prime_bundle_sha256": "64b035e176df1aa850280f9bcdad5cedef8108636b59a5c29f2af8b014cf3dbe",
+  "prime_commit": "26b3131d2716a4f8210b165df584b83b4bc54f61",
+  "rental_start_epoch": 1791101743.426195,
+  "schema": "matched-three-judge-allocation-v1",
+  "source_bundle_sha256": "6178fdf0ea637f14a15fb94edaa345e7b3b55ec9cd9c8b85a9f0d7f5cea3d295",
+  "source_commit": "9e644e2c038e656d29c1c21396fa214d413a63ca",
+  "status": "prime_staged",
+  "topology": {
+    "gpus_per_node": 2,
+    "num_infer_gpus": 1,
+    "num_train_gpus": 1
+  },
+  "recorded_utc": "2026-10-04T08:16:26.876181+00:00",
+  "claim": "Allocated and awaiting finite shared bootstrap; no optimizer update confirmed."
+}
