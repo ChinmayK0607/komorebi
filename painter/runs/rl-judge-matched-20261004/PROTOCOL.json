@@ -1,0 +1,84 @@
+{
+  "schema": "matched-three-judge-protocol-v1",
+  "status": "reviewed-before-rental",
+  "hypothesis": "With identical independent RL16 starts and training/evaluation recipe, changing only the pairwise judge changes the aesthetic and spatial qualities reinforced in heldout paintings.",
+  "primary_comparison": "Same 16 heldout briefs at exactly 12 completed optimizer updates per arm; fresh RL16 control generated once under the same evaluation setup. Human side-by-side visual preference is primary; raw rewards from different judges are not interchangeable.",
+  "arms": {
+    "flash": "xiaomi/mimo-v2.6-flash",
+    "pro": "xiaomi/mimo-v2.6-pro",
+    "luna": "openai/gpt-6-luna"
+  },
+  "judge_common": {
+    "requested_effort": "medium",
+    "max_output_tokens": 4096,
+    "format": "identity-joint-side-schema-v2-generic-v1",
+    "rubric_sha256": "d21e4644e7a3874a0694b2ad406420e733b7638222eb7717e7f5f91cbdf1613c",
+    "sampling_controls": "omitted for explicit reasoning",
+    "internal_compute_equivalence": false
+  },
+  "model": {
+    "repo": "Qwen/Qwen3.8-27B",
+    "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0"
+  },
+  "initializer": {
+    "repo": "CK0607/qwen3.8-27b-brush-painting",
+    "revision": "ac4d3eda8e5925e2d23992cfdc1a63620ebde573",
+    "prefix": "text-pairwise-scaled-20260929/step_16",
+    "sha256": "e5211706a23b46354aa269f2b9cfaaaad1b64eef1012b433b1887c149f5a927c",
+    "fresh_optimizer_every_arm": true
+  },
+  "frozen_reward_opponent": {
+    "revision": "adf687e5b321514eda7be6eab050434fdc8e44ff",
+    "prefix": "photo-curriculum-sft-20260922-balanced/step_512",
+    "sha256": "bea72b066986faa1b92b9dc539c710093181ee916b99323e2b2498f318ac1740"
+  },
+  "data": {
+    "train_cases": 40,
+    "heldout_cases": 47,
+    "train_semantic_sha256": "13ac0eebb3595fbd931ee7864e69101abdc8b7c9c1faccf11dfcd9bd495c6501"
+  },
+  "training_common": {
+    "actual_updates": 12,
+    "batch_size": 16,
+    "group_size": 4,
+    "initial_and_max_inflight": 32,
+    "max_policy_age": 1,
+    "learning_rate": 1e-06,
+    "cpu_activation_offload": true,
+    "strict_final_action": true,
+    "brush_api_reference": "v2",
+    "orchestrator_seed": 42,
+    "inference_seed": 0
+  },
+  "evaluation_common": {
+    "cases": 16,
+    "turns": 3,
+    "tokens_per_turn": 8192,
+    "seed": 918210,
+    "missing_or_invalid_terminal_cases": "Reported separately; no retained earlier image counted as a successful terminal action."
+  },
+  "gpu_plan": {
+    "topology": "twoH10080: inference1 trainer1, same node reused sequentially",
+    "observed_offer_usd_per_hour": 3.8,
+    "max_price_usd_per_hour": 3.8,
+    "hard_cap_per_arm_usd": 19.5,
+    "hard_total_cap_usd": 58.5,
+    "shared_setup_cost": "equally apportioned, includes freshbaseline/setup/evaluation/archive/release",
+    "prior_pilot_estimate_for_new_campaign_usd": 30,
+    "estimate_limitations": "Judge latency and on-policy validity may differ; an estimate, not a quote.",
+    "failed_starts": "counted in this campaign cap; no unbounded automatic retries"
+  },
+  "preservation": "Public hash-verifiedHFcheckpoints and screened evidence, source via reviewedGitbundle.",
+  "research_scope": "Actual training ablation; frozen-image judge panel is supporting evidence and not a substitute.",
+  "source_identifiers_pending": [
+    "reviewed_source_commit",
+    "generated_normalized_configuration_hashes",
+    "matched16_manifest_hash",
+    "exact_allocation_cost_and_runtime_receipts"
+  ],
+  "limitations": [
+    "Equal requested reasoning effort is not equal internal compute.",
+    "Async sampling/admission may yield different accepted batches as policies and judge uncertainty diverge; identical pool and seeds do not imply identical generated trajectories.",
+    "A single run per judge and 16 heldout cases is exploratory, not a precise population-level effect estimate."
+  ]
+}

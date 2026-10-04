@@ -1,0 +1,62 @@
+{
+  "schema": "matched-judge-contract-check-v1",
+  "calls": [
+    {
+      "requested_model": "xiaomi/mimo-v2.6-flash",
+      "returned_model": "xiaomi/mimo-v2.6-flash",
+      "status": "censored",
+      "elapsed_seconds": 21.815897583030164,
+      "usage": {
+        "prompt_tokens": 1464,
+        "completion_tokens": 831,
+        "total_tokens": 2295,
+        "reasoning_tokens": 496,
+        "cost": 0.00043764
+      },
+      "finish_reason": "stop",
+      "parse_error": "ValueError",
+      "provider_error": null,
+      "http_status": null
+    },
+    {
+      "requested_model": "xiaomi/mimo-v2.6-pro",
+      "returned_model": "xiaomi/mimo-v2.6-pro",
+      "status": "valid",
+      "elapsed_seconds": 19.883985250024125,
+      "usage": {
+        "prompt_tokens": 1464,
+        "completion_tokens": 988,
+        "total_tokens": 2452,
+        "reasoning_tokens": 599,
+        "cost": 0.0014964
+      },
+      "finish_reason": "stop",
+      "parse_error": null,
+      "provider_error": null,
+      "http_status": null
+    },
+    {
+      "requested_model": "openai/gpt-6-luna",
+      "returned_model": "openai/gpt-6-luna",
+      "status": "valid",
+      "elapsed_seconds": 9.030360666918568,
+      "usage": {
+        "prompt_tokens": 1792,
+        "completion_tokens": 709,
+        "total_tokens": 2501,
+        "reasoning_tokens": 454,
+        "cost": 0.000578425
+      },
+      "finish_reason": "stop",
+      "parse_error": null,
+      "provider_error": null,
+      "http_status": null
+    }
+  ],
+  "call_count": 3,
+  "same_image_pair": "sft-oldrl16-02",
+  "rubric_sha256": "d21e4644e7a3874a0694b2ad406420e733b7638222eb7717e7f5f91cbdf1613c",
+  "accuracy_claim": false,
+  "credential_access": "existing owner-only file consumed by runner; value not logged",
+  "purpose": "API model identity and structured response compatibility, not judge quality or training outcome"
+}

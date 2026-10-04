@@ -1,0 +1,68 @@
+{
+  "schema": "matched-live-judge-contract-v1",
+  "results": [
+    {
+      "judge_model": "openai/gpt-6-luna",
+      "status": "scored",
+      "score": 0.8333333333333333,
+      "consensus": "initial_agreement",
+      "call_count": 2,
+      "returned_models": [
+        "openai/gpt-6-luna"
+      ],
+      "parse_error_calls": 0,
+      "prompt_tokens": 3584,
+      "completion_tokens": 1087,
+      "reported_cost_usd": 0.000785615,
+      "call_latency_seconds": [
+        9.674738500034437,
+        7.08599245804362
+      ],
+      "prompt_sha256": "d21e4644e7a3874a0694b2ad406420e733b7638222eb7717e7f5f91cbdf1613c"
+    },
+    {
+      "judge_model": "xiaomi/mimo-v2.6-flash",
+      "status": "scored",
+      "score": 0.33333333333333337,
+      "consensus": "three_of_four",
+      "call_count": 4,
+      "returned_models": [
+        "xiaomi/mimo-v2.6-flash"
+      ],
+      "parse_error_calls": 0,
+      "prompt_tokens": 5856,
+      "completion_tokens": 4728,
+      "reported_cost_usd": 0.0015641472,
+      "call_latency_seconds": [
+        22.521687417058274,
+        26.391145291971043,
+        26.4598286250839,
+        18.81104762502946
+      ],
+      "prompt_sha256": "d21e4644e7a3874a0694b2ad406420e733b7638222eb7717e7f5f91cbdf1613c"
+    },
+    {
+      "judge_model": "xiaomi/mimo-v2.6-pro",
+      "status": "scored",
+      "score": 0.16666666666666669,
+      "consensus": "initial_agreement",
+      "call_count": 2,
+      "returned_models": [
+        "xiaomi/mimo-v2.6-pro"
+      ],
+      "parse_error_calls": 0,
+      "prompt_tokens": 2928,
+      "completion_tokens": 2463,
+      "reported_cost_usd": 0.0028090788000000003,
+      "call_latency_seconds": [
+        35.6496723749442,
+        19.92444849992171
+      ],
+      "prompt_sha256": "d21e4644e7a3874a0694b2ad406420e733b7638222eb7717e7f5f91cbdf1613c"
+    }
+  ],
+  "purpose": "Same actual balanced/retry/consensus protocol asRL. No best-judge or humanaccuracy claim. These extra APIcalls are separate from GPUbudget.",
+  "models_all_scored": true,
+  "call_count": 8,
+  "reported_cost_usd": 0.005158841
+}

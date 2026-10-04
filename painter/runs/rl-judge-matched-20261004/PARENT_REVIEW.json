@@ -1,0 +1,42 @@
+{
+  "schema": "matched-judge-prelaunch-review-v1",
+  "status": "reviewed-for-finite-linux-launch",
+  "checked": [
+    {
+      "check": "actual prepare_config generator: three normalized native TOMLs equal",
+      "result": "passed",
+      "scope": "synthetic manifest fixtures; no Prime-native validation or ML locally"
+    },
+    {
+      "check": "actual generated detached shell wrapper",
+      "result": "passed",
+      "scope": "dummy campaign exits0 with readable atomic start/exit receipts; no provider/API/ML/rendering"
+    },
+    {
+      "check": "all three live judge transports",
+      "result": "scored",
+      "evidence": "live-judge-contract-check.json",
+      "scope": "one frozen fan pair, not a judge-quality comparison"
+    },
+    {
+      "check": "shared bootstrap restores reviewed early resource, fast-storage and sandbox helper bindings with a finite setup timeout",
+      "result": "passed",
+      "scope": "parent source-chain review and metadata-only ordering test; actual Linux receipt pending"
+    }
+  ],
+  "review_findings": [
+    "Isolated run and shared roots must remain flat for inherited path derivation.",
+    "Manifest files must be copied into each arm because the actual generator resolves their relative paths.",
+    "Primary checkpoint confirmation must use verified public upload fields, not an invented public:true field.",
+    "Shared billing includes staging, preparation and fresh baseline.",
+    "Fresh baseline paintings must be publicly hash-verified before release."
+  ],
+  "runtime_assertions_pending": [
+    "Linux native config serializer and runtime checks",
+    "fresh RL16 baseline generation",
+    "actual optimizer updates and finite nonzero gradients",
+    "heldout visual preference"
+  ],
+  "gpu_allocated": false,
+  "scheduled_task_created": false
+}
