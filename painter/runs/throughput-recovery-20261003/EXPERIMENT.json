@@ -1,6 +1,6 @@
 {
   "schema": "painter-experiment-record-v1",
-  "status": "qwen-rollouts-active-first-optimizer-update-pending",
+  "status": "four-updates-public-checkpoints-node-released",
   "hypothesis": "Bound speculative work, cancellation-safe rendering, and checkpoint every actual update will yield useful published updates within a short single-arm rental; visual benefit remains a separate matched evaluation.",
   "matched_baseline": {
     "policy": "historical RL16 initializer",
@@ -123,7 +123,7 @@
     "matched initializer versus trained visual results with failures censored",
     "rental elapsed-time estimate and recorded API usage"
   ],
-  "next_decision": "Reviewed durable execution will survive SSH transport drops and produce four real Qwen RL16 updates with unchanged Flash judge and frozen SFT512 opponents. If useful optimizer updates remain unavailable, stop/release and compare Flash, Pro and Luna on the same saved paintings with no GPU rental.",
+  "next_decision": "Review saved 16-case visuals and reward exclusions before scaling; no new GPU rental. Three-judge frozen comparison remains prepared.",
   "planned_hardware_offer": {
     "gpu": "H100",
     "count": 2,
@@ -224,5 +224,7 @@
       "saturated": false
     },
     "controller_issue": "Reading the full growing metrics.jsonl caused repeated bounded SFTP observation timeouts; reconnects preserved the detached live job. Bounded-tail implementation requested; no live source mutation."
-  }
+  },
+  "result_record": "allocation-attempt8-result.json",
+  "research_objective_clarification": "Three actual matched RL runs differing only in Flash/Pro/GPT-6 Luna judge. This four-update Flash infrastructure pilot does not satisfy the ablation; offline frozen-image comparisons are supporting evidence only."
 }

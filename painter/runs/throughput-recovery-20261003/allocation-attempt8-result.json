@@ -1,0 +1,109 @@
+{
+  "schema": "throughput-recovery-attempt-result-v1",
+  "status": "four-updates-public-checkpoints-node-released",
+  "source_commit": "782053ce2f032bb6b98c903d8f0f8d4dcd4e92b6",
+  "completed_optimizer_updates": 4,
+  "rewards": [
+    {
+      "step": 1,
+      "reward": 0.14583333333333334
+    },
+    {
+      "step": 2,
+      "reward": 0.15625
+    },
+    {
+      "step": 3,
+      "reward": 0.08333333333333334
+    },
+    {
+      "step": 4,
+      "reward": 0.13541666666666666
+    }
+  ],
+  "nonzero_finite_gradients": [
+    {
+      "step": 1,
+      "grad_norm": 0.006317138671875
+    },
+    {
+      "step": 2,
+      "grad_norm": 0.00994873046875
+    },
+    {
+      "step": 3,
+      "grad_norm": 0.004180908203125
+    },
+    {
+      "step": 4,
+      "grad_norm": 0.010009765625
+    }
+  ],
+  "reward_trend": "No sustained increase across four changing-brief batches; this is not a heldout quality trend.",
+  "group_admission": {
+    "observed": 25,
+    "admitted": 24,
+    "rejected_uncertain_or_error": 1
+  },
+  "utilization": {
+    "first_utc": "2026-10-04 06:22:14",
+    "last_utc": "2026-10-04 07:09:25",
+    "samples_per_gpu": 284,
+    "sampling_seconds": 10,
+    "inference_mean_percent": 82.41901408450704,
+    "inference_busy_fraction_gt0": 0.8591549295774648,
+    "trainer_mean_percent": 23.468309859154928,
+    "trainer_busy_fraction_gt0": 0.3028169014084507,
+    "scope": "startup plus four-update training loop, excludes later evaluation",
+    "pipeline_saturated": false
+  },
+  "trainer_wait": {
+    "measurement_rows": 4,
+    "wait_seconds": 1350.701100353006,
+    "step_seconds_denominator": 2335.874563861027,
+    "fraction": 0.5782421373348051
+  },
+  "evaluation": {
+    "episodes": 16,
+    "has_any_valid_canvas": 15,
+    "valid_last_action": 14,
+    "failed_final_revision_or_no_valid_canvas": 2,
+    "fresh_matched_rl16_baseline": false,
+    "scored": false,
+    "quality_improvement": "Not established; archived SFT512 opponents are available for review but not a fresh matched RL16 control."
+  },
+  "public_evidence": {
+    "repo": "CK0607/komorebi-painter-experiments",
+    "repo_type": "dataset",
+    "revision": "0a7a5160a7be131be321e64d4bd37c5ca95784db",
+    "path": "runs/throughput-recovery-20261003/evidence.tar.gz",
+    "sha256": "f530e0c4fd70942c43f6d247f5ae0432f0a5156f9191034541412d08843e167b",
+    "bytes": 156923235,
+    "parent_anonymous_hash_verified": true,
+    "note": "Archive contains pre-upload terminal snapshot; final controller observed verified public archive and successful exit."
+  },
+  "public_checkpoints": {
+    "repo": "CK0607/qwen3.8-27b-brush-painting",
+    "revision": "0ed5d418476a5469421fe8eec666bae90e0ed7f1",
+    "prefix": "throughput-recovery-20261003",
+    "steps": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "step4_sha256": "223d702c1d058b74253b73095d86a5329b8e8815386012d9825b92e747f84178",
+    "verification": "Node upload receipts report public hash verification; parent independently read public validation metadata and HF LFS identity."
+  },
+  "rental": {
+    "released": true,
+    "exact_absence_confirmed": true,
+    "price_usd_hour": 3.8,
+    "attempt_clock_estimate_usd": 5.060409118440416,
+    "combined_clock_estimate_or_upper_bound_usd": 11.308209118440416,
+    "ceiling_usd": 20,
+    "cost_note": "Rental start to exact-release event file timestamp; earlier attempts include upper bounds; estimates not invoice.",
+    "gateway_cost": "Separate, aggregation pending."
+  },
+  "next_decision": "Review saved 16-case visuals and reward exclusions before scaling; no new GPU rental. Three-judge frozen comparison remains prepared."
+}

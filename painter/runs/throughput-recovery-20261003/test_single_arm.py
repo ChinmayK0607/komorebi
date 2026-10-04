@@ -140,14 +140,75 @@ class SummaryStream:
     def tell(self):
         return getattr(self, "position", 0)
 
-    def read(self):
-        return self.payload
+    def read(self, size=-1):
+        position = getattr(self, "position", 0)
+        if size is None or size < 0:
+            size = len(self.payload) - position
+        value = self.payload[position:position + size]
+        self.position = position + len(value)
+        return value
 
     def __enter__(self):
         return self
 
     def __exit__(self, *_args):
         return False
+
+
+class TailStream:
+    def __init__(self, payload: bytes):
+        self.payload = payload
+        self.position = 0
+        self.read_sizes = []
+
+    def seek(self, offset, whence=0):
+        if whence == 2:
+            self.position = len(self.payload) + offset
+        elif whence == 1:
+            self.position += offset
+        else:
+            self.position = offset
+
+    def tell(self):
+        return self.position
+
+    def read(self, size=-1):
+        self.read_sizes.append(size)
+        if size is None or size < 0:
+            size = len(self.payload) - self.position
+        value = self.payload[self.position:self.position + size]
+        self.position += len(value)
+        return value
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *_args):
+        return False
+
+
+class TailSFTP:
+    def __init__(self, payload: bytes):
+        self.stream = TailStream(payload)
+
+    def open(self, _remote, _mode):
+        return self.stream
+
+
+class BlockingTailStream(TailStream):
+    def __init__(self, payload: bytes):
+        super().__init__(payload)
+        self.started = threading.Event()
+
+    def read(self, size=-1):
+        self.started.set()
+        time.sleep(1.0)
+        return super().read(size)
+
+
+class BlockingTailSFTP(TailSFTP):
+    def __init__(self, payload: bytes):
+        self.stream = BlockingTailStream(payload)
 
 
 class SummarySFTP:
@@ -899,7 +960,8 @@ class SingleArmTests(unittest.TestCase):
                 if ready else b"{}"
             )
             values = [b"{}", b"{}", None, None, preparation, config_raw, None]
-            with patch.object(operator, "_sftp_read", side_effect=values):
+            with patch.object(operator, "_sftp_read", side_effect=values), \
+                 patch.object(operator, "_sftp_read_metrics_tail", return_value=None):
                 return operator._remote_summary(object(), timeout=1)
 
         self.assertEqual(summary_for(None)["config"], {})
@@ -920,6 +982,38 @@ class SingleArmTests(unittest.TestCase):
         self.assertFalse(malformed["phase_ready"])
         with self.assertRaises(operator.OperationError):
             operator._validate_config_summary(malformed)
+
+    def test_metrics_observation_reads_bounded_tail_and_drops_partial_lines(self):
+        records = b"".join(
+            json.dumps({
+                "index": index,
+                "render_queue_seconds": float(index),
+                "render_active_seconds": 0.25,
+            }, separators=(",", ":")).encode() + b"\n"
+            for index in range(12000)
+        )
+        payload = b"PARTIAL-OLD-RECORD" + (b"x" * 100) + b"\n" + records + b'{"index":12000'
+        sftp = TailSFTP(payload)
+        data = operator._sftp_read_metrics_tail(sftp, "metrics.jsonl", timeout=1)
+        self.assertIsNotNone(data)
+        self.assertLessEqual(len(data), operator.METRICS_TAIL_BYTES)
+        self.assertEqual(sftp.stream.read_sizes, [1, operator.METRICS_TAIL_BYTES])
+        rows = [json.loads(line) for line in data.splitlines()]
+        self.assertTrue(rows)
+        self.assertEqual(rows[-1]["index"], 11999)
+        summary = operator._queue_summary(data)
+        self.assertEqual(summary["queue_max_seconds"], 11999.0)
+        self.assertEqual(summary["scope"], "recent_bounded_metrics_tail")
+        self.assertEqual(summary["tail_bytes_observed"], len(data))
+        self.assertEqual(summary["tail_bytes_limit"], operator.METRICS_TAIL_BYTES)
+
+    def test_metrics_observation_timeout_is_bounded(self):
+        sftp = BlockingTailSFTP(b'{"render_queue_seconds":1}\n')
+        started = time.monotonic()
+        with self.assertRaises(operator.OperationError):
+            operator._sftp_read_metrics_tail(sftp, "metrics.jsonl", timeout=0.03)
+        self.assertLess(time.monotonic() - started, 0.5)
+        self.assertTrue(sftp.stream.started.wait(0.2))
 
     def test_controller_survives_transient_sftp_observation_timeout(self):
         config = {
@@ -1202,8 +1296,8 @@ class SingleArmTests(unittest.TestCase):
             config_receipt = (root / "rl-config-receipt.json").read_bytes()
             self.assertNotIn("profile", json.loads(config_receipt))
             with patch.object(operator, "_sftp_read", side_effect=[
-                b"{}", b"{}", None, None, (root / "preparation-receipt.json").read_bytes(), config_receipt, None
-            ]):
+                b"{}", b"{}", None, None, (root / "preparation-receipt.json").read_bytes(), config_receipt
+            ]), patch.object(operator, "_sftp_read_metrics_tail", return_value=None):
                 summary = operator._remote_summary(object(), timeout=1)
             self.assertTrue(summary["phase_ready"])
             operator._validate_config_summary(summary)

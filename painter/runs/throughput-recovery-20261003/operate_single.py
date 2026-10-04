@@ -53,6 +53,7 @@ RELEASE_MARGIN_SECONDS = 180.0
 INVENTORY_TIMEOUT_SECONDS = 60.0
 DIAGNOSTIC_BYTES = 65_536
 DIAGNOSTIC_LINES = 8
+METRICS_TAIL_BYTES = 256 * 1024
 
 
 class OperationError(RuntimeError):
@@ -282,6 +283,43 @@ def _sftp_read(sftp: Any, remote: str, *, timeout: float) -> bytes | None:
         return None
 
 
+def _sftp_read_metrics_tail(sftp: Any, remote: str, *, timeout: float,
+                            limit: int = METRICS_TAIL_BYTES) -> bytes | None:
+    """Read only the newest complete metrics lines within a bounded window."""
+
+    if limit <= 0:
+        raise ValueError("metrics tail limit must be positive")
+
+    def read() -> bytes:
+        with sftp.open(remote, "rb") as stream:
+            stream.seek(0, 2)
+            end = int(stream.tell())
+            start = max(0, end - limit)
+            starts_at_record = start == 0
+            if start:
+                stream.seek(start - 1)
+                starts_at_record = stream.read(1) == b"\n"
+            stream.seek(start)
+            data = stream.read(limit)
+            if len(data) > limit:
+                data = data[:limit]
+        if start > 0 and not starts_at_record:
+            # The first bytes may be the middle of a JSONL record.
+            first_newline = data.find(b"\n")
+            data = data[first_newline + 1:] if first_newline >= 0 else b""
+        # A writer can be between writes when observed.  Keep only complete
+        # records so the queue parser never treats a partial newest row as data.
+        if data and not data.endswith(b"\n"):
+            last_newline = data.rfind(b"\n")
+            data = data[:last_newline + 1] if last_newline >= 0 else b""
+        return data
+
+    try:
+        return _bounded_call(read, timeout)
+    except (OSError, IOError):
+        return None
+
+
 def _source_checkout_command(source_bundle: str, repo: str, source_commit: str) -> str:
     """Replay a bundle whose advertised branch is not the remote HEAD."""
     bundle = shlex.quote(source_bundle)
@@ -357,7 +395,7 @@ def _gpu_memory(raw: str) -> list[int]:
     return values
 
 
-def _queue_summary(raw: bytes | None) -> dict[str, float | int] | None:
+def _queue_summary(raw: bytes | None) -> dict[str, Any] | None:
     if raw is None:
         return None
     queue: list[float] = []
@@ -373,7 +411,12 @@ def _queue_summary(raw: bytes | None) -> dict[str, float | int] | None:
                 target.append(float(value))
     if not queue and not active:
         return None
-    values: dict[str, float | int] = {"samples": max(len(queue), len(active))}
+    values: dict[str, Any] = {
+        "samples": max(len(queue), len(active)),
+        "scope": "recent_bounded_metrics_tail",
+        "tail_bytes_observed": len(raw),
+        "tail_bytes_limit": METRICS_TAIL_BYTES,
+    }
     if queue:
         values.update({"queue_mean_seconds": sum(queue) / len(queue), "queue_max_seconds": max(queue)})
     if active:
@@ -418,7 +461,11 @@ def _remote_summary(sftp: Any, *, timeout: float) -> dict[str, Any]:
         key: preparation.get(key)
         for key in ("schema", "profile", "config_sha256", "train_manifest_sha256")
     }
-    metrics = read(str(REMOTE_RUN / f"async-output/{RUN_NAME}/monitors/file/metrics.jsonl"))
+    metrics = _sftp_read_metrics_tail(
+        sftp,
+        str(REMOTE_RUN / f"async-output/{RUN_NAME}/monitors/file/metrics.jsonl"),
+        timeout=deadline - time.monotonic(),
+    )
     return {
         "job": {
             "started": job_start.get("status") == "started",
