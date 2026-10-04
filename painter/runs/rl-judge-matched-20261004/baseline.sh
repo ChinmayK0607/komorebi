@@ -3,6 +3,8 @@ set -Eeuo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
 REPO="$(cd "$ROOT/../../.." && pwd -P)"
+source "$ROOT/runtime_env.sh"
+apply_matched_resource_limits
 NODE_ROOT="${PAINTER_NODE_ROOT:-/root/painter}"
 BASE="${PAINTER_BASE_RUN:-$REPO/painter/runs/text-sft512-consistent-20260930}"
 SHARED="${PAINTER_MATCHED_SHARED_ROOT:-$ROOT/../rl-judge-matched-20261004-shared}"
@@ -12,11 +14,21 @@ PY="${PRIME_ROOT:-$NODE_ROOT/prime}/.venv/bin/python"
 
 [[ "$(uname -s)" == Linux ]] || { echo 'Linux GPU node required for baseline evaluation' >&2; exit 1; }
 [[ -x "$PY" ]] || { echo "pinned Prime Python is unavailable: $PY" >&2; exit 1; }
-[[ -r "$SHARED/policy-adapter-path.txt" ]] || { echo 'RL16 initializer path receipt is missing' >&2; exit 1; }
-INIT="$(tr -d '\r\n' < "$SHARED/policy-adapter-path.txt")"
-[[ -f "$INIT/adapter_model.safetensors" && -f "$INIT/adapter_config.json" && -f "$INIT/hf-upload.json" ]] || {
-  echo 'fresh RL16 initializer is not a verified public adapter' >&2; exit 1;
+[[ -r "$SHARED/policy-adapter-path.txt" && -r "$SHARED/policy-adapter-receipt.json" ]] || {
+  echo 'RL16 initializer download receipt or path receipt is missing' >&2; exit 1;
 }
+INIT="$(tr -d '\r\n' < "$SHARED/policy-adapter-path.txt")"
+PUBLIC_RECEIPT="$BASELINE_ROOT/public-checkpoint-receipt.json"
+PUBLIC_PROOF="$ROOT/initializer-public-proof.json"
+[[ -f "$PUBLIC_PROOF" ]] || { echo 'anonymous public initializer proof is missing' >&2; exit 1; }
+"$PY" "$ROOT/verify_public_download.py" \
+  --download-receipt "$SHARED/policy-adapter-receipt.json" \
+  --adapter "$INIT" --output "$PUBLIC_RECEIPT" \
+  --public-proof "$PUBLIC_PROOF" \
+  --repo CK0607/qwen3.8-27b-brush-painting \
+  --revision ac4d3eda8e5925e2d23992cfdc1a63620ebde573 \
+  --prefix text-pairwise-scaled-20260929/step_16 \
+  --expected-sha256 e5211706a23b46354aa269f2b9cfaaaad1b64eef1012b433b1887c149f5a927c
 [[ -f "$SHARED/preparation-receipt.json" ]] || { echo 'shared preparation receipt is missing' >&2; exit 1; }
 [[ ! -e "$BASELINE_ROOT/validation" ]] || { echo 'baseline output already exists; preserve it before retrying' >&2; exit 1; }
 mkdir -p "$BASELINE_ROOT"
@@ -44,6 +56,7 @@ PY
 mv "$BASELINE_ROOT/baseline-identity.json.tmp" "$BASELINE_ROOT/baseline-identity.json"
 export PAINTER_RUN_ROOT="$BASELINE_ROOT" PAINTER_RUN_NAME="$NAME" PAINTER_EVAL_MANIFEST="$BASELINE_ROOT/anchors-frozen/validation-matched16.json"
 export PAINTER_EVAL_EXPECTED_COUNT=16 PAINTER_EVAL_SEED=918210 PAINTER_EVAL_SCOPE=balanced16
+export PAINTER_EVAL_PUBLIC_RECEIPT="$PUBLIC_RECEIPT"
 export PAINTER_RENDERER_PATH="$BASELINE_ROOT/runtime/watercolour-cancellable-centroid-v1/cancellable_watercolour_renderer.py"
 export PAINTER_RENDERER_PYTHON_PATH="$BASELINE_ROOT/renderer-env/bin/python"
 export PAINTER_JUDGE_PROTOCOL=text-paint-sft-pairwise-consistent-v1 PAINTER_JUDGE_FORMAT=identity-joint-side-schema-v2-generic-v1

@@ -34,9 +34,37 @@ EVAL_EXPECTED_COUNT="$EXPECTED_COUNT"
 [[ "$OUT" == /* ]] || { echo 'evaluation output path must be absolute' >&2; exit 1; }
 
 [[ -x "$PY" && -x "$VLLM" && -x "$EVAL" ]] || { echo 'pinned Prime runtime is unavailable' >&2; exit 1; }
-[[ -f "$ADAPTER/adapter_model.safetensors" && -f "$ADAPTER/hf-upload.json" ]] || {
-  echo 'requested public checkpoint adapter is missing' >&2; exit 1;
-}
+CHECKPOINT_RECEIPT="$ADAPTER/hf-upload.json"
+if [[ -n "${PAINTER_EVAL_PUBLIC_RECEIPT:-}" ]]; then
+  CHECKPOINT_RECEIPT="$PAINTER_EVAL_PUBLIC_RECEIPT"
+  [[ -f "$ADAPTER/adapter_model.safetensors" && -f "$CHECKPOINT_RECEIPT" ]] || {
+    echo 'requested public checkpoint adapter or supplied public receipt is missing' >&2; exit 1;
+  }
+  "$PY" - "$CHECKPOINT_RECEIPT" "$ADAPTER" <<'PY'
+import hashlib, json, sys
+from pathlib import Path
+receipt_path, adapter = Path(sys.argv[1]), Path(sys.argv[2])
+receipt = json.loads(receipt_path.read_text())
+if (receipt.get('provenance_type') != 'public_download' or
+        receipt.get('verified') is not True or receipt.get('private') is not False or
+        receipt.get('public_metadata_verified') is not True):
+    raise SystemExit('supplied public checkpoint receipt is not a verified public download')
+weight = adapter / 'adapter_model.safetensors'
+expected = receipt.get('files', {}).get('adapter_model.safetensors', {}).get('sha256')
+if not isinstance(expected, str):
+    raise SystemExit('supplied public checkpoint receipt has no adapter SHA')
+digest = hashlib.sha256()
+with weight.open('rb') as stream:
+    for block in iter(lambda: stream.read(1024 * 1024), b''):
+        digest.update(block)
+if digest.hexdigest() != expected:
+    raise SystemExit('supplied public checkpoint receipt does not match adapter bytes')
+PY
+else
+  [[ -f "$ADAPTER/adapter_model.safetensors" && -f "$CHECKPOINT_RECEIPT" ]] || {
+    echo 'requested public checkpoint adapter is missing' >&2; exit 1;
+  }
+fi
 [[ -f "$ALL_MANIFEST" ]] || { echo 'frozen validation manifest is missing' >&2; exit 1; }
 [[ -f "$RENDERER" && -x "$RENDERER_PYTHON" ]] || { echo 'explicit renderer runtime is missing' >&2; exit 1; }
 # Verify the exact lexical virtualenv interpreter before starting vLLM.  Do not
@@ -148,14 +176,16 @@ env PYTHONPATH="$REPO/painter" PAINTER_LOCAL_API_KEY=local \
   bash -c 'cd "$1"; exec "$2" @ "$3" --no-serve --no-push' \
   _ "$PRIME_ROOT" "$EVAL" "$OUT/eval.toml" >"$OUT/logs/eval.log" 2>&1
 
-PYTHONPATH="$REPO/painter" "$PY" - "$OUT" "$OUT/eval/evaluation-rollouts" "$ADAPTER" "$STEP" "$SCOPE" "$MAX_CONCURRENT" <<'PY'
+PYTHONPATH="$REPO/painter" "$PY" - "$OUT" "$OUT/eval/evaluation-rollouts" "$ADAPTER" "$STEP" "$SCOPE" "$MAX_CONCURRENT" "$CHECKPOINT_RECEIPT" <<'PY'
 import hashlib, json, os, sys
 from pathlib import Path
 from native_painting_eval import audit_evaluation_artifacts
 
 out = Path(sys.argv[1]).resolve()
 artifact_root = Path(sys.argv[2]).resolve()
-adapter, step, scope, max_concurrent = Path(sys.argv[3]), int(sys.argv[4]), sys.argv[5], int(sys.argv[6])
+adapter, step, scope, max_concurrent, checkpoint_receipt = (
+    Path(sys.argv[3]), int(sys.argv[4]), sys.argv[5], int(sys.argv[6]), Path(sys.argv[7])
+)
 
 try:
     artifact_root_relative = artifact_root.relative_to(out).as_posix()
@@ -171,7 +201,7 @@ def sha(path):
         for block in iter(lambda: stream.read(1024 * 1024), b''):
             h.update(block)
     return h.hexdigest()
-upload = json.loads((adapter / 'hf-upload.json').read_text())
+upload = json.loads(checkpoint_receipt.read_text())
 expected = upload['files']['adapter_model.safetensors']['sha256']
 actual = sha(adapter / 'adapter_model.safetensors')
 if upload.get('verified') is not True or upload.get('private') is not False or actual != expected:
@@ -184,6 +214,7 @@ if upload.get('verified') is not True or upload.get('private') is not False or a
 (out / 'generation-receipt.json').write_text(json.dumps({
     'schema': 'text-paint-consistent-generation-v2', 'run_name': out.parents[1].name, 'step': step,
     'scope': scope, 'adapter_sha256': actual, 'public_commit': upload.get('commit'),
+    'checkpoint_provenance': upload.get('provenance_type', 'uploaded_checkpoint'),
     'judge_deferred': True, 'scoring_protocol': os.environ.get('PAINTER_JUDGE_PROTOCOL', 'text-paint-sft-pairwise-consistent-v1'),
     'judge_format': os.environ.get('PAINTER_JUDGE_FORMAT', 'identity-joint-side-schema-v1'),
     'judge_model': os.environ.get('PAINTER_JUDGE_MODEL', 'xiaomi/mimo-v2.6-flash'),

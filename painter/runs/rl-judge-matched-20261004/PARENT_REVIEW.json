@@ -1,6 +1,6 @@
 {
   "schema": "matched-judge-prelaunch-review-v1",
-  "status": "materialization-import-fixed-parent-reviewed",
+  "status": "baseline-public-download-and-matched-evaluation-fixed-parent-reviewed",
   "checked": [
     {
       "check": "actual prepare_config generator: three normalized native TOMLs equal",
@@ -32,6 +32,26 @@
       "check": "Ruff undefined-name/static-scope checks F821,F822,F823 across every campaign Python module",
       "result": "passed",
       "scope": "source only, noGPU/runtime/API."
+    },
+    {
+      "check": "genuine downloaded-initializer receipt normalized without fabricated upload receipt",
+      "result": "passed",
+      "scope": "dummy adapter bytes with real downloader receipt schema, reviewed public proof, local hash validation and malformed/private/hash rejection; no local ML/rendering"
+    },
+    {
+      "check": "baseline sources common evaluation runtime and inherits API-reference/inspection/strict-final flags",
+      "result": "passed",
+      "scope": "source review and dummy baseline shell lifecycle; trained arm settings unchanged"
+    },
+    {
+      "check": "actual inherited evaluator accepts explicit verified public-download receipt",
+      "result": "passed",
+      "scope": "actual evaluate.sh --preflight with stub runtime; ten campaign tests and five existing evaluator tests passed; no optimizer or rendered result"
+    },
+    {
+      "check": "anonymous public HF initializer metadata",
+      "result": "passed",
+      "scope": "actual anonymous metadata call confirms pinned revision/public status/LFS SHA; proof in initializer-public-proof.json"
     }
   ],
   "review_findings": [
@@ -40,19 +60,25 @@
     "Primary checkpoint confirmation must use verified public upload fields, not an invented public:true field.",
     "Shared billing includes staging, preparation and fresh baseline.",
     "Fresh baseline paintings must be publicly hash-verified before release.",
-    "Prior tests exercised the native writer but not materialize(); this missed an undefined sys name and caused attempt1 to fail after shared preparation. A full subprocess materialization regression test is required before the single bounded retry."
+    "Prior tests exercised the native writer but not materialize(); this missed an undefined sys name and caused attempt1 to fail after shared preparation. A full subprocess materialization regression test is required before the single bounded retry.",
+    "A publicly downloaded initializer has download provenance, not necessarily hf-upload.json. Do not fabricate upload history or modify cached weights.",
+    "Preparation shell exports do not propagate to its parent; baseline must source the same common runtime as arm evaluations."
   ],
   "runtime_assertions_pending": [
-    "Linux native config serializer and runtime checks",
-    "fresh RL16 baseline generation",
+    "fresh RL16 baseline generation on Linux",
     "actual optimizer updates and finite nonzero gradients",
-    "heldout visual preference"
+    "matched heldout visual preference"
   ],
   "gpu_allocated": false,
   "scheduled_task_created": false,
   "attempt1": {
     "optimizer_updates": 0,
     "gpu_clock_estimate_usd": 0.781,
+    "node_released": true
+  },
+  "attempt2": {
+    "optimizer_updates": 0,
+    "gpu_clock_estimate_usd": 0.8174,
     "node_released": true
   }
 }

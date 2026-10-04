@@ -1,0 +1,10 @@
+{
+  "schema": "baseline-anonymous-public-metadata-v1",
+  "repo_id": "CK0607/qwen3.8-27b-brush-painting",
+  "revision": "ac4d3eda8e5925e2d23992cfdc1a63620ebde573",
+  "prefix": "text-pairwise-scaled-20260929/step_16",
+  "private": false,
+  "adapter_sha256": "e5211706a23b46354aa269f2b9cfaaaad1b64eef1012b433b1887c149f5a927c",
+  "hf_upload_receipt_present": false,
+  "anonymous_metadata_verified": true
+}

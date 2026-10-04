@@ -1,0 +1,26 @@
+{
+  "schema": "matched-campaign-attempt-result-v1",
+  "attempt": 2,
+  "status": "baseline_failed_node_released",
+  "completed_optimizer_updates": 0,
+  "baseline_evaluated": false,
+  "judge_arms_started": [],
+  "passed": [
+    "shared bootstrap",
+    "all3isolatednativeconfigs created",
+    "parent live configuration receipt verification"
+  ],
+  "failure": "Baseline/evaluator demanded hf-upload.json for an initializer whose genuine public provenance is the downloader receipt.",
+  "gpu_clock_estimate_usd": 0.8174,
+  "two_attempts_gpu_clock_estimate_usd": 1.5984,
+  "active_pods": 0,
+  "evidence": {
+    "repo_id": "CK0607/komorebi-painter-experiments",
+    "revision": "a6779a6faa89ec813c6c87c0d22a0b61706e7986",
+    "path": "runs/rl-judge-matched-20261004/campaign-evidence.tar.gz",
+    "sha256": "e337c69c682925ee49cd4ac5e47c35b9d643ce007467156fb29741f718615984",
+    "bytes": 688327,
+    "anonymous_hash_verified": true
+  },
+  "next_decision": "Correct explicit baseline public-download provenance and exercise inherited evaluator path before any further rental; preserve alltrained-evaluation defaults."
+}

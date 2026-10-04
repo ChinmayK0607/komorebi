@@ -17,6 +17,12 @@ SPEC = importlib.util.spec_from_file_location("matched_prepare", RUN / "prepare_
 assert SPEC and SPEC.loader
 prepare = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(prepare)
+VERIFY_SPEC = importlib.util.spec_from_file_location(
+    "matched_public_download", RUN / "verify_public_download.py"
+)
+assert VERIFY_SPEC and VERIFY_SPEC.loader
+verify_public_download = importlib.util.module_from_spec(VERIFY_SPEC)
+VERIFY_SPEC.loader.exec_module(verify_public_download)
 
 
 CONFIG = """
@@ -111,8 +117,31 @@ class MatchedCampaignTests(unittest.TestCase):
             run.mkdir(parents=True)
             source_baseline = RUN / "baseline.sh"
             baseline = run / "baseline.sh"
-            baseline.write_text(source_baseline.read_text(), encoding="utf-8")
+            weight = b"downloaded-public-initializer"
+            import hashlib
+            weight_sha = hashlib.sha256(weight).hexdigest()
+            baseline.write_text(
+                source_baseline.read_text().replace(
+                    "e5211706a23b46354aa269f2b9cfaaaad1b64eef1012b433b1887c149f5a927c",
+                    weight_sha,
+                ),
+                encoding="utf-8",
+            )
             baseline.chmod(0o755)
+            (run / "verify_public_download.py").write_text(
+                (RUN / "verify_public_download.py").read_text(), encoding="utf-8"
+            )
+            (run / "verify_public_download.py").chmod(0o755)
+            (run / "runtime_env.sh").write_text((RUN / "runtime_env.sh").read_text(), encoding="utf-8")
+            (run / "initializer-public-proof.json").write_text(json.dumps({
+                "schema": "baseline-anonymous-public-metadata-v1",
+                "repo_id": "CK0607/qwen3.8-27b-brush-painting",
+                "revision": "ac4d3eda8e5925e2d23992cfdc1a63620ebde573",
+                "prefix": "text-pairwise-scaled-20260929/step_16",
+                "private": False, "adapter_sha256": weight_sha,
+                "hf_upload_receipt_present": False,
+                "anonymous_metadata_verified": True,
+            }) + "\n")
             shared = repo / "runs/rl-judge-matched-20261004-shared"
             (shared / "anchors-frozen").mkdir(parents=True)
             for name in ("anchors-all", "vendor", "renderer-env", "browsers", "runtime"):
@@ -122,17 +151,25 @@ class MatchedCampaignTests(unittest.TestCase):
             (shared / "anchors-frozen/validation-matched16.json").write_text(
                 json.dumps({"cases": cases})
             )
-            (shared / "policy-adapter-path.txt").write_text(str(root / "initializer") + "\n")
             initializer = root / "initializer"
             initializer.mkdir()
-            for name in ("adapter_model.safetensors", "adapter_config.json", "hf-upload.json"):
-                (initializer / name).write_text("{}\n")
+            (initializer / "adapter_model.safetensors").write_bytes(weight)
+            (initializer / "adapter_config.json").write_text("{}\n")
+            (shared / "policy-adapter-path.txt").write_text(str(initializer) + "\n")
+            (shared / "policy-adapter-receipt.json").write_text(json.dumps({
+                "repo": "CK0607/qwen3.8-27b-brush-painting",
+                "revision": "ac4d3eda8e5925e2d23992cfdc1a63620ebde573",
+                "prefix": "text-pairwise-scaled-20260929/step_16",
+                "adapter_path": str(initializer), "adapter_sha256": weight_sha,
+                "verified": True,
+            }) + "\n")
             (shared / "frozen-sft-adapter-path.txt").write_text(str(initializer) + "\n")
             (repo / "runs/rl-judge-matched-20261004/prepare_arm.sh").write_text("#!/bin/sh\n")
             base = repo / "runs/text-sft512-consistent-20260930"
             base.mkdir(parents=True)
             evaluate_script = (
                 "#!/bin/sh\n"
+                "printf '%s %s %s\\n' \"$PAINTER_P5_BRUSH_API_REFERENCE_V2\" \"$PAINTER_INSPECT_CHOICE_FEEDBACK\" \"$PAINTER_REQUIRE_VALID_FINAL_ACTION\" > \"$PAINTER_RUN_ROOT/common-flags.txt\"\n"
                 "mkdir -p \"$PAINTER_RUN_ROOT/validation/step-1-balanced16\"\n"
                 "printf '%s\\n' '{\"adapter_sha256\":\"e5211706a23b46354aa269f2b9cfaaaad1b64eef1012b433b1887c149f5a927c\",\"scope\":\"balanced16\"}' > \"$PAINTER_RUN_ROOT/validation/step-1-balanced16/generation-receipt.json\"\n"
                 "cat > \"$PAINTER_RUN_ROOT/validation/step-1-balanced16/cases.json\" <<'JSON'\n"
@@ -153,6 +190,24 @@ class MatchedCampaignTests(unittest.TestCase):
             prime_python = root / "prime/.venv/bin/python"
             prime_python.parent.mkdir(parents=True)
             prime_python.symlink_to(Path("/usr/bin/python3"))
+            hf = root / "huggingface_hub"
+            hf.mkdir()
+            (hf / "__init__.py").write_text(textwrap.dedent(f"""
+                class _Lfs:
+                    sha256 = {weight_sha!r}
+                class _Sibling:
+                    rfilename = 'text-pairwise-scaled-20260929/step_16/adapter_model.safetensors'
+                    lfs = _Lfs()
+                class _Info:
+                    sha = 'ac4d3eda8e5925e2d23992cfdc1a63620ebde573'
+                    private = False
+                    siblings = [_Sibling()]
+                class HfApi:
+                    def __init__(self, token=None):
+                        assert token is False
+                    def model_info(self, repo, revision, files_metadata=True):
+                        return _Info()
+            """), encoding="utf-8")
             token = root / "hf-token"
             token.write_text("test-token\n")
             token.chmod(0o600)
@@ -172,10 +227,134 @@ class MatchedCampaignTests(unittest.TestCase):
                 "HF_TOKEN_PATH": str(token),
                 "PAINTER_MATCHED_BASELINE_ROOT": str(root / "baseline"),
                 "PATH": str(command_bin) + os.pathsep + env["PATH"],
+                "PYTHONPATH": str(root),
             })
             result = subprocess.run([str(baseline)], cwd=run, env=env, text=True, capture_output=True)
             self.assertEqual(result.returncode, 0, result.stderr + result.stdout)
             self.assertTrue((root / "baseline/local-evidence/baseline-evidence.tar.gz.upload.json").is_file())
+            self.assertEqual((root / "baseline/common-flags.txt").read_text().strip(), "1 1 1")
+            public = json.loads((root / "baseline/public-checkpoint-receipt.json").read_text())
+            self.assertEqual(public["provenance_type"], "public_download")
+            self.assertFalse((initializer / "hf-upload.json").exists())
+
+    def test_public_download_normalizer_rejects_bad_receipts(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            adapter = root / "adapter"
+            adapter.mkdir()
+            weight = adapter / "adapter_model.safetensors"
+            weight.write_bytes(b"initializer")
+            (adapter / "adapter_config.json").write_text("{}\n")
+            import hashlib
+            digest = hashlib.sha256(weight.read_bytes()).hexdigest()
+            expected = {
+                "repo": "repo", "revision": "r" * 40, "prefix": "p/step_16",
+                "adapter_path": str(adapter), "adapter_sha256": digest, "verified": True,
+            }
+
+            class Lfs:
+                sha256 = digest
+            class Sibling:
+                rfilename = "p/step_16/adapter_model.safetensors"
+                lfs = Lfs()
+            class Info:
+                sha = "r" * 40
+                private = False
+                siblings = [Sibling()]
+
+            def metadata(repo, revision):
+                return Info()
+
+            def normalize(value):
+                receipt = root / "download.json"
+                receipt.write_text(json.dumps(value))
+                return verify_public_download.normalize_download(
+                    download_receipt=receipt, adapter=adapter, output=root / "public.json",
+                    repo="repo", revision="r" * 40, prefix="p/step_16",
+                    expected_sha256=digest, metadata_lookup=metadata,
+                )
+
+            self.assertTrue(normalize(expected)["public_metadata_verified"])
+            malformed = dict(expected, verified=False)
+            with self.assertRaises(ValueError):
+                normalize(malformed)
+            private = dict(expected, private=True)
+            with self.assertRaises(ValueError):
+                normalize(private)
+            wrong_hash = dict(expected, adapter_sha256="0" * 64)
+            with self.assertRaises(ValueError):
+                normalize(wrong_hash)
+
+    def test_evaluator_preflight_accepts_download_public_receipt_without_upload(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            run = root / "painter/runs/eval-run"
+            base = root / "painter/runs/text-sft512-consistent-20260930"
+            run.mkdir(parents=True)
+            base.mkdir(parents=True)
+            (root / "painter/native_painting_eval.py").write_text(textwrap.dedent("""
+                import argparse
+                from pathlib import Path
+                parser = argparse.ArgumentParser()
+                parser.add_argument('--config', type=Path, required=True)
+                args, _ = parser.parse_known_args()
+                args.config.write_text(
+                    'base_url = "http://127.0.0.1:8000/v1"\\n'
+                    'seed = 918200\\n'
+                    'max_concurrent = 16\\n'
+                )
+            """), encoding="utf-8")
+            evaluate = base / "evaluate.sh"
+            evaluate.write_text((RUN.parent / "text-sft512-consistent-20260930/evaluate.sh").read_text())
+            evaluate.chmod(0o755)
+            prime = root / "prime/.venv/bin"
+            prime.mkdir(parents=True)
+            prime.joinpath("python").symlink_to(Path("/usr/bin/python3"))
+            for name in ("vllm", "eval"):
+                path = prime / name
+                path.write_text("#!/bin/sh\nexit 0\n")
+                path.chmod(0o755)
+            renderer_python = run / "renderer-env/bin/python"
+            renderer_python.parent.mkdir(parents=True)
+            renderer_python.symlink_to(Path("/usr/bin/python3"))
+            (run / "renderer.py").write_text("// fixture\n")
+            (run / "anchors-frozen").mkdir()
+            cases = (
+                [{"id": str(index), "family": "simple"} for index in range(4)] +
+                [{"id": str(index + 4), "family": "intermediate"} for index in range(4)] +
+                [{"id": str(index + 8), "family": "complex"} for index in range(8)]
+            )
+            (run / "anchors-frozen/validation-matched16.json").write_text(json.dumps({
+                "cases": cases
+            }))
+            adapter = run / "async-output/eval-run/artifacts/adapters/step_1"
+            adapter.mkdir(parents=True)
+            weight = b"downloaded-public-initializer"
+            adapter.joinpath("adapter_model.safetensors").write_bytes(weight)
+            import hashlib
+            digest = hashlib.sha256(weight).hexdigest()
+            receipt = root / "public-checkpoint-receipt.json"
+            receipt.write_text(json.dumps({
+                "provenance_type": "public_download", "verified": True, "private": False,
+                "public_metadata_verified": True,
+                "files": {"adapter_model.safetensors": {"sha256": digest}},
+                "commit": "r" * 40,
+            }))
+            playwright = root / "playwright"
+            playwright.mkdir()
+            (playwright / "__init__.py").write_text("")
+            env = os.environ.copy()
+            env.update({
+                "PRIME_ROOT": str(root / "prime"), "PAINTER_RUN_ROOT": str(run),
+                "PAINTER_RUN_NAME": "eval-run", "PAINTER_EVAL_MANIFEST": str(run / "anchors-frozen/validation-matched16.json"),
+                "PAINTER_EVAL_PUBLIC_RECEIPT": str(receipt), "PAINTER_EVAL_EXPECTED_COUNT": "16",
+                "PAINTER_RENDERER_PATH": str(run / "renderer.py"),
+                "PAINTER_RENDERER_PYTHON_PATH": str(renderer_python),
+                "PYTHONPATH": str(root),
+            })
+            result = subprocess.run([str(evaluate), "1", "balanced16", "--preflight"],
+                                    env=env, cwd=run, text=True, capture_output=True)
+            self.assertEqual(result.returncode, 0, result.stderr + result.stdout)
 
     def test_plan_and_full_native_config_equality_rejects_recipe_drift(self):
         protocol = prepare.load_protocol()

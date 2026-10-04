@@ -7,7 +7,7 @@
   "schema": "matched-three-judge-allocation-v1",
   "source_bundle_sha256": "c4a695f79f27ea5470045e5be64d5bfcf7f96af840710837bdf6b0efb42ce0cd",
   "source_commit": "5eff291263d49f4ba81a1694973f2e8ce0de9e16",
-  "status": "prime_staged",
+  "status": "baseline_failed_node_released",
   "topology": {
     "gpus_per_node": 2,
     "num_infer_gpus": 1,
@@ -16,6 +16,9 @@
   "attempt": 2,
   "prior_failed_start_reserve_usd": 1.0,
   "original_campaign_cap_usd": 58.5,
-  "claim": "Allocated for corrected finite campaign; waiting for readiness, zero optimizer updates confirmed.",
-  "recorded_utc": "2026-10-04T09:04:47.637727+00:00"
+  "claim": "All3nativeconfigs created/matched; baseline failed before generation because a public download has no hf-upload.json. No training/evaluation results.",
+  "recorded_utc": "2026-10-04T09:04:47.637727+00:00",
+  "completed_optimizer_steps": 0,
+  "gpu_clock_estimate_usd": 0.8174,
+  "active_pods_confirmed": 0
 }
