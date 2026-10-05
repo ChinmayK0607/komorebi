@@ -1,0 +1,32 @@
+{
+  "schema": "matched-campaign-budget-override-v1",
+  "recorded_utc": "2026-10-05T10:01:13.925841+00:00",
+  "user_request": "look again and do it under15USD",
+  "status": "prepared-no-supported-two-gpu-offer-no-rental",
+  "source_commit": "ba71c59944487865ff8254994a6131f519ceee45",
+  "new_gpu_rental_ceiling_usd": 14.5,
+  "scope": "One entire new three-judge campaign, including staging, preparation, baseline, training, evaluation, archive and release. Not per-arm. API spend remains separate under prior user instructions.",
+  "prior_failed_attempts_gpu_clock_upper_estimate_usd": 3.5482,
+  "ceiling_supersedes_prior_new_campaign_cap": true,
+  "maximum_supported_node_price_usd_per_hour": 3.8,
+  "runtime_cap_argument": [
+    "--cap-usd",
+    "14.5"
+  ],
+  "per_arm_equal_share_usd": 4.833333333333333,
+  "registered_recipe": "All arms retain identical RL16 initializer,12updates and matched data/hyperparameters. The finite spending deadline takes precedence over completion; censored runs are not a completed ablation.",
+  "market_snapshot": {
+    "active_pods": 0,
+    "two_h100_offers": 0,
+    "two_h200_offers": 0,
+    "two_a100_offers": 0,
+    "four_h100_offers": 0,
+    "eight_h100_minimum_whole_node_usd_per_hour": 14.4,
+    "eight_a100_minimum_whole_node_usd_per_hour": 8.0,
+    "single_h100_minimum_whole_node_usd_per_hour": 2.15
+  },
+  "next_decision": "Launch only a supported two-H100 offer within the price bound using this lower total cap. No scheduled recheck or unsupported topology substitution.",
+  "gpu_allocated": false,
+  "scheduled_task_created": false,
+  "plan_only_validation": "passed; credential paths validated without outputting credentials; no provider allocation, model, rendering or paid API call"
+}
