@@ -1,6 +1,6 @@
 {
   "schema": "matched-judge-prelaunch-review-v1",
-  "status": "actual-launcher-mode-and-early-preflight-fixed-parent-reviewed",
+  "status": "implemented-reviewed-local-regressions-passed-linux-training-pending",
   "checked": [
     {
       "check": "actual prepare_config generator: three normalized native TOMLs equal",
@@ -67,6 +67,11 @@
       "check": "Final parent regression and source checks",
       "result": "passed",
       "scope": "12 campaign and5 inherited evaluator tests; shell syntax, diff whitespace and undefined-name Ruff checks. Actual optimizer/evaluation quality still pending."
+    },
+    {
+      "check": "One canonical policy runner used by historical pilot and all matched arms",
+      "result": "passed",
+      "scope": "Parent independently passed12 campaign,31 pilot and5 existing evaluator tests; actual shell chains use dummy adapter/Prime/VF dependencies. Native update/interval agreement and mode conflict rejection exercised. No actual ML during repair."
     }
   ],
   "review_findings": [
@@ -79,7 +84,8 @@
     "A publicly downloaded initializer has download provenance, not necessarily hf-upload.json. Do not fabricate upload history or modify cached weights.",
     "Preparation shell exports do not propagate to its parent; baseline must source the same common runtime as arm evaluations.",
     "The actual launcher consumes PAINTER_RL_MODE, not PAINTER_POLICY_MODE. Bind both to recovered_policy and test the real wrapper chain under a clean environment.",
-    "Preflight all three prepared arms before the expensive baseline, bounded at180seconds perarm; it must not create training output or start models."
+    "Preflight all three prepared arms before the expensive baseline, bounded at180seconds perarm; it must not create training output or start models.",
+    "Preserve pilot4/1 and campaign12/4 defaults in validated wrappers; central execution derives launcher mode from policy mode and validates requested counts against native config."
   ],
   "runtime_assertions_pending": [
     "corrected early arm launcher preflight on Linux",
@@ -103,5 +109,6 @@
     "fresh_baseline_evaluated": true,
     "node_released": true,
     "gpu_clock_estimate_upper_bound_usd": 1.9498
-  }
+  },
+  "shared_runner_review": "SHARED_RUNNER_REVIEW.json"
 }

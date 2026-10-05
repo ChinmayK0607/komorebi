@@ -1116,7 +1116,7 @@ class SingleArmTests(unittest.TestCase):
     def test_wrappers_keep_matched_panel_renderer_and_four_update_bindings(self):
         execute = (RUN / "execute_single.sh").read_text()
         evaluate = (RUN / "evaluate.sh").read_text()
-        telemetry = (RUN / "run_single.sh").read_text()
+        telemetry = (REPO / "painter/policy_runner.sh").read_text()
         self.assertIn("PAINTER_RL_MAX_STEPS=4", execute)
         self.assertIn("PAINTER_EVAL_PREFERRED_STEP=4", execute)
         self.assertIn("balanced16", evaluate)
@@ -1126,6 +1126,19 @@ class SingleArmTests(unittest.TestCase):
         self.assertIn('"average_utilization_percent"', telemetry)
         self.assertIn('"sampled_busy_fraction"', telemetry)
         self.assertIn('"role": "inference" if index < inference_gpu_count else "trainer"', telemetry)
+
+    def test_pilot_and_matched_wrappers_delegate_canonical_policy_runner(self):
+        pilot = (RUN / "run_single.sh").read_text()
+        matched = (REPO / "painter/runs/rl-judge-matched-20261004/run_arm.sh").read_text()
+        canonical = (REPO / "painter/policy_runner.sh").read_text()
+        for wrapper in (pilot, matched):
+            self.assertIn('exec bash "$REPO/painter/policy_runner.sh" "$@"', wrapper)
+            self.assertLess(len(wrapper.splitlines()), 20)
+        self.assertIn("PAINTER_RL_PREFLIGHT_ONLY", canonical)
+        self.assertIn("nvidia-smi --query-gpu", canonical)
+        self.assertIn('bash "$RUN/launch_rl.sh" "$RUN"', canonical)
+        self.assertIn("PAINTER_POLICY_MODE", canonical)
+        self.assertIn("recovered_policy", canonical)
 
     def test_remote_failure_diagnostics_are_scrubbed(self):
         diagnostics = operator._sanitized_diagnostics(

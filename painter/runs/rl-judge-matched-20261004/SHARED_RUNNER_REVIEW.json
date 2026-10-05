@@ -1,0 +1,63 @@
+{
+  "schema": "shared-policy-runner-parent-review-v1",
+  "date": "2026-10-05",
+  "status": "implemented-reviewed-local-regressions-passed-linux-training-pending",
+  "canonical_runner": "painter/policy_runner.sh",
+  "canonical_runner_sha256": "c029266a202f5c167d82b701af91cf75149079bc3286914b9b0c2e4ebce4ca71",
+  "matched_baseline_source": "782053ce2f032bb6b98c903d8f0f8d4dcd4e92b6",
+  "hypothesis": "Using one policy execution body for the successful pilot and the three-judge campaign removes duplicated launcher bindings without changing the research recipe.",
+  "profiles": {
+    "pilot": {
+      "updates": 4,
+      "checkpoint_interval": 1,
+      "judge": "xiaomi/mimo-v2.6-flash"
+    },
+    "matched_campaign": {
+      "updates_per_arm": 12,
+      "checkpoint_interval": 4,
+      "judges": [
+        "xiaomi/mimo-v2.6-flash",
+        "xiaomi/mimo-v2.6-pro",
+        "openai/gpt-6-luna"
+      ]
+    }
+  },
+  "preserved": [
+    "RL16 initializer and distinct frozen SFT512 opponent",
+    "pinned model, Prime and checkpoint revisions",
+    "train and heldout manifests, rubric and reward protocol",
+    "B16/G4, inflight32, policy age1, LR1e-6, activation CPU offload",
+    "private credential handling, supervised finite execution, public checkpoint verification",
+    "ten-second telemetry and lifecycle cleanup"
+  ],
+  "checks": {
+    "campaign_tests": 12,
+    "pilot_tests": 31,
+    "existing_evaluator_tests": 5,
+    "total": 48,
+    "shell_syntax": "passed",
+    "undefined_names_F821_F822_F823": "passed",
+    "diff_whitespace": "passed"
+  },
+  "test_scope": "Actual pilot and all three matched shell wrappers call the canonical runner and actual launch_rl.sh under clean environments. Adapter bytes, Prime package and VF serializer are test fixtures. No local ML, rendering, paid API or GPU execution.",
+  "negative_checks": [
+    "conflicting fresh launcher mode rejected",
+    "requested steps and checkpoint interval must equal actual native config",
+    "failed arm preflight stops campaign before baseline/training"
+  ],
+  "observed_quality_result": null,
+  "optimizer_updates_in_this_repair": 0,
+  "gpu_allocated": false,
+  "scheduled_task_created": false,
+  "remaining": [
+    "Linux execution with actual pinned dependencies",
+    "optimizer updates and checkpoint upload evidence",
+    "matched heldout visual comparison"
+  ],
+  "cost": {
+    "additional_gpu_spend_during_repair_usd": 0,
+    "prior_three_failed_starts_gpu_clock_upper_estimate_usd": 3.5482,
+    "scope": "rental-clock estimate, not invoice"
+  },
+  "next_decision": "Use this committed runner for the already approved matched campaign when the supported two-H100 topology is available at the approved price. Do not rent an unsupported smaller-VRAM topology as a silent substitution."
+}

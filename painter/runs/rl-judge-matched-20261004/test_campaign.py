@@ -483,6 +483,7 @@ class MatchedCampaignTests(unittest.TestCase):
             repo = root / "painter"
             source_root = repo / "runs/rl-judge-matched-20261004"
             source_root.mkdir(parents=True)
+            shutil.copy2(RUN.parents[1] / "policy_runner.sh", repo / "policy_runner.sh")
             for name in ("arm_env.sh", "run.sh", "run_arm.sh", "runtime_env.sh",
                          "prepare_arm.sh", "prepare_node.sh", "evaluate.sh", "finalize.sh",
                          "finite_supervisor.py"):
@@ -680,6 +681,75 @@ class MatchedCampaignTests(unittest.TestCase):
                     json.loads((arm_root / "initial-adapter-receipt.json").read_text())["mode"],
                     "recovered_policy",
                 )
+            # Reuse the same prepared inputs through the historical pilot
+            # wrapper. Its profile validator remains in the thin wrapper while
+            # the canonical runner owns the launch body.
+            pilot_root = repo / "runs/throughput-recovery-20261003"
+            shutil.copytree(repo / "runs/rl-judge-matched-20261004-flash", pilot_root,
+                            symlinks=True)
+            shutil.copy2(RUN.parents[1] / "runs/throughput-recovery-20261003/run_single.sh",
+                         pilot_root / "run_single.sh")
+            pilot_runtime = (RUN.parents[1] / "runs/throughput-recovery-20261003/runtime_env.sh").read_text()
+            if (pilot_root / "runtime_env.sh").is_symlink():
+                (pilot_root / "runtime_env.sh").unlink()
+            (pilot_root / "runtime_env.sh").write_text(pilot_runtime.replace(
+                "e5211706a23b46354aa269f2b9cfaaaad1b64eef1012b433b1887c149f5a927c", initial_sha
+            ))
+            (repo / "throughput_recovery_profile.py").write_text(
+                (RUN.parents[1] / "throughput_recovery_profile.py").read_text()
+            )
+            pilot_env = dict(env)
+            pilot_env.update({
+                "PAINTER_RUN_ROOT": str(pilot_root),
+                "PAINTER_FROZEN_SFT_ADAPTER_PATH_FILE": str(shared / "frozen-sft-adapter-path.txt"),
+                "PAINTER_POLICY_SHA256": initial_sha,
+            })
+            for name in ("native.toml", "rl-config-receipt.json"):
+                (pilot_root / name).unlink()
+            subprocess.run([
+                sys.executable, str(RUN.parent / "text-pairwise-rl-20260928/prepare_config.py"),
+                "--output", str(pilot_root / "native.toml"), "--model", str(model),
+                "--run-root", str(pilot_root), "--manifest", str(pilot_root / "anchors-frozen/train-manifest.json"),
+                "--prime-root", str(prime), "--max-steps", "4", "--checkpoint-interval", "1",
+                "--run-name", "throughput-recovery-20261003", "--output-root", "rl-rollouts",
+                "--judge-protocol", "text-paint-sft-pairwise-consistent-v1", "--expected-count", "40",
+                "--adapter-revision", "ac4d3eda8e5925e2d23992cfdc1a63620ebde573",
+                "--adapter-prefix", "text-pairwise-scaled-20260929/step_16",
+                "--adapter-sha256", initial_sha, "--mode", "recovered_policy", "--learning-rate", "1e-6",
+                "--gpus-per-node", "2", "--num-train-gpus", "1", "--num-infer-gpus", "1",
+                "--batch-size", "16", "--group-size", "4", "--initial-inflight", "32",
+                "--max-inflight", "32", "--activation-cpu-offload",
+                "--renderer", str(pilot_root / "runtime/watercolour-cancellable-centroid-v1/cancellable_watercolour_renderer.py"),
+                "--renderer-python", str(pilot_root / "renderer-env/bin/python"),
+            ], env=pilot_env, cwd=pilot_root, check=True, capture_output=True, text=True)
+            for path in (pilot_root / "native.toml", pilot_root / "rl-config-receipt.json"):
+                path.write_text(path.read_text().replace(
+                    "bea72b066986faa1b92b9dc539c710093181ee916b99323e2b2498f318ac1740", frozen_sha
+                ))
+            pilot = subprocess.run([str(pilot_root / "run_single.sh"), "--preflight"],
+                                   env=pilot_env, cwd=pilot_root,
+                                   text=True, capture_output=True)
+            self.assertEqual(pilot.returncode, 0, pilot.stderr + pilot.stdout)
+            self.assertIn('"status":"preflight_passed"', pilot.stdout)
+            self.assertEqual(
+                json.loads((pilot_root / "initial-adapter-receipt.json").read_text())["mode"],
+                "recovered_policy",
+            )
+            native = pilot_root / "native.toml"
+            native_original = native.read_text()
+            for old, new, message in (
+                ("max_steps = 4", "max_steps = 5", "max_steps does not match"),
+                ("interval = 1", "interval = 2", "checkpoint interval does not match"),
+            ):
+                mutated = native_original.replace(old, new, 1)
+                self.assertNotEqual(mutated, native_original)
+                native.write_text(mutated)
+                invalid = subprocess.run([str(pilot_root / "run_single.sh"), "--preflight"],
+                                         env=pilot_env, cwd=pilot_root,
+                                         text=True, capture_output=True)
+                self.assertNotEqual(invalid.returncode, 0)
+                self.assertIn(message, invalid.stderr)
+                native.write_text(native_original)
             mismatch = (
                 f"source {source_root / 'arm_env.sh'} flash; "
                 f"BRUSH_ROOT={root / 'painter/rl_helpers'} "

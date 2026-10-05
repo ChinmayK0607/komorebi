@@ -1,0 +1,27 @@
+{
+  "schema": "shared-policy-runner-preimplementation-v1",
+  "hypothesis": "Reusing the successful pilot execution body with explicit launch parameters removes divergent environment/config propagation while preserving the approved three-judge experiment.",
+  "matched_baseline": "Successful four-update pilot source 782053ce2f032bb6b98c903d8f0f8d4dcd4e92b6; public result allocation-attempt8-result.json. Actual matched RL16 baseline archive from attempt3 is separately preserved.",
+  "research_change": false,
+  "required_preserved": [
+    "RL16 initializer revision/hash",
+    "fresh optimizer per judge",
+    "frozen SFT512 opponent",
+    "same40/47task pool",
+    "B16/G4/inflight32/age1/LR1e-6",
+    "current judge rubric/protocol/medium effort",
+    "CPU activation offload and strict final action/APIv2",
+    "public checkpoint hashing and finite spend/release",
+    "same16heldout panel/seed/turn budgets"
+  ],
+  "allowed_parameters": [
+    "run name and output root",
+    "judge model",
+    "max updates4pilot versus12matched",
+    "checkpoint interval1pilot versus4matched"
+  ],
+  "scope": "Extract only policy-launch execution body; thin pilot and matched wrappers. Keep controller, shared prep and baseline logic unchanged.",
+  "local_validation_scope": "Dummy adapter/metadata/subprocess tests only; actual training/ML/rendering only on Linux.",
+  "gpu_allocated": false,
+  "scheduled_task_created": false
+}
