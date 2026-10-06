@@ -1,0 +1,41 @@
+{
+  "schema": "single-operation-clock-guard-parent-review-v1",
+  "date": "2026-10-06",
+  "status": "implemented-reviewed-tested",
+  "hypothesis": "A coherent event clock plus finite polling safeguards prevent malformed injected test clocks from generating unbounded operations logs without changing the real rental deadline or normal30second cadence.",
+  "matched_baseline_source": "148ae750e8d2d1a3967db3e08b09008eeb9abf1f",
+  "changes": [
+    "Event elapsed times use the same injected clock as the controller.",
+    "Constant clock plus no-op wait fails after three immediate non-progress polls; slower stalls use a300second monotonic bound.",
+    "Poll count capped at ceil(initial remaining rental seconds/30)+4, catching a near-frozen clock that otherwise resets the stall check.",
+    "Poll ceiling follows the existing remote stop path; exact selected-pod release remains in outer finally.",
+    "Successful fake lifecycle tests use a coherent advancing clock/sleep pair.",
+    "Constant and micro-advancing regressions run in subprocesses with10second timeouts and parent-owned temporary directories."
+  ],
+  "parent_validation": {
+    "single_arm_tests": 33,
+    "matched_campaign_tests": 12,
+    "existing_evaluator_tests": 5,
+    "total": 50,
+    "suite_outer_timeout_seconds": 60,
+    "python_compilation": "passed",
+    "undefined_names_F821_F822_F823": "passed",
+    "whitespace_review": "passed"
+  },
+  "negative_case_assertions": [
+    "missing durable job exit cannot make the fake operation poll forever",
+    "exact fake pod released once",
+    "fewer than33 event rows and less than16KiB log per malformed-clock fixture",
+    "elapsed times use injected clock rather than fake origin/real epoch mismatch",
+    "subprocess killed and reaped on timeout; parent owns temp cleanup"
+  ],
+  "scope": "Local metadata/dummy subprocess fixtures only. No ML, rendering, paid API, GPU or provider operations.",
+  "source_sha256": {
+    "operate_single.py": "72f264b668f69a945b34410f356077536acc9183d802f56bffac8dfa1b455fad",
+    "test_single_arm.py": "dafad92462eac44da9a6363d4505ada1472349c6b6bfeba74b1a708affa5642d"
+  },
+  "cleanup_receipt": "abandoned-test-cleanup-20261006.json",
+  "actual_project_or_run_artifacts_deleted": false,
+  "scheduled_task_created": false,
+  "next_decision": "Use this clock-safe controller in subsequent Linux campaign handoffs. Existing actual training/runtime assertions remain pending; metadata tests are not an RL quality result."
+}

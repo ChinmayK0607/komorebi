@@ -54,6 +54,14 @@ INVENTORY_TIMEOUT_SECONDS = 60.0
 DIAGNOSTIC_BYTES = 65_536
 DIAGNOSTIC_LINES = 8
 METRICS_TAIL_BYTES = 256 * 1024
+# This is only a fallback for callers that inject a controller clock.  Normal
+# operation uses the real wall clock and a real sleep, so this guard does not
+# shorten a valid rental.  The immediate no-progress check below catches the
+# common test/operator error (a constant clock paired with a no-op wait).
+CLOCK_STALL_GUARD_SECONDS = 300.0
+CLOCK_NO_PROGRESS_POLLS = 3
+CLOCK_PROGRESS_EPSILON_SECONDS = 0.01
+POLL_CEILING_MARGIN = 4
 
 
 class OperationError(RuntimeError):
@@ -424,8 +432,20 @@ def _queue_summary(raw: bytes | None) -> dict[str, Any] | None:
     return values
 
 
-def _safe_event(path: Path, event: str, started: float, **fields: Any) -> None:
-    payload = {"schema": "throughput-recovery-single-operation-v1", "event": event, "elapsed_seconds": max(0.0, time.time() - started)}
+def _safe_event(
+    path: Path,
+    event: str,
+    started: float,
+    *,
+    clock: Callable[[], float] | None = None,
+    **fields: Any,
+) -> None:
+    event_clock = time.time if clock is None else clock
+    payload = {
+        "schema": "throughput-recovery-single-operation-v1",
+        "event": event,
+        "elapsed_seconds": max(0.0, event_clock() - started),
+    }
     payload.update({key: value for key, value in fields.items() if key not in {"pod", "pod_id", "host", "address", "ip", "command"}})
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("a", encoding="utf-8") as stream:
@@ -505,6 +525,7 @@ def _observe_summary(
             events,
             "observation_error",
             started,
+            clock=now,
             phase=phase,
             attempt=0,
             failure_diagnostics=_sanitized_diagnostics(str(exc), labels=("controller",)),
@@ -540,6 +561,7 @@ def _observe_summary(
                 events,
                 "observation_error",
                 started,
+                clock=now,
                 phase=phase,
                 attempt=1,
                 failure_diagnostics=_sanitized_diagnostics(str(exc), labels=("controller",)),
@@ -556,6 +578,7 @@ def _observe_summary(
             events,
             "observation_error",
             started,
+            clock=now,
             phase=phase,
             attempt=2,
             failure_diagnostics=_sanitized_diagnostics(str(exc), labels=("controller",)),
@@ -568,6 +591,7 @@ def _observe_summary(
             events,
             "observation_error",
             started,
+            clock=now,
             phase=phase,
             attempt=2,
             failure_diagnostics=_sanitized_diagnostics(str(exc), labels=("controller",)),
@@ -575,7 +599,7 @@ def _observe_summary(
         close_quickly(fresh)
         return None, None
     if first_error is not None:
-        _safe_event(events, "observation_recovered", started, phase=phase)
+        _safe_event(events, "observation_recovered", started, clock=now, phase=phase)
     return fresh, summary
 
 
@@ -593,7 +617,19 @@ def _validate_config_summary(summary: dict[str, Any]) -> None:
         raise OperationError("remote config topology is not 2 GPUs with one trainer and one inference GPU")
 
 
-def operate(*, window: RentalWindow, source_bundle: Path, source_commit: str, hf_token_file: Path, gateway_env_file: Path, output_root: Path, api: Any | None = None, now: Callable[[], float] = time.time, sleep: Callable[[float], None] = time.sleep) -> int:
+def operate(
+    *,
+    window: RentalWindow,
+    source_bundle: Path,
+    source_commit: str,
+    hf_token_file: Path,
+    gateway_env_file: Path,
+    output_root: Path,
+    api: Any | None = None,
+    now: Callable[[], float] = time.time,
+    sleep: Callable[[float], None] = time.sleep,
+    clock_stall_timeout: float | None = None,
+) -> int:
     source_bundle = _regular_file(source_bundle, "source-bundle")
     hf_token_file = _regular_file(hf_token_file, "HF token file", owner_only=True)
     gateway_env_file = _regular_file(gateway_env_file, "Gateway environment file", owner_only=True)
@@ -607,7 +643,14 @@ def operate(*, window: RentalWindow, source_bundle: Path, source_commit: str, hf
     output_root.chmod(0o700)
     events = output_root / "operations-single.jsonl"
     started = now()
-    _safe_event(events, "started", started, run_name=RUN_NAME, experiment_name=EXPERIMENT_NAME, source_commit=source_commit, gpu_count=GPU_COUNT, gpu_memory_min_mib=MIN_GPU_MEMORY_MIB)
+    if clock_stall_timeout is None:
+        clock_stall_timeout = CLOCK_STALL_GUARD_SECONDS
+    clock_stall_timeout = _positive_finite("clock-stall-timeout", clock_stall_timeout)
+
+    def event(name: str, **fields: Any) -> None:
+        _safe_event(events, name, started, clock=now, **fields)
+
+    event("started", run_name=RUN_NAME, experiment_name=EXPERIMENT_NAME, source_commit=source_commit, gpu_count=GPU_COUNT, gpu_memory_min_mib=MIN_GPU_MEMORY_MIB)
 
     api = api or _load_lium()
     # Keep an exact-id release target even if inventory or SSH setup fails
@@ -631,14 +674,14 @@ def operate(*, window: RentalWindow, source_bundle: Path, source_commit: str, hf
             min(INVENTORY_TIMEOUT_SECONDS, _remaining(window, now)),
         )
         release_target = pod
-        _safe_event(events, "pod_verified", started, topology={"gpus_per_node": 2, "num_train_gpus": 1, "num_infer_gpus": 1})
+        event("pod_verified", topology={"gpus_per_node": 2, "num_train_gpus": 1, "num_infer_gpus": 1})
         with api.ssh_connection(pod, timeout=min(30.0, _remaining(window, now))) as ssh:
             _remote_exec(ssh, "mkdir -p /root/painter/private /root/painter/logs && chmod 700 /root/painter/private", timeout=SSH_TIMEOUT_SECONDS, now=now, window=window)
             sftp = ssh.open_sftp()
             _sftp_put(sftp, source_bundle, str(REMOTE_BUNDLE), timeout=min(TRANSFER_TIMEOUT_SECONDS, _remaining(window, now)))
             _sftp_put(sftp, hf_token_file, str(REMOTE_TOKEN), timeout=min(TRANSFER_TIMEOUT_SECONDS, _remaining(window, now)))
             _sftp_put(sftp, gateway_env_file, str(REMOTE_GATEWAY), timeout=min(TRANSFER_TIMEOUT_SECONDS, _remaining(window, now)))
-            _safe_event(events, "inputs_transferred", started, source_bundle_bytes=source_bundle.stat().st_size)
+            event("inputs_transferred", source_bundle_bytes=source_bundle.stat().st_size)
 
             verify = "set -Eeuo pipefail; %s; nvidia-smi --query-gpu=memory.total --format=csv,noheader,nounits" % _source_checkout_command(str(REMOTE_BUNDLE), str(REMOTE_REPO), source_commit)
             verify_code, gpu_raw, verify_error = _remote_exec_capture(ssh, verify, timeout=min(TRANSFER_TIMEOUT_SECONDS, _remaining(window, now)), now=now, window=window)
@@ -654,7 +697,7 @@ def operate(*, window: RentalWindow, source_bundle: Path, source_commit: str, hf
             memories = _gpu_memory(gpu_raw)
             if len(memories) != GPU_COUNT or min(memories, default=0) < MIN_GPU_MEMORY_MIB:
                 raise OperationError("remote GPU inventory is not exactly two 80GB-class devices")
-            _safe_event(events, "source_and_gpu_verified", started, source_commit=source_commit, gpu_count=len(memories), gpu_memory_min_mib=min(memories))
+            event("source_and_gpu_verified", source_commit=source_commit, gpu_count=len(memories), gpu_memory_min_mib=min(memories))
 
             def reconnect(deadline_window: RentalWindow = window) -> Any:
                 context = _bounded_call(
@@ -666,7 +709,7 @@ def operate(*, window: RentalWindow, source_bundle: Path, source_commit: str, hf
                     min(30.0, _remaining(deadline_window, now)),
                 )
                 extra_ssh_contexts.append(context)
-                _safe_event(events, "remote_transport_reconnected", started)
+                event("remote_transport_reconnected")
                 return reopened
 
             command = _detached_job_command(
@@ -693,7 +736,7 @@ def operate(*, window: RentalWindow, source_bundle: Path, source_commit: str, hf
                 # its SSH wrapper disconnected. Never retry the launch: read
                 # the start/exit receipts after reconnecting instead.
                 launch_ambiguous = True
-                _safe_event(events, "remote_launch_ambiguous", started, error_type=type(exc).__name__)
+                event("remote_launch_ambiguous", error_type=type(exc).__name__)
             if launch_code not in {0, -1}:
                 remote_diagnostics = _sanitized_diagnostics(
                     launch_stderr,
@@ -703,13 +746,33 @@ def operate(*, window: RentalWindow, source_bundle: Path, source_commit: str, hf
                 )
                 raise OperationError("remote finite job could not be started")
             if launch_code == -1 and not launch_ambiguous:
-                _safe_event(events, "remote_transport_dropped", started, phase="launch")
-            _safe_event(events, "remote_execute_started", started, detached=True, launch_ambiguous=launch_ambiguous)
+                event("remote_transport_dropped", phase="launch")
+            event("remote_execute_started", detached=True, launch_ambiguous=launch_ambiguous)
             checked_config = False
             summary: dict[str, Any] = {}
+            stalled_since: float | None = None
+            no_progress_polls = 0
+            initial_remaining = _remaining(window, now)
+            max_poll_iterations = max(
+                1,
+                math.ceil(initial_remaining / POLL_SECONDS) + POLL_CEILING_MARGIN,
+            )
+            poll_iterations = 0
 
             while True:
                 current = now()
+                poll_iterations += 1
+                poll_ceiling_hit = poll_iterations > max_poll_iterations
+                if poll_ceiling_hit:
+                    event(
+                        "poll_safety_ceiling",
+                        poll_count=poll_iterations,
+                        poll_limit=max_poll_iterations,
+                    )
+                    # Route this malformed-clock case through the same stop
+                    # and release path as the real rental deadline.  A
+                    # detached remote job must not survive a controller guard.
+                    current = window.release_deadline_epoch
                 if current >= window.release_deadline_epoch:
                     stop_window = RentalWindow(
                         pod_id=window.pod_id,
@@ -741,7 +804,13 @@ def operate(*, window: RentalWindow, source_bundle: Path, source_commit: str, hf
                             stop_sent = True
                         except BaseException:
                             pass
-                    _safe_event(events, "remote_hard_deadline_action", started, stop_sent=stop_sent)
+                    event(
+                        "remote_hard_deadline_action",
+                        stop_sent=stop_sent,
+                        reason=("poll_safety_ceiling" if poll_ceiling_hit else "rental_release_deadline"),
+                    )
+                    if poll_ceiling_hit:
+                        raise OperationError("remote polling safety ceiling reached")
                     raise OperationError("remote execute reached the finite release deadline")
                 sftp, summary = _observe_summary(
                     active_ssh,
@@ -768,31 +837,55 @@ def operate(*, window: RentalWindow, source_bundle: Path, source_commit: str, hf
                             phase="reconnect",
                         )
                     except BaseException as exc:
-                        _safe_event(events, "remote_reconnect_error", started, error_type=type(exc).__name__)
+                        event("remote_reconnect_error", error_type=type(exc).__name__)
                         summary = None
                 if not checked_config and summary is not None and summary.get("phase_ready"):
                     _validate_config_summary(summary)
                     checked_config = True
-                    _safe_event(
-                        events,
+                    event(
                         "profile_verified",
-                        started,
                         profile=summary.get("preparation", {}).get("profile"),
                         topology=summary.get("config", {}).get("deployment"),
                     )
                 state = summary.get("state", {}) if summary is not None else {}
                 job = summary.get("job", {}) if summary is not None else {}
-                _safe_event(events, "poll", started, observation_available=summary is not None, job_started=job.get("started"), job_exit_code=job.get("exit_code"), state_status=state.get("status"), state_reason=state.get("reason"), completed_optimizer_steps=state.get("completed_optimizer_steps"), last_admitted_batch=state.get("last_admitted_batch"), render=summary.get("render") if summary is not None else None)
+                event("poll", observation_available=summary is not None, job_started=job.get("started"), job_exit_code=job.get("exit_code"), state_status=state.get("status"), state_reason=state.get("reason"), completed_optimizer_steps=state.get("completed_optimizer_steps"), last_admitted_batch=state.get("last_admitted_batch"), render=summary.get("render") if summary is not None else None)
                 if isinstance(job.get("exit_code"), int) and not isinstance(job.get("exit_code"), bool):
                     command_code = int(job["exit_code"])
                     if command_code < 0:
                         raise OperationError("durable remote job exit receipt is invalid")
                     if summary.get("terminal", {}).get("status") is None:
-                        _safe_event(events, "remote_archive_unconfirmed", started)
+                        event("remote_archive_unconfirmed")
                     else:
-                        _safe_event(events, "remote_archive_observed", started, status=summary["terminal"].get("status"))
+                        event("remote_archive_observed", status=summary["terminal"].get("status"))
                     break
-                sleep(min(POLL_SECONDS, max(0.0, window.release_deadline_epoch - now())))
+                wait_seconds = min(POLL_SECONDS, max(0.0, window.release_deadline_epoch - now()))
+                wait_started = time.monotonic()
+                previous_clock = current
+                sleep(wait_seconds)
+                wall_wait = time.monotonic() - wait_started
+                next_clock = now()
+                if next_clock > previous_clock:
+                    stalled_since = None
+                    no_progress_polls = 0
+                else:
+                    if stalled_since is None:
+                        stalled_since = wait_started
+                    # A real time.sleep advances the controller clock. Three
+                    # immediate returns therefore identify a malformed test or
+                    # operator callback without shortening valid live polls.
+                    if wall_wait <= max(
+                        CLOCK_PROGRESS_EPSILON_SECONDS,
+                        min(wait_seconds, 1.0) * 0.1,
+                    ):
+                        no_progress_polls += 1
+                    else:
+                        no_progress_polls = 0
+                    if (
+                        no_progress_polls >= CLOCK_NO_PROGRESS_POLLS
+                        or time.monotonic() - stalled_since >= clock_stall_timeout
+                    ):
+                        raise OperationError("controller clock did not advance between polls")
 
             if command_code != 0 and sftp is not None:
                 try:
@@ -822,7 +915,7 @@ def operate(*, window: RentalWindow, source_bundle: Path, source_commit: str, hf
             }
             if remote_diagnostics:
                 finished_fields["failure_diagnostics"] = remote_diagnostics
-            _safe_event(events, "remote_execute_finished", started, **finished_fields)
+            event("remote_execute_finished", **finished_fields)
     except BaseException as exc:
         channel_error = exc
         diagnostics = remote_diagnostics or _sanitized_diagnostics(
@@ -832,7 +925,7 @@ def operate(*, window: RentalWindow, source_bundle: Path, source_commit: str, hf
             forbidden=(window.pod_id,),
             labels=("stderr", "stdout", "controller"),
         )
-        _safe_event(events, "operation_error", started, error_type=type(exc).__name__, failure_diagnostics=diagnostics)
+        event("operation_error", error_type=type(exc).__name__, failure_diagnostics=diagnostics)
     finally:
         if sftp is not None:
             try:
@@ -855,10 +948,10 @@ def operate(*, window: RentalWindow, source_bundle: Path, source_commit: str, hf
         release_error: BaseException | None = None
         try:
             _bounded_call(lambda: api.rm(release_target), RELEASE_TIMEOUT_SECONDS)
-            _safe_event(events, "pod_release_requested", started)
+            event("pod_release_requested")
         except BaseException as exc:
             release_error = exc
-            _safe_event(events, "pod_release_error", started, error_type=type(exc).__name__)
+            event("pod_release_error", error_type=type(exc).__name__)
         if release_error is not None and channel_error is None:
             channel_error = OperationError("exact pod release failed")
 

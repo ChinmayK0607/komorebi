@@ -358,6 +358,30 @@ class DeadlineClock:
         return self.deadline + 1.0
 
 
+class AdvancingClock:
+    """Small coherent wall-clock/sleep pair for controller fakes."""
+
+    def __init__(self, value=1000.0):
+        self.value = float(value)
+
+    def __call__(self):
+        return self.value
+
+    def sleep(self, seconds):
+        self.value += max(0.0, float(seconds))
+
+
+class TinyAdvancingClock:
+    """Malformed operator clock: advances microscopically and never sleeps."""
+
+    def __init__(self, value=1000.0):
+        self.value = float(value)
+
+    def __call__(self):
+        self.value += 1e-6
+        return self.value
+
+
 class DeadlineLaunchChannel(SummaryChannel):
     def __init__(self, clock):
         super().__init__()
@@ -404,7 +428,115 @@ class AmbiguousLaunchAPI(FakeAPI):
         return connection
 
 
+def _run_stalled_clock_fixture(root_path=None, *, tiny=False):
+    """Exercise the controller's fail-fast path in a disposable child."""
+    if root_path is None:
+        with tempfile.TemporaryDirectory() as temp:
+            return _run_stalled_clock_fixture(temp, tiny=tiny)
+    contents = {
+        "throughput-recovery-remote-job-start.json": b'{"status":"started"}',
+        "supervisor-state.json": b'{"status":"running"}',
+        "terminal-receipt.json": b"{}",
+        "preparation-receipt.json": b"{}",
+        "rl-config-receipt.json": b"{}",
+        "metrics.jsonl": b"{}\n",
+    }
+    root = Path(root_path)
+    root.mkdir(parents=True, exist_ok=True)
+    bundle = root / "source.bundle"
+    bundle.write_bytes(b"git bundle fixture")
+    token = root / "token"
+    gateway = root / "gateway.env"
+    token.write_text("opaque-token\n")
+    gateway.write_text("opaque\n")
+    token.chmod(0o600)
+    gateway.chmod(0o600)
+    api = SummaryAPI(contents)
+    clock = TinyAdvancingClock() if tiny else None
+    window = operator.make_window(
+        pod_id="pod-test",
+        rental_start_epoch=1000.0,
+        price_usd_per_hour=3.8,
+        cap_usd=(0.2 if tiny else 20.0),
+    )
+    try:
+        operator.operate(
+            window=window,
+            source_bundle=bundle,
+            source_commit="a" * 40,
+            hf_token_file=token,
+            gateway_env_file=gateway,
+            output_root=root / "ops",
+            api=api,
+            now=(clock if clock is not None else lambda: 1000.0),
+            sleep=lambda _seconds: None,
+        )
+    except operator.OperationError as exc:
+        expected = "polling safety ceiling" if tiny else "clock did not advance"
+        if expected not in str(exc):
+            raise AssertionError(f"unexpected controller failure: {exc}") from exc
+    else:
+        raise AssertionError("stalled controller unexpectedly completed")
+    event_path = root / "ops/operations-single.jsonl"
+    rows = [json.loads(line) for line in event_path.read_text().splitlines()]
+    if [pod.id for pod in api.removed] != ["pod-test"]:
+        raise AssertionError("stalled controller did not release the exact pod")
+    if len(rows) > 32 or event_path.stat().st_size > 16_384:
+        raise AssertionError("stalled controller grew an unbounded operations log")
+    if not any(row["event"] == "operation_error" for row in rows):
+        raise AssertionError("stalled controller did not record its bounded failure")
+    if tiny:
+        deadline_rows = [
+            row for row in rows if row["event"] == "remote_hard_deadline_action"
+        ]
+        if len(deadline_rows) != 1 or not deadline_rows[0].get("stop_sent"):
+            raise AssertionError("poll ceiling did not stop the detached remote job")
+    if any(row["elapsed_seconds"] > (0.1 if tiny else 1e-9) for row in rows):
+        raise AssertionError("event elapsed time used a different clock")
+
+
 class SingleArmTests(unittest.TestCase):
+    def test_stalled_injected_clock_is_bounded_in_a_reaped_subprocess(self):
+        # Keep the guard itself in a child: a regression in the controller
+        # must be killed and reaped by subprocess.run rather than leaving a
+        # polling process or an unbounded operations log behind.
+        with tempfile.TemporaryDirectory() as temp:
+            script = (
+                "import runpy; "
+                f"module = runpy.run_path({str(Path(__file__).resolve())!r}); "
+                f"module['_run_stalled_clock_fixture']({str(temp)!r})"
+            )
+            started = time.monotonic()
+            subprocess.run(
+                [sys.executable, "-c", script],
+                cwd=REPO,
+                stdin=subprocess.DEVNULL,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                timeout=10.0,
+                check=True,
+            )
+            self.assertLess(time.monotonic() - started, 5.0)
+
+    def test_tiny_advancing_clock_hits_poll_ceiling_in_a_reaped_subprocess(self):
+        with tempfile.TemporaryDirectory() as temp:
+            script = (
+                "import runpy; "
+                f"module = runpy.run_path({str(Path(__file__).resolve())!r}); "
+                f"module['_run_stalled_clock_fixture']({str(temp)!r}, tiny=True)"
+            )
+            started = time.monotonic()
+            subprocess.run(
+                [sys.executable, "-c", script],
+                cwd=REPO,
+                stdin=subprocess.DEVNULL,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                timeout=10.0,
+                check=True,
+            )
+            self.assertLess(time.monotonic() - started, 5.0)
+
     def test_detached_job_real_subprocess_writes_valid_zero_and_nonzero_receipts(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
@@ -739,6 +871,7 @@ class SingleArmTests(unittest.TestCase):
             token.chmod(0o600)
             gateway.chmod(0o600)
             api = DropoutAPI(contents)
+            clock = AdvancingClock()
             window = operator.make_window(pod_id="pod-test", rental_start_epoch=1000.0, price_usd_per_hour=3.8, cap_usd=20.0)
             result = operator.operate(
                 window=window,
@@ -748,8 +881,8 @@ class SingleArmTests(unittest.TestCase):
                 gateway_env_file=gateway,
                 output_root=root / "ops",
                 api=api,
-                now=lambda: 1000.0,
-                sleep=lambda _seconds: None,
+                now=clock,
+                sleep=clock.sleep,
             )
             self.assertEqual(result, 0)
             events = [json.loads(line) for line in (root / "ops/operations-single.jsonl").read_text().splitlines()]
@@ -781,6 +914,7 @@ class SingleArmTests(unittest.TestCase):
             token.chmod(0o600)
             gateway.chmod(0o600)
             api = SummaryAPI(contents)
+            clock = AdvancingClock()
             window = operator.make_window(pod_id="pod-test", rental_start_epoch=1000.0, price_usd_per_hour=3.8, cap_usd=20.0)
             result = operator.operate(
                 window=window,
@@ -790,8 +924,8 @@ class SingleArmTests(unittest.TestCase):
                 gateway_env_file=gateway,
                 output_root=root / "ops",
                 api=api,
-                now=lambda: 1000.0,
-                sleep=lambda _seconds: None,
+                now=clock,
+                sleep=clock.sleep,
             )
             self.assertEqual(result, 17)
             events = [json.loads(line) for line in (root / "ops/operations-single.jsonl").read_text().splitlines()]
@@ -820,6 +954,7 @@ class SingleArmTests(unittest.TestCase):
             token.chmod(0o600)
             gateway.chmod(0o600)
             api = AmbiguousLaunchAPI(contents)
+            clock = AdvancingClock()
             window = operator.make_window(pod_id="pod-test", rental_start_epoch=1000.0, price_usd_per_hour=3.8, cap_usd=20.0)
             result = operator.operate(
                 window=window,
@@ -829,8 +964,8 @@ class SingleArmTests(unittest.TestCase):
                 gateway_env_file=gateway,
                 output_root=root / "ops",
                 api=api,
-                now=lambda: 1000.0,
-                sleep=lambda _seconds: None,
+                now=clock,
+                sleep=clock.sleep,
             )
             self.assertEqual(result, 0)
             self.assertEqual(api.connections[0].execute_attempts, 1)
@@ -1045,6 +1180,7 @@ class SingleArmTests(unittest.TestCase):
             token.chmod(0o600)
             gateway.chmod(0o600)
             api = SummaryAPI(contents)
+            clock = AdvancingClock()
             window = operator.make_window(
                 pod_id="pod-test",
                 rental_start_epoch=1000.0,
@@ -1059,8 +1195,8 @@ class SingleArmTests(unittest.TestCase):
                 gateway_env_file=gateway,
                 output_root=root / "ops",
                 api=api,
-                now=lambda: 1000.0,
-                sleep=lambda _seconds: None,
+                now=clock,
+                sleep=clock.sleep,
             )
             self.assertEqual(result, 0)
             self.assertEqual([pod.id for pod in api.removed], ["pod-test"])

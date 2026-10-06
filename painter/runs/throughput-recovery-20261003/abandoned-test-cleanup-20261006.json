@@ -1,0 +1,23 @@
+{
+  "schema": "abandoned-unittest-cleanup-v1",
+  "status": "temporary-directory-removed",
+  "process_identity_confirmed": "Painter throughput-recovery test_single_arm unittest",
+  "process_stopped": true,
+  "no_open_files_confirmed": true,
+  "deleted_log_bytes": 29183778312,
+  "deleted_directory_contains_only_test_fixtures": true,
+  "before_free_bytes": 23406280704,
+  "after_free_bytes": 52599828480,
+  "observed_free_space_gain_bytes": 29193547776,
+  "actual_project_or_run_artifacts_deleted": false,
+  "cause": "Unfinished controller observation loop combined an injected constant clock with a no-op wait; event logging subtracted that fake origin from real wall time. The frozen clock prevented its rental deadline from arriving.",
+  "guard_status": "implemented-parent-reviewed-regression-tests-passed",
+  "parent_tests": {
+    "single_arm": 33,
+    "matched_campaign": 12,
+    "evaluator": 5,
+    "total": 50,
+    "outer_timeout_seconds_per_suite": 60
+  },
+  "remaining_matching_processes": 0
+}
