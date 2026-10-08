@@ -1,0 +1,33 @@
+{
+  "schema": "structured-flow-live-launch-v1",
+  "status": "linux_preparation_running",
+  "rental_start_utc": "2026-10-08T21:48:10.980219+00:00",
+  "price_usd_per_node_hour": 3.72,
+  "gpu_cap_usd": 20,
+  "gpu_count": 2,
+  "trainer_gpus": 1,
+  "inference_gpus": 1,
+  "source_commit": "14719a8a9b4f446204ed8380726f6948f24179f0",
+  "source_bundle_sha256": "43fe7807f1248e7ab0a42aa0a03f60d1f8be4f728960539f62a83c30987d7bd9",
+  "prime_commit": "26b3131d2716a4f8210b165df584b83b4bc54f61",
+  "prime_bundle_sha256": "64b035e176df1aa850280f9bcdad5cedef8108636b59a5c29f2af8b014cf3dbe",
+  "actual_handoff": {
+    "ssh": true,
+    "source_checkout": true,
+    "gpu_memory_checked": true,
+    "detached_linux_job_started": true,
+    "renderer_derivative_verification_observed": true
+  },
+  "optimizer_updates_observed": 0,
+  "utilization": {
+    "status": "not_measured_yet",
+    "pipeline_phase": "runtime_preparation"
+  },
+  "planned_updates": {
+    "sft": 4,
+    "rl": 8
+  },
+  "scheduled_tasks_created": false,
+  "quality_result": "pending",
+  "evidence_target": "CK0607/komorebi-painter-experiments/runs/structured-flow-rl-20261009/evidence.tar.gz"
+}

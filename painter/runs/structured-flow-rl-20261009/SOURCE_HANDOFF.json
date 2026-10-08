@@ -1,0 +1,12 @@
+{
+  "schema": "structured-flow-reviewed-source-handoff-v1",
+  "source_commit": "14719a8a9b4f446204ed8380726f6948f24179f0",
+  "source_bundle_sha256": "43fe7807f1248e7ab0a42aa0a03f60d1f8be4f728960539f62a83c30987d7bd9",
+  "source_bundle_bytes": 3727852,
+  "prime_commit": "26b3131d2716a4f8210b165df584b83b4bc54f61",
+  "prime_bundle_sha256": "64b035e176df1aa850280f9bcdad5cedef8108636b59a5c29f2af8b014cf3dbe",
+  "prime_bundle_bytes": 18183769,
+  "gpu_cap_usd": 20,
+  "tests_passed": 40,
+  "provider_actions": "not_yet_started"
+}
