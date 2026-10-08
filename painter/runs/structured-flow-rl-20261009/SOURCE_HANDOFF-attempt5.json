@@ -1,0 +1,16 @@
+{
+  "source_commit": "1714ad78d62135971ad756fc39598e8a09d508c5",
+  "source_bundle_sha256": "23e5c5a66227a8026d07c0ac23cd87b4986e72db7a8c3a057a86601f2baea406",
+  "source_bundle_bytes": 3837436,
+  "retry_gpu_cap_usd": 18.0,
+  "prior_start_reserve_usd": 2.0,
+  "prior_gpu_clock_estimate_usd": 1.3785,
+  "allocation_observed": true,
+  "price_usd_per_whole_node_hour": 3.72,
+  "topology": {
+    "gpus_per_node": 2,
+    "num_infer_gpus": 1,
+    "num_train_gpus": 1
+  },
+  "allocation_status_at_record": "prime_staged"
+}
