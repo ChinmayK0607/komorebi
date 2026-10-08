@@ -20,6 +20,16 @@
       "bytes": 233590600,
       "private": false,
       "anonymous_metadata_hash_verified": true
+    },
+    {
+      "step": 12,
+      "repo_id": "CK0607/qwen3.8-27b-brush-painting",
+      "revision": "a9566118df43ec92568472e23b1552946b01bd15",
+      "path": "rl-judge-matched-20261004-flash/step_12",
+      "sha256": "c70c47ec0d6d7172b3bc25c4f54178919cf7c079cd9652fff3bc76db9e1eca79",
+      "bytes": 233590600,
+      "private": false,
+      "anonymous_metadata_hash_verified": true
     }
   ],
   "verification_scope": "Anonymous HF metadata/LFS SHA only; no weights downloaded locally."

@@ -1,0 +1,27 @@
+{
+  "schema": "matched-evaluation-scope-repair-review-v1",
+  "cause": "Shared executor passes STEP all; matched evaluate_arm.sh rejected all instead of frozen balanced16.",
+  "change": "Only matched evaluate.sh accepts legacy all as an alias for frozen balanced16; strict step12 and --preflight preserved. Generic executor, training config, model/data/rubric unchanged.",
+  "implementation_model": "gpt-5.6-luna",
+  "implementation_effort": "xhigh",
+  "parent_review": "Reviewed actual wrapper code and bounded fake-base regression; independently executed full matched suite.",
+  "tests": {
+    "matched_suite_passed": 17,
+    "elapsed_seconds": 9.885,
+    "external_process_group_timeout_seconds": 60,
+    "new_shell_subprocess_timeout_seconds": 10,
+    "actual_failed_call_covered": [
+      "12",
+      "all"
+    ],
+    "preflight_and_explicit_default_scope_covered": true,
+    "invalid_step_scope_mode_rejected": true,
+    "bash_syntax_passed": true,
+    "diff_whitespace_passed": true
+  },
+  "limitations": "Metadata/shell tests only; no post-training GPU evaluation has been rerun yet.",
+  "linux_runtime_source": "bdebd382c98f590ab88fdcc22135a517b9e063bf",
+  "fresh_rental_during_repair": false,
+  "scheduled_task_created": false,
+  "next_decision": "Recover balanced16 evaluation from public Flash step12 rather than retraining; Pro/Luna training still pending."
+}

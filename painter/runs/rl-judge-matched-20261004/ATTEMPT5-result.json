@@ -1,0 +1,87 @@
+{
+  "schema": "matched-campaign-attempt5-result-v1",
+  "observed_utc": "2026-10-08T09:28:29.031776+00:00",
+  "status": "failed_after_flash_training_before_primary_evaluation",
+  "source_commit": "bdebd382c98f590ab88fdcc22135a517b9e063bf",
+  "hypothesis_record": "RETRY-attempt5.json",
+  "matched_baseline": "Fresh RL16 balanced16 baseline completed; no completed post-training balanced16 comparison.",
+  "completed_optimizer_updates": {
+    "flash": 12,
+    "pro": 0,
+    "luna": 0
+  },
+  "training_status": "Flash native launcher reports Training finished; archived terminal records 12 completed optimizer steps and checkpoint_step12.",
+  "failure": {
+    "stage": "post-training evaluation invocation",
+    "shared_executor_arguments": [
+      "12",
+      "all"
+    ],
+    "matched_evaluator_required_arguments": [
+      "12",
+      "balanced16"
+    ],
+    "diagnostic": "matched primary evaluation is fixed to step 12 and balanced16",
+    "cause": "Shared executor legacy all scope sentinel was passed unchanged to strict matched evaluator. Evaluation rejected before generating heldout paintings.",
+    "evaluation_exit_code": 2,
+    "primary_success": false
+  },
+  "results_scope": "Completed Flash training only. No matched post-training visual quality result, no ranking of judges, no completed three-arm ablation.",
+  "node_released": true,
+  "release_evidence": "Controller exact-pod release request, followed by read-only provider inventory finding no matching campaign node.",
+  "gpu_cost": {
+    "price_usd_per_hour": 3.72,
+    "elapsed_seconds_to_release_request": 10138.390512943268,
+    "rental_clock_estimate_usd": 10.47633686337471,
+    "scope": "Rental clock through release request, not provider invoice; excludes API spend.",
+    "release_requested_utc": "2026-10-08T08:38:50.165388+00:00"
+  },
+  "public_evidence": {
+    "repo_id": "CK0607/komorebi-painter-experiments",
+    "revision": "16ddc7694b0f447f88ea0bb7f9df1f52fb043e68",
+    "campaign": {
+      "path": "runs/rl-judge-matched-20261004/campaign-evidence.tar.gz",
+      "bytes": 692378,
+      "sha256": "624bc057332062927d00ec5bcee79108159a983f43b0f605e2a633d611941a50",
+      "anonymous_download_hash_verified": true
+    },
+    "flash": {
+      "path": "runs/rl-judge-matched-20261004-flash/evidence.tar.gz",
+      "bytes": 206207624,
+      "sha256": "88a872d20561519f9d3a151f171ae3dfa7544caeec1c57553a0def755c46911b",
+      "anonymous_download_hash_verified": true
+    }
+  },
+  "public_checkpoint_steps": [
+    4,
+    8,
+    12
+  ],
+  "checkpoint_evidence": "flash-checkpoints-live.json",
+  "utilization_evidence": "ALLOCATION-attempt5.json; prior 60-sample recent interval only, not full-run utilization.",
+  "reporting_correction": "Old controller terminal total24 double counted the single Flash arm; actual campaign completed total12. Current reviewed summary code already excludes active arm from completed-arm sum.",
+  "next_decision": "Repair matched wrapper scope normalization with actual-wrapper regression. Preserve trained Flash step12; recover its balanced16 evaluation without retraining. Pro and Luna remain unstarted. No fresh rental during this status investigation.",
+  "scheduled_task_created": false,
+  "training_gradients": {
+    "completion_row_count": 12,
+    "all_finite_nonzero": true,
+    "minimum_grad_norm": 0.005035400390625,
+    "maximum_grad_norm": 0.0205078125,
+    "scope": "All12 archived trainer optim/grad_norm completion rows."
+  },
+  "batch_rewards": {
+    "1": 0.11458333333333334,
+    "2": 0.32291666666666663,
+    "3": 0.11458333333333334,
+    "4": 0.17708333333333334,
+    "5": 0.14583333333333334,
+    "6": 0.125,
+    "7": 0.15625,
+    "8": 0.10416666666666667,
+    "9": 0.05208333333333334,
+    "10": 0.125,
+    "11": 0.2604166666666667,
+    "12": 0.125
+  },
+  "reward_scope": "Admitted changing-prompt training batch means, not matched heldout quality or cross-judge comparable score."
+}
