@@ -6,7 +6,9 @@ RUN="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
 REPO="$(cd "$RUN/../../.." && pwd -P)"
 NODE_ROOT="${PAINTER_NODE_ROOT:-/root/painter}"
 PRIME_ROOT="${PRIME_ROOT:-$NODE_ROOT/prime}"
-MODEL_DIR="$NODE_ROOT/model-cache/qwen/1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0"
+# Preserve an explicit local-scratch model location supplied by the structured
+# arm; the default remains the historical node-root cache.
+MODEL_DIR="${MODEL_DIR:-$NODE_ROOT/model-cache/qwen/1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0}"
 [[ "$(uname -s)" == Linux ]] || { echo 'Linux node required' >&2; exit 1; }
 [[ "$(nvidia-smi --query-gpu=index --format=csv,noheader | wc -l)" -ge 2 ]] || {
   echo 'two visible GPUs required' >&2; exit 1;

@@ -1,0 +1,20 @@
+{
+  "schema": "structured-flow-failure-v1",
+  "attempt": 6,
+  "source_commit": "2c6c6018b479908c96b62888c3b1a638a298b795",
+  "cause": "Operator stopped bootstrap after prolonged stalls in model download and Git index-pack on fuse.gocryptfs; small writes passed and later model transfers resumed slowly. Encryption causality is unproven.",
+  "scope": {
+    "qwen_serving_started": false,
+    "sft_optimizer_updates": 0,
+    "rl_optimizer_updates": 0
+  },
+  "allocation_status": "released",
+  "gpu_clock_estimate_usd": 0.5514,
+  "cost_window_seconds": 533.65,
+  "cost_basis": "rental start through controller release request; not invoice, excludes API",
+  "cumulative_gpu_clock_estimate_usd": 2.1457,
+  "retry_allowance_usd": 17.0,
+  "conservative_prior_start_reserve_usd": 3.0,
+  "public_evidence_proof": "FAILURE_PUBLIC-attempt6.json",
+  "next_decision": "Keep model and Prime large mutable trees on local scratch; protected credentials remain on node private storage."
+}

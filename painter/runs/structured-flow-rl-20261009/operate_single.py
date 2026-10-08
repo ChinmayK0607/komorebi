@@ -8,6 +8,7 @@ run identity, remote command, and structured config checks.
 from __future__ import annotations
 
 import importlib.util
+import os
 from pathlib import Path
 import shlex
 import sys
@@ -37,25 +38,35 @@ base.INFER_GPU_COUNT = 1
 
 
 def _detached_job_command(*, source_commit: str, rental_start_epoch: float, price_usd_per_hour: float, cap_usd: float) -> str:
+    values = {
+        "PAINTER_SOURCE_COMMIT": source_commit,
+        "PAINTER_NODE_ROOT": str(base.REMOTE_ROOT),
+        "HF_TOKEN_PATH": str(base.REMOTE_TOKEN),
+        "PAINTER_GATEWAY_ENV_FILE": str(base.REMOTE_GATEWAY),
+        "PAINTER_RUN_ROOT": str(base.REMOTE_RUN),
+        "PAINTER_RUN_NAME": base.RUN_NAME,
+        "PAINTER_GPUS_PER_NODE": "2",
+        "PAINTER_NUM_TRAIN_GPUS": "1",
+        "PAINTER_NUM_INFER_GPUS": "1",
+        "PAINTER_STRUCTURED_FLOW_POLICY": "1",
+        "PAINTER_CODE_SUPERVISION_ENABLED": "1",
+        "PAINTER_RUN_SUPERVISION": "1",
+        "PAINTER_WARMUP_REQUIRED": "1",
+        "HF_CHECKPOINT_REPO": "CK0607/qwen3.8-27b-brush-painting",
+        "HF_CHECKPOINT_RUN": "structured-flow-rl-20261009-sft-warmup",
+    }
+    # Keep this opt-in: the controller's environment can select a node-local
+    # filesystem for the large model and Prime checkout, while credentials
+    # remain under REMOTE_ROOT/private.  An unset value preserves the reviewed
+    # node-root defaults.
+    local_scratch = os.environ.get("PAINTER_LOCAL_SCRATCH_ROOT", "")
+    if local_scratch:
+        if not local_scratch.startswith("/"):
+            raise ValueError("PAINTER_LOCAL_SCRATCH_ROOT must be absolute")
+        values["PAINTER_LOCAL_SCRATCH_ROOT"] = local_scratch
     env = " ".join(
         f"{key}={shlex.quote(value)}"
-        for key, value in {
-            "PAINTER_SOURCE_COMMIT": source_commit,
-            "PAINTER_NODE_ROOT": str(base.REMOTE_ROOT),
-            "HF_TOKEN_PATH": str(base.REMOTE_TOKEN),
-            "PAINTER_GATEWAY_ENV_FILE": str(base.REMOTE_GATEWAY),
-            "PAINTER_RUN_ROOT": str(base.REMOTE_RUN),
-            "PAINTER_RUN_NAME": base.RUN_NAME,
-            "PAINTER_GPUS_PER_NODE": "2",
-            "PAINTER_NUM_TRAIN_GPUS": "1",
-            "PAINTER_NUM_INFER_GPUS": "1",
-            "PAINTER_STRUCTURED_FLOW_POLICY": "1",
-            "PAINTER_CODE_SUPERVISION_ENABLED": "1",
-            "PAINTER_RUN_SUPERVISION": "1",
-            "PAINTER_WARMUP_REQUIRED": "1",
-            "HF_CHECKPOINT_REPO": "CK0607/qwen3.8-27b-brush-painting",
-            "HF_CHECKPOINT_RUN": "structured-flow-rl-20261009-sft-warmup",
-        }.items()
+        for key, value in values.items()
     )
     execute = shlex.quote(str(base.REMOTE_RUN / "execute_single.sh"))
     args = " ".join(shlex.quote(str(value)) for value in (rental_start_epoch, price_usd_per_hour, cap_usd))

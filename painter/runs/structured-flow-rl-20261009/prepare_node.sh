@@ -16,6 +16,12 @@ validate_structured_bindings
 # the selection explicit and expose a cheap node-local probe for the operator
 # and regression tests before any renderer or model setup begins.
 PY_PRIME="${PAINTER_PRIME_PYTHON:-$PRIME_ROOT/.venv/bin/python}"
+if [[ -n "$PAINTER_LOCAL_SCRATCH_ROOT" ]]; then
+  mkdir -p "$PAINTER_LOCAL_SCRATCH_ROOT"
+  [[ -d "$PAINTER_LOCAL_SCRATCH_ROOT" && -w "$PAINTER_LOCAL_SCRATCH_ROOT" ]] || {
+    echo "local scratch root is not writable: $PAINTER_LOCAL_SCRATCH_ROOT" >&2; exit 1;
+  }
+fi
 if [[ "${1:-}" == --interpreter-probe ]]; then
   [[ -x "$PY_PRIME" ]] || { echo "pinned Prime Python is missing: $PY_PRIME" >&2; exit 1; }
   "$PY_PRIME" - <<'PY'

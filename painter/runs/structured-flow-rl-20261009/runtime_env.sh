@@ -11,10 +11,22 @@ export PAINTER_RUN_ROOT="${PAINTER_RUN_ROOT:-$RUN_ROOT_DEFAULT}"
 export PAINTER_RUN_NAME="${PAINTER_RUN_NAME:-structured-flow-rl-20261009}"
 export PAINTER_EXPERIMENT_NAME="${PAINTER_EXPERIMENT_NAME:-structured-flow-rl-20261009-flash}"
 export PAINTER_NODE_ROOT="${PAINTER_NODE_ROOT:-/root/painter}"
-export PRIME_ROOT="${PRIME_ROOT:-$PAINTER_NODE_ROOT/prime}"
+# Opt-in local-disk placement for the two largest mutable trees. Keep the
+# node root separate so its private credential files remain on the protected
+# root filesystem. Explicit PRIME_ROOT/MODEL_DIR values still win.
+export PAINTER_LOCAL_SCRATCH_ROOT="${PAINTER_LOCAL_SCRATCH_ROOT:-}"
+if [[ -n "$PAINTER_LOCAL_SCRATCH_ROOT" ]]; then
+  export PRIME_ROOT="${PRIME_ROOT:-$PAINTER_LOCAL_SCRATCH_ROOT/prime}"
+else
+  export PRIME_ROOT="${PRIME_ROOT:-$PAINTER_NODE_ROOT/prime}"
+fi
 export PAINTER_BOOTSTRAP_RUN="${PAINTER_BOOTSTRAP_RUN:-$PAINTER_RUN_ROOT/../text-pairwise-rl-20260928}"
 
-export MODEL_DIR="${MODEL_DIR:-$PAINTER_NODE_ROOT/model-cache/qwen/1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0}"
+if [[ -n "$PAINTER_LOCAL_SCRATCH_ROOT" ]]; then
+  export MODEL_DIR="${MODEL_DIR:-$PAINTER_LOCAL_SCRATCH_ROOT/model-cache/qwen/1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0}"
+else
+  export MODEL_DIR="${MODEL_DIR:-$PAINTER_NODE_ROOT/model-cache/qwen/1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0}"
+fi
 export PAINTER_POLICY_MODE="${PAINTER_POLICY_MODE:-recovered_policy}"
 export PAINTER_POLICY_REPO="${PAINTER_POLICY_REPO:-CK0607/qwen3.8-27b-brush-painting}"
 export PAINTER_POLICY_REVISION="${PAINTER_POLICY_REVISION:-1227a2427a8ae16014d2fdca4d1adb6855d3fa1c}"
@@ -114,6 +126,7 @@ export HF_TOKEN_PATH="${HF_TOKEN_PATH:-$PAINTER_NODE_ROOT/private/hf-token}"
 export PAINTER_GATEWAY_ENV_FILE="${PAINTER_GATEWAY_ENV_FILE:-$PAINTER_NODE_ROOT/private/gateway.env}"
 
 validate_structured_bindings() {
+  [[ -z "$PAINTER_LOCAL_SCRATCH_ROOT" || "$PAINTER_LOCAL_SCRATCH_ROOT" == /* ]] || { echo 'PAINTER_LOCAL_SCRATCH_ROOT must be absolute' >&2; return 1; }
   [[ "$PAINTER_RUN_NAME" == structured-flow-rl-20261009 ]] || { echo 'structured run name is not bound' >&2; return 1; }
   [[ "$PAINTER_POLICY_REPO" == CK0607/qwen3.8-27b-brush-painting ]] || return 1
   [[ "$PAINTER_POLICY_REVISION" == 1227a2427a8ae16014d2fdca4d1adb6855d3fa1c ]] || return 1

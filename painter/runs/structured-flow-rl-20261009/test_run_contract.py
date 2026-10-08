@@ -141,6 +141,64 @@ class StructuredFlowRunTests(unittest.TestCase):
             )
             self.assertEqual(result.stdout, str(selected))
 
+    def test_opt_in_local_scratch_moves_model_and_prime_but_not_credentials(self):
+        command = (
+            'source "$1/runtime_env.sh"; '
+            'printf "%s\\n%s\\n%s\\n%s" "$PRIME_ROOT" "$MODEL_DIR" '
+            '"$PAINTER_NODE_ROOT" "$HF_TOKEN_PATH"'
+        )
+        environment = os.environ.copy()
+        environment.update({
+            "PAINTER_RUN_ROOT": str(RUN),
+            "PAINTER_NODE_ROOT": "/protected/node-root",
+            "PAINTER_LOCAL_SCRATCH_ROOT": "/local/scratch/structured-flow",
+        })
+        environment.pop("PRIME_ROOT", None)
+        environment.pop("MODEL_DIR", None)
+        result = subprocess.run(
+            ["bash", "-c", command, "scratch-contract", str(RUN)],
+            env=environment,
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        prime, model, node_root, token = result.stdout.splitlines()
+        self.assertEqual(prime, "/local/scratch/structured-flow/prime")
+        self.assertEqual(model, "/local/scratch/structured-flow/model-cache/qwen/1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0")
+        self.assertEqual(node_root, "/protected/node-root")
+        self.assertEqual(token, "/protected/node-root/private/hf-token")
+        bootstrap = (RUN.parent / "text-pairwise-rl-20260928/setup_node.sh").read_text()
+        self.assertIn('MODEL_DIR="${MODEL_DIR:-$NODE_ROOT/model-cache/qwen/1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0}"', bootstrap)
+        invalid = dict(environment, PAINTER_LOCAL_SCRATCH_ROOT="relative/scratch")
+        refused = subprocess.run(
+            ["bash", "-c", 'source "$1/runtime_env.sh"; validate_structured_bindings', "scratch-contract", str(RUN)],
+            env=invalid,
+            capture_output=True,
+            text=True,
+        )
+        self.assertNotEqual(refused.returncode, 0)
+        self.assertIn("must be absolute", refused.stderr)
+
+    def test_controller_forwards_opt_in_scratch_to_detached_node_job(self):
+        operator = load("structured_flow_operation_scratch_contract", RUN / "operate_single.py")
+        with mock.patch.dict(os.environ, {"PAINTER_LOCAL_SCRATCH_ROOT": "/tmp/structured-flow-scratch"}, clear=False):
+            command = operator._detached_job_command(
+                source_commit="a" * 40,
+                rental_start_epoch=100.0,
+                price_usd_per_hour=3.70,
+                cap_usd=0.50,
+            )
+        self.assertIn("PAINTER_LOCAL_SCRATCH_ROOT=/tmp/structured-flow-scratch", command)
+        self.assertIn("HF_TOKEN_PATH=/root/painter/private/hf-token", command)
+        with mock.patch.dict(os.environ, {"PAINTER_LOCAL_SCRATCH_ROOT": "relative/scratch"}, clear=False):
+            with self.assertRaises(ValueError):
+                operator._detached_job_command(
+                    source_commit="a" * 40,
+                    rental_start_epoch=100.0,
+                    price_usd_per_hour=3.70,
+                    cap_usd=0.50,
+                )
+
     def test_node_builds_missing_proposals_and_evaluator_preserves_flow_hook(self):
         prepare = (RUN / "prepare_node.sh").read_text()
         evaluator = (RUN / "evaluate.sh").read_text()
