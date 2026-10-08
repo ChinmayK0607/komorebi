@@ -1,0 +1,7 @@
+{
+  "source_commit": "74256cd850a27f57ac246c5327b1d36958becf65",
+  "source_bundle_sha256": "56e79fd67ad6ff30ca0cdc6a3398e0adc82bc3b78b4e728564d9c7643fd5449f",
+  "source_bundle_bytes": 3663220,
+  "retry_gpu_cap_usd": 19.5,
+  "prior_attempt_reserve_usd": 0.5
+}
