@@ -1,0 +1,51 @@
+{
+  "schema": "matched-continuation-prelaunch-v1",
+  "date": "2026-10-08",
+  "recorded_utc": "2026-10-08T09:32:55.982119+00:00",
+  "status": "reviewed-ready-for-continuation",
+  "user_direction": "Recover Flash evaluation and continue other matched trainings.",
+  "hypothesis": "Under identical registered RL16 starts, dataset and12-update optimization recipe, judge identity produces different heldout aesthetic/spatial outcomes. Resume saved Flash12 rather than repeat training.",
+  "matched_baseline": "Reuse pinned prior fresh RL16 balanced16 generation from attempt5, same16case order, seed918210,3turns8192tokens. Frozen SFT512 remains distinct reward opponent.",
+  "protocol": "PROTOCOL.json",
+  "protocol_sha256": "3c897211a8181b38965e32025a3cc1c50fd0e348a3fe6e6866dc7c4055d04fb8",
+  "recovery_plan": {
+    "flash": "Download public pinned Flash step12 checkpoint, recover provenance, evaluate/finalize/archive only; no additional optimization.",
+    "pro": "Fresh optimizer, original RL16 initializer,12actualupdates.",
+    "luna": "Fresh optimizer, original RL16 initializer,12actualupdates.",
+    "baseline": "Hash-verified prior baseline archive, no regeneration.",
+    "input_evidence": "ATTEMPT5-result.json",
+    "flash_checkpoint_identity": "flash-checkpoints-live.json"
+  },
+  "new_rental_cap_usd": 43.5,
+  "completed_attempt5_gpu_clock_estimate_usd": 10.47633686337471,
+  "prior_failed_start_reserve_usd": 4,
+  "whole_campaign_bound_usd": 57.97633686337471,
+  "approved_total_campaign_ceiling_usd": 58.5,
+  "max_whole_node_price_usd_hour": 3.8,
+  "topology": {
+    "gpus": 2,
+    "trainer": 1,
+    "inference": 1
+  },
+  "unchanged_recipe": [
+    "B16/G4,inflight32,policyage1,LR1e-6",
+    "40train47heldout",
+    "samejudge rubric,mediumrequested effort",
+    "independentRL16 initializers/freshoptimizers",
+    "checkpoints4/8/12",
+    "balanced16evaluation3turns8192tokensseed918210"
+  ],
+  "implementation_review_pending": false,
+  "source_commit_pending": true,
+  "allocation_policy": "One finite continuation allocation with exact release on completion/failure/budget cutoff; no auto-rental retry.",
+  "checkpoint_storage": "PublicHF withhashverification; all weightsdownloadedLinuxnodeonly.",
+  "decision_rule": "Compare same heldout visual panel, not raw rewardmeans acrossjudgeidentities; incomplete arms censored.",
+  "scheduled_task_created": false,
+  "budget_allocation_note": "4.50 reserved for sharedprep/Flashrecovery; pendingPro/Luna retain19.50registered per-arm caps. Wholecontroller43.50 deadline hard; sharedcost charge recorded separately.",
+  "implementation_review": "CONTINUATION_REVIEW.json",
+  "continuation_phase_budget_plan_usd": {
+    "shared_preparation_and_flash_evaluation_recovery": 4.5,
+    "pro": 19.5,
+    "luna": 19.5
+  }
+}

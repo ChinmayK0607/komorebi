@@ -1,0 +1,30 @@
+{
+  "schema": "matched-continuation-parent-review-v1",
+  "implementation_model": "gpt-5.6-luna",
+  "implementation_effort": "xhigh",
+  "reviewed_changes": [
+    "Opt-in continuation CLI propagated before positional remote arguments; fresh default preserved.",
+    "Restore hash-pinned baseline and Flash12 public checkpoint; no baseline generation or Flash optimization.",
+    "Real matched evaluation/finalizer/archive then independent Pro/Luna12-update execution.",
+    "Restore uses pinned Prime Python, accepts verified HFcache symlinks copied to regular files, rejects unsafe tar members.",
+    "Explicit checkpoint primary-selection and recovered-evaluation provenance; progress sums deduplicated by arm."
+  ],
+  "parent_tests": {
+    "matched_suite_passed": 21,
+    "matched_suite_seconds": 12.781,
+    "allocator_suite_passed": 12,
+    "allocator_suite_seconds": 3.841,
+    "external_suite_timeout_seconds": 60,
+    "new_shell_test_timeout_seconds": 10,
+    "real_flash_archive_receipt_validation_passed": true,
+    "bash_syntax_passed": true,
+    "diff_whitespace_passed": true
+  },
+  "scope_limitations": "Local metadata/config/shell fixtures only. Actual Linux continuation evaluation and Pro/Luna optimizer results pending.",
+  "gpu_or_paid_api_work_during_review": false,
+  "scheduled_task_created": false,
+  "budget_total_ceiling_usd": 58.5,
+  "new_rental_ceiling_usd": 43.5,
+  "new_allocation_retry_limit": 1,
+  "next_decision": "Launch explicit continuation on one2H100 node\u22643.8whole-node/hour; archivepublic and releaseexactnode after completion/failure/deadline."
+}

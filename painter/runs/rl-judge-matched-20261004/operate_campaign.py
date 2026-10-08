@@ -45,6 +45,8 @@ REMOTE_JOB_STDOUT = REMOTE_JOB_DIR / "rl-judge-matched-remote-job.stdout.log"
 REMOTE_JOB_STDERR = REMOTE_JOB_DIR / "rl-judge-matched-remote-job.stderr.log"
 GPU_COUNT = 2
 MIN_GPU_MEMORY_MIB = 80_000
+CONTINUATION_CAP_USD = 43.5
+CONTINUATION_MODE = False
 _SUCCESS_STEP = re.compile(r"SUCCESS[^\n]*?Step\s+(\d+)\s+\|")
 _TRAINER_METRIC_KEYS = frozenset({"optim/grad_norm", "time/step", "optimizer/step"})
 
@@ -101,8 +103,15 @@ def _state_admitted_batch(state: dict[str, Any]) -> int | None:
     return None
 
 
+def set_continuation_mode(enabled: bool) -> None:
+    """Bind the explicit allocator/controller mode before remote launch."""
+    global CONTINUATION_MODE
+    CONTINUATION_MODE = bool(enabled)
+
+
 def _campaign_job_command(*, source_commit: str, rental_start_epoch: float,
-                          price_usd_per_hour: float, cap_usd: float) -> str:
+                          price_usd_per_hour: float, cap_usd: float,
+                          continuation: bool | None = None) -> str:
     env = " ".join(
         f"{key}={shlex.quote(value)}" for key, value in {
             "PAINTER_SOURCE_COMMIT": source_commit,
@@ -115,7 +124,11 @@ def _campaign_job_command(*, source_commit: str, rental_start_epoch: float,
         }.items()
     )
     execute = shlex.quote(str(REMOTE_RUN / "campaign.sh"))
-    args = " ".join(shlex.quote(str(value)) for value in (rental_start_epoch, price_usd_per_hour, cap_usd))
+    mode = CONTINUATION_MODE if continuation is None else bool(continuation)
+    positional = [rental_start_epoch, price_usd_per_hour, cap_usd]
+    if mode:
+        positional.insert(0, "--continuation")
+    args = " ".join(shlex.quote(str(value)) for value in positional)
     exit_tmp = shlex.quote(str(REMOTE_JOB_EXIT) + ".tmp")
     inner = (
         f"set +e; env {env} bash {execute} {args} >{shlex.quote(str(REMOTE_JOB_STDOUT))} "
@@ -150,7 +163,7 @@ def _campaign_summary(sftp: Any, *, timeout: float) -> dict[str, Any]:
     terminal = obj(REMOTE_RUN / "campaign/terminal-receipt.json")
     arms_raw = read(REMOTE_RUN / "campaign/arms.jsonl") or b""
     arms = []
-    for line in arms_raw.decode("utf-8", "replace").splitlines()[-3:]:
+    for line in arms_raw.decode("utf-8", "replace").splitlines():
         try:
             item = json.loads(line)
         except json.JSONDecodeError:
@@ -161,6 +174,10 @@ def _campaign_summary(sftp: Any, *, timeout: float) -> dict[str, Any]:
     job.update(obj(REMOTE_JOB_EXIT))
     reason = status.get("reason") if isinstance(status.get("reason"), str) else ""
     active_arm = reason.removeprefix("arm_").removesuffix("_running")
+    # Continuation reports recovery as a separate phase while preserving the
+    # underlying arm identity for controller totals and config observation.
+    if active_arm.endswith("_recovery"):
+        active_arm = active_arm.removesuffix("_recovery")
     metrics = None
     config_receipt = {}
     active_state = {}
@@ -177,10 +194,18 @@ def _campaign_summary(sftp: Any, *, timeout: float) -> dict[str, Any]:
             timeout=max(0.0, deadline - base.time.monotonic()),
         )
     ready = bool(materialization.get("schema") == "matched-three-judge-materialization-v1" and config_receipt)
+    # A resumed controller may observe a repeated line after reconnect. Keep
+    # the latest row for each arm so the campaign total cannot double-count a
+    # recovered Flash record or a completed Pro/Luna record.
+    unique_arms: dict[str, dict[str, Any]] = {}
+    for row in arms:
+        arm = row.get("arm")
+        if arm in {"flash", "pro", "luna"}:
+            unique_arms[arm] = row
     finished_steps = sum(
         int(row.get("completed_optimizer_steps", 0) or 0)
-        for row in arms
-        if row.get("arm") != active_arm
+        for arm, row in unique_arms.items()
+        if arm != active_arm
     )
     active_steps = _state_step(active_state)
     if active_steps is None and active_arm in {"flash", "pro", "luna"}:
@@ -209,7 +234,7 @@ def _campaign_summary(sftp: Any, *, timeout: float) -> dict[str, Any]:
         "preparation": {"profile": "matched-three-judge-v1", "arms": len(materialization.get("arms", []))},
         "render": {
             "scope": "active arm recent bounded metrics tail and campaign receipt tail",
-            "arm_count": len(arms), "active_arm": active_arm if active_arm in {"flash", "pro", "luna"} else None,
+            "arm_count": len(unique_arms), "active_arm": active_arm if active_arm in {"flash", "pro", "luna"} else None,
             "queue": base._queue_summary(metrics),
         },
     }
@@ -293,14 +318,17 @@ base._validate_config_summary = _validate_campaign_summary
 
 
 def make_campaign_window(*, pod_id: str, rental_start_epoch: float,
-                         price_usd_per_hour: float, cap_usd: float) -> Any:
+                         price_usd_per_hour: float, cap_usd: float,
+                         continuation: bool | None = None) -> Any:
     if not isinstance(pod_id, str) or not base.POD_ID_RE.fullmatch(pod_id) or pod_id.lower() in {"all", "*"}:
         raise ValueError("pod-id must be one exact provider ID")
     start = base._positive_finite("rental-start-epoch", rental_start_epoch)
     price = base._positive_finite("price-usd-hour", price_usd_per_hour)
     cap = base._positive_finite("cap-usd", cap_usd)
-    if cap > 58.5:
-        raise ValueError("campaign cap must be at most 58.50")
+    mode = CONTINUATION_MODE if continuation is None else bool(continuation)
+    cap_limit = CONTINUATION_CAP_USD if mode else 58.5
+    if cap > cap_limit:
+        raise ValueError(f"campaign cap must be at most {cap_limit:.2f}")
     window = base.RentalWindow(pod_id, start, price, cap)
     if window.release_deadline_epoch <= start:
         raise ValueError("release margin leaves no finite operating window")
@@ -318,25 +346,33 @@ def parser() -> argparse.ArgumentParser:
     value.add_argument("--hf-token-file", type=Path, default=base.default_hf_token_file())
     value.add_argument("--gateway-env-file", type=Path, default=base.default_gateway_env_file())
     value.add_argument("--output-root", type=Path, required=True)
+    value.add_argument("--continuation", action="store_true",
+                       help="recover Flash evaluation and continue with Pro/Luna")
     value.add_argument("--plan-only", action="store_true")
     return value
 
 
 def main(argv: Sequence[str] | None = None) -> int:
     args = parser().parse_args(argv)
+    set_continuation_mode(args.continuation)
     window = make_campaign_window(pod_id=args.pod_id, rental_start_epoch=args.rental_start_epoch,
-                                  price_usd_per_hour=args.price_usd_hour, cap_usd=args.cap_usd)
+                                  price_usd_per_hour=args.price_usd_hour, cap_usd=args.cap_usd,
+                                  continuation=args.continuation)
     base._regular_file(args.source_bundle, "source-bundle")
     base._regular_file(args.hf_token_file, "HF token file", owner_only=True)
     base._regular_file(args.gateway_env_file, "Gateway environment file", owner_only=True)
     if not base.COMMIT_RE.fullmatch(args.source_commit):
         raise SystemExit("source-commit must be a full immutable Git commit")
     if args.plan_only:
-        print(json.dumps({"schema": "matched-three-judge-operation-plan-v1", "run_name": RUN_NAME,
-                          "campaign_cap_usd": window.cap_usd,
-                          "per_arm_cap_usd": window.cap_usd / 3,
-                          "topology": {"gpus_per_node": 2, "num_train_gpus": 1, "num_infer_gpus": 1},
-                          "max_updates": 12, "arms": ["flash", "pro", "luna"]}, sort_keys=True))
+        plan = {"schema": "matched-three-judge-operation-plan-v1", "run_name": RUN_NAME,
+                "campaign_cap_usd": window.cap_usd,
+                "per_arm_cap_usd": 19.5 if args.continuation else window.cap_usd / 3,
+                "topology": {"gpus_per_node": 2, "num_train_gpus": 1, "num_infer_gpus": 1},
+                "max_updates": 12, "arms": ["flash", "pro", "luna"]}
+        if args.continuation:
+            plan["continuation"] = True
+            plan["flash_recovery_reserved_usd"] = window.cap_usd - 2 * 19.5
+        print(json.dumps(plan, sort_keys=True))
         return 0
     return base.operate(window=window, source_bundle=args.source_bundle,
                         source_commit=args.source_commit, hf_token_file=args.hf_token_file,

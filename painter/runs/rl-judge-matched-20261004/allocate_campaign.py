@@ -41,12 +41,14 @@ RUN_NAME = "rl-judge-matched-20261004"
 GPU_COUNT = 2
 GPU_TYPE = "H100"
 MAX_CAP_USD = 58.5
+CONTINUATION_CAP_USD = 43.5
 
 
 def allocate_and_operate(*, api: Any, max_price_usd_hour: float, cap_usd: float,
                          source_bundle: Path, source_commit: str, prime_bundle: Path,
                          prime_commit: str, prime_sha256: str, hf_token_file: Path,
                          gateway_env_file: Path, output_root: Path,
+                         continuation: bool = False,
                          now: Callable[[], float] = time.time) -> int:
     source_bundle = alloc._regular(source_bundle, "source-bundle")
     prime_bundle = alloc._regular(prime_bundle, "prime-bundle")
@@ -57,11 +59,13 @@ def allocate_and_operate(*, api: Any, max_price_usd_hour: float, cap_usd: float,
     if not operation.base.COMMIT_RE.fullmatch(prime_commit):
         raise ValueError("prime-commit must be a full immutable Git commit")
     cap = alloc._positive("cap-usd", cap_usd)
-    if cap > MAX_CAP_USD:
-        raise ValueError("campaign cap must be at most 58.50")
+    cap_limit = CONTINUATION_CAP_USD if continuation else MAX_CAP_USD
+    if cap > cap_limit:
+        raise ValueError(f"campaign cap must be at most {cap_limit:.2f}")
     maximum = alloc._positive("max-price-usd-hour", max_price_usd_hour)
     source_sha = alloc.verify_source_bundle(source_bundle, source_commit)
     prime_sha = alloc.verify_prime_bundle(prime_bundle, prime_commit, prime_sha256)
+    operation.set_continuation_mode(continuation)
     output_root = output_root.expanduser()
     if output_root.exists() and output_root.is_symlink():
         raise ValueError("output-root must not be a symlink")
@@ -92,6 +96,8 @@ def allocate_and_operate(*, api: Any, max_price_usd_hour: float, cap_usd: float,
         "prime_commit": prime_commit, "prime_bundle_sha256": prime_sha,
         "topology": {"gpus_per_node": 2, "num_train_gpus": 1, "num_infer_gpus": 1},
     }
+    if continuation:
+        receipt["continuation"] = True
     try:
         alloc._write_receipt(receipt_path, receipt)
         ready = alloc.wait_ready_bounded(api=api, operation=operation.base, allocation=allocation)
@@ -125,7 +131,7 @@ def allocate_and_operate(*, api: Any, max_price_usd_hour: float, cap_usd: float,
 def parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--max-price-usd-hour", type=float, default=3.8)
-    parser.add_argument("--cap-usd", type=float, default=58.5)
+    parser.add_argument("--cap-usd", type=float)
     parser.add_argument("--source-bundle", type=Path, required=True)
     parser.add_argument("--source-commit", required=True)
     parser.add_argument("--prime-bundle", type=Path, required=True)
@@ -134,6 +140,8 @@ def parser() -> argparse.ArgumentParser:
     parser.add_argument("--hf-token-file", type=Path, default=operation.base.default_hf_token_file())
     parser.add_argument("--gateway-env-file", type=Path, default=operation.base.default_gateway_env_file())
     parser.add_argument("--output-root", type=Path, required=True)
+    parser.add_argument("--continuation", action="store_true",
+                        help="recover the pinned baseline/Flash checkpoint, then train Pro and Luna")
     parser.add_argument("--plan-only", action="store_true")
     return parser
 
@@ -146,20 +154,30 @@ def main(argv: Sequence[str] | None = None) -> int:
     gateway = alloc._regular(args.gateway_env_file, "Gateway environment file", owner_only=True)
     if not operation.base.COMMIT_RE.fullmatch(args.source_commit) or not operation.base.COMMIT_RE.fullmatch(args.prime_commit):
         raise SystemExit("source and Prime commits must be immutable full hashes")
+    cap = 43.5 if args.continuation and args.cap_usd is None else (58.5 if args.cap_usd is None else args.cap_usd)
+    cap_limit = CONTINUATION_CAP_USD if args.continuation else MAX_CAP_USD
+    if cap > cap_limit:
+        raise SystemExit(f"campaign cap must be at most {cap_limit:.2f}")
+    operation.set_continuation_mode(args.continuation)
     if args.plan_only:
-        print(json.dumps({"schema": "matched-three-judge-allocation-plan-v1", "run_name": RUN_NAME,
-                          "gpu_type": GPU_TYPE, "gpu_count": GPU_COUNT, "max_price_usd_hour": args.max_price_usd_hour,
-                          "campaign_cap_usd": args.cap_usd, "per_arm_cap_usd": args.cap_usd / 3,
-                          "prime_commit": args.prime_commit, "source_bundle_bytes": source.stat().st_size,
-                          "prime_bundle_bytes": prime.stat().st_size, "credential_paths_validated": True}, sort_keys=True))
+        plan = {"schema": "matched-three-judge-allocation-plan-v1", "run_name": RUN_NAME,
+                "gpu_type": GPU_TYPE, "gpu_count": GPU_COUNT, "max_price_usd_hour": args.max_price_usd_hour,
+                "campaign_cap_usd": cap,
+                "per_arm_cap_usd": 19.5 if args.continuation else cap / 3,
+                "prime_commit": args.prime_commit, "source_bundle_bytes": source.stat().st_size,
+                "prime_bundle_bytes": prime.stat().st_size, "credential_paths_validated": True}
+        if args.continuation:
+            plan["continuation"] = True
+            plan["flash_recovery_reserved_usd"] = cap - 2 * 19.5
+        print(json.dumps(plan, sort_keys=True))
         return 0
     api = alloc._load_lium()
     return allocate_and_operate(api=api, max_price_usd_hour=args.max_price_usd_hour,
-                                cap_usd=args.cap_usd, source_bundle=source,
+                                cap_usd=cap, source_bundle=source,
                                 source_commit=args.source_commit, prime_bundle=prime,
                                 prime_commit=args.prime_commit, prime_sha256=args.prime_sha256,
                                 hf_token_file=token, gateway_env_file=gateway,
-                                output_root=args.output_root)
+                                output_root=args.output_root, continuation=args.continuation)
 
 
 if __name__ == "__main__":

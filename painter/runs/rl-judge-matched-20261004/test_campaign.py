@@ -135,6 +135,9 @@ class MatchedCampaignTests(unittest.TestCase):
         rows = [
             {"arm": "flash", "completed_optimizer_steps": 8},
             {"arm": "pro", "completed_optimizer_steps": 12},
+            # A reconnect can repeat a finished arm receipt; totals must use
+            # one latest row per arm rather than double-counting it.
+            {"arm": "pro", "completed_optimizer_steps": 12},
             {"arm": "luna", "completed_optimizer_steps": 12},
         ]
         sftp = self._summary_sftp(
