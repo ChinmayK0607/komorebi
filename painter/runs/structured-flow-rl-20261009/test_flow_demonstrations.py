@@ -168,6 +168,37 @@ class StructuredFlowCandidateTests(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, "Linux-node-only"):
                 MODULE.render("/tmp/no-run", "/tmp/renderer.py", "/tmp/python")
 
+    def test_render_keeps_python_environment_symlink_lexical(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / "data"
+            MODULE.build(root)
+            renderer = Path(directory) / "renderer.py"
+            renderer.write_text("pinned renderer")
+            real_python = Path(directory) / "real-python"
+            real_python.write_text("pinned environment interpreter")
+            environment = Path(directory) / "renderer-env" / "bin"
+            environment.mkdir(parents=True)
+            python_link = environment / "python"
+            python_link.symlink_to(real_python)
+            seen: list[Path] = []
+
+            def fake_renderer(source, png, renderer_path, renderer_python, run_as_user):
+                seen.append(renderer_python)
+                png.parent.mkdir(parents=True, exist_ok=True)
+                png.write_bytes(source.read_bytes()[:1] or b"x")
+                return {
+                    "valid": True,
+                    "source_sha256": hashlib.sha256(source.read_bytes()).hexdigest(),
+                    "png_sha256": hashlib.sha256(png.read_bytes()).hexdigest(),
+                }
+
+            with patch.object(MODULE.sys, "platform", "linux"), patch.object(MODULE, "_prepare_render_dirs"), patch.object(MODULE, "_renderer_result", side_effect=fake_renderer):
+                value = MODULE.render(root, renderer, python_link, renderer_sha256=hashlib.sha256(renderer.read_bytes()).hexdigest())
+            self.assertTrue(value["complete_hash_verified"])
+            self.assertEqual(len(seen), 32)
+            self.assertTrue(all(path == python_link.absolute() for path in seen))
+            self.assertTrue(all(path != real_python.absolute() for path in seen))
+
     def test_build_cli_alias_keeps_authoring_step_explicit_in_output(self):
         with tempfile.TemporaryDirectory() as directory:
             self.assertEqual(MODULE.main(["--output", directory]), 0)

@@ -764,7 +764,10 @@ def render(
     records = _verify_sources(root, manifest)
     _verify_prompt(root, manifest)
     renderer_path = Path(renderer).resolve()
-    renderer_python_path = Path(renderer_python).resolve()
+    # Keep the pinned environment path lexical.  ``renderer-env/bin/python``
+    # is commonly a symlink; resolving it can escape the environment and make
+    # the node invoke a different interpreter than the published renderer pin.
+    renderer_python_path = Path(renderer_python).expanduser().absolute()
     if not renderer_path.is_file() or not renderer_python_path.is_file():
         raise FileNotFoundError("pinned renderer or renderer Python is missing")
     expected_renderer_sha = renderer_sha256 or os.environ.get("PAINTER_RENDERER_SHA256")

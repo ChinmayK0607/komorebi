@@ -1,0 +1,165 @@
+"""Offline contract checks for the structured-flow launcher and handoff."""
+
+from __future__ import annotations
+
+import hashlib
+import importlib.util
+import json
+import os
+from pathlib import Path
+import subprocess
+import sys
+import tempfile
+import types
+import unittest
+
+
+RUN = Path(__file__).resolve().parent
+
+
+def load(name: str, path: Path):
+    spec = importlib.util.spec_from_file_location(name, path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError(path)
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[name] = module
+    spec.loader.exec_module(module)
+    return module
+
+
+class StructuredFlowRunTests(unittest.TestCase):
+    def test_lazy_manifest_is_exact_pilot_and_has_explicit_frozen_identity(self):
+        curriculum = load("structured_flow_curriculum_contract", RUN / "prepare_curriculum.py")
+        bank = load("structured_flow_anchor_bank_contract", RUN / "anchor_bank.py")
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            curriculum.build_proposal(root / "proposal")
+            report = bank.prepare_lazy(
+                train_proposal=root / "proposal/train-proposal.json",
+                heldout_proposal=root / "proposal/heldout-proposal.json",
+                train_output=root / "train.json",
+                heldout_output=root / "heldout.json",
+            )
+            self.assertEqual(report, {"status": "pending_runtime_frozen_anchors", "train_rows": 32, "heldout_cases": 16})
+            train = json.loads((root / "train.json").read_text())
+            self.assertTrue(all("opponent" not in row and row["lazy_opponent"]["model_alias"] == "sft-step512" for row in train["rows"]))
+            self.assertTrue(all(row["max_turns"] == 3 for row in train["rows"]))
+
+    def test_config_cli_accepts_pending_manifest_only_with_explicit_flag(self):
+        config = load("structured_flow_config_contract", RUN / "prepare_structured_config.py")
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            manifest = root / "curriculum/train.json"
+            manifest.parent.mkdir()
+            row = {
+                "id": "case-1", "reference_kind": "text", "reference": "brief.txt",
+                "reference_sha256": hashlib.sha256(b"brief\n").hexdigest(),
+                "lazy_opponent": {"model_alias": "sft-step512"},
+            }
+            (root / "curriculum/brief.txt").write_text("brief\n")
+            manifest.write_text(json.dumps({"rows": [row] * 32}))
+            # Duplicate IDs are rejected before a pending config can be built.
+            with self.assertRaises(ValueError):
+                config.prepare(output=root / "bad.toml", model=Path("/tmp/model"), run_root=root, manifest=manifest, expected_count=32, max_turns=3, allow_pending_anchors=True)
+
+    def test_flow_hook_consumes_casebrief_as_system_input(self):
+        hook = load("structured_flow_prompt_hook_contract", RUN / "flow_prompt_hook.py")
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            reference = root / "brief.txt"
+            reference.write_text("Paint one orb.\n")
+            casebrief = root / "casebrief.txt"
+            casebrief.write_text("[SYSTEM]\nPlan by hierarchy.\n\n[USER]\nPaint one orb.\n")
+            digest = hashlib.sha256(casebrief.read_bytes()).hexdigest()
+            manifest = root / "manifest.json"
+            manifest.write_text(json.dumps({"rows": [{"id": "case-1", "reference": str(reference), "casebrief": str(casebrief), "casebrief_sha256": digest}]}))
+            os.environ["PAINTER_STRUCTURED_FLOW_POLICY"] = "1"
+            os.environ["PAINTER_RL_MANIFEST"] = str(manifest)
+            class Task:
+                def __init__(self):
+                    self.data = types.SimpleNamespace(task_id="case-1", reference=str(reference), system_prompt="native", prompt=[])
+            class Taskset:
+                def load(self):
+                    return [Task()]
+            fake = types.ModuleType("painter.native_painting_rl")
+            fake.NativePaintingRLTaskset = Taskset
+            old = sys.modules.get("painter.native_painting_rl")
+            sys.modules["painter.native_painting_rl"] = fake
+            try:
+                hook.install()
+                task = Taskset().load()[0]
+                self.assertIn("Plan by hierarchy.", task.data.system_prompt)
+                self.assertNotIn("STRUCTURED-FLOW RUN HINT", "".join(str(part) for part in task.data.prompt))
+            finally:
+                if old is None:
+                    sys.modules.pop("painter.native_painting_rl", None)
+                else:
+                    sys.modules["painter.native_painting_rl"] = old
+                os.environ.pop("PAINTER_STRUCTURED_FLOW_POLICY", None)
+                os.environ.pop("PAINTER_RL_MANIFEST", None)
+
+    def test_supervisor_source_has_arm_bound_and_no_old_checkpoint_cadence(self):
+        text = (RUN / "finite_supervisor.py").read_text()
+        self.assertIn("base.CHECKPOINT_STEPS = ()", text)
+        self.assertIn('for checkpoint in (4, 8)', text)
+        self.assertIn("max_updates=8", text)
+        self.assertNotIn("max-updates 50", text)
+
+    def test_renderer_and_anchor_handoff_are_hash_bound(self):
+        prepare = (RUN / "prepare_node.sh").read_text()
+        anchor = (RUN / "anchor_bank.py").read_text()
+        self.assertIn("db5b0094cb223529a8c5fc3bbba7bf8f2d5b5f5a5c0a847062194feaf917d16b", prepare)
+        self.assertIn("dc6b9d837ed7be382784a6c84de1b64911506b17a19b499ce054c0c572e75794", prepare)
+        self.assertIn("prepare_renderer_runtime.py", prepare)
+        self.assertIn('"reference_kind": "text"', anchor)
+        self.assertIn("max_concurrent=workers", anchor)
+        self.assertIn("_native_eval_canvas", anchor)
+
+    def test_runtime_env_upgrades_raw_renderer_after_node_overlay_exists(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            overlay = root / "runtime/watercolour-cancellable-centroid-v1"
+            overlay.mkdir(parents=True)
+            selected = overlay / "cancellable_watercolour_renderer.py"
+            selected.write_text("# verified test overlay\n")
+            raw = root / "vendor/integrations/watercolour/renderer.py"
+            raw.parent.mkdir(parents=True)
+            raw.write_text("# raw vendor\n")
+            result = subprocess.run(
+                ["bash", "-c", 'source "$1/runtime_env.sh"; printf "%s" "$PAINTER_RENDERER_PATH"', "_", str(RUN)],
+                env={
+                    **os.environ,
+                    "PAINTER_RUN_ROOT": str(root),
+                    "PAINTER_RENDERER_PATH": str(raw),
+                    "PAINTER_RUN_NAME": "structured-flow-rl-20261009",
+                },
+                capture_output=True,
+                text=True,
+                check=True,
+            )
+            self.assertEqual(result.stdout, str(selected))
+
+    def test_node_builds_missing_proposals_and_evaluator_preserves_flow_hook(self):
+        prepare = (RUN / "prepare_node.sh").read_text()
+        evaluator = (RUN / "evaluate.sh").read_text()
+        self.assertIn('prepare_curriculum.py" build --output "$RUN/curriculum"', prepare)
+        self.assertNotIn('flow_demonstrations.py" render', prepare)
+        self.assertIn('supervision_phase.py" --data', prepare)
+        self.assertIn('PAINTER_PRIME_ROLE=orchestrator', evaluator)
+        self.assertIn('PAINTER_STRUCTURED_FLOW_POLICY=1', evaluator)
+        self.assertIn('PYTHONPATH="$REPO:$REPO/painter:$RUN"', evaluator)
+
+    def test_warmup_upload_has_a_run_scoped_public_destination(self):
+        runtime = (RUN / "runtime_env.sh").read_text()
+        self.assertIn('HF_CHECKPOINT_REPO="${HF_CHECKPOINT_REPO:-CK0607/qwen3.8-27b-brush-painting}"', runtime)
+        self.assertIn('HF_CHECKPOINT_RUN="${HF_CHECKPOINT_RUN:-structured-flow-rl-20261009-sft-warmup}"', runtime)
+
+    def test_shell_scripts_compile(self):
+        scripts = ["runtime_env.sh", "prepare_node.sh", "run.sh", "execute_single.sh", "execute_pipeline.sh", "evaluate.sh", "finalize.sh", "matched_baseline.sh"]
+        for name in scripts:
+            result = subprocess.run(["bash", "-n", str(RUN / name)], capture_output=True, text=True)
+            self.assertEqual(result.returncode, 0, f"{name}: {result.stderr}")
+
+
+if __name__ == "__main__":
+    unittest.main()

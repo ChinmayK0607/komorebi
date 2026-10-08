@@ -1,0 +1,139 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+# Runtime bindings for the single Flash structured-flow arm.  This file is
+# sourced by every node-side entry point; it contains no credentials or host
+# details.  The full 240/60 curriculum is prepared separately.  The first
+# bounded run admits only the reviewed pilot manifests (32/16) so preparation
+# never pretends that an unrendered anchor bank is runnable.
+RUN_ROOT_DEFAULT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
+export PAINTER_RUN_ROOT="${PAINTER_RUN_ROOT:-$RUN_ROOT_DEFAULT}"
+export PAINTER_RUN_NAME="${PAINTER_RUN_NAME:-structured-flow-rl-20261009}"
+export PAINTER_EXPERIMENT_NAME="${PAINTER_EXPERIMENT_NAME:-structured-flow-rl-20261009-flash}"
+export PAINTER_NODE_ROOT="${PAINTER_NODE_ROOT:-/root/painter}"
+export PRIME_ROOT="${PRIME_ROOT:-$PAINTER_NODE_ROOT/prime}"
+export PAINTER_BOOTSTRAP_RUN="${PAINTER_BOOTSTRAP_RUN:-$PAINTER_RUN_ROOT/../text-pairwise-rl-20260928}"
+
+export MODEL_DIR="${MODEL_DIR:-$PAINTER_NODE_ROOT/model-cache/qwen/1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0}"
+export PAINTER_POLICY_MODE="${PAINTER_POLICY_MODE:-recovered_policy}"
+export PAINTER_POLICY_REPO="${PAINTER_POLICY_REPO:-CK0607/qwen3.8-27b-brush-painting}"
+export PAINTER_POLICY_REVISION="${PAINTER_POLICY_REVISION:-1227a2427a8ae16014d2fdca4d1adb6855d3fa1c}"
+export PAINTER_POLICY_PREFIX="${PAINTER_POLICY_PREFIX:-rl-judge-matched-20261004-flash/step_12}"
+export PAINTER_POLICY_SHA256="${PAINTER_POLICY_SHA256:-c70c47ec0d6d7172b3bc25c4f54178919cf7c079cd9652fff3bc76db9e1eca79}"
+export HF_CHECKPOINT_REPO="${HF_CHECKPOINT_REPO:-CK0607/qwen3.8-27b-brush-painting}"
+export HF_CHECKPOINT_RUN="${HF_CHECKPOINT_RUN:-structured-flow-rl-20261009-sft-warmup}"
+export PAINTER_SFT_ADAPTER_PATH_FILE="${PAINTER_SFT_ADAPTER_PATH_FILE:-$PAINTER_RUN_ROOT/policy-adapter-path.txt}"
+export PAINTER_FROZEN_SFT_ADAPTER_PATH_FILE="${PAINTER_FROZEN_SFT_ADAPTER_PATH_FILE:-$PAINTER_RUN_ROOT/frozen-sft-adapter-path.txt}"
+export PAINTER_FROZEN_SFT_ALIAS="${PAINTER_FROZEN_SFT_ALIAS:-sft-step512}"
+export PAINTER_FROZEN_SFT_REVISION="${PAINTER_FROZEN_SFT_REVISION:-adf687e5b321514eda7be6eab050434fdc8e44ff}"
+export PAINTER_FROZEN_SFT_PREFIX="${PAINTER_FROZEN_SFT_PREFIX:-photo-curriculum-sft-20260922-balanced/step_512}"
+export PAINTER_FROZEN_SFT_SHA256="${PAINTER_FROZEN_SFT_SHA256:-bea72b066986faa1b92b9dc539c710093181ee916b99323e2b2498f318ac1740}"
+
+export PAINTER_JUDGE_MODEL="${PAINTER_JUDGE_MODEL:-xiaomi/mimo-v2.6-flash}"
+export PAINTER_JUDGE_EFFORT="${PAINTER_JUDGE_EFFORT:-medium}"
+export PAINTER_JUDGE_PROTOCOL="${PAINTER_JUDGE_PROTOCOL:-text-paint-sft-pairwise-consistent-v1}"
+export PAINTER_JUDGE_FORMAT="${PAINTER_JUDGE_FORMAT:-identity-joint-side-schema-v2-generic-v1}"
+export PAINTER_JUDGE_RUBRIC="${PAINTER_JUDGE_RUBRIC:-existing-generic-rubric}"
+
+export PAINTER_GPUS_PER_NODE="${PAINTER_GPUS_PER_NODE:-2}"
+export PAINTER_NUM_TRAIN_GPUS="${PAINTER_NUM_TRAIN_GPUS:-1}"
+export PAINTER_NUM_INFER_GPUS="${PAINTER_NUM_INFER_GPUS:-1}"
+export PAINTER_GROUP_SIZE="${PAINTER_GROUP_SIZE:-4}"
+export PAINTER_INITIAL_INFLIGHT="${PAINTER_INITIAL_INFLIGHT:-32}"
+export PAINTER_MAX_INFLIGHT="${PAINTER_MAX_INFLIGHT:-32}"
+export PAINTER_RL_MAX_STEPS="${PAINTER_RL_MAX_STEPS:-8}"
+export PAINTER_MAX_UPDATES="${PAINTER_MAX_UPDATES:-8}"
+export PAINTER_CHECKPOINT_INTERVAL="${PAINTER_CHECKPOINT_INTERVAL:-4}"
+export PAINTER_RL_CHECKPOINT_INTERVAL="$PAINTER_CHECKPOINT_INTERVAL"
+export PAINTER_MAX_POLICY_AGE="${PAINTER_MAX_POLICY_AGE:-1}"
+export PAINTER_LEARNING_RATE="${PAINTER_LEARNING_RATE:-1e-6}"
+export PAINTER_BATCH_SIZE="${PAINTER_BATCH_SIZE:-16}"
+export PAINTER_ACTIVATION_CPU_OFFLOAD="${PAINTER_ACTIVATION_CPU_OFFLOAD:-1}"
+export PAINTER_MAX_TURNS="${PAINTER_MAX_TURNS:-3}"
+
+# Deliberately opt-in.  The casebrief files carry a hashable system/user
+# separation, but policy prompting remains unchanged unless the operator
+# enables this flag for this arm.
+export PAINTER_STRUCTURED_FLOW_POLICY="${PAINTER_STRUCTURED_FLOW_POLICY:-0}"
+export PAINTER_CODE_SUPERVISION_ENABLED="${PAINTER_CODE_SUPERVISION_ENABLED:-1}"
+export PAINTER_CODE_SUPERVISION_PATH="${PAINTER_CODE_SUPERVISION_PATH:-$PAINTER_RUN_ROOT/code-supervision/teacher.jsonl}"
+export PAINTER_FLOW_HOOK_RECEIPT="${PAINTER_FLOW_HOOK_RECEIPT:-$PAINTER_RUN_ROOT/structured-flow-hook-receipt.json}"
+export PAINTER_WARMUP_REQUIRED="${PAINTER_WARMUP_REQUIRED:-1}"
+export PAINTER_RUN_WARMUP="${PAINTER_RUN_WARMUP:-1}"
+export PAINTER_RUN_SUPERVISION="${PAINTER_RUN_SUPERVISION:-1}"
+export PAINTER_SUPERVISION_ROOT="${PAINTER_SUPERVISION_ROOT:-$PAINTER_RUN_ROOT/code-supervision}"
+export PAINTER_ACTIVE_POLICY_PATH_FILE="${PAINTER_ACTIVE_POLICY_PATH_FILE:-$PAINTER_RUN_ROOT/active-policy-adapter-path.txt}"
+export PAINTER_RUN_MATCHED_BASELINE="${PAINTER_RUN_MATCHED_BASELINE:-1}"
+
+export PAINTER_EXPECTED_COUNT="${PAINTER_EXPECTED_COUNT:-32}"
+export PAINTER_EVAL_EXPECTED_COUNT="${PAINTER_EVAL_EXPECTED_COUNT:-16}"
+export PAINTER_EVAL_SCOPE="${PAINTER_EVAL_SCOPE:-all}"
+export PAINTER_EVAL_PREFERRED_STEP="${PAINTER_EVAL_PREFERRED_STEP:-8}"
+export PAINTER_EVAL_SEED="${PAINTER_EVAL_SEED:-918210}"
+export PAINTER_EVAL_MAX_CONCURRENT="${PAINTER_EVAL_MAX_CONCURRENT:-8}"
+export PAINTER_RENDER_WORKERS="${PAINTER_RENDER_WORKERS:-8}"
+export PAINTER_INITIAL_METRIC_TIMEOUT_SECONDS="${PAINTER_INITIAL_METRIC_TIMEOUT_SECONDS:-3600}"
+export PAINTER_EVAL_TIMEOUT_SECONDS="${PAINTER_EVAL_TIMEOUT_SECONDS:-1800}"
+export PAINTER_ARCHIVE_TIMEOUT_SECONDS="${PAINTER_ARCHIVE_TIMEOUT_SECONDS:-600}"
+export PAINTER_RESERVE_SECONDS="${PAINTER_RESERVE_SECONDS:-3600}"
+export PAINTER_PARENT_RELEASE_RESERVE_SECONDS="${PAINTER_PARENT_RELEASE_RESERVE_SECONDS:-180}"
+export PAINTER_COMPLETION_MARGIN_SECONDS="${PAINTER_COMPLETION_MARGIN_SECONDS:-120}"
+
+export PAINTER_REQUIRE_VALID_FINAL_ACTION=1
+# Once node preparation has materialized the verified overlay, bind it as the
+# default for later RL/evaluation shells.  Before preparation, retain the
+# ordinary path so bootstrap discovery can still fail closed.
+STRUCTURED_RENDERER_OVERLAY="$PAINTER_RUN_ROOT/runtime/watercolour-cancellable-centroid-v1/cancellable_watercolour_renderer.py"
+if [[ -f "$STRUCTURED_RENDERER_OVERLAY" && ( -z "${PAINTER_RENDERER_PATH+x}" || "$PAINTER_RENDERER_PATH" == "$PAINTER_RUN_ROOT/vendor/integrations/watercolour/renderer.py" ) ]]; then
+  export PAINTER_RENDERER_PATH="$PAINTER_RUN_ROOT/runtime/watercolour-cancellable-centroid-v1/cancellable_watercolour_renderer.py"
+fi
+export PAINTER_JS_SYNTAX_PREFLIGHT=1
+export PAINTER_P5_BRUSH_API_REFERENCE_V2=1
+export PAINTER_INSPECT_CHOICE_FEEDBACK=1
+export PAINTER_MAX_OFF_POLICY_STEPS=1
+export PAINTER_ORCHESTRATOR_SEED=42
+export PAINTER_INFERENCE_SEED=0
+export ADAPTER_ONLY_CHECKPOINTS=1
+export PAINTER_RL_FIXED_OPPONENT=1
+export PAINTER_RL_MANIFEST="${PAINTER_RL_MANIFEST:-$PAINTER_RUN_ROOT/curriculum/pilot-train-manifest.json}"
+export PAINTER_EVAL_MANIFEST="${PAINTER_EVAL_MANIFEST:-$PAINTER_RUN_ROOT/curriculum/matched16-manifest.json}"
+export PAINTER_TRAIN_PROPOSAL="${PAINTER_TRAIN_PROPOSAL:-$PAINTER_RUN_ROOT/curriculum/train-proposal.json}"
+export PAINTER_HELDOUT_PROPOSAL="${PAINTER_HELDOUT_PROPOSAL:-$PAINTER_RUN_ROOT/curriculum/heldout-proposal.json}"
+export PAINTER_ANCHOR_ROOT="${PAINTER_ANCHOR_ROOT:-$PAINTER_RUN_ROOT/curriculum/anchors}"
+export PAINTER_ANCHOR_STAGING="${PAINTER_ANCHOR_STAGING:-$PAINTER_RUN_ROOT/curriculum/.materialized-pilot}"
+export PAINTER_FROZEN_OPPONENT_ENDPOINT="${PAINTER_FROZEN_OPPONENT_ENDPOINT:-http://127.0.0.1:8100/v1}"
+export PAINTER_RENDERER_PATH="${PAINTER_RENDERER_PATH:-$PAINTER_RUN_ROOT/vendor/integrations/watercolour/renderer.py}"
+export PAINTER_RENDERER_PYTHON_PATH="${PAINTER_RENDERER_PYTHON_PATH:-$PAINTER_RUN_ROOT/renderer-env/bin/python}"
+if [[ -z "${PAINTER_FROZEN_OPPONENT_RENDERER+x}" && -f "$PAINTER_RUN_ROOT/runtime/watercolour-cancellable-centroid-v1/cancellable_watercolour_renderer.py" ]]; then
+  export PAINTER_FROZEN_OPPONENT_RENDERER="$PAINTER_RUN_ROOT/runtime/watercolour-cancellable-centroid-v1/cancellable_watercolour_renderer.py"
+fi
+export PAINTER_FROZEN_OPPONENT_RENDERER_PYTHON="${PAINTER_FROZEN_OPPONENT_RENDERER_PYTHON:-$PAINTER_RENDERER_PYTHON_PATH}"
+export HF_TOKEN_PATH="${HF_TOKEN_PATH:-$PAINTER_NODE_ROOT/private/hf-token}"
+export PAINTER_GATEWAY_ENV_FILE="${PAINTER_GATEWAY_ENV_FILE:-$PAINTER_NODE_ROOT/private/gateway.env}"
+
+validate_structured_bindings() {
+  [[ "$PAINTER_RUN_NAME" == structured-flow-rl-20261009 ]] || { echo 'structured run name is not bound' >&2; return 1; }
+  [[ "$PAINTER_POLICY_REPO" == CK0607/qwen3.8-27b-brush-painting ]] || return 1
+  [[ "$PAINTER_POLICY_REVISION" == 1227a2427a8ae16014d2fdca4d1adb6855d3fa1c ]] || return 1
+  [[ "$PAINTER_POLICY_PREFIX" == rl-judge-matched-20261004-flash/step_12 ]] || return 1
+  [[ "$PAINTER_POLICY_SHA256" == c70c47ec0d6d7172b3bc25c4f54178919cf7c079cd9652fff3bc76db9e1eca79 ]] || return 1
+  [[ "$PAINTER_FROZEN_SFT_REVISION" == adf687e5b321514eda7be6eab050434fdc8e44ff ]] || return 1
+  [[ "$PAINTER_FROZEN_SFT_PREFIX" == photo-curriculum-sft-20260922-balanced/step_512 ]] || return 1
+  [[ "$PAINTER_FROZEN_SFT_SHA256" == bea72b066986faa1b92b9dc539c710093181ee916b99323e2b2498f318ac1740 ]] || return 1
+  [[ "$PAINTER_JUDGE_MODEL" == xiaomi/mimo-v2.6-flash && "$PAINTER_JUDGE_EFFORT" == medium ]] || return 1
+  [[ "$PAINTER_JUDGE_PROTOCOL" == text-paint-sft-pairwise-consistent-v1 ]] || return 1
+  [[ "$PAINTER_JUDGE_FORMAT" == identity-joint-side-schema-v2-generic-v1 ]] || return 1
+  [[ "$PAINTER_GPUS_PER_NODE" == 2 && "$PAINTER_NUM_TRAIN_GPUS" == 1 && "$PAINTER_NUM_INFER_GPUS" == 1 ]] || return 1
+  [[ "$PAINTER_GROUP_SIZE" == 4 && "$PAINTER_INITIAL_INFLIGHT" == 32 && "$PAINTER_MAX_INFLIGHT" == 32 ]] || return 1
+  [[ "$PAINTER_RL_MAX_STEPS" == 8 && "$PAINTER_MAX_UPDATES" == 8 && "$PAINTER_CHECKPOINT_INTERVAL" == 4 ]] || return 1
+  [[ "$PAINTER_BATCH_SIZE" == 16 && "$PAINTER_LEARNING_RATE" == 1e-6 && "$PAINTER_MAX_POLICY_AGE" == 1 ]] || return 1
+  [[ "$PAINTER_ACTIVATION_CPU_OFFLOAD" == 0 || "$PAINTER_ACTIVATION_CPU_OFFLOAD" == 1 ]] || return 1
+  [[ "$PAINTER_EXPECTED_COUNT" =~ ^[0-9]+$ && "$PAINTER_EVAL_EXPECTED_COUNT" == 16 ]] || return 1
+  [[ "$PAINTER_STRUCTURED_FLOW_POLICY" == 0 || "$PAINTER_STRUCTURED_FLOW_POLICY" == 1 ]] || return 1
+  [[ "$PAINTER_CODE_SUPERVISION_ENABLED" == 0 || "$PAINTER_CODE_SUPERVISION_ENABLED" == 1 ]] || return 1
+  [[ "$PAINTER_WARMUP_REQUIRED" == 0 || "$PAINTER_WARMUP_REQUIRED" == 1 ]] || return 1
+  [[ "$PAINTER_RUN_WARMUP" == 0 || "$PAINTER_RUN_WARMUP" == 1 ]] || return 1
+  [[ "$PAINTER_RUN_SUPERVISION" == 0 || "$PAINTER_RUN_SUPERVISION" == 1 ]] || return 1
+  [[ "$PAINTER_RUN_MATCHED_BASELINE" == 0 || "$PAINTER_RUN_MATCHED_BASELINE" == 1 ]] || return 1
+  [[ "$PAINTER_MAX_TURNS" == 3 ]] || return 1
+}
