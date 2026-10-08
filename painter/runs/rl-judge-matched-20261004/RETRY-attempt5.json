@@ -1,0 +1,47 @@
+{
+  "schema": "matched-three-judge-retry5-prelaunch-v1",
+  "date": "2026-10-08",
+  "recorded_utc": "2026-10-08T05:42:40.440938+00:00",
+  "status": "prepared-after-reviewed-ssh-fix",
+  "user_direction": "Ramp up compute spending and complete the experiment.",
+  "budget_override": "Supersedes October5 under15USD ceiling using the previous58.50USD campaign ceiling.",
+  "hypothesis": "With launcher provenance/mode and clock-loop defects fixed, the same Qwen RL16 policy can complete three matched12-update trajectories differing only by judge, enabling heldout visual comparison.",
+  "matched_baseline": "Fresh untrained RL16 evaluation on exact balanced16 order; distinct frozen SFT512 reward opponent.",
+  "source_commit": "bdebd382c98f590ab88fdcc22135a517b9e063bf",
+  "source_bundle_sha256": "d095c6bfd975739268e10b1d134c0377bafb15c07635d2a24ff8ab62d41d3c95",
+  "registered_protocol": "PROTOCOL.json",
+  "registered_protocol_sha256": "3c897211a8181b38965e32025a3cc1c50fd0e348a3fe6e6866dc7c4055d04fb8",
+  "new_rental_cap_usd": 54.5,
+  "prior_attempt_reserve_usd": 4,
+  "original_total_campaign_ceiling_usd": 58.5,
+  "prior_failed_starts_gpu_clock_upper_estimate_usd": 3.5611880048592885,
+  "maximum_whole_node_price_usd_hour": 3.8,
+  "observed_minimum_two_h100_whole_node_price_usd_hour": 3.72,
+  "topology": {
+    "gpus": 2,
+    "trainer": 1,
+    "inference": 1
+  },
+  "updates_per_arm": 12,
+  "judges": [
+    "xiaomi/mimo-v2.6-flash",
+    "xiaomi/mimo-v2.6-pro",
+    "openai/gpt-6-luna"
+  ],
+  "rollout_generator": "Qwen/Qwen3.8-27B policy initialized from pinnedRL16; judges only score",
+  "unchanged": [
+    "40train/47heldout manifests",
+    "B16/G4,inflight32,policyage1,LR1e-6",
+    "samejudge rubric andmediumrequested effort",
+    "3turns/8192tokens matched16evaluation",
+    "freshoptimizer eacharm andcheckpoint4/8/12"
+  ],
+  "checkpoint_storage": "PublicHF withhashverification; no localweight download",
+  "allocation_policy": "One bounded retry; no further automatic allocation after failure; all failures charged to original campaign ceiling.",
+  "scheduled_task_created": false,
+  "api_spend_scope": "Separate from GPU budget under previoususerinstructions",
+  "decision_rule": "Rank commonheldoutvisuals rather than comparing different judges reward means. Incomplete arms are censored and not a completedablation.",
+  "failed_attempt4_gpu_clock_estimate_usd": 0.012988004859288535,
+  "readiness_fix_review": "SSH_READINESS_REVIEW.json",
+  "offer_selection": "Choose the other current two-H100 offer through parent operations; do not repeat the cheapest snapshot selection automatically."
+}
