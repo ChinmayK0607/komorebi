@@ -13,6 +13,7 @@ import argparse
 import importlib.util
 import json
 from pathlib import Path
+import re
 import shlex
 import sys
 from typing import Any, Callable, Sequence
@@ -44,6 +45,60 @@ REMOTE_JOB_STDOUT = REMOTE_JOB_DIR / "rl-judge-matched-remote-job.stdout.log"
 REMOTE_JOB_STDERR = REMOTE_JOB_DIR / "rl-judge-matched-remote-job.stderr.log"
 GPU_COUNT = 2
 MIN_GPU_MEMORY_MIB = 80_000
+_SUCCESS_STEP = re.compile(r"SUCCESS[^\n]*?Step\s+(\d+)\s+\|")
+_TRAINER_METRIC_KEYS = frozenset({"optim/grad_norm", "time/step", "optimizer/step"})
+
+
+def _completed_optimizer_steps_from_metrics(raw: bytes | None, *, max_step: int = 12) -> set[int]:
+    """Extract only trainer-produced completion rows from a bounded metrics tail."""
+    completed: set[int] = set()
+    if raw is None:
+        return completed
+    for line in raw.decode("utf-8", "replace").splitlines():
+        try:
+            row = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if not isinstance(row, dict):
+            continue
+        step = row.get("step")
+        if isinstance(step, bool) or not isinstance(step, int) or not 1 <= step <= max_step:
+            continue
+        producer = row.get("producer")
+        trainer_metric = bool(_TRAINER_METRIC_KEYS.intersection(row))
+        if (producer == "trainer" and trainer_metric) or (
+            producer is None and "optim/grad_norm" in row
+        ):
+            completed.add(step)
+    return completed
+
+
+def _completed_optimizer_steps_from_trainer_log(raw: bytes | None, *, max_step: int = 12) -> set[int]:
+    """Extract only explicit trainer SUCCESS rows from a bounded log tail."""
+    if raw is None:
+        return set()
+    return {
+        int(value)
+        for value in _SUCCESS_STEP.findall(raw.decode("utf-8", "replace"))
+        if 1 <= int(value) <= max_step
+    }
+
+
+def _state_step(state: dict[str, Any]) -> int | None:
+    """Use a state counter when present, preserving an explicit zero."""
+    for key in ("completed_optimizer_steps", "last_optimizer_step"):
+        value = state.get(key)
+        if isinstance(value, int) and not isinstance(value, bool) and value >= 0:
+            return value
+    return None
+
+
+def _state_admitted_batch(state: dict[str, Any]) -> int | None:
+    for key in ("last_admitted_batch", "admitted_batch_counter"):
+        value = state.get(key)
+        if isinstance(value, int) and not isinstance(value, bool) and value >= 0:
+            return value
+    return None
 
 
 def _campaign_job_command(*, source_commit: str, rental_start_epoch: float,
@@ -122,18 +177,29 @@ def _campaign_summary(sftp: Any, *, timeout: float) -> dict[str, Any]:
             timeout=max(0.0, deadline - base.time.monotonic()),
         )
     ready = bool(materialization.get("schema") == "matched-three-judge-materialization-v1" and config_receipt)
-    finished_steps = sum(int(row.get("completed_optimizer_steps", 0) or 0) for row in arms)
-    active_steps = active_state.get("completed_optimizer_steps", active_state.get("last_optimizer_step", 0))
-    try:
-        active_steps = int(active_steps)
-    except (TypeError, ValueError):
+    finished_steps = sum(
+        int(row.get("completed_optimizer_steps", 0) or 0)
+        for row in arms
+        if row.get("arm") != active_arm
+    )
+    active_steps = _state_step(active_state)
+    if active_steps is None and active_arm in {"flash", "pro", "luna"}:
+        trainer_log = read(
+            REMOTE_RUN.parent
+            / f"{RUN_NAME}-{active_arm}/async-output/{RUN_NAME}-{active_arm}/logs/attempt_1/trainer.log"
+        )
+        completed = _completed_optimizer_steps_from_metrics(metrics)
+        completed.update(_completed_optimizer_steps_from_trainer_log(trainer_log))
+        active_steps = max(completed) if completed else 0
+    if active_steps is None:
         active_steps = 0
+    active_admitted_batch = _state_admitted_batch(active_state)
     return {
         "state": {"status": status.get("status"), "reason": status.get("reason"),
                   "completed_optimizer_steps": finished_steps + active_steps,
                   "active_arm": active_arm if active_arm in {"flash", "pro", "luna"} else None,
                   "active_completed_optimizer_steps": active_steps,
-                  "last_admitted_batch": active_state.get("last_admitted_batch")},
+                  "last_admitted_batch": active_admitted_batch},
         "terminal": terminal,
         "job": job,
         "phase_ready": ready,

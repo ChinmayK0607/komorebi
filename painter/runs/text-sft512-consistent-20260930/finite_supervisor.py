@@ -397,6 +397,29 @@ def supervise(
         )
         return 0 if status in {"completed", "stopped"} else 1
 
+    def write_live_state() -> None:
+        """Publish observed counters while the finite process is still running."""
+        _write_state(
+            state_path,
+            {
+                "schema": "finite-text-paint-supervisor-v1",
+                "status": "running",
+                "started_epoch": started,
+                "pid": owner.pid,
+                "pgid": owner.pgid,
+                "metrics_path": str(metrics_path),
+                "trend_path": str(trend_path),
+                "max_updates": max_updates,
+                "admitted_batch_counter": last_admitted_batch,
+                "last_admitted_batch": last_admitted_batch,
+                "last_optimizer_step": last_completed_optimizer_step,
+                "completed_optimizer_steps": last_completed_optimizer_step,
+                "budget": budget.as_dict(),
+                "metric_timeout_seconds": metric_timeout_seconds,
+                "initial_metric_timeout_seconds": initial_metric_timeout_seconds,
+            },
+        )
+
     while True:
         exit_code = process.poll()
         try:
@@ -420,6 +443,8 @@ def supervise(
         ):
             last_completed_optimizer_step = completed_current
             last_optimizer_progress_epoch = now()
+
+        write_live_state()
 
         for checkpoint in CHECKPOINT_STEPS:
             if (

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import io
 import importlib.util
 import json
 from pathlib import Path
@@ -25,6 +26,11 @@ VERIFY_SPEC = importlib.util.spec_from_file_location(
 assert VERIFY_SPEC and VERIFY_SPEC.loader
 verify_public_download = importlib.util.module_from_spec(VERIFY_SPEC)
 VERIFY_SPEC.loader.exec_module(verify_public_download)
+OPERATION_SPEC = importlib.util.spec_from_file_location("matched_operation_reporting", RUN / "operate_campaign.py")
+assert OPERATION_SPEC and OPERATION_SPEC.loader
+operate_campaign = importlib.util.module_from_spec(OPERATION_SPEC)
+sys.modules[OPERATION_SPEC.name] = operate_campaign
+OPERATION_SPEC.loader.exec_module(operate_campaign)
 
 
 CONFIG = """
@@ -86,6 +92,77 @@ def _write_config(path: Path, *, lr: str = "1e-6") -> None:
 
 
 class MatchedCampaignTests(unittest.TestCase):
+    class _SFTP:
+        def __init__(self, files):
+            self.files = files
+
+        def open(self, path, _mode):
+            return io.BytesIO(self.files.get(path, b""))
+
+    def _summary_sftp(self, *, state, metrics=b"", trainer_log=b"", arms=()):
+        active_root = operate_campaign.REMOTE_RUN.parent / f"{operate_campaign.RUN_NAME}-flash"
+        files = {
+            str(operate_campaign.REMOTE_RUN / "campaign/status.json"): json.dumps({
+                "status": "running", "reason": "arm_flash_running",
+            }).encode(),
+            str(operate_campaign.REMOTE_RUN / "materialization-receipt.json"): b"{}",
+            str(operate_campaign.REMOTE_RUN / "campaign/terminal-receipt.json"): b"{}",
+            str(operate_campaign.REMOTE_RUN / "campaign/arms.jsonl"): b"".join(
+                json.dumps(row).encode() + b"\n" for row in arms
+            ),
+            str(operate_campaign.REMOTE_JOB_START): b"{}",
+            str(operate_campaign.REMOTE_JOB_EXIT): b"{}",
+            str(active_root / "supervisor-state.json"): json.dumps(state).encode(),
+            str(active_root / f"async-output/{operate_campaign.RUN_NAME}-flash/monitors/file/metrics.jsonl"): metrics,
+            str(active_root / f"async-output/{operate_campaign.RUN_NAME}-flash/logs/attempt_1/trainer.log"): trainer_log,
+        }
+        return self._SFTP(files)
+
+    def test_completed_step_parser_excludes_admitted_orchestrator_and_inference_rows(self):
+        metrics = b"\n".join([
+            json.dumps({"step": 8, "train/agg/effective/agent/reward/mean": 0.5}).encode(),
+            json.dumps({"step": 8, "producer": "orchestrator", "time/step": 99.0}).encode(),
+            json.dumps({"step": 8, "producer": "inference", "optim/grad_norm": 0.01}).encode(),
+            json.dumps({"step": 7, "producer": "trainer", "optim/grad_norm": 0.01}).encode(),
+        ]) + b"\n"
+        self.assertEqual(operate_campaign._completed_optimizer_steps_from_metrics(metrics), {7})
+        self.assertEqual(
+            operate_campaign._completed_optimizer_steps_from_trainer_log(b"SUCCESS ok Step 8 | done\n"),
+            {8},
+        )
+
+    def test_summary_fallback_uses_trainer_log_and_does_not_double_count_active_arm(self):
+        rows = [
+            {"arm": "flash", "completed_optimizer_steps": 8},
+            {"arm": "pro", "completed_optimizer_steps": 12},
+            {"arm": "luna", "completed_optimizer_steps": 12},
+        ]
+        sftp = self._summary_sftp(
+            state={"status": "running", "completed_optimizer_steps": None, "admitted_batch_counter": 8},
+            metrics=(json.dumps({"step": 8, "train/agg/effective/agent/reward/mean": 0.5}) + "\n").encode(),
+            trainer_log=b"INFO SUCCESS optimizer Step 8 | grad_norm=0.0107\n",
+            arms=rows,
+        )
+        summary = operate_campaign._campaign_summary(sftp, timeout=5.0)
+        self.assertEqual(summary["state"]["active_completed_optimizer_steps"], 8)
+        self.assertEqual(summary["state"]["completed_optimizer_steps"], 32)
+        self.assertEqual(summary["state"]["last_admitted_batch"], 8)
+        self.assertNotIn("SUCCESS", json.dumps(summary))
+
+    def test_summary_fallback_uses_trainer_metric_but_not_admitted_batch(self):
+        metrics = b"\n".join([
+            json.dumps({"step": 8, "train/agg/effective/agent/reward/mean": 0.5}).encode(),
+            json.dumps({"step": 8, "producer": "trainer", "optim/grad_norm": 0.0107}).encode(),
+        ]) + b"\n"
+        summary = operate_campaign._campaign_summary(
+            self._summary_sftp(
+                state={"status": "running", "completed_optimizer_steps": None},
+                metrics=metrics,
+            ),
+            timeout=5.0,
+        )
+        self.assertEqual(summary["state"]["active_completed_optimizer_steps"], 8)
+
     def test_shared_prepare_binds_fast_storage_and_renderer_hooks_before_bootstrap(self):
         script = (RUN / "prepare.sh").read_text(encoding="utf-8")
         source_at = script.index('source "$RUN/runtime_env.sh"')

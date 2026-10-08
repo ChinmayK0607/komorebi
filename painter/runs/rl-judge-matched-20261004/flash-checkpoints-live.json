@@ -1,0 +1,26 @@
+{
+  "schema": "matched-flash-live-public-checkpoints-v1",
+  "checkpoints": [
+    {
+      "step": 4,
+      "repo_id": "CK0607/qwen3.8-27b-brush-painting",
+      "revision": "e6bc6d129d48e24138a589b4b133faaf712e9eb2",
+      "path": "rl-judge-matched-20261004-flash/step_4",
+      "sha256": "800276252898acad635b3ef8163c83e08dddf95702e4c33e38a36c1d5e2d7956",
+      "bytes": 233590600,
+      "private": false,
+      "anonymous_metadata_hash_verified": true
+    },
+    {
+      "step": 8,
+      "repo_id": "CK0607/qwen3.8-27b-brush-painting",
+      "revision": "5e942541c8adfa709ae7fe9c6c9076ebf682f8ed",
+      "path": "rl-judge-matched-20261004-flash/step_8",
+      "sha256": "24cc02e6edd7290147ca6367f892ad36a10e78626b899a638b3ee1b10f14ef40",
+      "bytes": 233590600,
+      "private": false,
+      "anonymous_metadata_hash_verified": true
+    }
+  ],
+  "verification_scope": "Anonymous HF metadata/LFS SHA only; no weights downloaded locally."
+}

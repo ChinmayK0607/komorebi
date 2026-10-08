@@ -1,0 +1,30 @@
+{
+  "schema": "matched-live-reporting-parent-review-v1",
+  "date": "2026-10-08",
+  "status": "implemented-reviewed-local-tests-passed-current-training-untouched",
+  "hypothesis": "Publishing live trainer completion counters and a provenance-filtered fallback avoids incorrectly reportingzero while optimization proceeds.",
+  "changes": [
+    "Atomic running supervisorstate writteneachpoll",
+    "None-awareprogressfallback fromboundedtrainerlog/metrics",
+    "Excludeorchestrator/admittedbatchandinferencetelemetry asoptimizerproof",
+    "Do notdoublecountcompletedactivearm"
+  ],
+  "parent_validation": {
+    "supervisor_tests": 15,
+    "campaign_tests": 15,
+    "total": 30,
+    "external_timeout_seconds_each_suite": 60,
+    "undefined_names": "passed",
+    "whitespace": "passed"
+  },
+  "source_sha256": {
+    "painter/runs/text-sft512-consistent-20260930/finite_supervisor.py": "cebad2ea1c3c5b9e81ffc3d5201fde865c5871f0540ed5aad8dc8657fde745b2",
+    "painter/runs/rl-judge-matched-20261004/operate_campaign.py": "70892eebcf243b76471dbecd886bd60da3673772e710d3805913c373c825a8fc"
+  },
+  "runtime_source_unchanged": "bdebd382c98f590ab88fdcc22135a517b9e063bf",
+  "current_run_deployment": "Not patched or restarted. Read authoritative trainer/metrics via the corrected read-only observer; old controller logs remain historical evidence.",
+  "unchanged": "Algorithm,judge,rubric,curriculum,budget,max12updates,stoppinglogic,checkpoints andtrainingprocess",
+  "scope": "Metadata/dummytests; noML/rendering/API/providercalls duringimplementationorregressiontests.",
+  "next_decision": "Useactualtrainer evidence for currentstatus and the committed reportingfix on subsequent launches. Completecurrentmatchedablation before visualquality conclusion.",
+  "scheduled_task_created": false
+}

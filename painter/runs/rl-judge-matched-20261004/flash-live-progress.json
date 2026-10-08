@@ -1,0 +1,45 @@
+{
+  "schema": "matched-flash-live-trainer-progress-v1",
+  "observed_utc": "2026-10-08T08:18:51.949254+00:00",
+  "arm": "flash",
+  "completed_optimizer_steps": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9
+  ],
+  "evidence": "Actual trainer completion metrics and SUCCESS lines, read on Linux with existing finite-supervisor parser.",
+  "batch_rewards": {
+    "1": 0.11458333333333334,
+    "2": 0.32291666666666663,
+    "3": 0.11458333333333334,
+    "4": 0.17708333333333334,
+    "5": 0.14583333333333334,
+    "6": 0.125,
+    "7": 0.15625,
+    "8": 0.10416666666666667,
+    "9": 0.05208333333333334
+  },
+  "reward_scope": "Admitted training-batch means on changing prompts; not heldout evaluation or judge-comparable quality.",
+  "trend_interpretation": "No sustained upward pattern yet; defer visual-quality conclusion to matched step12 evaluation.",
+  "last_explicit_gradient_sample": {
+    "step": 8,
+    "grad_norm": 0.0107,
+    "finite": true,
+    "nonzero": true,
+    "loss": 0.0038,
+    "mismatch_kl": 0.0003,
+    "lr": 1e-06
+  },
+  "public_checkpoints": "flash-checkpoints-live.json",
+  "stale_local_controller_reports_zero": true,
+  "cause": "Supervisor writes initial completed_optimizer_steps=None and final state, but did not publish live counter updates; old controller therefore mappedNone to0.",
+  "active_training_restarted": false,
+  "active_node_or_controller_source_modified": false,
+  "rental_clock_cost_estimate_usd_at_initial_observation": 8.6978
+}

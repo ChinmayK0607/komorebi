@@ -283,6 +283,46 @@ class FiniteSupervisorTests(unittest.TestCase):
             self.assertEqual(len(stopped), 1)
             self.assertEqual(stopped[0], 2900.0)
 
+    def test_live_state_publishes_trainer_step_before_process_finish(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            written = [False]
+            observed = []
+
+            def writer(_now):
+                metrics = root / "metrics.jsonl"
+                if not written[0]:
+                    metrics.write_text(
+                        json.dumps({
+                            "step": 1,
+                            "train/agg/effective/agent/reward/mean": 0.5,
+                        })
+                        + "\n"
+                        + json.dumps({
+                            "step": 1,
+                            "producer": "trainer",
+                            "optim/grad_norm": 0.0107,
+                        })
+                        + "\n"
+                    )
+                    written[0] = True
+                state = json.loads((root / "state.json").read_text())
+                if state.get("status") == "running" and state.get("completed_optimizer_steps") == 1:
+                    observed.append(state)
+
+            code, _stopped, state = self._clocked_supervision(
+                root,
+                initial_metric_timeout_seconds=1000.0,
+                metric_timeout_seconds=200.0,
+                writer=writer,
+            )
+            self.assertEqual(code, 1)
+            self.assertTrue(observed)
+            self.assertEqual(observed[0]["last_optimizer_step"], 1)
+            self.assertEqual(observed[0]["last_admitted_batch"], 1)
+            self.assertEqual(observed[0]["status"], "running")
+            self.assertEqual(state["reason"], "missing_metric_timeout")
+
     def test_initial_metric_timeout_rejects_nonpositive_or_overbound_values(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)

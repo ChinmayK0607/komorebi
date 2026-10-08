@@ -1,7 +1,7 @@
 {
   "schema": "matched-campaign-allocation-record-v1",
   "attempt": 5,
-  "status": "flash_first_batch_collection",
+  "status": "flash_training_step9_observed",
   "rental_request_utc": "2026-10-08T05:49:51.774875+00:00",
   "source_commit": "bdebd382c98f590ab88fdcc22135a517b9e063bf",
   "source_bundle_sha256": "d095c6bfd975739268e10b1d134c0377bafb15c07635d2a24ff8ab62d41d3c95",
@@ -11,7 +11,7 @@
   "this_rental_cap_usd": 54.5,
   "prior_failed_start_reserve_usd": 4,
   "original_campaign_cap_usd": 58.5,
-  "completed_optimizer_updates": 0,
+  "completed_optimizer_updates": 9,
   "detached_campaign_started": true,
   "scheduled_task_created": false,
   "prime_bundle_verified": true,
@@ -20,7 +20,7 @@
   "hypothesis_record": "RETRY-attempt5.json",
   "source_public_evidence": "source-handoff-attempt5.json",
   "last_observed_reason": "arm_flash_running",
-  "last_observed_utc": "2026-10-08T06:44:14.545529+00:00",
+  "last_observed_utc": "2026-10-08T08:18:51.949254+00:00",
   "native_prime_config_verified": true,
   "all_three_actual_launch_preflights_passed": true,
   "live_baseline_receipts": {
@@ -30,7 +30,7 @@
     "generation_complete_receipt": false,
     "scope": "Live saved render attempts/turns, not completed-case count or terminal-validity audit."
   },
-  "rental_clock_cost_estimate_usd_at_observation": 2.97,
+  "rental_clock_cost_estimate_usd_at_observation": 8.6978,
   "baseline_evaluation_completed": true,
   "baseline_public_archive_verified": true,
   "first_batch_progress": {
@@ -58,5 +58,11 @@
     "trainer_sampled_busy_fraction": 0.35,
     "denominator": "60 samples for each GPU in this recent window; not full-run utilization.",
     "pipeline_status": "Inference busy; trainer waiting for batch completion, not fully saturated."
-  }
+  },
+  "authoritative_progress": "flash-live-progress.json",
+  "local_controller_live_counter_known_stale": true,
+  "public_verified_checkpoint_steps": [
+    4,
+    8
+  ]
 }
