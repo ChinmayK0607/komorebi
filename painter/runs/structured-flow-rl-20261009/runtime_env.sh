@@ -15,6 +15,8 @@ export PAINTER_NODE_ROOT="${PAINTER_NODE_ROOT:-/root/painter}"
 # node root separate so its private credential files remain on the protected
 # root filesystem. Explicit PRIME_ROOT/MODEL_DIR values still win.
 export PAINTER_LOCAL_SCRATCH_ROOT="${PAINTER_LOCAL_SCRATCH_ROOT:-}"
+export PAINTER_PRIME_SEED_ENABLED="${PAINTER_PRIME_SEED_ENABLED:-0}"
+export PAINTER_PRIME_SEED_ROOT="${PAINTER_PRIME_SEED_ROOT:-$PAINTER_NODE_ROOT/prime}"
 if [[ -n "$PAINTER_LOCAL_SCRATCH_ROOT" ]]; then
   export PRIME_ROOT="${PRIME_ROOT:-$PAINTER_LOCAL_SCRATCH_ROOT/prime}"
 else
@@ -133,6 +135,8 @@ export PAINTER_GATEWAY_ENV_FILE="${PAINTER_GATEWAY_ENV_FILE:-$PAINTER_NODE_ROOT/
 
 validate_structured_bindings() {
   [[ -z "$PAINTER_LOCAL_SCRATCH_ROOT" || "$PAINTER_LOCAL_SCRATCH_ROOT" == /* ]] || { echo 'PAINTER_LOCAL_SCRATCH_ROOT must be absolute' >&2; return 1; }
+  [[ "$PAINTER_PRIME_SEED_ENABLED" == 0 || "$PAINTER_PRIME_SEED_ENABLED" == 1 ]] || return 1
+  [[ "$PAINTER_PRIME_SEED_ROOT" == /* ]] || { echo 'PAINTER_PRIME_SEED_ROOT must be absolute' >&2; return 1; }
   [[ "$PAINTER_RUN_NAME" == structured-flow-rl-20261009 ]] || { echo 'structured run name is not bound' >&2; return 1; }
   [[ "$PAINTER_POLICY_REPO" == CK0607/qwen3.8-27b-brush-painting ]] || return 1
   [[ "$PAINTER_POLICY_REVISION" == 1227a2427a8ae16014d2fdca4d1adb6855d3fa1c ]] || return 1

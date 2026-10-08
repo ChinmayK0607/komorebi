@@ -9,6 +9,7 @@ PRIME_ROOT="${PRIME_ROOT:-$NODE_ROOT/prime}"
 # Preserve an explicit local-scratch model location supplied by the structured
 # arm; the default remains the historical node-root cache.
 MODEL_DIR="${MODEL_DIR:-$NODE_ROOT/model-cache/qwen/1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0}"
+PRIME_COMMIT="26b3131d2716a4f8210b165df584b83b4bc54f61"
 [[ "$(uname -s)" == Linux ]] || { echo 'Linux node required' >&2; exit 1; }
 [[ "$(nvidia-smi --query-gpu=index --format=csv,noheader | wc -l)" -ge 2 ]] || {
   echo 'two visible GPUs required' >&2; exit 1;
@@ -35,11 +36,25 @@ PY
 model_pid=$!
 trap 'kill "$model_pid" 2>/dev/null || true' EXIT
 "$NODE_ROOT/bootstrap/bin/python" "$RUN/../photo-curriculum-rl-20260922/download_initial_adapter.py"
+if [[ ! -d "$PRIME_ROOT/.git" && "${PAINTER_PRIME_SEED_ENABLED:-0}" == 1 ]]; then
+  SEED_HELPER="${PAINTER_PRIME_SEED_HELPER:-}"
+  SEED_SOURCE="${PAINTER_PRIME_SEED_ROOT:-$NODE_ROOT/prime}"
+  [[ -f "$SEED_HELPER" ]] || { echo "Prime seed helper is missing: $SEED_HELPER" >&2; exit 1; }
+  [[ -d "$SEED_SOURCE/.git" ]] || { echo "Prime seed source is missing: $SEED_SOURCE" >&2; exit 1; }
+  if [[ "$SEED_SOURCE" != "$PRIME_ROOT" ]]; then
+    python3 "$SEED_HELPER" --source "$SEED_SOURCE" --destination "$PRIME_ROOT" --expected-commit "$PRIME_COMMIT" \
+      >"${PAINTER_PRIME_SEED_RECEIPT:-$RUN/logs/prime-seed-receipt.json}"
+  fi
+fi
 if [[ ! -d "$PRIME_ROOT/.git" ]]; then
   git -c http.version=HTTP/1.1 clone -q https://github.com/PrimeIntellect-ai/prime-rl.git "$PRIME_ROOT"
 fi
-git -C "$PRIME_ROOT" -c http.version=HTTP/1.1 fetch -q origin 26b3131d2716a4f8210b165df584b83b4bc54f61
-git -C "$PRIME_ROOT" checkout -q 26b3131d2716a4f8210b165df584b83b4bc54f61
+if git -C "$PRIME_ROOT" cat-file -e "$PRIME_COMMIT^{commit}" 2>/dev/null; then
+  git -C "$PRIME_ROOT" checkout -q "$PRIME_COMMIT"
+else
+  git -C "$PRIME_ROOT" -c http.version=HTTP/1.1 fetch -q origin "$PRIME_COMMIT"
+  git -C "$PRIME_ROOT" checkout -q "$PRIME_COMMIT"
+fi
 PRIME_ROOT="$PRIME_ROOT" PAINTER_RENDER_ROOT="$REPO/painter" UV_BIN="$NODE_ROOT/bootstrap/bin/uv" \
   bash "$RUN/../photo-curriculum-rl-20260922/setup_rl_runtime.sh" "$RUN"
 wait "$model_pid"

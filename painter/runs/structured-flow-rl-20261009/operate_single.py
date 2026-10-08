@@ -65,6 +65,15 @@ def _detached_job_command(*, source_commit: str, rental_start_epoch: float, pric
         if not local_scratch.startswith("/"):
             raise ValueError("PAINTER_LOCAL_SCRATCH_ROOT must be absolute")
         values["PAINTER_LOCAL_SCRATCH_ROOT"] = local_scratch
+    prime_seed = os.environ.get("PAINTER_PRIME_SEED_ENABLED", "0")
+    if prime_seed not in {"0", "1"}:
+        raise ValueError("PAINTER_PRIME_SEED_ENABLED must be 0 or 1")
+    if prime_seed == "1":
+        seed_root = os.environ.get("PAINTER_PRIME_SEED_ROOT", "/root/painter/prime")
+        if not seed_root.startswith("/"):
+            raise ValueError("PAINTER_PRIME_SEED_ROOT must be absolute")
+        values["PAINTER_PRIME_SEED_ENABLED"] = "1"
+        values["PAINTER_PRIME_SEED_ROOT"] = seed_root
     restore = os.environ.get("PAINTER_RESTORE_ANCHOR_EVIDENCE", "0")
     if restore not in {"0", "1"}:
         raise ValueError("PAINTER_RESTORE_ANCHOR_EVIDENCE must be 0 or 1")

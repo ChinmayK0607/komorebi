@@ -156,6 +156,19 @@ python3 "$PAINTER_FAST_STORAGE_HELPER" --phase cache --run-root "$RUN" \
 export PAINTER_FAST_STORAGE_HELPER PAINTER_FAST_STORAGE_ROOT
 export UV_CACHE_DIR="$PAINTER_FAST_STORAGE_ROOT/uv-cache"
 
+PY_BOOT="${PAINTER_BOOTSTRAP_PYTHON:-$PAINTER_NODE_ROOT/bootstrap/bin/python}"
+[[ -x "$PY_BOOT" ]] || PY_BOOT=python3
+if [[ "$PAINTER_PRIME_SEED_ENABLED" == 1 && ! -d "$PRIME_ROOT/.git" ]]; then
+  [[ -f "$RUN/seed_prime_checkout.py" ]] || { echo 'Prime seed helper is missing' >&2; exit 1; }
+  [[ -d "$PAINTER_PRIME_SEED_ROOT/.git" ]] || { echo "verified Prime seed source is missing: $PAINTER_PRIME_SEED_ROOT" >&2; exit 1; }
+  mkdir -p "$(dirname "$PRIME_ROOT")"
+  "$PY_BOOT" "$RUN/seed_prime_checkout.py" \
+    --source "$PAINTER_PRIME_SEED_ROOT" --destination "$PRIME_ROOT" \
+    --expected-commit 26b3131d2716a4f8210b165df584b83b4bc54f61 \
+    >"${PAINTER_PRIME_SEED_RECEIPT:-$RUN/prime-seed-receipt.json}"
+fi
+export PAINTER_PRIME_SEED_HELPER="$RUN/seed_prime_checkout.py"
+export PAINTER_PRIME_SEED_RECEIPT="${PAINTER_PRIME_SEED_RECEIPT:-$RUN/prime-seed-receipt.json}"
 BOOTSTRAP_RUN="${PAINTER_BOOTSTRAP_RUN:-$REPO/painter/runs/text-pairwise-rl-20260928}"
 [[ -f "$BOOTSTRAP_RUN/setup_node.sh" ]] || { echo "reviewed bootstrap missing: $BOOTSTRAP_RUN" >&2; exit 1; }
 bash "$BOOTSTRAP_RUN/setup_node.sh"
@@ -165,8 +178,6 @@ bash "$BOOTSTRAP_RUN/setup_node.sh"
 if [[ -d "$PRIME_ROOT/.venv/bin" && ":${PATH:-}:" != *":$PRIME_ROOT/.venv/bin:"* ]]; then
   export PATH="$PRIME_ROOT/.venv/bin:${PATH:-/usr/local/bin:/usr/bin:/bin}"
 fi
-PY_BOOT="${PAINTER_BOOTSTRAP_PYTHON:-$PAINTER_NODE_ROOT/bootstrap/bin/python}"
-[[ -x "$PY_BOOT" ]] || PY_BOOT=python3
 [[ -x "$PY_PRIME" ]] || { echo "pinned Prime Python is missing: $PY_PRIME" >&2; exit 1; }
 DOWNLOAD="${PAINTER_POLICY_DOWNLOAD_SCRIPT:-$REPO/painter/runs/text-pairwise-rl-20260928/download_public_adapter.py}"
 [[ -f "$DOWNLOAD" ]] || { echo 'pinned public adapter downloader is missing' >&2; exit 1; }

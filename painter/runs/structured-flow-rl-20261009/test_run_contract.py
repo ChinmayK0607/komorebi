@@ -246,6 +246,32 @@ class StructuredFlowRunTests(unittest.TestCase):
                     cap_usd=0.50,
                 )
 
+    def test_controller_forwards_opt_in_prime_seed_root(self):
+        operator = load("structured_flow_operation_prime_seed_contract", RUN / "operate_single.py")
+        with mock.patch.dict(os.environ, {
+            "PAINTER_PRIME_SEED_ENABLED": "1",
+            "PAINTER_PRIME_SEED_ROOT": "/root/painter/prime",
+        }, clear=False):
+            command = operator._detached_job_command(
+                source_commit="a" * 40,
+                rental_start_epoch=100.0,
+                price_usd_per_hour=3.70,
+                cap_usd=0.50,
+            )
+        self.assertIn("PAINTER_PRIME_SEED_ENABLED=1", command)
+        self.assertIn("PAINTER_PRIME_SEED_ROOT=/root/painter/prime", command)
+        with mock.patch.dict(os.environ, {
+            "PAINTER_PRIME_SEED_ENABLED": "1",
+            "PAINTER_PRIME_SEED_ROOT": "relative/prime",
+        }, clear=False):
+            with self.assertRaises(ValueError):
+                operator._detached_job_command(
+                    source_commit="a" * 40,
+                    rental_start_epoch=100.0,
+                    price_usd_per_hour=3.70,
+                    cap_usd=0.50,
+                )
+
     def test_node_builds_missing_proposals_and_evaluator_preserves_flow_hook(self):
         prepare = (RUN / "prepare_node.sh").read_text()
         evaluator = (RUN / "evaluate.sh").read_text()
@@ -256,6 +282,8 @@ class StructuredFlowRunTests(unittest.TestCase):
         self.assertNotIn('>"$SUPERVISION_ROOT/build.json"', prepare)
         self.assertIn('restore_anchor_evidence.py', prepare)
         self.assertLess(prepare.index('restore_anchor_evidence.py'), prepare.index('anchor_bank.py" prepare-lazy'))
+        self.assertIn('seed_prime_checkout.py', prepare)
+        self.assertLess(prepare.index('seed_prime_checkout.py'), prepare.index('bash "$BOOTSTRAP_RUN/setup_node.sh"'))
         self.assertNotIn('flow_demonstrations.py" render', prepare)
         self.assertIn('supervision_phase.py" --data', prepare)
         self.assertIn('PAINTER_PRIME_ROLE=orchestrator', evaluator)
