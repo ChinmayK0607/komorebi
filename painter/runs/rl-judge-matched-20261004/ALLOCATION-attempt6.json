@@ -1,0 +1,40 @@
+{
+  "schema": "matched-continuation-allocation-record-v1",
+  "attempt": 6,
+  "status": "linux_detached_continuation_started",
+  "rental_request_utc": "2026-10-08T09:43:54.658849+00:00",
+  "source_commit": "5bfe80e5c96510ef04db37076d8b54c81c6943db",
+  "source_bundle_sha256": "ff7d8eecdb0edcdbd92f17b88a031928895ece19c86176ce13bdc3e4815d6836",
+  "gpu_type": "H100",
+  "gpu_count": 2,
+  "price_usd_per_hour": 3.72,
+  "new_rental_cap_usd": 43.5,
+  "prior_reserve_usd": 4,
+  "completed_attempt5_gpu_clock_estimate_usd": 10.47633686337471,
+  "whole_campaign_bound_usd": 57.97633686337471,
+  "continuation": true,
+  "baseline_regeneration_planned": false,
+  "flash_retraining_planned": false,
+  "flash_completed_updates_preserved": 12,
+  "new_completed_updates": {
+    "pro": 0,
+    "luna": 0
+  },
+  "remaining_order": [
+    "restore_public_baseline_and_flash12",
+    "flash_matched16_evaluation_and_publication",
+    "pro_fresh_rl16_12_updates_evaluation_publication",
+    "luna_fresh_rl16_12_updates_evaluation_publication",
+    "campaign_archive_and_release"
+  ],
+  "hypothesis_record": "RETRY-attempt6.json",
+  "review_record": "CONTINUATION_REVIEW.json",
+  "public_source_evidence": "source-handoff-attempt6.json",
+  "node_released": false,
+  "scheduled_task_created": false,
+  "prime_bundle_verified": true,
+  "source_and_gpu_verified": true,
+  "detached_campaign_started": true,
+  "last_observed_utc": "2026-10-08T09:45:49.451480+00:00",
+  "last_observed_phase": "shared_preparation"
+}
