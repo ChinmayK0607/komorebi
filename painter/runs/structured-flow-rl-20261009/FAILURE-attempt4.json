@@ -1,0 +1,42 @@
+{
+  "schema": "structured-flow-failure-v1",
+  "attempt": 4,
+  "source_commit": "e980103a9dd341d992bdf32d4bd87972134034ac",
+  "cause": "Native anchor subprocess did not receive PLAYWRIGHT_BROWSERS_PATH; native renderer fell back to nested attempt/browsers, where Chromium was not installed.",
+  "scope": {
+    "render_attempts": 48,
+    "valid_canvases": 0,
+    "sft_optimizer_updates": 0,
+    "rl_optimizer_updates": 0
+  },
+  "failed_render_attempts_preserved": true,
+  "public_evidence_proof": "FAILURE_PUBLIC-attempt4.json",
+  "exact_run_pod_absence_confirmed": true,
+  "gpu_clock_estimate_usd": 0.7631,
+  "cost_window_seconds": 738.5,
+  "cost_basis": "rental start through controller release-request log timestamp; not an invoice, excludes API",
+  "prior_three_gpu_clock_estimate_usd": 0.6154,
+  "cumulative_gpu_clock_estimate_usd": 1.3785,
+  "retry_allowance_usd": 18.0,
+  "conservative_prior_start_reserve_usd": 2.0,
+  "gpu_window": [
+    {
+      "device": 0,
+      "samples": 35,
+      "from": "2026/10/08 22:24:43.647",
+      "to": "2026/10/08 22:30:23.746",
+      "mean_utilization_pct": 65.91,
+      "busy_fraction_at_least_10pct": 0.686
+    },
+    {
+      "device": 1,
+      "samples": 35,
+      "from": "2026/10/08 22:24:43.650",
+      "to": "2026/10/08 22:30:23.747",
+      "mean_utilization_pct": 0.0,
+      "busy_fraction_at_least_10pct": 0.0
+    }
+  ],
+  "gpu_window_scope": "failed preparation/frozen-opponent generation, no trainer updates; not saturated",
+  "next_decision": "Bind the actual verified browser root and execute one nested native renderer smoke before loading/generating Qwen in a fresh bounded retry."
+}
