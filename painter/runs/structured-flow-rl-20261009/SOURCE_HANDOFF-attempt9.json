@@ -1,0 +1,18 @@
+{
+  "schema": "structured-flow-source-handoff-v1",
+  "attempt": 9,
+  "source_commit": "60267c0098c4e9f09979f3c2bc05659849312f46",
+  "bundle_sha256": "e5305505f57b61b0095fb7811caab6a53368a629a624a628ae8ec880ee5958d8",
+  "bundle_bytes": 3660826,
+  "gpu_allowance_usd": 16,
+  "prior_start_reserve_usd": 4,
+  "prior_gpu_clock_estimate_usd": 3.849,
+  "paid_anchor_reuse": {
+    "public_revision": "cdf16bceda0212ba94e6f3fa5cc6f92b95f3c6d6",
+    "archive_sha256": "0c7fac0092ebdb94eb4f1e32d7d4df6a91e0d4908bf14ab7a0cc2ff476510266",
+    "expected_reused_valid": 46,
+    "bounded_invalid_resamples": 2
+  },
+  "status": "finite_controller_started",
+  "optimizer_updates_confirmed": 0
+}
