@@ -262,6 +262,16 @@ PY
 )"
 export PAINTER_RENDERER_SHA256=dc6b9d837ed7be382784a6c84de1b64911506b17a19b499ce054c0c572e75794
 
+# Cross the exact renderer boundary once before any Qwen-serving process.
+# This tiny p5.brush program uses the selected cancellable renderer, the
+# verified browser root, and the same sandboxed runuser path as supervision;
+# source/PNG/renderer receipts remain available when the probe is censored.
+"$PY_PRIME" "$PAINTER_RENDERER_RUNTIME_HELPER" \
+  --render-probe --run-root "$RUN" --renderer-root "$BOOTSTRAP_RUN" \
+  --renderer "$PAINTER_RENDERER_PATH" --renderer-python "$PAINTER_RENDERER_PYTHON_PATH" \
+  --browsers "$RUN/browsers" --prime-venv "$PRIME_ROOT/.venv" \
+  --renderer-sha256 "$PAINTER_RENDERER_SHA256" --assets-sha256 "$PAINTER_RENDERER_ASSETS_SHA256"
+
 
 TRAIN_MANIFEST="${PAINTER_RL_MANIFEST:-$RUN/curriculum/pilot-train-manifest.json}"
 EVAL_MANIFEST="${PAINTER_EVAL_MANIFEST:-$RUN/curriculum/matched16-manifest.json}"

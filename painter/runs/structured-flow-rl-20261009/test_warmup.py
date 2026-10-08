@@ -97,9 +97,41 @@ class WarmupTest(unittest.TestCase):
             scheduled = warmup.build_schedule(json.loads(line) for line in train.read_text().splitlines())
             self.assertEqual(len(scheduled), 16)
             self.assertEqual(
-                [row["schedule_group"] for row in scheduled],
+                [row["warmup_flow_state"] for row in scheduled],
                 [state for pattern in warmup.WARMUP_STATE_PATTERN for state in pattern],
             )
+            self.assertTrue(all(row["task_family"] == "painting" for row in scheduled))
+            self.assertTrue(all(not warmup.SCHEDULE_RESERVED_FIELDS.intersection(row) for row in scheduled))
+
+    def test_legacy_schedule_passes_actual_pinned_validator(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            train, _ = self._pool(root)
+            rows = warmup.build_schedule(json.loads(line) for line in train.read_text().splitlines())
+            data = root / "data"
+            data.mkdir()
+            raw = "".join(json.dumps(row, sort_keys=True, separators=(",", ":")) + "\n" for row in rows).encode()
+            (data / "train.jsonl").write_bytes(raw)
+            receipt = warmup.build_schedule_receipt(rows, hashlib.sha256(raw).hexdigest())
+            receipt_path = root / "schedule.json"
+            receipt_path.write_text(json.dumps(receipt, sort_keys=True) + "\n", encoding="utf-8")
+            pinned = RUN / "sft_source/mixed_sft/scheduled_data.py"
+            result = warmup.validate_warmup_schedule(data, receipt_path, pinned)
+            self.assertEqual(result["native_schedule"], None)
+            self.assertEqual(result["rows"], 16)
+
+    def test_processor_audit_covers_runtime_capacity_mode(self) -> None:
+        self.assertEqual(warmup._processor_mask_modes(), (("baseline", None), ("capacity_prefill", "1")))
+        self.assertIn("CAPACITY_STATE_COMPLETE", (RUN / "sft_source/mixed_sft/train.py").read_text(encoding="utf-8"))
+
+    def test_baseline_mask_mismatch_is_diagnostic_but_capacity_mismatch_fails(self) -> None:
+        baseline = warmup._mask_observation("baseline", 5, [False, True, True, True, False], [8, 9, 10], [9, 10], 8)
+        self.assertEqual(baseline["status"], "diagnostic")
+        self.assertFalse(baseline["exact_target_match"])
+        passing = warmup._mask_observation("capacity_prefill", 5, [False, False, True, True, False], [9, 10], [9, 10], 8)
+        self.assertEqual(passing["status"], "required_pass")
+        with self.assertRaisesRegex(ValueError, "capacity_prefill assistant target"):
+            warmup._mask_observation("capacity_prefill", 5, [False, True, True, True, False], [8, 9, 10], [9, 10], 8)
 
     def test_unapproved_target_and_prior_without_hash_are_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

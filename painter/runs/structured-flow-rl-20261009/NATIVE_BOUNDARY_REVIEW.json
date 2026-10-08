@@ -1,0 +1,37 @@
+{
+  "schema": "structured-flow-boundary-review-v1",
+  "status": "parent_reviewed_for_bounded_linux_retry",
+  "tests": {
+    "structured_flow_unit_and_contract_tests": 50,
+    "shell_syntax_files": 9,
+    "diff_check": "passed",
+    "scope": "offline metadata/mock transport; no local ML or rendering"
+  },
+  "reviewed_fixes": [
+    "Installed browser root explicitly reaches native anchor, baseline, RL and final evaluation subprocesses.",
+    "Actual nested native render_action probe runs with Prime Python before Qwen serving, retaining source/PNG/receipt hashes and sandboxing.",
+    "Probe child environment is explicitly sanitized; ambient credential-canary test passes.",
+    "Warmup preserves 6 construction/6 revision/4 finish draws using native painting family and supported ordered legacy loader; no fake retention labels or pinned trainer source changes.",
+    "Run-owned schedule receipt binds row order and file SHA outside the native data schedule namespace; real pinned validator returns legacy None.",
+    "Actual CAPACITY_STATE_COMPLETE=1 loss-mask branch is strict; inactive baseline branch is diagnostic only."
+  ],
+  "linux_evidence_pending": [
+    "nested renderer probe",
+    "processor masks on actual multimodal tokenizer",
+    "SFT/RL gradients and optimizer counts",
+    "matched visual evaluation"
+  ],
+  "retry_gpu_allowance_usd": 18.0,
+  "prior_start_reserve_usd": 2.0,
+  "total_gpu_ceiling_usd": 20.0,
+  "hypothesis_and_research_settings_changed": false,
+  "source_files": {
+    "anchor_bank.py": "cb131b6ea47f9258a7c51f3ad4d8116a4cec5a5b0a43f683748f78cef6e69aa5",
+    "prepare_node.sh": "c4514d08fe7c4867080fa51bd420d50fd960947f5d0716be0c7ed3bcc2a152b2",
+    "prepare_renderer_runtime.py": "87a6aa2cf05e1b91bd2538670dde9d3fd8df3a9ae17e03a02251ef7cb53d1057",
+    "matched_baseline.sh": "fbd589f1775fa5d4e7c927e6fdfd31d38f70da4b56c50382eeb7ce838bb6d21e",
+    "evaluate.sh": "493125c7b6e111be12ff18cb9be636ce893828b3cb2edc8e0ac2caa7d40f793f",
+    "runtime_env.sh": "ef8224398231adcc8875a746a3e51bd754ab8f7c9852b09a3ec40171c3f05fd3",
+    "warmup.py": "a76d93a159c075d57543994031731d0f1bc6b2d8db83841cf54a172809d4a3e1"
+  }
+}

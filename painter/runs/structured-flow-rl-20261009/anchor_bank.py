@@ -48,6 +48,19 @@ CONTEXT_LENGTH = 32768
 MAX_GENERATION_WORKERS = 8
 
 
+def _browser_root(run_root: Path) -> Path:
+    """Resolve the verified browser installation for native evaluation."""
+    configured = (
+        os.environ.get("PAINTER_BROWSER_ROOT")
+        or os.environ.get("PLAYWRIGHT_BROWSERS_PATH")
+        or str(Path(run_root) / "browsers")
+    )
+    path = Path(configured).expanduser().resolve()
+    if not path.is_dir():
+        raise RuntimeError(f"native evaluation browser root is missing: {path}")
+    return path
+
+
 def sha256_file(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as stream:
@@ -201,6 +214,7 @@ def _batch_native_generation(
         raise RuntimeError("frozen anchor batch renderer paths are not configured")
     renderer_path = Path(renderer).resolve()
     renderer_python_path = Path(renderer_python).absolute()
+    browser_root = _browser_root(run_root)
     if not renderer_path.is_file() or not renderer_python_path.is_file():
         raise RuntimeError("frozen anchor batch renderer runtime is missing")
     if not eval_bin.is_file() or not prime_root.is_dir():
@@ -264,6 +278,12 @@ def _batch_native_generation(
     environment.pop("PAINTER_RL_MANIFEST", None)
     environment.pop("PAINTER_EVAL_MANIFEST", None)
     environment["PYTHONPATH"] = str(workspace_root) + os.pathsep + environment.get("PYTHONPATH", "")
+    # NativePaintingTaskset resolves Playwright's executable from the process
+    # environment. Without this explicit binding it derives ``attempt/browsers``
+    # beside the temporary native-eval manifest and misses the installed node
+    # browser, even though the renderer smoke test already passed.
+    environment["PAINTER_BROWSER_ROOT"] = str(browser_root)
+    environment["PLAYWRIGHT_BROWSERS_PATH"] = str(browser_root)
     environment.setdefault("WANDB_MODE", "disabled")
     command = [str(eval_bin), "@", str(config_path), "--no-serve", "--no-push"]
     try:

@@ -10,6 +10,7 @@ Chromium startup failures otherwise often reduce to an unhelpful SIGTRAP tail.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import importlib.util
 import json
 import os
@@ -195,6 +196,231 @@ def _browser_tmpdir() -> Path:
     return root
 
 
+def _sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as stream:
+        for block in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(block)
+    return digest.hexdigest()
+
+
+def _probe_write_json(path: Path, value: object) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_name(path.name + f".{os.getpid()}.tmp")
+    temporary.write_text(json.dumps(value, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    temporary.replace(path)
+    try:
+        path.chmod(0o600)
+    except OSError:
+        pass
+
+
+def render_probe(
+    *,
+    run_root: Path,
+    renderer: Path,
+    renderer_python: Path,
+    browsers: Path,
+    expected_renderer_sha256: str,
+    expected_assets_sha256: str | None = None,
+) -> dict[str, object]:
+    """Render one tiny p5.brush program through the native production boundary.
+
+    This deliberately calls ``native_painting_renderer.render_action`` from
+    the Prime interpreter rather than invoking the cancellable renderer
+    directly.  Native evaluation derives paths from its nested attempt root;
+    the explicit browser variables below are therefore part of the probe's
+    contract and catch the failure mode before any paid model work starts.
+    """
+    if sys.platform != "linux":
+        raise RuntimeError("structured-flow renderer probe requires Linux")
+    run_root = run_root.expanduser().resolve()
+    renderer = renderer.expanduser().resolve()
+    renderer_python = renderer_python.expanduser().absolute()
+    browsers = browsers.expanduser().resolve()
+    if not renderer.is_file() or not renderer_python.is_file():
+        raise FileNotFoundError("pinned renderer or renderer Python is missing")
+    if not browsers.is_dir():
+        raise FileNotFoundError(f"pinned browser root is missing: {browsers}")
+    actual_renderer_sha256 = _sha256(renderer)
+    if actual_renderer_sha256 != expected_renderer_sha256:
+        raise RuntimeError("renderer probe source hash does not match the pinned renderer")
+    assets = {
+        path.relative_to(renderer.parent / "assets").as_posix(): _sha256(path)
+        for path in sorted((renderer.parent / "assets").rglob("*"))
+        if path.is_file() and not path.is_symlink()
+    }
+    assets_sha256 = hashlib.sha256(
+        (json.dumps(assets, ensure_ascii=False, sort_keys=True, separators=(",", ":")) + "\n").encode("utf-8")
+    ).hexdigest()
+    if expected_assets_sha256 is not None and assets_sha256 != expected_assets_sha256:
+        raise RuntimeError("renderer probe asset map hash does not match the pinned renderer assets")
+    probe_root = run_root / "runtime" / "native-render-probe"
+    source = probe_root / "probe.js"
+    nested_root = probe_root / "nested-attempt"
+    native_folder = nested_root / "native-render"
+    native_source = native_folder / "program.js"
+    output = native_folder / "painting.png"
+    renderer_receipt = output.with_suffix(".json")
+    native_row_path = probe_root / "native-row.json"
+    receipt_path = probe_root / "renderer-probe-receipt.json"
+    stdout_path = probe_root / "renderer.stdout.log"
+    stderr_path = probe_root / "renderer.stderr.log"
+    if any(path.exists() for path in (source, output, renderer_receipt, receipt_path, native_row_path)):
+        raise RuntimeError(f"existing renderer probe evidence must be preserved: {probe_root}")
+    probe_root.mkdir(parents=True, exist_ok=False)
+    source.write_text(
+        "function setup(){createCanvas(600,600,WEBGL);}\n"
+        "function draw(){translate(-width/2,-height/2);background('#f5efe4');"
+        "brush.set('cpencil','#554d44',0.8);brush.stroke('#554d44');"
+        "brush.line(80,80,520,520);noLoop();}\n",
+        encoding="utf-8",
+    )
+    source.chmod(0o644)
+    nested_root.mkdir()
+    native_folder.mkdir()
+    home = probe_root / "home"
+    tmp = probe_root / "tmp"
+    home.mkdir()
+    tmp.mkdir()
+    runuser = shutil.which("runuser")
+    if os.geteuid() == 0 and runuser:
+        uid = int(subprocess.check_output([runuser, "-u", "painter", "--", "id", "-u"], text=True).strip())
+        gid = int(subprocess.check_output([runuser, "-u", "painter", "--", "id", "-g"], text=True).strip())
+        for path in (probe_root, home, tmp):
+            os.chown(path, uid, gid)
+    # Renderer children receive only the non-secret runtime needed for the
+    # sandbox.  Keep PYTHONPATH explicit so this subprocess exercises the
+    # checked-in native renderer with the actual Prime interpreter.  Do not
+    # use os.environ.copy(): inherited model/API tokens must not cross this
+    # boundary.
+    repo_root = Path(__file__).resolve().parents[3]
+    environment = {
+        "PATH": "/usr/local/bin:/usr/bin:/bin",
+        "PYTHONPATH": str(repo_root),
+        "PAINTER_BROWSER_ROOT": str(browsers),
+        "PLAYWRIGHT_BROWSERS_PATH": str(browsers),
+        "HOME": str(home),
+        "TMPDIR": str(tmp),
+        "XDG_RUNTIME_DIR": str(tmp),
+        "LANG": "C",
+        "LC_ALL": "C",
+        "PAINTER_JS_SYNTAX_PREFLIGHT": "1",
+        "PAINTER_RENDER_TIMEOUT_SECONDS": "180",
+    }
+    # Keep this harness small and pass all paths as argv.  render_action then
+    # performs the exact production runuser/Popen renderer launch itself,
+    # including receipt validation and sandbox handling.
+    harness = """
+import json
+import sys
+from pathlib import Path
+from painter.native_painting_renderer import render_action
+
+root, folder, source, renderer, renderer_python, row_path = map(Path, sys.argv[1:])
+program = source.read_text(encoding="utf-8")
+row = render_action(
+    root=root,
+    folder=folder,
+    reply="```javascript\\n" + program + "\\n```",
+    initial_canvas=None,
+    initial_program=None,
+    renderer=renderer,
+    renderer_python=renderer_python,
+)
+row_path.write_text(json.dumps(row, indent=2, sort_keys=True) + "\\n", encoding="utf-8")
+if not row.get("valid"):
+    raise SystemExit(2)
+"""
+    command = [
+        str(sys.executable), "-c", harness,
+        str(nested_root), str(native_folder), str(source),
+        str(renderer), str(renderer_python), str(native_row_path),
+    ]
+    started = time.monotonic()
+    try:
+        # Explicit env= is intentional.  A runuser ``env`` argv prefix alone
+        # does not stop this controller process from inheriting credentials.
+        completed = subprocess.run(
+            command,
+            cwd=repo_root,
+            env=environment,
+            capture_output=True,
+            text=True,
+            timeout=240,
+            check=False,
+        )
+        stdout = completed.stdout or ""
+        stderr = completed.stderr or ""
+    except subprocess.TimeoutExpired as exc:
+        completed = subprocess.CompletedProcess(command, returncode=None, stdout=exc.stdout or "", stderr=exc.stderr or "")
+        stdout = completed.stdout or ""
+        stderr = completed.stderr or ""
+    except Exception as exc:
+        completed = subprocess.CompletedProcess(command, returncode=None, stdout="", stderr=f"{type(exc).__name__}: {exc}")
+        stdout = ""
+        stderr = completed.stderr
+    stdout_path.write_text(stdout, encoding="utf-8")
+    stderr_path.write_text(stderr, encoding="utf-8")
+    stdout_path.chmod(0o600)
+    stderr_path.chmod(0o600)
+    value: dict[str, object] = {
+        "schema": "structured-flow-native-render-probe-v1",
+        "status": "failed",
+        "renderer": str(renderer),
+        "renderer_sha256": actual_renderer_sha256,
+        "assets_sha256": assets_sha256,
+        "renderer_python": str(renderer_python),
+        "browser_root": str(browsers),
+        "source": str(native_source),
+        "source_sha256": _sha256(native_source) if native_source.is_file() else None,
+        "probe_source": str(source),
+        "probe_source_sha256": _sha256(source),
+        "output": str(output),
+        "nested_root": str(nested_root),
+        "native_row": str(native_row_path),
+        "returncode": completed.returncode,
+        "elapsed_seconds": round(time.monotonic() - started, 3),
+        "stdout_first": _lines(stdout)[:10],
+        "stdout_last": _lines(stdout)[-10:],
+        "stderr_first": _lines(stderr)[:10],
+        "stderr_last": _lines(stderr)[-10:],
+        "stdout_log": str(stdout_path),
+        "stderr_log": str(stderr_path),
+    }
+    try:
+        native_receipt = json.loads(renderer_receipt.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        native_receipt = None
+    try:
+        native_result = json.loads(native_row_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        native_result = None
+    value["renderer_receipt"] = native_receipt
+    value["native_result"] = native_result
+    valid = bool(
+        completed.returncode == 0
+        and isinstance(native_result, dict)
+        and native_result.get("valid") is True
+        and isinstance(native_receipt, dict)
+        and native_receipt.get("valid") is True
+        and output.is_file()
+        and output.read_bytes()[:8] == b"\x89PNG\r\n\x1a\n"
+        and value["source_sha256"] is not None
+        and native_receipt.get("source_sha256") == value["source_sha256"]
+        and native_receipt.get("png_sha256") == _sha256(output)
+        and native_receipt.get("renderer_sha256") == actual_renderer_sha256
+    )
+    value["png_sha256"] = _sha256(output) if output.is_file() else None
+    value["renderer_receipt_sha256"] = _sha256(renderer_receipt) if renderer_receipt.is_file() else None
+    value["valid"] = valid
+    value["status"] = "verified" if valid else "censored_invalid"
+    _probe_write_json(receipt_path, value)
+    if not valid:
+        raise RuntimeError(f"native renderer probe failed; evidence preserved at {receipt_path}")
+    return value
+
+
 def _smoke(renderer_python: Path, browsers: Path, prime_venv: Path | None) -> None:
     """Start Chromium with sandboxing intact and preserve useful diagnostics."""
 
@@ -271,11 +497,27 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--renderer-python", type=Path, required=True)
     parser.add_argument("--browsers", type=Path, required=True)
     parser.add_argument("--prime-venv", type=Path, required=True)
+    parser.add_argument("--renderer", type=Path)
+    parser.add_argument("--renderer-sha256")
+    parser.add_argument("--assets-sha256")
+    parser.add_argument("--render-probe", action="store_true")
     parser.add_argument("--sandbox-only", action="store_true")
     parser.add_argument("--capability-only", action="store_true")
     parser.add_argument("--no-smoke", action="store_true")
     args = parser.parse_args(argv)
     os.environ.setdefault("PAINTER_RUN_ROOT", str(args.run_root.resolve()))
+    if args.render_probe:
+        if args.renderer is None or not args.renderer_sha256:
+            raise SystemExit("--render-probe requires --renderer and --renderer-sha256")
+        render_probe(
+            run_root=args.run_root,
+            renderer=args.renderer,
+            renderer_python=args.renderer_python,
+            browsers=args.browsers,
+            expected_renderer_sha256=args.renderer_sha256,
+            expected_assets_sha256=args.assets_sha256,
+        )
+        return 0
     if args.capability_only:
         capability_preflight(run_root=args.run_root, browsers=args.browsers, allow_deferred_browser_setup=True)
         return 0

@@ -13,6 +13,7 @@ import sys
 import tempfile
 import types
 import unittest
+from unittest import mock
 
 
 RUN = Path(__file__).resolve().parent
@@ -281,6 +282,8 @@ mv "$flow_tmp" "$run_root/flow-supervision-build.json"
     def test_run_binds_runtime_receipt_and_matched_baseline_flow(self):
         run = (RUN / "run.sh").read_text()
         baseline = (RUN / "matched_baseline.sh").read_text()
+        evaluate = (RUN / "evaluate.sh").read_text()
+        runtime = (RUN / "runtime_env.sh").read_text()
         self.assertIn('runtime_receipt.py', run)
         self.assertIn('PAINTER_RL_ADAPTER_SHA256="$ACTIVE_POLICY_SHA256"', run)
         self.assertIn('PAINTER_STRUCTURED_FLOW_POLICY=1', baseline)
@@ -288,6 +291,70 @@ mv "$flow_tmp" "$run_root/flow-supervision-build.json"
         self.assertIn('CUDA_HOME=', baseline)
         self.assertIn('LD_LIBRARY_PATH="$CUDA_HOME/lib:', baseline)
         self.assertIn('"frozen_anchor"', (RUN / "runtime_receipt.py").read_text())
+        self.assertIn('PAINTER_BROWSER_ROOT="$RUN/browsers"', evaluate)
+        self.assertIn('PLAYWRIGHT_BROWSERS_PATH="$RUN/browsers"', evaluate)
+        self.assertIn('export PLAYWRIGHT_BROWSERS_PATH="${PLAYWRIGHT_BROWSERS_PATH:-$PAINTER_BROWSER_ROOT}"', runtime)
+
+    def test_anchor_batch_passes_verified_browser_root_to_native_eval(self):
+        bank = load("structured_flow_anchor_browser_contract", RUN / "anchor_bank.py")
+        frozen = importlib.import_module("painter.frozen_opponent")
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            browser_root = root / "browsers"
+            browser_root.mkdir()
+            wrong_browser_root = root / "wrong-browsers"
+            wrong_browser_root.mkdir()
+            proposal_root = root / "proposal"
+            proposal_root.mkdir()
+            reference = proposal_root / "brief.txt"
+            reference.write_text("Paint one orb.\n")
+            renderer = root / "renderer.py"
+            renderer.write_text("# pinned renderer fixture\n")
+            renderer_python = root / "renderer-python"
+            renderer_python.write_text("#!/bin/sh\n")
+            eval_bin = root / "eval"
+            eval_bin.write_text("#!/bin/sh\n")
+            prime_root = root / "prime"
+            prime_root.mkdir()
+            source_png = root / "source.png"
+            source_png.write_bytes(b"\x89PNG\r\n\x1a\nfixture")
+            captured = {}
+
+            def fake_run(command, *, cwd, env, **kwargs):
+                captured.update({"command": command, "cwd": cwd, "env": env})
+                return subprocess.CompletedProcess(command, 0, "", "")
+
+            row = {
+                "id": "train-simple-001",
+                "source_group": "train-simple-001",
+                "reference": "brief.txt",
+                "reference_sha256": hashlib.sha256(reference.read_bytes()).hexdigest(),
+                "family": "simple",
+            }
+            environment = {
+                "PAINTER_BROWSER_ROOT": str(browser_root),
+                "PLAYWRIGHT_BROWSERS_PATH": str(wrong_browser_root),
+                "PAINTER_FROZEN_OPPONENT_RENDERER": str(renderer),
+                "PAINTER_FROZEN_OPPONENT_RENDERER_PYTHON": str(renderer_python),
+                "PAINTER_FROZEN_OPPONENT_EVAL": str(eval_bin),
+                "PAINTER_FROZEN_OPPONENT_PRIME_ROOT": str(prime_root),
+            }
+            with mock.patch.dict(os.environ, environment, clear=False), \
+                 mock.patch.object(bank.subprocess, "run", side_effect=fake_run), \
+                 mock.patch.object(frozen, "_native_eval_canvas", return_value=source_png):
+                result = bank._batch_native_generation(
+                    [row],
+                    anchor_root=root / "anchors",
+                    receipt_root=root / "anchors/native-generation",
+                    proposal_root=proposal_root,
+                    run_root=root / "run",
+                    workers=1,
+                )
+            self.assertEqual(result["train-simple-001"]["valid"], True)
+            self.assertEqual(captured["env"]["PAINTER_BROWSER_ROOT"], str(browser_root.resolve()))
+            self.assertEqual(captured["env"]["PLAYWRIGHT_BROWSERS_PATH"], str(browser_root.resolve()))
+            self.assertNotIn("wrong-browsers", captured["env"]["PLAYWRIGHT_BROWSERS_PATH"])
+            self.assertEqual(captured["command"][0], str(eval_bin.resolve()))
 
     def test_browser_probe_precedes_bootstrap_and_preserves_sandbox_diagnostics(self):
         prepare = (RUN / "prepare_node.sh").read_text()
@@ -304,6 +371,89 @@ mv "$flow_tmp" "$run_root/flow-supervision-build.json"
         self.assertIn('NoNewPrivs=1', helper)
         self.assertIn('Seccomp:', helper)
         self.assertIn('cap_eff', helper)
+        self.assertIn('--render-probe', prepare)
+        self.assertLess(prepare.index('--render-probe'), prepare.index('prepare_curriculum.py'))
+        self.assertIn('PLAYWRIGHT_BROWSERS_PATH', helper)
+        self.assertIn('structured-flow-native-render-probe-v1', helper)
+        self.assertIn('from painter.native_painting_renderer import render_action', helper)
+        self.assertIn('env=environment', helper)
+        self.assertIn('"PAINTER_BROWSER_ROOT": str(browsers)', helper)
+        self.assertIn('"AMBIENT_CANARY_SECRET"', (RUN / "test_run_contract.py").read_text())
+
+    def test_native_render_probe_uses_sanitized_env_and_nested_boundary(self):
+        """The paid-node probe must exercise native render_action safely.
+
+        A mocked subprocess stands in for Prime and the renderer.  It writes
+        the same native program/PNG/receipt files that render_action produces,
+        which lets this test verify the real probe contract without launching
+        Chromium or touching a model endpoint.
+        """
+        helper = load("structured_flow_renderer_probe_contract", RUN / "prepare_renderer_runtime.py")
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            run_root = root / "run"
+            renderer_root = root / "renderer"
+            assets = renderer_root / "assets"
+            assets.mkdir(parents=True)
+            (assets / "brush.js").write_text("brush fixture\n")
+            renderer = renderer_root / "renderer.py"
+            renderer.write_text("# pinned renderer fixture\n")
+            renderer_python = root / "prime-python"
+            renderer_python.write_text("#!/bin/sh\n")
+            browsers = root / "browsers"
+            browsers.mkdir()
+            renderer_sha = helper._sha256(renderer)
+            asset_map = {
+                path.relative_to(assets).as_posix(): helper._sha256(path)
+                for path in sorted(assets.rglob("*"))
+                if path.is_file() and not path.is_symlink()
+            }
+            asset_sha = hashlib.sha256(
+                (json.dumps(asset_map, ensure_ascii=False, sort_keys=True, separators=(",", ":")) + "\n").encode()
+            ).hexdigest()
+            captured = {}
+
+            def fake_run(command, *, cwd, env, **kwargs):
+                captured.update({"command": command, "cwd": cwd, "env": dict(env), "kwargs": kwargs})
+                nested_root = Path(command[3])
+                native_folder = Path(command[4])
+                probe_source = Path(command[5])
+                selected_renderer = Path(command[6])
+                row_path = Path(command[8])
+                native_source = native_folder / "program.js"
+                native_source.write_text(probe_source.read_text())
+                output = native_folder / "painting.png"
+                output.write_bytes(b"\x89PNG\r\n\x1a\nprobe")
+                receipt = {
+                    "valid": True,
+                    "source_sha256": helper._sha256(native_source),
+                    "png_sha256": helper._sha256(output),
+                    "renderer_sha256": helper._sha256(selected_renderer),
+                }
+                output.with_suffix(".json").write_text(json.dumps(receipt))
+                row_path.write_text(json.dumps({"valid": True, "canvas": str(output)}))
+                self.assertTrue(nested_root.is_dir())
+                return subprocess.CompletedProcess(command, 0, "", "")
+
+            with mock.patch.dict(os.environ, {"AMBIENT_CANARY_SECRET": "must-not-cross"}, clear=False), \
+                 mock.patch.object(helper.sys, "platform", "linux"), \
+                 mock.patch.object(helper.shutil, "which", return_value=None), \
+                 mock.patch.object(helper.subprocess, "run", side_effect=fake_run):
+                result = helper.render_probe(
+                    run_root=run_root,
+                    renderer=renderer,
+                    renderer_python=renderer_python,
+                    browsers=browsers,
+                    expected_renderer_sha256=renderer_sha,
+                    expected_assets_sha256=asset_sha,
+                )
+            self.assertTrue(result["valid"])
+            self.assertEqual(captured["env"]["PAINTER_BROWSER_ROOT"], str(browsers.resolve()))
+            self.assertEqual(captured["env"]["PLAYWRIGHT_BROWSERS_PATH"], str(browsers.resolve()))
+            self.assertNotIn("AMBIENT_CANARY_SECRET", captured["env"])
+            self.assertEqual(captured["env"]["PYTHONPATH"], str(Path(__file__).resolve().parents[3]))
+            self.assertIn("timeout", captured["kwargs"])
+            self.assertEqual(result["nested_root"], str((run_root / "runtime/native-render-probe/nested-attempt").resolve()))
 
     def test_prepare_node_prime_interpreter_probe_isolated_from_bootstrap(self):
         """Run the actual preparation probe with deliberately split interpreters."""

@@ -23,12 +23,14 @@ EVAL_MANIFEST="${PAINTER_EVAL_MANIFEST:-$RUN/curriculum/matched16-manifest.json}
 OUT="${PAINTER_MATCHED_BASELINE_OUTPUT:-$RUN/matched-baseline/pre-step12}"
 RENDERER="${PAINTER_RENDERER_PATH:-$RUN/vendor/integrations/watercolour/renderer.py}"
 RENDERER_PYTHON="${PAINTER_RENDERER_PYTHON_PATH:-$RUN/renderer-env/bin/python}"
+BROWSER_ROOT="${PAINTER_BROWSER_ROOT:-${PLAYWRIGHT_BROWSERS_PATH:-$RUN/browsers}}"
 MODEL="${MODEL_DIR:-$PAINTER_NODE_ROOT/model-cache/qwen/1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0}"
 PORT="${PAINTER_BASELINE_PORT:-8000}"
 
 for required in "$PY" "$VLLM" "$EVAL" "$MODEL/config.json" "$FLASH_POINTER" "$FROZEN_POINTER" "$RUN/anchor_bank.py" "$RENDERER" "$RENDERER_PYTHON"; do
   [[ -e "$required" ]] || { echo "missing baseline input: $required" >&2; exit 1; }
 done
+[[ -d "$BROWSER_ROOT" ]] || { echo "native evaluation browser root is missing: $BROWSER_ROOT" >&2; exit 1; }
 [[ -d "$CUDA_HOME" ]] || { echo "CUDA 13 runtime directory is missing: $CUDA_HOME" >&2; exit 1; }
 export CUDA_HOME
 export PATH="${PRIME_ROOT:-$PAINTER_NODE_ROOT/prime}/.venv/bin:$CUDA_HOME/bin:$PATH"
@@ -94,7 +96,7 @@ PY
 done
 (( SECONDS < deadline )) || { echo 'baseline vLLM startup timeout' >&2; exit 1; }
 
-PYTHONPATH="$REPO:$REPO/painter:$RUN${PYTHONPATH:+:$PYTHONPATH}" PAINTER_STRUCTURED_FLOW_POLICY=1 PAINTER_FROZEN_OPPONENT_ENDPOINT="http://127.0.0.1:$PORT/v1" \
+PYTHONPATH="$REPO:$REPO/painter:$RUN${PYTHONPATH:+:$PYTHONPATH}" PAINTER_STRUCTURED_FLOW_POLICY=1 PAINTER_BROWSER_ROOT="$BROWSER_ROOT" PLAYWRIGHT_BROWSERS_PATH="$BROWSER_ROOT" PAINTER_FROZEN_OPPONENT_ENDPOINT="http://127.0.0.1:$PORT/v1" \
   "$PY" "$RUN/anchor_bank.py" materialize \
   --train-manifest "$TRAIN_MANIFEST" --heldout-manifest "$EVAL_MANIFEST" \
   --anchor-root "${PAINTER_ANCHOR_ROOT:-$RUN/curriculum/anchors}" \
@@ -102,7 +104,7 @@ PYTHONPATH="$REPO:$REPO/painter:$RUN${PYTHONPATH:+:$PYTHONPATH}" PAINTER_STRUCTU
   --run-root "$RUN" >"$OUT/logs/anchor-materialization.json"
 
 PYTHONPATH="$REPO:$REPO/painter:$RUN${PYTHONPATH:+:$PYTHONPATH}" \
-  PAINTER_PRIME_ROLE=orchestrator PAINTER_STRUCTURED_FLOW_POLICY=1 PAINTER_RL_MANIFEST="$TRAIN_MANIFEST" PAINTER_EVAL_MANIFEST="$EVAL_MANIFEST" \
+  PAINTER_PRIME_ROLE=orchestrator PAINTER_STRUCTURED_FLOW_POLICY=1 PAINTER_BROWSER_ROOT="$BROWSER_ROOT" PLAYWRIGHT_BROWSERS_PATH="$BROWSER_ROOT" PAINTER_RL_MANIFEST="$TRAIN_MANIFEST" PAINTER_EVAL_MANIFEST="$EVAL_MANIFEST" \
   PAINTER_FLOW_HOOK_RECEIPT="$OUT/structured-flow-hook-receipt.json" \
   "$PY" "$REPO/painter/native_painting_eval.py" --root "$REPO/painter" --manifest "$EVAL_MANIFEST" \
   --policy-label flash12-pre-warmup --model flash12-baseline --output-dir "$OUT/evaluation-rollouts" \
@@ -119,7 +121,7 @@ if text.count(old) != 1 or text.count('seed = 918200') != 1:
 path.write_text(text.replace(old, f'base_url = "http://127.0.0.1:{port}/v1"').replace('seed = 918200', f'seed = {seed}'))
 PY
 env PYTHONPATH="$REPO/painter:$RUN${PYTHONPATH:+:$PYTHONPATH}" PAINTER_LOCAL_API_KEY=local \
-  PLAYWRIGHT_BROWSERS_PATH="$RUN/browsers" PAINTER_REQUIRE_VALID_FINAL_ACTION=1 PAINTER_JS_SYNTAX_PREFLIGHT=1 \
+  PAINTER_BROWSER_ROOT="$BROWSER_ROOT" PLAYWRIGHT_BROWSERS_PATH="$BROWSER_ROOT" PAINTER_REQUIRE_VALID_FINAL_ACTION=1 PAINTER_JS_SYNTAX_PREFLIGHT=1 \
   PAINTER_JUDGE_PROTOCOL="$PAINTER_JUDGE_PROTOCOL" PAINTER_JUDGE_FORMAT="$PAINTER_JUDGE_FORMAT" PAINTER_JUDGE_MODEL="$PAINTER_JUDGE_MODEL" \
   PAINTER_STRUCTURED_FLOW_POLICY=1 PAINTER_RL_MANIFEST="$TRAIN_MANIFEST" PAINTER_EVAL_MANIFEST="$EVAL_MANIFEST" \
   PAINTER_PRIME_ROLE=orchestrator PAINTER_FLOW_HOOK_RECEIPT="$OUT/structured-flow-hook-receipt.json" \

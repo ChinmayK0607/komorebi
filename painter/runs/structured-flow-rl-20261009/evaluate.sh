@@ -29,7 +29,12 @@ replacement = (
 )
 if text.count(needle) < 2:
     raise SystemExit("generic evaluator contract changed: expected two Python path bindings")
-target.write_text(text.replace(needle, replacement), encoding="utf-8")
+text = text.replace(needle, replacement)
+text = text.replace(
+    'PLAYWRIGHT_BROWSERS_PATH="$REPO/painter/browsers"',
+    'PAINTER_BROWSER_ROOT="$RUN/browsers" PLAYWRIGHT_BROWSERS_PATH="$RUN/browsers"',
+)
+target.write_text(text, encoding="utf-8")
 target.chmod(0o700)
 PY
 export PAINTER_PRIME_ROLE=orchestrator PAINTER_STRUCTURED_FLOW_POLICY=1

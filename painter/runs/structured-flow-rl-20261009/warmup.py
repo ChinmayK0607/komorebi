@@ -67,6 +67,13 @@ FLOW_STATE_ALIASES = {
     "revision": "revision", "improved": "revision", "improved_final": "revision", "edit": "revision",
     "finish": "finish", "finished": "finish", "finish_state": "finish", "terminal": "finish",
 }
+# The pinned mixed-SFT loader reserves these names for its own ordered
+# schedule.  This warmup deliberately uses its supported legacy path: the
+# rows are a finite, already-ordered four-batch painting stream, while the
+# flow curriculum is recorded under warmup_* fields in our own receipt.
+NATIVE_TASK_FAMILY = "painting"
+SCHEDULE_RESERVED_FIELDS = frozenset({"scheduled_step", "scheduled_slot", "schedule_group"})
+WARMUP_SCHEDULE_SCHEMA = "structured-flow-warmup-schedule-v1"
 
 
 def sha256_bytes(value: bytes) -> str:
@@ -362,13 +369,110 @@ def build_schedule(rows: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
             source_id = str(source["id"])
             source.update({
                 "id": f"{source_id}__warmup_step_{step:02d}_slot_{slot:02d}",
-                "source_example_id": source_id, "scheduled_step": step, "scheduled_slot": slot,
-                "schedule_group": state, "warmup_flow_state": state,
+                "source_example_id": source_id, "warmup_step": step, "warmup_slot": slot,
+                "warmup_flow_state": state, "task_family": NATIVE_TASK_FAMILY,
             })
             emitted.append(source)
     if len(emitted) != MAX_STEPS * BATCH_SIZE or len({row["id"] for row in emitted}) != len(emitted):
         raise AssertionError("warmup schedule must contain four complete unique optimizer batches")
     return emitted
+
+
+def build_schedule_receipt(rows: Sequence[Mapping[str, Any]], train_sha256: str) -> dict[str, Any]:
+    """Describe the bounded legacy stream without activating PRIME scheduling.
+
+    ``scheduled_data.py`` has a separate painting/retention schedule contract
+    which would misclassify flow examples (especially finish examples) if we
+    projected them into retention families.  The caller therefore keeps every
+    row in the native ``painting`` family and records the four ordered batches
+    in this run-owned receipt.  The pinned loader sees an ordinary ordered
+    dataset and returns ``None`` from ``guard_runtime``.
+    """
+    rows = list(rows)
+    if len(rows) != MAX_STEPS * BATCH_SIZE:
+        raise ValueError("warmup schedule receipt requires exactly sixteen emitted rows")
+    expected: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    source_seen: set[str] = set()
+    flow_counts = {state: 0 for state in FLOW_STATES}
+    for index, row in enumerate(rows):
+        step, slot = divmod(index, BATCH_SIZE)
+        expected_state = WARMUP_STATE_PATTERN[step][slot]
+        ident = row.get("id")
+        source = row.get("source_example_id")
+        if not isinstance(ident, str) or not ident or ident in seen:
+            raise ValueError("warmup schedule receipt requires unique emission IDs")
+        if not isinstance(source, str) or not source:
+            raise ValueError(f"{ident}: schedule source identity is required")
+        if source in source_seen:
+            raise ValueError(f"{ident}: warmup schedule repeats a source identity")
+        if row.get("task_family") != NATIVE_TASK_FAMILY:
+            raise ValueError(f"{ident}: legacy warmup rows must use task_family=painting")
+        if any(field in row for field in SCHEDULE_RESERVED_FIELDS):
+            raise ValueError(f"{ident}: pinned schedule fields must not enter the legacy stream")
+        if (row.get("warmup_step"), row.get("warmup_slot"), row.get("warmup_flow_state")) != (step + 1, slot, expected_state):
+            raise ValueError(f"{ident}: warmup flow order differs from the bounded pattern")
+        if _canonical_flow_state(row) != expected_state:
+            raise ValueError(f"{ident}: warmup flow_state was not preserved")
+        seen.add(ident)
+        source_seen.add(source)
+        flow_counts[expected_state] += 1
+        expected.append({
+            "id": ident, "source_example_id": source, "warmup_step": step + 1,
+            "warmup_slot": slot, "warmup_flow_state": expected_state,
+        })
+    if not isinstance(train_sha256, str) or not HEX64.fullmatch(train_sha256):
+        raise ValueError("warmup schedule receipt requires the train JSONL SHA-256")
+    return {
+        "schema": WARMUP_SCHEDULE_SCHEMA,
+        "mode": "legacy_ordered_painting",
+        "task_family": NATIVE_TASK_FAMILY,
+        "batch_size": BATCH_SIZE,
+        "max_steps": MAX_STEPS,
+        "row_count": len(rows),
+        "flow_state_pattern": [list(pattern) for pattern in WARMUP_STATE_PATTERN],
+        "flow_state_counts": flow_counts,
+        "train_sha256": train_sha256,
+        "emissions": expected,
+        "pinned_loader": "scheduled_data.validate_returns_none_without_reserved_schedule_fields",
+    }
+
+
+def validate_warmup_schedule(data_dir: Path, receipt_path: Path, native_schedule_path: Path | None = None) -> dict[str, Any]:
+    """Validate the own bounded schedule and, when supplied, the pinned API.
+
+    This intentionally calls the real reviewed ``scheduled_data.validate``
+    implementation when a materialized source is available.  A ``None``
+    result is required: it proves the rows remain on the pinned legacy path
+    rather than silently entering the native painting/retention scheduler.
+    """
+    data_dir = data_dir.expanduser().resolve()
+    receipt_path = receipt_path.expanduser().resolve()
+    receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+    if receipt.get("schema") != WARMUP_SCHEDULE_SCHEMA:
+        raise ValueError("warmup schedule receipt schema is not recognized")
+    train_path = data_dir / "train.jsonl"
+    rows = _read_jsonl(train_path)
+    raw = train_path.read_bytes()
+    actual_sha = sha256_bytes(raw)
+    if actual_sha != receipt.get("train_sha256"):
+        raise ValueError("warmup schedule train hash differs from its receipt")
+    if data_dir.joinpath("schedule.json").exists():
+        raise ValueError("legacy warmup data must not contain a native schedule.json")
+    expected = build_schedule_receipt(rows, actual_sha)
+    if expected != receipt:
+        raise ValueError("warmup schedule receipt does not match the emitted train stream")
+    native_result = None
+    if native_schedule_path is not None:
+        spec = importlib.util.spec_from_file_location("structured_flow_pinned_scheduled_data", native_schedule_path)
+        if spec is None or spec.loader is None:
+            raise ImportError(f"missing pinned schedule validator: {native_schedule_path}")
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        native_result = module.validate(data_dir)
+        if native_result is not None:
+            raise ValueError("warmup rows unexpectedly entered the pinned ordered schedule")
+    return {"status": "validated", "train_sha256": actual_sha, "native_schedule": native_result, "rows": len(rows)}
 
 
 def build_config(model_dir: Path, data_dir: Path, run_name: str = "structured-flow-sft-warmup") -> dict[str, Any]:
@@ -478,6 +582,50 @@ def _training_projection(row: Mapping[str, Any]) -> dict[str, Any]:
     return {key: row[key] for key in keys if key in row}
 
 
+def _processor_mask_modes() -> tuple[tuple[str, str | None], ...]:
+    """Return both the ordinary and actual training mask environments."""
+    return (("baseline", None), ("capacity_prefill", "1"))
+
+
+def _mask_observation(
+    mask_mode: str,
+    total: int,
+    masks: Sequence[bool],
+    learned: Sequence[int],
+    expected: Sequence[int],
+    seq_len: int,
+) -> dict[str, Any]:
+    """Classify one mask; only the runtime capacity branch is a gate.
+
+    The baseline branch is retained as evidence because the native renderer
+    may leave disabled-thinking/generation-wrapper tokens visible there.  The
+    training environment always enables the capacity-prefill branch, whose
+    exact target and no-truncation checks are mandatory.
+    """
+    supervised = sum(bool(mask) for mask in masks)
+    exact = list(learned) == list(expected)
+    observation = {
+        "status": "diagnostic" if mask_mode == "baseline" else "required_pass",
+        "exact_target_match": exact,
+        "total_tokens": total,
+        "assistant_tokens": len(learned),
+        "expected_assistant_tokens": len(expected),
+        "target_token_delta": len(learned) - len(expected),
+        "supervised_tokens": supervised,
+        "extra_supervised_tokens": max(0, supervised - len(expected)),
+        "fits": total <= seq_len,
+    }
+    if mask_mode != "capacity_prefill":
+        return observation
+    if total > seq_len:
+        raise ValueError(f"capacity_prefill sample has {total} tokens exceeding {seq_len}; refusing truncation")
+    if not exact:
+        raise ValueError("capacity_prefill assistant target/mask/tokenizer parity mismatch")
+    if not 0 < supervised < total:
+        raise ValueError("capacity_prefill has an invalid assistant-only loss mask")
+    return observation
+
+
 def processor_audit(config_path: Path, output: Path, brush_root: Path) -> dict[str, Any]:
     """Run the reviewed processor and prove exact assistant target masking."""
     if sys.platform != "linux":
@@ -505,41 +653,78 @@ def processor_audit(config_path: Path, output: Path, brush_root: Path) -> dict[s
     result: list[dict[str, Any]] = []
     dataset_dir = Path(resolved.data.name)
     paths = {"train": dataset_dir / "train.jsonl", "validation": dataset_dir / "validation.jsonl"}
-    for split, path in paths.items():
-        raw_rows = _read_jsonl(path)
-        if not raw_rows:
-            raise ValueError(f"{split} is empty: {path}")
-        wrapper = module.StrictSFTDataset(Dataset.from_list([_training_projection(raw_rows[0])]), renderer,
-                                          seq_len=2**62, multimodal=True,
-                                          loss_mask_config=resolved.data.loss_mask)
-        for raw in raw_rows:
-            row = _training_projection(raw)
-            wrapper.dataset = Dataset.from_list([row])
-            sample = wrapper._process(row)
-            if sample is None:
-                raise ValueError(f"{raw.get('id')}: no trainable assistant tokens")
-            total = len(sample["input_ids"])
-            if total > resolved.data.seq_len:
-                raise ValueError(f"{raw.get('id')}: {total} tokens exceed {resolved.data.seq_len}; refusing truncation")
-            masks = list(sample["loss_mask"])
-            learned = [token for token, mask in zip(sample["target_ids"], masks) if mask]
-            target = "".join(_text_parts(row["messages"][-1]["content"]))
-            expected = tokenizer.encode(target, add_special_tokens=False) + [eos]
-            if learned != expected:
-                raise ValueError(f"{raw.get('id')}: assistant target/mask/tokenizer parity mismatch")
-            if not 0 < sum(bool(mask) for mask in masks) < total:
-                raise ValueError(f"{raw.get('id')}: invalid assistant-only loss mask")
-            result.append({"id": raw["id"], "split": split, "source_group": raw.get("source_group"),
-                           "total_tokens": total, "assistant_tokens": len(learned),
-                           "mask_sha256": sha256_bytes(bytes(int(bool(mask)) for mask in masks)),
-                           "target_sha256": sha256_text(target), "fits": True,
-                           "images": len(_image_parts(row["messages"][1]["content"]))})
+    previous_capacity = os.environ.get("CAPACITY_STATE_COMPLETE")
+    try:
+        for mask_mode, capacity_flag in _processor_mask_modes():
+            if capacity_flag is None:
+                os.environ.pop("CAPACITY_STATE_COMPLETE", None)
+            else:
+                os.environ["CAPACITY_STATE_COMPLETE"] = capacity_flag
+            for split, path in paths.items():
+                raw_rows = _read_jsonl(path)
+                if not raw_rows:
+                    raise ValueError(f"{split} is empty: {path}")
+                wrapper = module.StrictSFTDataset(Dataset.from_list([_training_projection(raw_rows[0])]), renderer,
+                                                  seq_len=2**62, multimodal=True,
+                                                  loss_mask_config=resolved.data.loss_mask)
+                for raw in raw_rows:
+                    row = _training_projection(raw)
+                    wrapper.dataset = Dataset.from_list([row])
+                    try:
+                        sample = wrapper._process(row)
+                    except Exception as exc:
+                        if mask_mode == "capacity_prefill":
+                            raise
+                        result.append({"id": raw["id"], "split": split, "source_group": raw.get("source_group"),
+                                       "mask_mode": mask_mode, "capacity_state_complete": False,
+                                       "status": "diagnostic_processor_error", "error_type": type(exc).__name__,
+                                       "total_tokens": 0, "assistant_tokens": 0, "expected_assistant_tokens": 0,
+                                       "target_token_delta": 0, "supervised_tokens": 0, "extra_supervised_tokens": 0,
+                                       "fits": False, "exact_target_match": False, "images": 0})
+                        continue
+                    if sample is None:
+                        if mask_mode == "capacity_prefill":
+                            raise ValueError(f"{raw.get('id')}: no trainable assistant tokens")
+                        result.append({"id": raw["id"], "split": split, "source_group": raw.get("source_group"),
+                                       "mask_mode": mask_mode, "capacity_state_complete": False,
+                                       "status": "diagnostic_no_trainable_tokens", "total_tokens": 0,
+                                       "assistant_tokens": 0, "expected_assistant_tokens": 0,
+                                       "target_token_delta": 0, "supervised_tokens": 0,
+                                       "extra_supervised_tokens": 0, "fits": False,
+                                       "exact_target_match": False, "images": len(_image_parts(row["messages"][1]["content"]))})
+                        continue
+                    total = len(sample["input_ids"])
+                    masks = list(sample["loss_mask"])
+                    learned = [token for token, mask in zip(sample["target_ids"], masks) if mask]
+                    target = "".join(_text_parts(row["messages"][-1]["content"]))
+                    expected = tokenizer.encode(target, add_special_tokens=False) + [eos]
+                    observation = _mask_observation(mask_mode, total, masks, learned, expected, resolved.data.seq_len)
+                    result.append({"id": raw["id"], "split": split, "source_group": raw.get("source_group"),
+                                   "mask_mode": mask_mode, "capacity_state_complete": capacity_flag == "1", **observation,
+                                   "mask_sha256": sha256_bytes(bytes(int(bool(mask)) for mask in masks)),
+                                   "target_sha256": sha256_text(target),
+                                   "images": len(_image_parts(row["messages"][1]["content"]))})
+    finally:
+        if previous_capacity is None:
+            os.environ.pop("CAPACITY_STATE_COMPLETE", None)
+        else:
+            os.environ["CAPACITY_STATE_COMPLETE"] = previous_capacity
+    mode_reports = {
+        mode: {
+            "capacity_state_complete": flag == "1",
+            "train_rows": sum(item["split"] == "train" and item["mask_mode"] == mode for item in result),
+            "validation_rows": sum(item["split"] == "validation" and item["mask_mode"] == mode for item in result),
+            "exact_target_matches": sum(item.get("exact_target_match") is True and item["mask_mode"] == mode for item in result),
+        }
+        for mode, flag in _processor_mask_modes()
+    }
     report = {"schema": "structured-flow-sft-mask-audit-v1", "status": "passed",
               "seq_len": resolved.data.seq_len, "mask": "assistant_only_exact_target_plus_im_end",
+              "mask_modes": mode_reports, "runtime_capacity_state_complete": True,
               "no_truncation": True, "processor_class": type(renderer._processor).__name__,
-              "train_rows": sum(r["split"] == "train" for r in result),
-              "validation_rows": sum(r["split"] == "validation" for r in result),
-              "max_tokens": max(r["total_tokens"] for r in result), "examples": result,
+              "train_rows": len(_read_jsonl(paths["train"])),
+              "validation_rows": len(_read_jsonl(paths["validation"])),
+              "max_tokens": max((r["total_tokens"] for r in result), default=0), "examples": result,
               "config_sha256": sha256_file(config_path),
               "dataset_sha256": {split: sha256_file(path) for split, path in paths.items()}}
     _write_json(output, report)
@@ -566,6 +751,9 @@ def prepare(args: argparse.Namespace) -> dict[str, Any]:
     train_sha = write_rows(data_dir / "train.jsonl", scheduled_rows)
     dev_sha = write_rows(data_dir / "dev.jsonl", dev_rows)
     validation_sha = write_rows(data_dir / "validation.jsonl", dev_rows)
+    schedule = build_schedule_receipt(scheduled_rows, train_sha)
+    _write_json(output / "schedule.json", schedule)
+    validate_warmup_schedule(data_dir, output / "schedule.json")
     config = build_config(args.model_dir, data_dir, args.run_name)
     write_toml(output / "warmup.toml", config)
     _write_json(output / "config.json", config)
@@ -583,6 +771,8 @@ def prepare(args: argparse.Namespace) -> dict[str, Any]:
                              "dev_sha256": dev_sha, "validation_sha256": validation_sha,
                              "source_train_rows": len(train_rows), "scheduled_train_rows": len(scheduled_rows), "dev_rows": len(dev_rows),
                              "flow_state_pattern": [list(pattern) for pattern in WARMUP_STATE_PATTERN],
+                             "schedule": {"path": str(output / "schedule.json"), "sha256": sha256_file(output / "schedule.json"),
+                                          "schema": WARMUP_SCHEDULE_SCHEMA, "mode": schedule["mode"]},
                              "validation_alias": "dev", "input_train": str(args.train.resolve()), "input_dev": str(args.dev.resolve())},
                     "training": {"max_steps": MAX_STEPS, "batch_size": BATCH_SIZE, "micro_batch_size": MICRO_BATCH_SIZE,
                                  "gpus_per_node": 1, "num_train_gpus": 1, "learning_rate": LEARNING_RATE,
@@ -698,6 +888,10 @@ def train(args: argparse.Namespace) -> dict[str, Any]:
         raise ValueError("warmup parent adapter differs from the prepared Flash12 parent")
     verify_prime_pin(args.prime_root)
     runtime = materialize_source_layout(args.source_root, prepared)
+    validate_warmup_schedule(
+        prepared / "data", prepared / "schedule.json",
+        runtime / "integrations/speedpainting/mixed_sft/scheduled_data.py",
+    )
     _write_json(prepared / "source-receipt.json", source_identity(runtime))
     setup = runtime / "runs" / f"{args.run_name}-setup"
     setup.mkdir(parents=True)

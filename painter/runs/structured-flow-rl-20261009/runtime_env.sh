@@ -80,6 +80,8 @@ export PAINTER_PARENT_RELEASE_RESERVE_SECONDS="${PAINTER_PARENT_RELEASE_RESERVE_
 export PAINTER_COMPLETION_MARGIN_SECONDS="${PAINTER_COMPLETION_MARGIN_SECONDS:-120}"
 
 export PAINTER_REQUIRE_VALID_FINAL_ACTION=1
+export PAINTER_BROWSER_ROOT="${PAINTER_BROWSER_ROOT:-$PAINTER_RUN_ROOT/browsers}"
+export PLAYWRIGHT_BROWSERS_PATH="${PLAYWRIGHT_BROWSERS_PATH:-$PAINTER_BROWSER_ROOT}"
 # Once node preparation has materialized the verified overlay, bind it as the
 # default for later RL/evaluation shells.  Before preparation, retain the
 # ordinary path so bootstrap discovery can still fail closed.
