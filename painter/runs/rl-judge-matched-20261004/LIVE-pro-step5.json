@@ -1,0 +1,46 @@
+{
+  "schema": "matched-continuation-live-pro-progress-v1",
+  "observed_utc": "2026-10-08T11:46:33.616094+00:00",
+  "status": "arm_pro_running",
+  "flash": {
+    "completed_optimizer_updates": 12,
+    "retrained_during_continuation": false,
+    "recovered_evaluation_complete": true,
+    "evaluation_exit_code": 0,
+    "finalizer_exit_code": 0,
+    "public_archive_hash_verified_by_node": true,
+    "public_archive": {
+      "repo_id": "CK0607/komorebi-painter-experiments",
+      "revision": "a3a2daf6098631cb78dae9822f8f9d9bca761531",
+      "path": "runs/rl-judge-matched-20261004-flash/evidence.tar.gz",
+      "sha256": "3f58233731036adfc2c9c384bf7393ac4df67ff78a02e70164a19683b9633242",
+      "bytes": 22753013,
+      "private": false
+    }
+  },
+  "pro": {
+    "completed_optimizer_updates": 5,
+    "last_admitted_batch": 5,
+    "checkpoint4": {
+      "repo_id": "CK0607/qwen3.8-27b-brush-painting",
+      "revision": "106cfeac5e08f80a7a85098ac305a57df470d44c",
+      "path": "rl-judge-matched-20261004-pro/step_4",
+      "sha256": "ce4a5107e5fa05a988959e0f1b9b99f428bc8f20ee743136373f74d6921e2b73",
+      "private": false,
+      "anonymous_metadata_hash_verified": true
+    }
+  },
+  "luna": {
+    "completed_optimizer_updates": 0,
+    "status": "pending_after_pro"
+  },
+  "campaign_completed_optimizer_total": 17,
+  "gpu_rental_clock_estimate_usd_at_check": 7.43,
+  "rental_hours_at_check": 2.0,
+  "new_rental_cap_usd": 43.5,
+  "cost_scope": "Active continuation rental only, not invoice; prior attempt costs retained in RETRY-attempt6.json. API separate.",
+  "observation_limitations": "Additional full metrics download timed out; progress from actual supervisor/controller and archived arm receipt. This observation failure did not stop training. No new reward-trend or full-pipeline-utilization estimate claimed.",
+  "visual_quality_status": "Recovered Flash evaluation published but not yet visually reviewed; no cross-judge quality conclusion.",
+  "next_decision": "Continue registered Pro12 then Luna12; preserve all public artifacts and release node on campaign completion/failure/deadline.",
+  "scheduled_task_created": false
+}
