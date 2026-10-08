@@ -1,0 +1,76 @@
+{
+  "schema": "matched-three-judge-campaign-completed-v1",
+  "observed_utc": "2026-10-08T19:51:25.372838+00:00",
+  "status": "complete",
+  "protocol": "PROTOCOL.json",
+  "prelaunch_record": "RETRY-attempt6.json",
+  "source_commit": "5bfe80e5c96510ef04db37076d8b54c81c6943db",
+  "matched_baseline": "Pinned prior fresh RL16 initializer evaluation, balanced16; separate SFT512 reward opponent.",
+  "completed_optimizer_updates": {
+    "flash": 12,
+    "pro": 12,
+    "luna": 12
+  },
+  "continuation_updates": {
+    "flash": 0,
+    "pro": 12,
+    "luna": 12
+  },
+  "flash_provenance": "Training completed in attempt5; preserved step12 recovered for evaluation only.",
+  "evaluation_scope": {
+    "cases_per_model": 16,
+    "model_columns": [
+      "RL16 starting checkpoint",
+      "Flash judge RL12",
+      "Pro judge RL12",
+      "Luna judge RL12"
+    ],
+    "turns": 3,
+    "tokens_per_turn": 8192,
+    "seed": 918210,
+    "data": "40train47heldout, common ordered16-case evaluation subset"
+  },
+  "terminal_validity_counts": {
+    "baseline": {
+      "VALID TERMINAL": 15,
+      "CENSORED TERMINAL": 1
+    },
+    "flash": {
+      "VALID TERMINAL": 16
+    },
+    "pro": {
+      "VALID TERMINAL": 16
+    },
+    "luna": {
+      "VALID TERMINAL": 14,
+      "INVALID TERMINAL": 2
+    }
+  },
+  "failures_and_censored_cases": "completed-terminal-outcomes.json",
+  "quality_result": "Visual-quality ranking pending inspection of matched images; render validity and own-judge reward means do not establish superiority.",
+  "public_checkpoint_evidence": "completed-public-checkpoints.json",
+  "public_archive_evidence": "completed-public-evidence.json",
+  "gallery": "local-evidence/comparison/index.html",
+  "node_released": true,
+  "release_evidence": "Allocation terminal receipt statusreleased and exact-campaign provider inventory count0.",
+  "gpu_cost": {
+    "continuation_rental_seconds_until_release_receipt": 23437.05977487564,
+    "whole_node_price_usd_hour": 3.72,
+    "continuation_rental_clock_estimate_usd": 24.21829510070483,
+    "prior_attempt_clock_estimates_usd": 14.037524868233998,
+    "whole_campaign_gpu_clock_estimate_usd": 38.25581996893882,
+    "approved_campaign_ceiling_usd": 58.5,
+    "cost_scope": "Clock estimates, not invoices. Continuation includes source/runtime handoff through release-receipt timestamp. Earlier attempt estimate definitions retained in prior records. API spend excluded."
+  },
+  "utilization_scope": "No full-run utilization recomputed in this collection. Prior measured60-sample window in ALLOCATION-attempt5.json is an interval only, not saturation of wholecampaign. Raw telemetry remains in public archives for later analysis.",
+  "gallery_parent_review": {
+    "focused_tests_passed": 3,
+    "suite_external_timeout_seconds": 30,
+    "exact_four_way_case_json_match": true,
+    "all_displayed_image_links_exist": true,
+    "terminal_png_sha_verified": true,
+    "invalid_or_missing_trace_does_not_promote_prior_canvas": true
+  },
+  "next_decision": "Inspect fixed-label paired paintings to choose judge and checkpoint; diagnose invalid/censored final actions. Do not launch another GPU run until next direction agreed.",
+  "scheduled_task_created": false
+}

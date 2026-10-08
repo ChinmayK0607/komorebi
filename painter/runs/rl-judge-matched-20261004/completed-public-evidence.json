@@ -1,0 +1,60 @@
+{
+  "schema": "matched-completed-public-evidence-v1",
+  "archives": [
+    {
+      "repo_id": "CK0607/komorebi-painter-experiments",
+      "revision": "7efa353a6afb4437e3adf34c920a80ed705b62f5",
+      "path": "runs/rl-judge-matched-20261004/baseline-evidence.tar.gz",
+      "bytes": 23309572,
+      "sha256": "6967e1304b8b51aeda5b73bb00b05365edf72e44ae92baffaabaf93327158d41",
+      "private": false,
+      "anonymous_stream_hash_verified": true,
+      "selected_files_copied": 119,
+      "local_subset": "painter/runs/rl-judge-matched-20261004/local-evidence/completed/baseline"
+    },
+    {
+      "repo_id": "CK0607/komorebi-painter-experiments",
+      "revision": "7efa353a6afb4437e3adf34c920a80ed705b62f5",
+      "path": "runs/rl-judge-matched-20261004/campaign-evidence.tar.gz",
+      "bytes": 711274,
+      "sha256": "dc521a22afc5a9e00433cb756c2a72eae0a4356b940b23580683b92bf4c14872",
+      "private": false,
+      "anonymous_stream_hash_verified": true,
+      "selected_files_copied": 3,
+      "local_subset": "painter/runs/rl-judge-matched-20261004/local-evidence/completed/campaign"
+    },
+    {
+      "repo_id": "CK0607/komorebi-painter-experiments",
+      "revision": "7efa353a6afb4437e3adf34c920a80ed705b62f5",
+      "path": "runs/rl-judge-matched-20261004-flash/evidence.tar.gz",
+      "bytes": 22753013,
+      "sha256": "3f58233731036adfc2c9c384bf7393ac4df67ff78a02e70164a19683b9633242",
+      "private": false,
+      "anonymous_stream_hash_verified": true,
+      "selected_files_copied": 125,
+      "local_subset": "painter/runs/rl-judge-matched-20261004/local-evidence/completed/flash"
+    },
+    {
+      "repo_id": "CK0607/komorebi-painter-experiments",
+      "revision": "7efa353a6afb4437e3adf34c920a80ed705b62f5",
+      "path": "runs/rl-judge-matched-20261004-pro/evidence.tar.gz",
+      "bytes": 282478906,
+      "sha256": "91f45d278cc5e296b28f650180960e630a37fef9ca9c43fe1050b6e7469d3a68",
+      "private": false,
+      "anonymous_stream_hash_verified": true,
+      "selected_files_copied": 118,
+      "local_subset": "painter/runs/rl-judge-matched-20261004/local-evidence/completed/pro"
+    },
+    {
+      "repo_id": "CK0607/komorebi-painter-experiments",
+      "revision": "7efa353a6afb4437e3adf34c920a80ed705b62f5",
+      "path": "runs/rl-judge-matched-20261004-luna/evidence.tar.gz",
+      "bytes": 221573361,
+      "sha256": "2c4328b857165288ee41ba1f8929c856e8a9fbb11052ca0d3b1337e6d45acccb",
+      "private": false,
+      "anonymous_stream_hash_verified": true,
+      "selected_files_copied": 120,
+      "local_subset": "painter/runs/rl-judge-matched-20261004/local-evidence/completed/luna"
+    }
+  ]
+}

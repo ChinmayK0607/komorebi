@@ -1,0 +1,44 @@
+{
+  "schema": "matched-terminal-outcomes-v1",
+  "counts_by_arm": {
+    "baseline": {
+      "VALID TERMINAL": 15,
+      "CENSORED TERMINAL": 1
+    },
+    "flash": {
+      "VALID TERMINAL": 16
+    },
+    "pro": {
+      "VALID TERMINAL": 16
+    },
+    "luna": {
+      "VALID TERMINAL": 14,
+      "INVALID TERMINAL": 2
+    }
+  },
+  "failures": [
+    {
+      "case_id": "t600-523",
+      "arm_id": "luna",
+      "status": "INVALID TERMINAL",
+      "terminal_turn": 3,
+      "error": "['number 433.2170328949586 is not iterable (cannot read property Symbol(Symbol.iterator))', 'TypeError: number 433.2170328949586 is not iterable (cannot read property Symbol(Symbol.iterator))']; number 433.2170328949586 is not iterable (cannot read property Symbol(Symbol.iterator)); TypeError: number 433.2170328949586 is not iterable (cannot read property Symbol(Symbol.iterator))"
+    },
+    {
+      "case_id": "t600-423",
+      "arm_id": "baseline",
+      "status": "CENSORED TERMINAL",
+      "terminal_turn": 3,
+      "error": "terminal action was valid but no verified terminal PNG is available"
+    },
+    {
+      "case_id": "t600-339",
+      "arm_id": "luna",
+      "status": "INVALID TERMINAL",
+      "terminal_turn": 3,
+      "error": "[\"No brush or color set. Call brush.set('brushName', color) before drawing.\", \"Error: No brush or color set. Call brush.set('brushName', color) before drawing.\"]; No brush or color set. Call brush.set('brushName', color) before drawing.; Error: No brush or color set. Call brush.set('brushName', color) before drawing."
+    }
+  ],
+  "all_displayed_image_links_exist": true,
+  "scope": "Terminal action and verified PNG validity; not visual quality scores."
+}

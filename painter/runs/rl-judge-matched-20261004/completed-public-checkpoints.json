@@ -1,0 +1,44 @@
+{
+  "schema": "matched-completed-checkpoints-v1",
+  "checkpoints": [
+    {
+      "arm": "flash",
+      "step": 12,
+      "repo_id": "CK0607/qwen3.8-27b-brush-painting",
+      "revision": "1227a2427a8ae16014d2fdca4d1adb6855d3fa1c",
+      "path": "rl-judge-matched-20261004-flash/step_12/adapter_model.safetensors",
+      "sha256": "c70c47ec0d6d7172b3bc25c4f54178919cf7c079cd9652fff3bc76db9e1eca79",
+      "bytes": 233590600,
+      "private": false,
+      "verification_scope": "Anonymous pinned HF/LFS metadata; compare with archived upload receipts after collection.",
+      "archived_upload_receipt_hash_matches_public_lfs": true,
+      "upload_revision": "a9566118df43ec92568472e23b1552946b01bd15"
+    },
+    {
+      "arm": "pro",
+      "step": 12,
+      "repo_id": "CK0607/qwen3.8-27b-brush-painting",
+      "revision": "1227a2427a8ae16014d2fdca4d1adb6855d3fa1c",
+      "path": "rl-judge-matched-20261004-pro/step_12/adapter_model.safetensors",
+      "sha256": "cb8a5dc02ae13df22b2744d6c21f40f2b981c573ceaa102f9f3976ef80e16036",
+      "bytes": 233590600,
+      "private": false,
+      "verification_scope": "Anonymous pinned HF/LFS metadata; compare with archived upload receipts after collection.",
+      "archived_upload_receipt_hash_matches_public_lfs": true,
+      "upload_revision": "4c59af7d1ef96ce0768985f83ce447a0d3ad9713"
+    },
+    {
+      "arm": "luna",
+      "step": 12,
+      "repo_id": "CK0607/qwen3.8-27b-brush-painting",
+      "revision": "1227a2427a8ae16014d2fdca4d1adb6855d3fa1c",
+      "path": "rl-judge-matched-20261004-luna/step_12/adapter_model.safetensors",
+      "sha256": "042424b3e5b20dab23e4ebd147d91351bdb110330381d312196303a833f5eb9a",
+      "bytes": 233590600,
+      "private": false,
+      "verification_scope": "Anonymous pinned HF/LFS metadata; compare with archived upload receipts after collection.",
+      "archived_upload_receipt_hash_matches_public_lfs": true,
+      "upload_revision": "1227a2427a8ae16014d2fdca4d1adb6855d3fa1c"
+    }
+  ]
+}
