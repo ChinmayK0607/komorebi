@@ -1,0 +1,19 @@
+{
+  "schema": "structured-flow-attempt-failure-v1",
+  "attempt": 1,
+  "status": "failed_before_learning_released",
+  "failure_stage": "renderer_browser_sandbox_smoke",
+  "error": "Chromium startup ended with SIGTRAP; current helper retained only log tail, root cause not yet established",
+  "actual_sft_updates": 0,
+  "actual_rl_updates": 0,
+  "source_commit": "14719a8a9b4f446204ed8380726f6948f24179f0",
+  "rental_clock_seconds_estimate": 139.58,
+  "gpu_cost_usd_estimate": 0.1442,
+  "cost_basis": "allocation timestamp through release receipt mtime; excludes API; not provider invoice",
+  "provider_absence_confirmed": true,
+  "public_failure_archive_hash_verified_by_controller": true,
+  "next_decision": "retain complete browser diagnostic before retry; renderer sandbox stays enabled",
+  "retry_gpu_cap_usd": 19.5,
+  "prior_attempt_gpu_reserve_usd": 0.5,
+  "cumulative_gpu_cap_usd": 20
+}
