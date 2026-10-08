@@ -69,7 +69,9 @@
     "exact_four_way_case_json_match": true,
     "all_displayed_image_links_exist": true,
     "terminal_png_sha_verified": true,
-    "invalid_or_missing_trace_does_not_promote_prior_canvas": true
+    "invalid_or_missing_trace_does_not_promote_prior_canvas": true,
+    "layout": "Fixed four-way RL16/Flash/Pro/Luna; wide4columns, medium2x2, small1column; imageopen/zoom links preserved.",
+    "layout_update_focused_tests_passed": 3
   },
   "next_decision": "Inspect fixed-label paired paintings to choose judge and checkpoint; diagnose invalid/censored final actions. Do not launch another GPU run until next direction agreed.",
   "scheduled_task_created": false

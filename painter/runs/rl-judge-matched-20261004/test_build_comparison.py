@@ -74,7 +74,8 @@ class MatchedComparisonBuilderTests(unittest.TestCase):
         self.assertTrue(all(row["image"].startswith("../completed/") for row in first_rows))
         page = self.output.read_text(encoding="utf-8")
         self.assertIn("Paint a small paper fan.", page)
-        self.assertIn("Pairwise comparison", page)
+        self.assertIn('class="grid"', page)
+        self.assertIn("View all four results at full size", page)
         self.assertIn("RL • Luna judge • 12 updates", page)
 
     def test_invalid_native_terminal_never_promotes_prior_image(self) -> None:
