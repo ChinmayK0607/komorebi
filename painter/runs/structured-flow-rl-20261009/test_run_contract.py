@@ -402,6 +402,11 @@ mv "$flow_tmp" "$run_root/flow-supervision-build.json"
             renderer_python.write_text("#!/bin/sh\n")
             browsers = root / "browsers"
             browsers.mkdir()
+            node_bin = root / "sdk-node/bin"
+            node_bin.mkdir(parents=True)
+            node = node_bin / "node"
+            node.write_text("#!/bin/sh\n[ \"$1\" = \"--check\" ]\n")
+            node.chmod(0o755)
             renderer_sha = helper._sha256(renderer)
             asset_map = {
                 path.relative_to(assets).as_posix(): helper._sha256(path)
@@ -413,6 +418,9 @@ mv "$flow_tmp" "$run_root/flow-supervision-build.json"
             ).hexdigest()
             captured = {}
 
+            real_run = subprocess.run
+            real_which = helper.shutil.which
+
             def fake_run(command, *, cwd, env, **kwargs):
                 captured.update({"command": command, "cwd": cwd, "env": dict(env), "kwargs": kwargs})
                 nested_root = Path(command[3])
@@ -420,6 +428,14 @@ mv "$flow_tmp" "$run_root/flow-supervision-build.json"
                 probe_source = Path(command[5])
                 selected_renderer = Path(command[6])
                 row_path = Path(command[8])
+                node_check = real_run(
+                    ["node", "--check", str(probe_source)],
+                    env=env,
+                    capture_output=True,
+                    text=True,
+                    check=False,
+                )
+                self.assertEqual(node_check.returncode, 0, node_check.stderr)
                 native_source = native_folder / "program.js"
                 native_source.write_text(probe_source.read_text())
                 output = native_folder / "painting.png"
@@ -435,9 +451,15 @@ mv "$flow_tmp" "$run_root/flow-supervision-build.json"
                 self.assertTrue(nested_root.is_dir())
                 return subprocess.CompletedProcess(command, 0, "", "")
 
-            with mock.patch.dict(os.environ, {"AMBIENT_CANARY_SECRET": "must-not-cross"}, clear=False), \
+            def which(name):
+                return None if name == "runuser" else real_which(name)
+
+            with mock.patch.dict(os.environ, {
+                     "AMBIENT_CANARY_SECRET": "must-not-cross",
+                     "PATH": str(node_bin) + os.pathsep + os.environ.get("PATH", ""),
+                 }, clear=False), \
                  mock.patch.object(helper.sys, "platform", "linux"), \
-                 mock.patch.object(helper.shutil, "which", return_value=None), \
+                 mock.patch.object(helper.shutil, "which", side_effect=which), \
                  mock.patch.object(helper.subprocess, "run", side_effect=fake_run):
                 result = helper.render_probe(
                     run_root=run_root,
@@ -452,6 +474,7 @@ mv "$flow_tmp" "$run_root/flow-supervision-build.json"
             self.assertEqual(captured["env"]["PLAYWRIGHT_BROWSERS_PATH"], str(browsers.resolve()))
             self.assertNotIn("AMBIENT_CANARY_SECRET", captured["env"])
             self.assertEqual(captured["env"]["PYTHONPATH"], str(Path(__file__).resolve().parents[3]))
+            self.assertEqual(captured["env"]["PATH"].split(os.pathsep)[0], str(node_bin.resolve()))
             self.assertIn("timeout", captured["kwargs"])
             self.assertEqual(result["nested_root"], str((run_root / "runtime/native-render-probe/nested-attempt").resolve()))
 
@@ -504,6 +527,41 @@ mv "$flow_tmp" "$run_root/flow-supervision-build.json"
             self.assertFalse(wrong_marker.exists())
             prepare = (RUN / "prepare_node.sh").read_text()
             self.assertIn('"$PY_PRIME" "$RUN/prepare_structured_config.py"', prepare)
+
+    def test_render_probe_preserves_byte_timeout_diagnostics(self):
+        helper = load("structured_flow_renderer_timeout_contract", RUN / "prepare_renderer_runtime.py")
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            renderer_root = root / "renderer"
+            (renderer_root / "assets").mkdir(parents=True)
+            renderer = renderer_root / "renderer.py"
+            renderer.write_text("# pinned renderer fixture\n")
+            renderer_python = root / "prime-python"
+            renderer_python.write_text("#!/bin/sh\n")
+            browsers = root / "browsers"
+            browsers.mkdir()
+            node = root / "node"
+            node.write_text("#!/bin/sh\n")
+            with mock.patch.object(helper.sys, "platform", "linux"), \
+                 mock.patch.object(helper, "_resolve_node_executable", return_value=node), \
+                 mock.patch.object(
+                     helper.subprocess,
+                     "run",
+                     side_effect=subprocess.TimeoutExpired(["prime"], 240, output=b"partial out", stderr=b"partial err"),
+                 ):
+                with self.assertRaisesRegex(RuntimeError, "evidence preserved"):
+                    helper.render_probe(
+                        run_root=root / "run",
+                        renderer=renderer,
+                        renderer_python=renderer_python,
+                        browsers=browsers,
+                        expected_renderer_sha256=helper._sha256(renderer),
+                    )
+            probe_root = root / "run/runtime/native-render-probe"
+            self.assertEqual((probe_root / "renderer.stdout.log").read_text(), "partial out")
+            self.assertEqual((probe_root / "renderer.stderr.log").read_text(), "partial err")
+            receipt = json.loads((probe_root / "renderer-probe-receipt.json").read_text())
+            self.assertEqual(receipt["status"], "censored_invalid")
 
     def test_shell_scripts_compile(self):
         scripts = ["runtime_env.sh", "prepare_node.sh", "run.sh", "execute_single.sh", "execute_pipeline.sh", "evaluate.sh", "finalize.sh", "matched_baseline.sh"]

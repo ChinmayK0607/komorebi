@@ -42,6 +42,14 @@ def _lines(value: str | bytes | None) -> list[str]:
     return [line.strip() for line in str(value).splitlines() if line.strip()]
 
 
+def _text(value: str | bytes | None) -> str:
+    if value is None:
+        return ""
+    if isinstance(value, bytes):
+        return value.decode("utf-8", errors="replace")
+    return str(value)
+
+
 def _write_json(path: Path, value: object) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_name(path.name + f".{os.getpid()}.tmp")
@@ -215,6 +223,17 @@ def _probe_write_json(path: Path, value: object) -> None:
         pass
 
 
+def _resolve_node_executable() -> Path:
+    """Resolve the node binary before constructing the secret-free env."""
+    selected = shutil.which("node")
+    if not selected:
+        raise RuntimeError("renderer probe requires Node.js for the syntax preflight")
+    node = Path(selected).expanduser().resolve()
+    if not node.is_file() or not os.access(node, os.X_OK):
+        raise RuntimeError(f"resolved Node.js executable is not runnable: {node}")
+    return node
+
+
 def render_probe(
     *,
     run_root: Path,
@@ -255,6 +274,7 @@ def render_probe(
     ).hexdigest()
     if expected_assets_sha256 is not None and assets_sha256 != expected_assets_sha256:
         raise RuntimeError("renderer probe asset map hash does not match the pinned renderer assets")
+    node = _resolve_node_executable()
     probe_root = run_root / "runtime" / "native-render-probe"
     source = probe_root / "probe.js"
     nested_root = probe_root / "nested-attempt"
@@ -295,8 +315,13 @@ def render_probe(
     # use os.environ.copy(): inherited model/API tokens must not cross this
     # boundary.
     repo_root = Path(__file__).resolve().parents[3]
+    # Keep the controller-selected Node binary available to the native
+    # syntax preflight even when it lives in the image SDK or Prime toolchain.
+    # Only this verified parent directory is admitted; no ambient PATH is
+    # copied into the child environment.
+    safe_path = os.pathsep.join(dict.fromkeys((str(node.parent), "/usr/local/bin", "/usr/bin", "/bin")))
     environment = {
-        "PATH": "/usr/local/bin:/usr/bin:/bin",
+        "PATH": safe_path,
         "PYTHONPATH": str(repo_root),
         "PAINTER_BROWSER_ROOT": str(browsers),
         "PLAYWRIGHT_BROWSERS_PATH": str(browsers),
@@ -350,12 +375,12 @@ if not row.get("valid"):
             timeout=240,
             check=False,
         )
-        stdout = completed.stdout or ""
-        stderr = completed.stderr or ""
+        stdout = _text(completed.stdout)
+        stderr = _text(completed.stderr)
     except subprocess.TimeoutExpired as exc:
-        completed = subprocess.CompletedProcess(command, returncode=None, stdout=exc.stdout or "", stderr=exc.stderr or "")
-        stdout = completed.stdout or ""
-        stderr = completed.stderr or ""
+        stdout = _text(exc.stdout)
+        stderr = _text(exc.stderr)
+        completed = subprocess.CompletedProcess(command, returncode=None, stdout=stdout, stderr=stderr)
     except Exception as exc:
         completed = subprocess.CompletedProcess(command, returncode=None, stdout="", stderr=f"{type(exc).__name__}: {exc}")
         stdout = ""
@@ -371,6 +396,8 @@ if not row.get("valid"):
         "renderer_sha256": actual_renderer_sha256,
         "assets_sha256": assets_sha256,
         "renderer_python": str(renderer_python),
+        "node": str(node),
+        "node_sha256": _sha256(node),
         "browser_root": str(browsers),
         "source": str(native_source),
         "source_sha256": _sha256(native_source) if native_source.is_file() else None,

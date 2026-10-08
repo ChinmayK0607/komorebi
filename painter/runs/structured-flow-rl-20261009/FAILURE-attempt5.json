@@ -1,0 +1,23 @@
+{
+  "schema": "structured-flow-failure-v1",
+  "attempt": 5,
+  "source_commit": "1714ad78d62135971ad756fc39598e8a09d508c5",
+  "cause": "The nested native render probe enabled JS syntax validation but its sanitized PATH omitted the image-installed Node.js directory.",
+  "scope": {
+    "qwen_serving_started": false,
+    "policy_generations": 0,
+    "sft_optimizer_updates": 0,
+    "rl_optimizer_updates": 0
+  },
+  "public_evidence_proof": "FAILURE_PUBLIC-attempt5.json",
+  "allocation_status": "released",
+  "exact_run_pod_absence_confirmed": true,
+  "gpu_clock_estimate_usd": 0.2158,
+  "cost_window_seconds": 208.81,
+  "cost_basis": "rental start through controller release-request log timestamp; not invoice, excludes API",
+  "cumulative_gpu_clock_estimate_usd": 1.5943,
+  "retry_allowance_usd": 18.0,
+  "conservative_prior_start_reserve_usd": 2.0,
+  "gpu_utilization": "not measured for this failed preparation-only attempt",
+  "next_decision": "Resolve the trusted installed Node executable before constructing sanitized PATH; test an actual node --check invocation from a nonstandard binary directory, then fresh native rendering before Qwen serving."
+}
