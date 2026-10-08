@@ -143,11 +143,82 @@ class StructuredFlowRunTests(unittest.TestCase):
         prepare = (RUN / "prepare_node.sh").read_text()
         evaluator = (RUN / "evaluate.sh").read_text()
         self.assertIn('prepare_curriculum.py" build --output "$RUN/curriculum"', prepare)
+        self.assertIn('CURRICULUM_BUILD_TMP="$RUN/.curriculum-build.json.$$"', prepare)
+        self.assertNotIn('>"$RUN/curriculum/build.json"', prepare)
+        self.assertIn('FLOW_BUILD_TMP="$RUN/.flow-supervision-build.json.$$"', prepare)
+        self.assertNotIn('>"$SUPERVISION_ROOT/build.json"', prepare)
         self.assertNotIn('flow_demonstrations.py" render', prepare)
         self.assertIn('supervision_phase.py" --data', prepare)
         self.assertIn('PAINTER_PRIME_ROLE=orchestrator', evaluator)
         self.assertIn('PAINTER_STRUCTURED_FLOW_POLICY=1', evaluator)
         self.assertIn('PYTHONPATH="$REPO:$REPO/painter:$RUN"', evaluator)
+
+    def test_clean_tracked_source_builds_receipts_outside_strict_output_dirs(self):
+        """Exercise the actual builders with the same shell redirection shape.
+
+        A shell creates a redirection target before Python starts.  The
+        curriculum builder intentionally rejects a non-empty output directory,
+        so this test catches a regression where the node script puts its own
+        receipt below that directory.  The source files are read from the
+        tracked run tree rather than reimplemented in a string-only fixture.
+        """
+        repo = Path(subprocess.check_output(
+            ["git", "rev-parse", "--show-toplevel"], cwd=RUN, text=True
+        ).strip())
+        tracked = subprocess.run(
+            ["git", "ls-files", "--error-unmatch", str(RUN.relative_to(repo) / "prepare_curriculum.py")],
+            cwd=repo,
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(tracked.returncode, 0, tracked.stderr)
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / "clean-run"
+            root.mkdir()
+            script = RUN / "prepare_curriculum.py"
+            flow_script = RUN / "flow_demonstrations.py"
+            builder = f'''set -eu
+run_root="$1"
+python="$2"
+curriculum_builder="$3"
+flow_builder="$4"
+mkdir -p "$run_root/curriculum"
+curriculum_tmp="$run_root/.curriculum-build.json.$$"
+"$python" "$curriculum_builder" build --output "$run_root/curriculum" >"$curriculum_tmp"
+mv "$curriculum_tmp" "$run_root/curriculum-build.json"
+mkdir -p "$run_root/code-supervision"
+flow_tmp="$run_root/.flow-supervision-build.json.$$"
+"$python" "$flow_builder" build --output "$run_root/code-supervision" >"$flow_tmp"
+mv "$flow_tmp" "$run_root/flow-supervision-build.json"
+'''
+            result = subprocess.run(
+                ["bash", "-c", builder, "builder", str(root), sys.executable, str(script), str(flow_script)],
+                cwd=repo,
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertTrue((root / "curriculum/train-proposal.json").is_file())
+            self.assertTrue((root / "curriculum/heldout-proposal.json").is_file())
+            self.assertEqual(json.loads((root / "curriculum-build.json").read_text())["status"], "prepared_unrendered")
+            self.assertTrue((root / "code-supervision/manifest.json").is_file())
+            self.assertTrue((root / "flow-supervision-build.json").is_file())
+            self.assertEqual(list(root.glob(".curriculum-build.json.*")), [])
+            self.assertEqual(list(root.glob(".flow-supervision-build.json.*")), [])
+
+            protected = root / "protected-curriculum"
+            protected.mkdir()
+            sentinel = protected / "operator-note.txt"
+            sentinel.write_text("preserve this file\n")
+            refused = subprocess.run(
+                [sys.executable, str(script), "build", "--output", str(protected)],
+                cwd=repo,
+                capture_output=True,
+                text=True,
+            )
+            self.assertNotEqual(refused.returncode, 0)
+            self.assertIn("refusing to overwrite non-empty output", refused.stderr)
+            self.assertEqual(sentinel.read_text(), "preserve this file\n")
 
     def test_warmup_upload_has_a_run_scoped_public_destination(self):
         runtime = (RUN / "runtime_env.sh").read_text()

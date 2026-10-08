@@ -250,9 +250,19 @@ if [[ ! -f "$TRAIN_PROPOSAL" || ! -f "$HELDOUT_PROPOSAL" ]]; then
   # deterministic 240/60 proposal pool on the node before admitting the
   # bounded 32/16 pilot; no GPU or anchor generation is involved here.
   mkdir -p "$RUN/curriculum"
-  PYTHONPATH="$REPO:$REPO/painter:$RUN${PYTHONPATH:+:$PYTHONPATH}" \
+  # Keep the stdout receipt outside the strict output directory.  The shell
+  # opens a redirection target before Python starts; placing it below
+  # $RUN/curriculum would make the clean directory non-empty and correctly
+  # trigger prepare_curriculum.py's refusal to overwrite an existing tree.
+  CURRICULUM_BUILD_TMP="$RUN/.curriculum-build.json.$$"
+  if PYTHONPATH="$REPO:$REPO/painter:$RUN${PYTHONPATH:+:$PYTHONPATH}" \
     "$PY_BOOT" "$RUN/prepare_curriculum.py" build --output "$RUN/curriculum" \
-    >"$RUN/curriculum/build.json"
+    >"$CURRICULUM_BUILD_TMP"; then
+    mv "$CURRICULUM_BUILD_TMP" "${PAINTER_CURRICULUM_BUILD_RECEIPT:-$RUN/curriculum-build.json}"
+  else
+    rm -f "$CURRICULUM_BUILD_TMP"
+    exit 1
+  fi
 fi
 [[ -f "$TRAIN_PROPOSAL" && -f "$HELDOUT_PROPOSAL" ]] || {
   echo 'structured-flow train/heldout proposals are missing' >&2; exit 1;
@@ -321,9 +331,18 @@ if [[ "$PAINTER_CODE_SUPERVISION_ENABLED" == 1 && "$PAINTER_RUN_SUPERVISION" == 
   FLOW_PHASE_RECEIPT="$SUPERVISION_ROOT/supervision-phase.json"
   mkdir -p "$SUPERVISION_ROOT"
   if [[ ! -f "$FLOW_SOURCE_MANIFEST" ]]; then
-    PYTHONPATH="$REPO:$REPO/painter:$RUN${PYTHONPATH:+:$PYTHONPATH}" \
+    # Apply the same outside-the-output-directory rule as the curriculum
+    # builder.  This keeps retries and clean-node preparation deterministic
+    # even when flow_demonstrations.py later grows a strict output guard.
+    FLOW_BUILD_TMP="$RUN/.flow-supervision-build.json.$$"
+    if PYTHONPATH="$REPO:$REPO/painter:$RUN${PYTHONPATH:+:$PYTHONPATH}" \
       "$PY_BOOT" "$RUN/flow_demonstrations.py" build --output "$SUPERVISION_ROOT" \
-      >"$SUPERVISION_ROOT/build.json"
+      >"$FLOW_BUILD_TMP"; then
+      mv "$FLOW_BUILD_TMP" "${PAINTER_FLOW_BUILD_RECEIPT:-$RUN/flow-supervision-build.json}"
+    else
+      rm -f "$FLOW_BUILD_TMP"
+      exit 1
+    fi
   fi
   if [[ ! -f "$FLOW_PHASE_RECEIPT" || ! -s "$SUPERVISION_ROOT/train.jsonl" || ! -s "$SUPERVISION_ROOT/dev.jsonl" ]]; then
     GATEWAY="$PAINTER_GATEWAY_ENV_FILE"

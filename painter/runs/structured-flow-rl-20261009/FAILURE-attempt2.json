@@ -1,0 +1,17 @@
+{
+  "schema": "structured-flow-failure-v1",
+  "attempt": 2,
+  "status": "released",
+  "completed_optimizer_updates": 0,
+  "browser_sandbox_smoke": "passed",
+  "failure": "builder stdout redirection creates curriculum/build.json before build_proposal checks for an empty output directory",
+  "source_commit": "74256cd850a27f57ac246c5327b1d36958becf65",
+  "gpu_clock_seconds": 209.21,
+  "estimated_gpu_cost_usd": 0.2162,
+  "cost_basis": "rental start to final release receipt; estimate, not provider invoice; API excluded",
+  "total_attempt1_and_2_estimated_gpu_usd": 0.3604,
+  "public_evidence_receipt": "FAILURE_PUBLIC-attempt2.json",
+  "next_decision": "fix fresh-directory stdout path and execute fresh-source integration checks before retry",
+  "retry_cap_usd": 19.5,
+  "prior_attempt_reserve_usd": 0.5
+}
