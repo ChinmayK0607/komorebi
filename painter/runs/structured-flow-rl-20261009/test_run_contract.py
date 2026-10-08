@@ -220,6 +220,32 @@ class StructuredFlowRunTests(unittest.TestCase):
                     cap_usd=0.50,
                 )
 
+    def test_controller_forwards_opt_in_pinned_anchor_restore(self):
+        operator = load("structured_flow_operation_restore_contract", RUN / "operate_single.py")
+        environment = {
+            "PAINTER_RESTORE_ANCHOR_EVIDENCE": "1",
+            "PAINTER_ANCHOR_EVIDENCE_SHA256": "a" * 64,
+            "PAINTER_ANCHOR_EVIDENCE_URL": "https://huggingface.co/datasets/CK0607/komorebi-painter-experiments/resolve/revision/runs/structured-flow-rl-20261009/evidence.tar.gz",
+        }
+        with mock.patch.dict(os.environ, environment, clear=False):
+            command = operator._detached_job_command(
+                source_commit="a" * 40,
+                rental_start_epoch=100.0,
+                price_usd_per_hour=3.70,
+                cap_usd=0.50,
+            )
+        self.assertIn("PAINTER_RESTORE_ANCHOR_EVIDENCE=1", command)
+        self.assertIn("PAINTER_ANCHOR_EVIDENCE_SHA256=" + "a" * 64, command)
+        self.assertIn("PAINTER_ANCHOR_EVIDENCE_URL=https://huggingface.co/", command)
+        with mock.patch.dict(os.environ, {"PAINTER_RESTORE_ANCHOR_EVIDENCE": "1", "PAINTER_ANCHOR_EVIDENCE_URL": "https://example.com/a"}, clear=False):
+            with self.assertRaises(ValueError):
+                operator._detached_job_command(
+                    source_commit="a" * 40,
+                    rental_start_epoch=100.0,
+                    price_usd_per_hour=3.70,
+                    cap_usd=0.50,
+                )
+
     def test_node_builds_missing_proposals_and_evaluator_preserves_flow_hook(self):
         prepare = (RUN / "prepare_node.sh").read_text()
         evaluator = (RUN / "evaluate.sh").read_text()
@@ -228,6 +254,8 @@ class StructuredFlowRunTests(unittest.TestCase):
         self.assertNotIn('>"$RUN/curriculum/build.json"', prepare)
         self.assertIn('FLOW_BUILD_TMP="$RUN/.flow-supervision-build.json.$$"', prepare)
         self.assertNotIn('>"$SUPERVISION_ROOT/build.json"', prepare)
+        self.assertIn('restore_anchor_evidence.py', prepare)
+        self.assertLess(prepare.index('restore_anchor_evidence.py'), prepare.index('anchor_bank.py" prepare-lazy'))
         self.assertNotIn('flow_demonstrations.py" render', prepare)
         self.assertIn('supervision_phase.py" --data', prepare)
         self.assertIn('PAINTER_PRIME_ROLE=orchestrator', evaluator)
@@ -433,7 +461,123 @@ mv "$flow_tmp" "$run_root/flow-supervision-build.json"
             self.assertEqual(captured["env"]["PAINTER_BROWSER_ROOT"], str(browser_root.resolve()))
             self.assertEqual(captured["env"]["PLAYWRIGHT_BROWSERS_PATH"], str(browser_root.resolve()))
             self.assertNotIn("wrong-browsers", captured["env"]["PLAYWRIGHT_BROWSERS_PATH"])
+            self.assertEqual(captured["env"]["PAINTER_ANCHOR_REQUIRE_NO_LOOP"], "1")
+            self.assertIn(str(RUN), captured["env"]["PYTHONPATH"].split(os.pathsep))
             self.assertEqual(captured["command"][0], str(eval_bin.resolve()))
+
+    def test_anchor_no_loop_guard_rejects_unbounded_program_before_renderer(self):
+        guard = load("structured_flow_anchor_no_loop_guard_contract", RUN / "anchor_no_loop_guard.py")
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            invalid = root / "invalid.js"
+            invalid.write_text("function draw(){background('white');}\n")
+            valid = root / "valid.js"
+            valid.write_text("function draw(){background('white');noLoop();}\n")
+            self.assertIn("noLoop", guard.no_loop_error(invalid) or "")
+            self.assertIsNone(guard.no_loop_error(valid))
+        sitecustomize = (RUN / "sitecustomize.py").read_text()
+        self.assertIn("PAINTER_ANCHOR_REQUIRE_NO_LOOP", sitecustomize)
+
+    def test_anchor_batch_resamples_only_model_invalid_cases_once(self):
+        bank = load("structured_flow_anchor_resample_contract", RUN / "anchor_bank.py")
+        rows = [
+            {"id": "bad", "source_group": "bad", "reference": "bad.txt"},
+            {"id": "good", "source_group": "good", "reference": "good.txt"},
+        ]
+        calls = []
+
+        def fake_batch(batch_rows, **kwargs):
+            retry_index = kwargs["retry_index"]
+            failures = kwargs["failed_cases"]
+            calls.append((retry_index, [row["id"] for row in batch_rows], kwargs["workers"]))
+            if retry_index == 0:
+                failures["bad"] = {"status": "invalid_model_output", "case_id": "bad", "case_seed": 11, "retry_index": 0}
+                return {"good": {"valid": True}}
+            failures["bad"] = {"status": "invalid_model_output", "case_id": "bad", "case_seed": 12, "retry_index": 1}
+            return {}
+
+        with mock.patch.object(bank, "_batch_native_generation", side_effect=fake_batch):
+            provenance, failures = bank._batch_with_bounded_resample(
+                rows,
+                anchor_root=Path("/tmp/anchors"),
+                receipt_root=Path("/tmp/anchors/native-generation"),
+                proposal_root=Path("/tmp/proposal"),
+                run_root=Path("/tmp/run"),
+                workers=8,
+            )
+        self.assertEqual(calls, [(0, ["bad", "good"], 2), (1, ["bad"], 1)])
+        self.assertEqual(sorted(provenance), ["good"])
+        self.assertEqual(failures["bad"]["initial"]["case_seed"], 11)
+        self.assertEqual(failures["bad"]["retry"]["case_seed"], 12)
+
+    def test_anchor_resume_reuses_valid_paid_case_and_retries_only_invalid_case(self):
+        bank = load("structured_flow_anchor_resume_contract", RUN / "anchor_bank.py")
+        rows = [
+            {"id": "bad", "source_group": "bad", "reference": "bad.txt"},
+            {"id": "good", "source_group": "good", "reference": "good.txt"},
+        ]
+        calls = []
+        resumed = {
+            "good": {"valid": True, "generation_mode": "resumed_paid_batch"},
+        }
+        resumed_failures = {
+            "bad": {"status": "invalid_model_output", "case_id": "bad", "retry_index": 0, "case_seed": 7},
+        }
+
+        def fake_batch(batch_rows, **kwargs):
+            calls.append((kwargs["retry_index"], [row["id"] for row in batch_rows]))
+            self.assertEqual(kwargs["retry_index"], 1)
+            kwargs["failed_cases"].clear()
+            return {"bad": {"valid": True, "generation_mode": "resampled_paid_batch"}}
+
+        with mock.patch.object(bank, "_resume_existing_batches", return_value=(resumed, resumed_failures)), \
+             mock.patch.object(bank, "_batch_native_generation", side_effect=fake_batch):
+            provenance, failures = bank._batch_with_bounded_resample(
+                rows,
+                anchor_root=Path("/tmp/anchors"),
+                receipt_root=Path("/tmp/anchors/native-generation"),
+                proposal_root=Path("/tmp/proposal"),
+                run_root=Path("/tmp/run"),
+                workers=8,
+            )
+        self.assertEqual(calls, [(1, ["bad"])])
+        self.assertEqual(sorted(provenance), ["bad", "good"])
+        self.assertEqual(failures, {})
+
+    def test_anchor_retry_zero_keeps_canonical_case_seed(self):
+        bank = load("structured_flow_anchor_seed_contract", RUN / "anchor_bank.py")
+        reference_sha = "a" * 64
+        canonical = int.from_bytes(
+            hashlib.sha256(f"20261009:group:{reference_sha}".encode()).digest()[:8],
+            "big",
+        ) & ((1 << 63) - 1)
+        self.assertEqual(bank.deterministic_anchor_seed("group", reference_sha), canonical)
+        self.assertNotEqual(bank.deterministic_anchor_seed("group", reference_sha), bank.deterministic_anchor_seed("group", reference_sha, 1))
+
+    def test_anchor_receipt_records_native_current_canvas_terminal_semantics(self):
+        bank = load("structured_flow_anchor_terminal_contract", RUN / "anchor_bank.py")
+        trace = {
+            "task": {"data": {"task_id": "case-02"}},
+            "info": {
+                "task_id": "case-02",
+                "final_canvas": "/evidence/turn-2/painting.png",
+                "final_canvas_valid": True,
+                "operational_cutoff": True,
+                "turns": [
+                    {"turn": 1, "action": "paint", "valid": True, "canvas": "/evidence/turn-1/painting.png"},
+                    {"turn": 2, "action": "paint", "valid": False, "failure_kind": "program"},
+                    {"turn": 3, "action": "paint", "valid": False, "failure_kind": "program"},
+                ],
+            },
+        }
+        metadata = bank._terminal_metadata(([trace], [], []), "case-02")
+        self.assertEqual(metadata["terminal_canvas_policy"], "native_current_canvas_at_episode_end")
+        self.assertTrue(metadata["final_canvas_valid"])
+        self.assertEqual(metadata["last_action_valid"], False)
+        self.assertEqual(metadata["last_valid_canvas_turn"], 1)
+        self.assertEqual(metadata["last_valid_canvas_reference"], "/evidence/turn-1/painting.png")
+        self.assertEqual([row["turn"] for row in metadata["invalid_turns"]], [2, 3])
+        self.assertEqual(metadata["terminal_canvas_reference"], "/evidence/turn-2/painting.png")
 
     def test_browser_probe_precedes_bootstrap_and_preserves_sandbox_diagnostics(self):
         prepare = (RUN / "prepare_node.sh").read_text()

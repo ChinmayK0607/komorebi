@@ -14,3 +14,9 @@ if __import__("os").environ.get("PAINTER_PRIME_ROLE") == "orchestrator":
     result = install()
     if __import__("os").environ.get("PAINTER_STRUCTURED_FLOW_POLICY") == "1" and not result.get("installed"):
         raise RuntimeError(f"structured-flow prompt hook did not install: {result}")
+
+if __import__("os").environ.get("PAINTER_ANCHOR_REQUIRE_NO_LOOP") == "1":
+    from anchor_no_loop_guard import install
+    result = install()
+    if not result.get("installed"):
+        raise RuntimeError(f"anchor noLoop guard did not install: {result}")

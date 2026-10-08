@@ -1,0 +1,49 @@
+{
+  "schema": "structured-flow-paid-anchor-recovery-review-v1",
+  "original_generation_source": "43d8f4f0b5a4ae7ed588e7b01e95c02bf93248dc",
+  "paid_archive_proof": "FAILURE_PUBLIC-attempt8.json",
+  "reuse_scope": "46 valid native terminal current canvases; only two invalid_model_output cases resampled once",
+  "frozen_anchor_canvas_policy": "Existing native_current_canvas_at_episode_end; retained valid canvases and later failed actions are explicitly recorded. This does not assert strict last-action validity.",
+  "changes": [
+    "Restore only hash-bound anchor evidence, preserving original source archive identity; no weights or credentials restored.",
+    "Canonical original seeds retained; distinct registered retry seeds for invalid cases.",
+    "Trace stream parsed once per batch; same canonical selection semantics.",
+    "Missing noLoop rejected before Chromium for frozen-anchor resamples; FINISHED unchanged.",
+    "Fresh/resumed provenance records terminal action validity and retained canvas turn."
+  ],
+  "parent_verification": {
+    "structured_flow_tests": 65,
+    "frozen_opponent_tests": 14,
+    "shell_syntax": "passed",
+    "diff_check": "passed",
+    "independent_public_download_sha": "0c7fac0092ebdb94eb4f1e32d7d4df6a91e0d4908bf14ab7a0cc2ff476510266",
+    "archive_episode_count": 48,
+    "archive_final_current_canvas_valid_count": 46
+  },
+  "agent_actual_archive_restore_check": {
+    "evidence_files": 384,
+    "resumed_valid_cases": 46,
+    "invalid_cases": [
+      "sf-s2-he-connected-key-03",
+      "sf-s2-tr-connected-bicycle-00"
+    ],
+    "idempotent": true
+  },
+  "next_attempt_allowance_usd": 16,
+  "prior_reserve_usd": 4,
+  "cumulative_gpu_ceiling_usd": 20,
+  "recipe_changed": false,
+  "optimizer_updates_so_far": 0,
+  "scheduled_automation": false,
+  "reviewed_files": {
+    "painter/runs/structured-flow-rl-20261009/anchor_bank.py": "cf796633299849bbfb8b81476c0caa5aa01e2cabc0b80923b4adaa05a6a19f42",
+    "painter/runs/structured-flow-rl-20261009/anchor_no_loop_guard.py": "a862ffbf59fee69804ac8e64723b26a1fe8cad57165bdfe5c6c9620cce823e12",
+    "painter/runs/structured-flow-rl-20261009/restore_anchor_evidence.py": "d5226345f0793162a8dc2450ef838e8f192fe7d7744886da98add683f76ff865",
+    "painter/runs/structured-flow-rl-20261009/operate_single.py": "9b2a340532b3ee93f28fe059381bf3e514abae534b72d4c9ec10b2c15a0cbac9",
+    "painter/runs/structured-flow-rl-20261009/prepare_node.sh": "32e4ed54851f503b90e1014348c14808f4a47e81ea8262d5ebd69836fdc203e2",
+    "painter/runs/structured-flow-rl-20261009/sitecustomize.py": "88f6b6d4cadfe63172b993ca07cb47258d72dbb342a3029bb9f6cadf03fc84c4",
+    "painter/runs/structured-flow-rl-20261009/test_anchor_restore.py": "4f2fc8eb32a5a78450876a171f1031a4c6fd6e48a6927faa64d1e3b080b70a37",
+    "painter/runs/structured-flow-rl-20261009/test_run_contract.py": "a22fe1eb62a7eebc4e602da04102d13347321eaf5723f7d3a320e6ebe08c5242",
+    "painter/frozen_opponent.py": "35f1ea22f4f5d7ed1e335a068aeb77ef725183be1356606b79401f91670efe54"
+  }
+}

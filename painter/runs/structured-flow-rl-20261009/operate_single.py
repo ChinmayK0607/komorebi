@@ -12,6 +12,7 @@ import os
 from pathlib import Path
 import shlex
 import sys
+import urllib.parse
 
 
 RUN = Path(__file__).resolve().parent
@@ -64,6 +65,29 @@ def _detached_job_command(*, source_commit: str, rental_start_epoch: float, pric
         if not local_scratch.startswith("/"):
             raise ValueError("PAINTER_LOCAL_SCRATCH_ROOT must be absolute")
         values["PAINTER_LOCAL_SCRATCH_ROOT"] = local_scratch
+    restore = os.environ.get("PAINTER_RESTORE_ANCHOR_EVIDENCE", "0")
+    if restore not in {"0", "1"}:
+        raise ValueError("PAINTER_RESTORE_ANCHOR_EVIDENCE must be 0 or 1")
+    if restore == "1":
+        restore_sha = os.environ.get(
+            "PAINTER_ANCHOR_EVIDENCE_SHA256",
+            "0c7fac0092ebdb94eb4f1e32d7d4df6a91e0d4908bf14ab7a0cc2ff476510266",
+        )
+        if len(restore_sha) != 64 or any(char not in "0123456789abcdef" for char in restore_sha):
+            raise ValueError("PAINTER_ANCHOR_EVIDENCE_SHA256 must be lowercase hexadecimal")
+        restore_url = os.environ.get(
+            "PAINTER_ANCHOR_EVIDENCE_URL",
+            "https://huggingface.co/datasets/CK0607/komorebi-painter-experiments/resolve/"
+            "cdf16bceda0212ba94e6f3fa5cc6f92b95f3c6d6/runs/structured-flow-rl-20261009/evidence.tar.gz",
+        )
+        parsed_url = urllib.parse.urlparse(restore_url)
+        if parsed_url.scheme != "https" or parsed_url.netloc != "huggingface.co" or parsed_url.username or parsed_url.password or parsed_url.query or parsed_url.fragment:
+            raise ValueError("PAINTER_ANCHOR_EVIDENCE_URL must be a credential-free pinned HTTPS Hugging Face URL")
+        values.update({
+            "PAINTER_RESTORE_ANCHOR_EVIDENCE": "1",
+            "PAINTER_ANCHOR_EVIDENCE_SHA256": restore_sha,
+            "PAINTER_ANCHOR_EVIDENCE_URL": restore_url,
+        })
     env = " ".join(
         f"{key}={shlex.quote(value)}"
         for key, value in values.items()

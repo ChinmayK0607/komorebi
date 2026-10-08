@@ -311,6 +311,30 @@ fi
 [[ -f "$TRAIN_PROPOSAL" && -f "$HELDOUT_PROPOSAL" ]] || {
   echo 'structured-flow train/heldout proposals are missing' >&2; exit 1;
 }
+# An earlier paid native batch can be reused only through this explicit,
+# hash-pinned public-evidence restore.  The restore helper admits the anchor
+# tree and native-generation traces/manifests, refuses symlinks/traversal and
+# model material, and never overwrites a different existing file.  It is off
+# by default so a normal preparation remains independent of the archive.
+RESTORE_ANCHOR_EVIDENCE="${PAINTER_RESTORE_ANCHOR_EVIDENCE:-0}"
+[[ "$RESTORE_ANCHOR_EVIDENCE" == 0 || "$RESTORE_ANCHOR_EVIDENCE" == 1 ]] || {
+  echo 'PAINTER_RESTORE_ANCHOR_EVIDENCE must be 0 or 1' >&2; exit 1;
+}
+if [[ "$RESTORE_ANCHOR_EVIDENCE" == 1 ]]; then
+  RESTORE_SHA256="${PAINTER_ANCHOR_EVIDENCE_SHA256:-0c7fac0092ebdb94eb4f1e32d7d4df6a91e0d4908bf14ab7a0cc2ff476510266}"
+  RESTORE_URL="${PAINTER_ANCHOR_EVIDENCE_URL:-https://huggingface.co/datasets/CK0607/komorebi-painter-experiments/resolve/cdf16bceda0212ba94e6f3fa5cc6f92b95f3c6d6/runs/structured-flow-rl-20261009/evidence.tar.gz}"
+  RESTORE_SCRIPT="$RUN/restore_anchor_evidence.py"
+  [[ -f "$RESTORE_SCRIPT" ]] || { echo 'anchor evidence restore helper is missing' >&2; exit 1; }
+  RESTORE_ARGS=(--run-root "$RUN" --sha256 "$RESTORE_SHA256")
+  if [[ -n "${PAINTER_ANCHOR_EVIDENCE_ARCHIVE:-}" ]]; then
+    RESTORE_ARGS+=(--archive "$PAINTER_ANCHOR_EVIDENCE_ARCHIVE")
+  else
+    RESTORE_ARGS+=(--url "$RESTORE_URL")
+  fi
+  PYTHONPATH="$REPO:$REPO/painter:$RUN${PYTHONPATH:+:$PYTHONPATH}" \
+    "$PY_BOOT" "$RESTORE_SCRIPT" "${RESTORE_ARGS[@]}" \
+    >"${PAINTER_ANCHOR_RESTORE_SUMMARY:-$RUN/anchor-restore-summary.json}"
+fi
 # The fixed-anchor files are produced after the owned inference server has
 # loaded the frozen SFT alias.  Stage an explicit lazy manifest for preflight;
 # run_from_sft.py replaces these bytes with the hash-verified pilot manifests

@@ -161,7 +161,13 @@ def _trace_values(trace: Mapping[str, Any]) -> tuple[dict[str, Any], dict[str, A
     return data, info, context
 
 
-def _native_eval_canvas(attempt: Path, case_id: str, workspace_root: Path) -> Path | Mapping[str, Any]:
+def _native_eval_canvas(
+    attempt: Path,
+    case_id: str,
+    workspace_root: Path,
+    *,
+    trace_bundle: tuple[list[Mapping[str, Any]], list[Any], list[Path]] | None = None,
+) -> Path | Mapping[str, Any]:
     """Read the one-case native trace; never infer validity from a PNG glob."""
     attempt = Path(attempt).resolve()
     workspace_root = Path(workspace_root).resolve()
@@ -172,7 +178,7 @@ def _native_eval_canvas(attempt: Path, case_id: str, workspace_root: Path) -> Pa
             from native_painting_report import read_traces, resolve_existing  # type: ignore
         except ImportError as exc:
             raise OpponentUnavailable(f"native trace parser unavailable: {exc}") from exc
-    traces, parse_errors, trace_files = read_traces(attempt)
+    traces, parse_errors, trace_files = trace_bundle if trace_bundle is not None else read_traces(attempt)
     matches: list[tuple[Mapping[str, Any], dict[str, Any], dict[str, Any], dict[str, Any]]] = []
     for trace in traces:
         data, info, context = _trace_values(trace)
