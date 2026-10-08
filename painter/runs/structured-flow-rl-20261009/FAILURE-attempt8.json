@@ -1,0 +1,49 @@
+{
+  "schema": "structured-flow-attempt-failure-v1",
+  "attempt": 8,
+  "source_commit": "43d8f4f0b5a4ae7ed588e7b01e95c02bf93248dc",
+  "status": "failed_preparation",
+  "failure": "Frozen SFT512 native anchor batch completed, but two briefs produced no valid canvas; original materializer stopped at first invalid case. No optimizer updates.",
+  "native_episode_count": 48,
+  "valid_terminal_current_canvases": 46,
+  "invalid_cases": [
+    "sf-s2-he-connected-key-03",
+    "sf-s2-tr-connected-bicycle-00"
+  ],
+  "render_receipts": {
+    "valid": 83,
+    "invalid": 11
+  },
+  "terminal_canvas_policy": "native_current_canvas_at_episode_end; may retain an earlier valid canvas when a later action fails",
+  "completed_sft_updates": 0,
+  "completed_rl_updates": 0,
+  "node_released": true,
+  "exact_run_active_nodes_verified": 0,
+  "public_evidence": "FAILURE_PUBLIC-attempt8.json",
+  "gpu_cost": {
+    "basis": "rental clock through release request; listed whole-node rate; not an invoice; API excluded",
+    "elapsed_seconds": 1434.97909617424,
+    "listed_usd_hour": 3.72,
+    "attempt_estimate_usd": 1.4828,
+    "prior_estimate_usd": 2.3662,
+    "cumulative_estimate_usd": 3.849
+  },
+  "gpu_sampling": {
+    "phase": "baseline preparation only; no trainer work",
+    "sampling_interval_seconds": 10,
+    "gpu_denominator": 2,
+    "samples_per_gpu": 120,
+    "window_utc_start": "2026-10-08 23:12:25",
+    "window_utc_end": "2026-10-08 23:32:15",
+    "inference_gpu": {
+      "mean_utilization_percent": 76.96,
+      "fraction_samples_at_least_10_percent": 0.775
+    },
+    "trainer_gpu": {
+      "mean_utilization_percent": 0,
+      "fraction_samples_at_least_10_percent": 0
+    },
+    "pipeline_saturated": false
+  },
+  "next_decision": "Reuse hash-bound valid paid native anchors, retry only the two invalid cases once with early noLoop contract validation; parse the trace bundle once. Same initializer/briefs/judge/warmup/RL recipe. Fresh allowance16USD plus4USD prior reserve retains20USD cumulative limit."
+}
