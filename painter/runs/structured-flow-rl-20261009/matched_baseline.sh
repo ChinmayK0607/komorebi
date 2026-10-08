@@ -15,6 +15,7 @@ validate_structured_bindings
 PY="${PRIME_ROOT:-$PAINTER_NODE_ROOT/prime}/.venv/bin/python"
 VLLM="${PRIME_ROOT:-$PAINTER_NODE_ROOT/prime}/.venv/bin/vllm"
 EVAL="${PRIME_ROOT:-$PAINTER_NODE_ROOT/prime}/.venv/bin/eval"
+CUDA_HOME="$($PY -c 'import sysconfig; print(sysconfig.get_paths()["purelib"] + "/nvidia/cu13")')"
 FLASH_POINTER="${PAINTER_SFT_ADAPTER_PATH_FILE:-$RUN/policy-adapter-path.txt}"
 FROZEN_POINTER="${PAINTER_FROZEN_SFT_ADAPTER_PATH_FILE:-$RUN/frozen-sft-adapter-path.txt}"
 TRAIN_MANIFEST="${PAINTER_RL_MANIFEST:-$RUN/curriculum/pilot-train-manifest.json}"
@@ -28,6 +29,10 @@ PORT="${PAINTER_BASELINE_PORT:-8000}"
 for required in "$PY" "$VLLM" "$EVAL" "$MODEL/config.json" "$FLASH_POINTER" "$FROZEN_POINTER" "$RUN/anchor_bank.py" "$RENDERER" "$RENDERER_PYTHON"; do
   [[ -e "$required" ]] || { echo "missing baseline input: $required" >&2; exit 1; }
 done
+[[ -d "$CUDA_HOME" ]] || { echo "CUDA 13 runtime directory is missing: $CUDA_HOME" >&2; exit 1; }
+export CUDA_HOME
+export PATH="${PRIME_ROOT:-$PAINTER_NODE_ROOT/prime}/.venv/bin:$CUDA_HOME/bin:$PATH"
+export LD_LIBRARY_PATH="$CUDA_HOME/lib:${LD_LIBRARY_PATH:-}"
 FLASH="$(tr -d '\r\n' < "$FLASH_POINTER")"
 FROZEN="$(tr -d '\r\n' < "$FROZEN_POINTER")"
 "$PY" - "$FLASH" "$FROZEN" "$PAINTER_POLICY_SHA256" "$PAINTER_FROZEN_SFT_SHA256" <<'PY'
@@ -89,7 +94,7 @@ PY
 done
 (( SECONDS < deadline )) || { echo 'baseline vLLM startup timeout' >&2; exit 1; }
 
-PYTHONPATH="$REPO:$REPO/painter:$RUN${PYTHONPATH:+:$PYTHONPATH}" PAINTER_FROZEN_OPPONENT_ENDPOINT="http://127.0.0.1:$PORT/v1" \
+PYTHONPATH="$REPO:$REPO/painter:$RUN${PYTHONPATH:+:$PYTHONPATH}" PAINTER_STRUCTURED_FLOW_POLICY=1 PAINTER_FROZEN_OPPONENT_ENDPOINT="http://127.0.0.1:$PORT/v1" \
   "$PY" "$RUN/anchor_bank.py" materialize \
   --train-manifest "$TRAIN_MANIFEST" --heldout-manifest "$EVAL_MANIFEST" \
   --anchor-root "${PAINTER_ANCHOR_ROOT:-$RUN/curriculum/anchors}" \
@@ -97,8 +102,8 @@ PYTHONPATH="$REPO:$REPO/painter:$RUN${PYTHONPATH:+:$PYTHONPATH}" PAINTER_FROZEN_
   --run-root "$RUN" >"$OUT/logs/anchor-materialization.json"
 
 PYTHONPATH="$REPO:$REPO/painter:$RUN${PYTHONPATH:+:$PYTHONPATH}" \
-  PAINTER_PRIME_ROLE=orchestrator PAINTER_RL_MANIFEST="$TRAIN_MANIFEST" PAINTER_EVAL_MANIFEST="$EVAL_MANIFEST" \
-  PAINTER_STRUCTURED_FLOW_POLICY="$PAINTER_STRUCTURED_FLOW_POLICY" PAINTER_FLOW_HOOK_RECEIPT="$OUT/structured-flow-hook-receipt.json" \
+  PAINTER_PRIME_ROLE=orchestrator PAINTER_STRUCTURED_FLOW_POLICY=1 PAINTER_RL_MANIFEST="$TRAIN_MANIFEST" PAINTER_EVAL_MANIFEST="$EVAL_MANIFEST" \
+  PAINTER_FLOW_HOOK_RECEIPT="$OUT/structured-flow-hook-receipt.json" \
   "$PY" "$REPO/painter/native_painting_eval.py" --root "$REPO/painter" --manifest "$EVAL_MANIFEST" \
   --policy-label flash12-pre-warmup --model flash12-baseline --output-dir "$OUT/evaluation-rollouts" \
   --config "$OUT/eval.toml" --expected-count 16 --max-turns 3 --max-tokens 8192 --max-concurrent 8 \
@@ -116,7 +121,7 @@ PY
 env PYTHONPATH="$REPO/painter:$RUN${PYTHONPATH:+:$PYTHONPATH}" PAINTER_LOCAL_API_KEY=local \
   PLAYWRIGHT_BROWSERS_PATH="$RUN/browsers" PAINTER_REQUIRE_VALID_FINAL_ACTION=1 PAINTER_JS_SYNTAX_PREFLIGHT=1 \
   PAINTER_JUDGE_PROTOCOL="$PAINTER_JUDGE_PROTOCOL" PAINTER_JUDGE_FORMAT="$PAINTER_JUDGE_FORMAT" PAINTER_JUDGE_MODEL="$PAINTER_JUDGE_MODEL" \
-  PAINTER_STRUCTURED_FLOW_POLICY="$PAINTER_STRUCTURED_FLOW_POLICY" PAINTER_RL_MANIFEST="$TRAIN_MANIFEST" PAINTER_EVAL_MANIFEST="$EVAL_MANIFEST" \
+  PAINTER_STRUCTURED_FLOW_POLICY=1 PAINTER_RL_MANIFEST="$TRAIN_MANIFEST" PAINTER_EVAL_MANIFEST="$EVAL_MANIFEST" \
   PAINTER_PRIME_ROLE=orchestrator PAINTER_FLOW_HOOK_RECEIPT="$OUT/structured-flow-hook-receipt.json" \
   bash -c 'cd "$1"; exec "$2" @ "$3" --no-serve --no-push' _ "$PRIME_ROOT" "$EVAL" "$OUT/eval.toml" >"$OUT/logs/eval.log" 2>&1
 

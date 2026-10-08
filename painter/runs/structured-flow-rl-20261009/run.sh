@@ -11,7 +11,7 @@ CONFIG="${PAINTER_RL_CONFIG:-$RUN/native.toml}"
 MANIFEST="${PAINTER_RL_MANIFEST:-$RUN/curriculum/pilot-train-manifest.json}"
 for required in "$CONFIG" "$RUN/rl-config-receipt.json" "$MANIFEST" "$RUN/curriculum/matched16-manifest.json" \
   "$RUN/launch_rl.sh" "$RUN/run_from_sft.py" "$RUN/train_from_sft.py" "$RUN/renderer-env/bin/python" \
-  "$RUN/sitecustomize.py" "$REPO/painter/consistent_group_admission.py"; do
+  "$RUN/sitecustomize.py" "$RUN/runtime_receipt.py" "$REPO/painter/consistent_group_admission.py"; do
   [[ -e "$required" ]] || { echo "missing prepared input: $required" >&2; exit 1; }
 done
 [[ -r "$PAINTER_SFT_ADAPTER_PATH_FILE" && -r "$PAINTER_FROZEN_SFT_ADAPTER_PATH_FILE" ]] || {
@@ -54,15 +54,32 @@ PY
   }
 fi
 export PAINTER_ACTIVE_POLICY_ADAPTER_SHA256="$ACTIVE_POLICY_SHA256"
+# The prepared receipt records the public Flash12 initializer, while Prime's
+# generic launcher validates the bytes it actually loads.  Normalize the
+# receipt once after warmup so both identities remain auditable and the
+# launcher checks the verified active adapter rather than the parent bytes.
+RECEIPT_ARGS=(
+  --receipt "$RUN/rl-config-receipt.json"
+  --active-sha256 "$ACTIVE_POLICY_SHA256"
+  --parent-sha256 "$PAINTER_POLICY_SHA256"
+  --parent-revision "$PAINTER_POLICY_REVISION"
+  --parent-prefix "$PAINTER_POLICY_PREFIX"
+  --mode "$PAINTER_POLICY_MODE"
+)
+if [[ -r "$ACTIVE_POLICY_POINTER" ]]; then
+  [[ -r "$RUN/active-policy.json" ]] || { echo 'active warmup policy receipt is missing' >&2; exit 1; }
+  RECEIPT_ARGS+=(--active-policy-json "$RUN/active-policy.json")
+fi
+python3 "$RUN/runtime_receipt.py" "${RECEIPT_ARGS[@]}"
 export PAINTER_RL_MODE="$PAINTER_POLICY_MODE" PAINTER_RL_FIXED_OPPONENT=1
 export PAINTER_RL_CONFIG="$CONFIG" PAINTER_RL_MANIFEST="$MANIFEST"
 export PAINTER_RL_RUN_NAME="$PAINTER_RUN_NAME" PAINTER_RL_MAX_STEPS=8
 export PAINTER_RL_ADAPTER_REVISION="$PAINTER_POLICY_REVISION"
 export PAINTER_RL_ADAPTER_PREFIX="$PAINTER_POLICY_PREFIX"
-# The config receipt remains bound to the immutable Flash12 initializer. The
-# warmup adapter bytes are the active policy and are bound separately by
-# active-policy.json/node_validate.py.
-export PAINTER_RL_ADAPTER_SHA256="$PAINTER_POLICY_SHA256"
+# The config receipt retains the immutable Flash12 identity under
+# policy_initializer; this top-level value binds the actual active bytes to
+# Prime's generic launcher's initializer check.
+export PAINTER_RL_ADAPTER_SHA256="$ACTIVE_POLICY_SHA256"
 export PAINTER_RL_MAX_POLICY_AGE=1
 export PAINTER_FROZEN_SFT_ALIAS=sft-step512
 export PAINTER_WHOLE_GROUP_ADMISSION=1 PAINTER_WHOLE_GROUP_SIZE="$PAINTER_GROUP_SIZE"

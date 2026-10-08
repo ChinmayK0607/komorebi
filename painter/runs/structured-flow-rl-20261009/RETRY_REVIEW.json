@@ -1,0 +1,28 @@
+{
+  "schema": "structured-flow-retry-review-v1",
+  "actual_previous_linux_proofs": [
+    "sandbox_enabled_chromium_startup_passed",
+    "node_brush_asset_syntax_passed",
+    "public_Flash12_and_SFT512_weights_hash_verified"
+  ],
+  "corrected_fresh_launch_bugs": [
+    "stdout_receipt_created_strict_builder_destination_before_build",
+    "warmup_active_adapter_SHA_was_not_bound_to_generic_launcher_receipt",
+    "generic_launcher_frozen_anchor_metadata_missing",
+    "matched_baseline_CUDA_runtime_library_paths_missing"
+  ],
+  "local_verification": {
+    "structured_tests_passed": 44,
+    "actual_generic_launcher_receipt_payload": "passed_on_fixture; drift_rejected",
+    "actual_fresh_builder_commands": "passed",
+    "rendering_or_training_on_Mac": false
+  },
+  "prior_attempts_estimated_gpu_usd": 0.3604,
+  "retry_gpu_cap_usd": 19.5,
+  "prior_reserve_usd": 0.5,
+  "limitations": [
+    "No optimizer updates or visual improvement observed yet",
+    "Baseline preparation serial; no saturation claim",
+    "Terminal GRPO still assigns coarse multi-turn credit"
+  ]
+}

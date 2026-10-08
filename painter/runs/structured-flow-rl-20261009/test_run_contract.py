@@ -225,6 +225,69 @@ mv "$flow_tmp" "$run_root/flow-supervision-build.json"
         self.assertIn('HF_CHECKPOINT_REPO="${HF_CHECKPOINT_REPO:-CK0607/qwen3.8-27b-brush-painting}"', runtime)
         self.assertIn('HF_CHECKPOINT_RUN="${HF_CHECKPOINT_RUN:-structured-flow-rl-20261009-sft-warmup}"', runtime)
 
+    def test_runtime_receipt_binds_active_warmup_bytes_and_preserves_parent(self):
+        helper = load("structured_flow_runtime_receipt", RUN / "runtime_receipt.py")
+        parent = "a" * 64
+        active = "b" * 64
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            receipt = root / "rl-config-receipt.json"
+            receipt.write_text(json.dumps({
+                "schema": "structured-flow-rl-config-receipt-v1",
+                "policy_initializer": {"revision": "rev", "prefix": "prefix", "sha256": parent},
+                "frozen_sft": {
+                    "alias": "sft-step512",
+                    "revision": "adf687e5b321514eda7be6eab050434fdc8e44ff",
+                    "prefix": "photo-curriculum-sft-20260922-balanced/step_512",
+                    "sha256": "bea72b066986faa1b92b9dc539c710093181ee916b99323e2b2498f318ac1740",
+                },
+            }))
+            active_receipt = root / "active-policy.json"
+            active_receipt.write_text(json.dumps({"status": "verified_warmup_adapter", "adapter_sha256": active}))
+            helper.normalize(
+                receipt,
+                active_sha256=active,
+                parent_sha256=parent,
+                parent_revision="rev",
+                parent_prefix="prefix",
+                mode="recovered_policy",
+                active_policy_json=active_receipt,
+            )
+            value = json.loads(receipt.read_text())
+            self.assertEqual(value["adapter_sha256"], active)
+            self.assertEqual(value["policy_initializer"]["sha256"], parent)
+            self.assertEqual(value["active_policy"]["parent_sha256"], parent)
+            self.assertEqual(value["frozen_anchor"], {
+                "alias": "sft-step512",
+                "revision": "adf687e5b321514eda7be6eab050434fdc8e44ff",
+                "prefix": "photo-curriculum-sft-20260922-balanced/step_512",
+                "checkpoint_sha256": "bea72b066986faa1b92b9dc539c710093181ee916b99323e2b2498f318ac1740",
+                "immutable": True,
+            })
+            drifted = json.loads(receipt.read_text())
+            drifted["frozen_sft"]["sha256"] = "c" * 64
+            receipt.write_text(json.dumps(drifted))
+            with self.assertRaises(ValueError):
+                helper.normalize(
+                    receipt,
+                    active_sha256=active,
+                    parent_sha256=parent,
+                    parent_revision="rev",
+                    parent_prefix="prefix",
+                    mode="recovered_policy",
+                )
+
+    def test_run_binds_runtime_receipt_and_matched_baseline_flow(self):
+        run = (RUN / "run.sh").read_text()
+        baseline = (RUN / "matched_baseline.sh").read_text()
+        self.assertIn('runtime_receipt.py', run)
+        self.assertIn('PAINTER_RL_ADAPTER_SHA256="$ACTIVE_POLICY_SHA256"', run)
+        self.assertIn('PAINTER_STRUCTURED_FLOW_POLICY=1', baseline)
+        self.assertNotIn('PAINTER_STRUCTURED_FLOW_POLICY="$PAINTER_STRUCTURED_FLOW_POLICY"', baseline)
+        self.assertIn('CUDA_HOME=', baseline)
+        self.assertIn('LD_LIBRARY_PATH="$CUDA_HOME/lib:', baseline)
+        self.assertIn('"frozen_anchor"', (RUN / "runtime_receipt.py").read_text())
+
     def test_browser_probe_precedes_bootstrap_and_preserves_sandbox_diagnostics(self):
         prepare = (RUN / "prepare_node.sh").read_text()
         helper = (RUN / "prepare_renderer_runtime.py").read_text()
