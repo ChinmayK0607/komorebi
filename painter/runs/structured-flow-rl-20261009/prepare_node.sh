@@ -34,7 +34,7 @@ done
 # vendor renderer is never silently substituted for this run.
 THROUGHPUT_RUN="${PAINTER_RECOVERY_RUN:-$REPO/painter/runs/throughput-recovery-20261003}"
 PATCH_RENDERER="$REPO/painter/patch_brush_centroid.py"
-PAINTER_RENDERER_RUNTIME_HELPER="${PAINTER_RENDERER_RUNTIME_HELPER:-$THROUGHPUT_RUN/prepare_renderer_runtime.py}"
+PAINTER_RENDERER_RUNTIME_HELPER="${PAINTER_RENDERER_RUNTIME_HELPER:-$RUN/prepare_renderer_runtime.py}"
 FROZEN_RENDERER_ROOT="${PAINTER_FROZEN_RENDERER_ROOT:-$RUN/runtime/watercolour-p5-brush-2.2.1-centroid-fix-v1}"
 CANCELLABLE_RENDERER_ROOT="${PAINTER_CANCELLABLE_RENDERER_ROOT:-$RUN/runtime/watercolour-cancellable-centroid-v1}"
 [[ -f "$PATCH_RENDERER" && -f "$PAINTER_RENDERER_RUNTIME_HELPER" ]] || {
@@ -106,6 +106,28 @@ export PAINTER_RENDERER_RUNTIME_HELPER
 export PAINTER_RENDERER_ROOT="$FROZEN_RENDERER_ROOT"
 export PAINTER_RENDERER_PATH="$FROZEN_RENDERER_ROOT/renderer.py"
 export PAINTER_RENDERER_PYTHON_PATH="${PAINTER_RENDERER_PYTHON_PATH:-$RUN/renderer-env/bin/python}"
+
+# Probe the node's user-namespace/setuid prerequisites before bootstrap can
+# start model downloads or install the large Prime environment.  This does
+# not weaken Chromium's sandbox; it fails closed when neither supported path
+# is available and records the kernel evidence for a useful retry decision.
+export PAINTER_BROWSER_TMPDIR="${PAINTER_BROWSER_TMPDIR:-$RUN/runtime/browser-tmp}"
+python3 "$PAINTER_RENDERER_RUNTIME_HELPER" --capability-only \
+  --run-root "$RUN" --renderer-root "$RUN" --renderer-python "$PAINTER_RENDERER_PYTHON_PATH" \
+  --browsers "${PAINTER_BROWSER_PROBE_ROOT:-$REPO/painter/browsers}" --prime-venv "$PRIME_ROOT/.venv"
+
+# Match the proven campaign's bounded fast-cache placement.  In particular,
+# keep uv's cache and later browser storage on the selected scratch device;
+# this also lets the shared setup script preserve its browser ownership and
+# helper permissions instead of creating a private root-owned tree.
+PAINTER_FAST_STORAGE_HELPER="${PAINTER_FAST_STORAGE_HELPER:-$THROUGHPUT_RUN/prepare_fast_storage.py}"
+PAINTER_FAST_STORAGE_ROOT="${PAINTER_FAST_STORAGE_ROOT:-${TMPDIR:-/tmp}/structured-flow-renderer-fast}"
+[[ -f "$PAINTER_FAST_STORAGE_HELPER" ]] || { echo 'reviewed fast-storage helper is missing' >&2; exit 1; }
+python3 "$PAINTER_FAST_STORAGE_HELPER" --phase cache --run-root "$RUN" \
+  --fast-root "$PAINTER_FAST_STORAGE_ROOT" --uv-source "${PAINTER_UV_CACHE_SOURCE:-${HOME:-/root}/.cache/uv}" \
+  --uv-concurrent-installs "$UV_CONCURRENT_INSTALLS"
+export PAINTER_FAST_STORAGE_HELPER PAINTER_FAST_STORAGE_ROOT
+export UV_CACHE_DIR="$PAINTER_FAST_STORAGE_ROOT/uv-cache"
 
 BOOTSTRAP_RUN="${PAINTER_BOOTSTRAP_RUN:-$REPO/painter/runs/text-pairwise-rl-20260928}"
 [[ -f "$BOOTSTRAP_RUN/setup_node.sh" ]] || { echo "reviewed bootstrap missing: $BOOTSTRAP_RUN" >&2; exit 1; }

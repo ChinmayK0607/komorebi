@@ -154,6 +154,22 @@ class StructuredFlowRunTests(unittest.TestCase):
         self.assertIn('HF_CHECKPOINT_REPO="${HF_CHECKPOINT_REPO:-CK0607/qwen3.8-27b-brush-painting}"', runtime)
         self.assertIn('HF_CHECKPOINT_RUN="${HF_CHECKPOINT_RUN:-structured-flow-rl-20261009-sft-warmup}"', runtime)
 
+    def test_browser_probe_precedes_bootstrap_and_preserves_sandbox_diagnostics(self):
+        prepare = (RUN / "prepare_node.sh").read_text()
+        helper = (RUN / "prepare_renderer_runtime.py").read_text()
+        self.assertIn('--capability-only', prepare)
+        self.assertLess(prepare.index('--capability-only'), prepare.index('bash "$BOOTSTRAP_RUN/setup_node.sh"'))
+        self.assertIn('PAINTER_FAST_STORAGE_HELPER', prepare)
+        self.assertIn('chromium_sandbox=True', helper)
+        self.assertIn('--use-angle=swiftshader', helper)
+        self.assertIn('--enable-unsafe-swiftshader', helper)
+        self.assertIn('"stderr": stderr', helper)
+        self.assertIn('stderr_first', helper)
+        self.assertIn('stderr_last', helper)
+        self.assertIn('NoNewPrivs=1', helper)
+        self.assertIn('Seccomp:', helper)
+        self.assertIn('cap_eff', helper)
+
     def test_shell_scripts_compile(self):
         scripts = ["runtime_env.sh", "prepare_node.sh", "run.sh", "execute_single.sh", "execute_pipeline.sh", "evaluate.sh", "finalize.sh", "matched_baseline.sh"]
         for name in scripts:

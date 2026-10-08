@@ -10,6 +10,8 @@ python3 "$RUN/prepare_local.py" validate --plan "$RUN/local-plan/launch-plan.jso
 
 `prepare_node.sh` builds the 240/60 prompt proposals when they are not already staged, then creates a lazy 32/16 pilot manifest. After the frozen SFT512 endpoint is available, `anchor_bank.py materialize` runs one bounded native batch and writes real PNGs, receipts, and provenance before replacing the lazy rows. It fails when an anchor is missing or its bytes do not match the manifest; it never creates placeholders.
 
+Before bootstrap downloads the model or installs the Prime environment, the run-owned renderer helper records the node's user-namespace/setuid capability. After the renderer environment is staged, its sandbox smoke writes `browser-smoke-diagnostic.json` with both the first and last Chromium diagnostics; inspect that file and `browser-capability-preflight.json` after a failed setup. The launch keeps Chromium sandboxing enabled.
+
 On the Linux node, set `PAINTER_STRUCTURED_FLOW_POLICY=1` only when the reviewed casebrief hint should be active. Set `PAINTER_CODE_SUPERVISION_ENABLED=1` only after the separate teacher JSONL passes `validate_code_supervision.py`. Run preparation first:
 
 ```bash
