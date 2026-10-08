@@ -1,0 +1,12 @@
+{
+  "schema": "structured-flow-native-boundary-observation-v1",
+  "status": "verified",
+  "valid": true,
+  "source_sha256": "9f0f47230cde489b2e8fd4335bc42026ea00cff4512edb5e7c4697f2f66f4b20",
+  "png_sha256": "78361781bc5449d1173e8c6a937ab97ba2ad69d5b284fea768bc3d718f4daa2a",
+  "renderer_sha256": "dc6b9d837ed7be382784a6c84de1b64911506b17a19b499ce054c0c572e75794",
+  "renderer_elapsed_seconds": 1.828,
+  "browser_sandbox_enabled": true,
+  "source_commit": "43d8f4f0b5a4ae7ed588e7b01e95c02bf93248dc",
+  "scope": "one tiny native render; no optimizer update or general throughput claim"
+}
