@@ -159,6 +159,12 @@ export UV_CACHE_DIR="$PAINTER_FAST_STORAGE_ROOT/uv-cache"
 BOOTSTRAP_RUN="${PAINTER_BOOTSTRAP_RUN:-$REPO/painter/runs/text-pairwise-rl-20260928}"
 [[ -f "$BOOTSTRAP_RUN/setup_node.sh" ]] || { echo "reviewed bootstrap missing: $BOOTSTRAP_RUN" >&2; exit 1; }
 bash "$BOOTSTRAP_RUN/setup_node.sh"
+# setup_node has now materialized the verified Prime environment.  Keep its
+# bin directory visible for this preparation shell as well as later shells
+# that source runtime_env.sh; native renderer syntax checks rely on its Node.
+if [[ -d "$PRIME_ROOT/.venv/bin" && ":${PATH:-}:" != *":$PRIME_ROOT/.venv/bin:"* ]]; then
+  export PATH="$PRIME_ROOT/.venv/bin:${PATH:-/usr/local/bin:/usr/bin:/bin}"
+fi
 PY_BOOT="${PAINTER_BOOTSTRAP_PYTHON:-$PAINTER_NODE_ROOT/bootstrap/bin/python}"
 [[ -x "$PY_BOOT" ]] || PY_BOOT=python3
 [[ -x "$PY_PRIME" ]] || { echo "pinned Prime Python is missing: $PY_PRIME" >&2; exit 1; }

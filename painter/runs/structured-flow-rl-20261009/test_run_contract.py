@@ -8,6 +8,7 @@ import json
 import os
 from pathlib import Path
 import shlex
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -140,6 +141,26 @@ class StructuredFlowRunTests(unittest.TestCase):
                 check=True,
             )
             self.assertEqual(result.stdout, str(selected))
+
+    def test_runtime_env_exposes_prepared_prime_bin_to_downstream_children(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            prime_bin = root / "prime/.venv/bin"
+            prime_bin.mkdir(parents=True)
+            result = subprocess.run(
+                ["/bin/bash", "-c", 'source "$1/runtime_env.sh"; printf "%s" "$PATH"', "_", str(RUN)],
+                env={
+                    **os.environ,
+                    "PATH": "/controller/path-without-node:/usr/local/bin:/usr/bin:/bin",
+                    "PAINTER_RUN_ROOT": str(root),
+                    "PAINTER_RUN_NAME": "structured-flow-rl-20261009",
+                    "PRIME_ROOT": str(root / "prime"),
+                },
+                capture_output=True,
+                text=True,
+                check=True,
+            )
+            self.assertEqual(result.stdout.split(":", 1)[0], str(prime_bin))
 
     def test_opt_in_local_scratch_moves_model_and_prime_but_not_credentials(self):
         command = (
@@ -460,11 +481,14 @@ mv "$flow_tmp" "$run_root/flow-supervision-build.json"
             renderer_python.write_text("#!/bin/sh\n")
             browsers = root / "browsers"
             browsers.mkdir()
-            node_bin = root / "sdk-node/bin"
+            prime_venv = root / "prime-venv"
+            node_bin = prime_venv / "bin"
             node_bin.mkdir(parents=True)
             node = node_bin / "node"
-            node.write_text("#!/bin/sh\n[ \"$1\" = \"--check\" ]\n")
-            node.chmod(0o755)
+            actual_node = shutil.which("node")
+            if actual_node is None:
+                self.fail("PATH regression requires a real Node.js binary; run with the bundled runtime on PATH")
+            node.symlink_to(actual_node)
             renderer_sha = helper._sha256(renderer)
             asset_map = {
                 path.relative_to(assets).as_posix(): helper._sha256(path)
@@ -514,7 +538,7 @@ mv "$flow_tmp" "$run_root/flow-supervision-build.json"
 
             with mock.patch.dict(os.environ, {
                      "AMBIENT_CANARY_SECRET": "must-not-cross",
-                     "PATH": str(node_bin) + os.pathsep + os.environ.get("PATH", ""),
+                     "PATH": "/controller/path-without-node",
                  }, clear=False), \
                  mock.patch.object(helper.sys, "platform", "linux"), \
                  mock.patch.object(helper.shutil, "which", side_effect=which), \
@@ -525,6 +549,7 @@ mv "$flow_tmp" "$run_root/flow-supervision-build.json"
                     renderer_python=renderer_python,
                     browsers=browsers,
                     expected_renderer_sha256=renderer_sha,
+                    prime_venv=prime_venv,
                     expected_assets_sha256=asset_sha,
                 )
             self.assertTrue(result["valid"])
@@ -599,7 +624,8 @@ mv "$flow_tmp" "$run_root/flow-supervision-build.json"
             browsers = root / "browsers"
             browsers.mkdir()
             node = root / "node"
-            node.write_text("#!/bin/sh\n")
+            node.write_text("#!/bin/sh\nexit 0\n")
+            node.chmod(0o755)
             with mock.patch.object(helper.sys, "platform", "linux"), \
                  mock.patch.object(helper, "_resolve_node_executable", return_value=node), \
                  mock.patch.object(

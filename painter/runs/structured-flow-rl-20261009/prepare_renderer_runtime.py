@@ -223,8 +223,12 @@ def _probe_write_json(path: Path, value: object) -> None:
         pass
 
 
-def _resolve_node_executable() -> Path:
-    """Resolve the node binary before constructing the secret-free env."""
+def _resolve_node_executable(prime_venv: Path | None = None) -> Path:
+    """Resolve verified Prime Node before falling back to the controller PATH."""
+    if prime_venv is not None:
+        prime_node = prime_venv.expanduser().resolve() / "bin" / "node"
+        if prime_node.is_file() and os.access(prime_node, os.X_OK):
+            return prime_node
     selected = shutil.which("node")
     if not selected:
         raise RuntimeError("renderer probe requires Node.js for the syntax preflight")
@@ -241,6 +245,7 @@ def render_probe(
     renderer_python: Path,
     browsers: Path,
     expected_renderer_sha256: str,
+    prime_venv: Path | None = None,
     expected_assets_sha256: str | None = None,
 ) -> dict[str, object]:
     """Render one tiny p5.brush program through the native production boundary.
@@ -274,7 +279,7 @@ def render_probe(
     ).hexdigest()
     if expected_assets_sha256 is not None and assets_sha256 != expected_assets_sha256:
         raise RuntimeError("renderer probe asset map hash does not match the pinned renderer assets")
-    node = _resolve_node_executable()
+    node = _resolve_node_executable(prime_venv)
     probe_root = run_root / "runtime" / "native-render-probe"
     source = probe_root / "probe.js"
     nested_root = probe_root / "nested-attempt"
@@ -541,6 +546,7 @@ def main(argv: list[str] | None = None) -> int:
             renderer=args.renderer,
             renderer_python=args.renderer_python,
             browsers=args.browsers,
+            prime_venv=args.prime_venv,
             expected_renderer_sha256=args.renderer_sha256,
             expected_assets_sha256=args.assets_sha256,
         )

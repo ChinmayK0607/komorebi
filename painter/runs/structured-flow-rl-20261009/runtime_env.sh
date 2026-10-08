@@ -27,6 +27,12 @@ if [[ -n "$PAINTER_LOCAL_SCRATCH_ROOT" ]]; then
 else
   export MODEL_DIR="${MODEL_DIR:-$PAINTER_NODE_ROOT/model-cache/qwen/1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0}"
 fi
+# Once Prime has been prepared, make its verified tools visible to every
+# later renderer/evaluator subprocess.  Before preparation this is a no-op;
+# the native render probe also receives --prime-venv explicitly.
+if [[ -d "$PRIME_ROOT/.venv/bin" && ":${PATH:-}:" != *":$PRIME_ROOT/.venv/bin:"* ]]; then
+  export PATH="$PRIME_ROOT/.venv/bin:${PATH:-/usr/local/bin:/usr/bin:/bin}"
+fi
 export PAINTER_POLICY_MODE="${PAINTER_POLICY_MODE:-recovered_policy}"
 export PAINTER_POLICY_REPO="${PAINTER_POLICY_REPO:-CK0607/qwen3.8-27b-brush-painting}"
 export PAINTER_POLICY_REVISION="${PAINTER_POLICY_REVISION:-1227a2427a8ae16014d2fdca4d1adb6855d3fa1c}"

@@ -1,0 +1,26 @@
+{
+  "schema": "structured-flow-failure-v1",
+  "attempt": 7,
+  "source_commit": "3cd18055be2e014c8b7d832e6c96ae709a013eae",
+  "cause": "Prime helper verified and installed Node under Prime/bin, but native render probe searched inherited controller PATH without binding that directory.",
+  "scope": {
+    "qwen_serving_started": false,
+    "sft_optimizer_updates": 0,
+    "rl_optimizer_updates": 0
+  },
+  "preparation_results": {
+    "scratch_model_download_seconds": 28,
+    "model_shards": 18,
+    "prime_submodules_verified": true,
+    "prime_install_completed": true
+  },
+  "allocation_status": "released",
+  "gpu_clock_estimate_usd": 0.2205,
+  "cost_window_seconds": 213.41,
+  "cost_basis": "rental start through controller release request; not invoice, excludes API",
+  "cumulative_gpu_clock_estimate_usd": 2.3662,
+  "retry_allowance_usd": 17.0,
+  "conservative_prior_start_reserve_usd": 3.0,
+  "public_evidence_proof": "FAILURE_PUBLIC-attempt7.json",
+  "next_decision": "Resolve the explicit verified Prime Node path and export it to downstream renderer environments; controller PATH cannot be assumed."
+}
