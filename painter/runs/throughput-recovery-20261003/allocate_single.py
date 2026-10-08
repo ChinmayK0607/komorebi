@@ -10,6 +10,7 @@ enter the private receipt.
 from __future__ import annotations
 
 import argparse
+import errno
 import hashlib
 import importlib.util
 import json
@@ -37,6 +38,9 @@ READY_CALL_MAX_SECONDS = 40.0
 SDK_READY_TIMEOUT_SECONDS = 30.0
 SDK_READY_POLL_SECONDS = 4.0
 READY_POLL_SECONDS = 30
+SSH_READINESS_TIMEOUT_SECONDS = 120.0
+SSH_READINESS_CALL_MAX_SECONDS = 30.0
+SSH_READINESS_RETRY_SECONDS = 2.0
 OFFER_TIMEOUT_SECONDS = 40.0
 ALLOCATION_TIMEOUT_SECONDS = 60.0
 RELEASE_TIMEOUT_SECONDS = 40.0
@@ -249,6 +253,104 @@ def wait_ready_bounded(*, api: Any, operation: Any, allocation: Any) -> Any:
         _public_progress("ready_pending", attempt=attempt)
 
 
+def _is_transport_readiness_error(exc: BaseException) -> bool:
+    """Recognize only errors that can clear while a pod's SSH service starts."""
+    seen: set[int] = set()
+    current: BaseException | None = exc
+    while current is not None and id(current) not in seen:
+        seen.add(id(current))
+        if isinstance(current, (ConnectionError, TimeoutError)):
+            return True
+        if isinstance(current, OSError) and current.errno in {
+            errno.ECONNREFUSED,
+            errno.ECONNRESET,
+            errno.ECONNABORTED,
+            errno.ETIMEDOUT,
+            errno.EHOSTUNREACH,
+            errno.ENETUNREACH,
+            errno.EPIPE,
+        }:
+            return True
+        message = str(current).strip().lower()
+        name = type(current).__name__.lower()
+        if name == "operationerror" and message in {
+            "bounded operation timed out",
+            "ssh command could not be started",
+        }:
+            return True
+        if any(marker in message for marker in (
+            "connection refused",
+            "connection reset",
+            "connection aborted",
+            "timed out",
+            "timeout",
+            "handshake",
+            "protocol banner",
+            "no route to host",
+            "network is unreachable",
+            "transport is inactive",
+            "transport closed",
+            "unable to connect",
+        )) and not any(marker in message for marker in (
+            "authentication",
+            "permission denied",
+            "access denied",
+        )):
+            return True
+        current = current.__cause__ or current.__context__
+    return False
+
+
+def probe_ssh_ready_bounded(
+    *,
+    api: Any,
+    operation: Any,
+    pod: Any,
+    window: Any,
+    now: Callable[[], float],
+    sleep: Callable[[float], None] = time.sleep,
+    monotonic: Callable[[], float] = time.monotonic,
+) -> None:
+    """Prove a real SSH command works on the exact allocated pod before transfer."""
+    deadline = monotonic() + SSH_READINESS_TIMEOUT_SECONDS
+    attempt = 0
+    while True:
+        remaining = min(deadline - monotonic(), operation._remaining(window, now))
+        if remaining <= 0:
+            raise RuntimeError("allocated pod SSH handshake did not become ready within 120 seconds")
+        attempt += 1
+        timeout = min(SSH_READINESS_CALL_MAX_SECONDS, float(operation.SSH_TIMEOUT_SECONDS), remaining)
+        _public_progress("ssh_probe_started", attempt=attempt, timeout_seconds=round(timeout, 3))
+        try:
+            def connect_and_probe() -> None:
+                with api.ssh_connection(pod, timeout=timeout) as ssh:
+                    operation._remote_exec(
+                        ssh,
+                        "true",
+                        timeout=timeout,
+                        now=now,
+                        window=window,
+                    )
+
+            operation._bounded_call(connect_and_probe, timeout)
+        except BaseException as exc:
+            if not _is_transport_readiness_error(exc):
+                raise
+            _public_progress("ssh_probe_retry", attempt=attempt)
+            retry_remaining = min(
+                deadline - monotonic(),
+                operation._remaining(window, now),
+            )
+            if retry_remaining <= 0:
+                raise RuntimeError("allocated pod SSH handshake did not become ready within 120 seconds")
+            retry_for = min(SSH_READINESS_RETRY_SECONDS, retry_remaining)
+            if retry_for > 0:
+                sleep(retry_for)
+            continue
+        _public_progress("ssh_probe_ready", attempt=attempt)
+        return
+
+
 def stage_prime_bundle(*, api: Any, operation: Any, window: Any, prime_bundle: Path, prime_commit: str, prime_sha256: str, now: Callable[[], float]) -> None:
     """Transfer and replay the verified Prime bundle before the main handoff."""
     pod = operation._bounded_call(
@@ -261,6 +363,13 @@ def stage_prime_bundle(*, api: Any, operation: Any, window: Any, prime_bundle: P
     sftp = None
     _public_progress("prime_stage_started")
     try:
+        probe_ssh_ready_bounded(
+            api=api,
+            operation=operation,
+            pod=pod,
+            window=window,
+            now=now,
+        )
         with api.ssh_connection(pod, timeout=min(30.0, operation._remaining(window, now))) as ssh:
             operation._remote_exec(
                 ssh,

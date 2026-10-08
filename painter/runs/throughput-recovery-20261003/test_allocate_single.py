@@ -12,6 +12,7 @@ import tempfile
 from contextlib import redirect_stdout
 from types import SimpleNamespace
 import unittest
+from unittest.mock import patch
 
 
 RUN = Path(__file__).resolve().parent
@@ -90,15 +91,19 @@ class FakeSSH:
 
 
 class FakeProvider:
-    def __init__(self, *, wait_error: BaseException | None = None, stage_error: bool = False):
+    def __init__(self, *, wait_error: BaseException | None = None, stage_error: bool = False,
+                 ssh_errors: list[BaseException] | None = None, ssh_error: BaseException | None = None):
         self.offers = [SimpleNamespace(id="executor-2", gpu_type="H100", gpu_count=2, price_per_hour=3.8)]
         self.wait_error = wait_error
         self.stage_error = stage_error
+        self.ssh_errors = list(ssh_errors or [])
+        self.ssh_error = ssh_error
         self.calls = []
         self.removed = []
         self.wait_calls = []
         self.sftp_calls = []
         self.ssh_commands = []
+        self.ssh_pod_ids = []
         self.ssh_closed = 0
 
     def ls(self, *, gpu_type, gpu_count):
@@ -121,6 +126,11 @@ class FakeProvider:
         return [SimpleNamespace(id="pod-allocated")]
 
     def ssh_connection(self, pod, timeout=None):
+        self.ssh_pod_ids.append(str(pod.id))
+        if self.ssh_error is not None:
+            raise self.ssh_error
+        if self.ssh_errors:
+            raise self.ssh_errors.pop(0)
         return FakeSSH(self)
 
     def rm(self, pod):
@@ -230,6 +240,31 @@ class AllocationTests(unittest.TestCase):
         self.assertEqual(receipt["source_commit"], self.commit)
         self.assertNotIn("token-placeholder", receipt_path.read_text())
         self.assertNotIn("gateway-placeholder", receipt_path.read_text())
+
+    def test_ssh_probe_retries_transport_refusal_before_any_prime_transfer(self):
+        provider = FakeProvider(ssh_errors=[ConnectionRefusedError("temporarily refused")])
+        output = io.StringIO()
+        with redirect_stdout(output):
+            self.assertEqual(self.run_allocation(provider, FakeOperation()), 0)
+        self.assertEqual(provider.ssh_pod_ids, ["pod-allocated", "pod-allocated", "pod-allocated"])
+        self.assertTrue(any(call[0] == "put" for call in provider.sftp_calls))
+        self.assertIn("ssh_probe_retry", output.getvalue())
+        self.assertIn("ssh_probe_ready", output.getvalue())
+        self.assertEqual(provider.removed, ["pod-allocated"])
+
+    def test_permanent_ssh_refusal_is_bounded_and_releases_without_transfer(self):
+        provider = FakeProvider(ssh_error=ConnectionRefusedError("permanently refused"))
+        with patch.object(allocate, "SSH_READINESS_TIMEOUT_SECONDS", 0.05), patch.object(
+            allocate, "SSH_READINESS_RETRY_SECONDS", 0.0
+        ):
+            output = io.StringIO()
+            with redirect_stdout(output), self.assertRaisesRegex(RuntimeError, "SSH handshake did not become ready"):
+                self.run_allocation(provider, FakeOperation())
+        self.assertEqual(provider.removed, ["pod-allocated"])
+        self.assertEqual(provider.sftp_calls, [])
+        self.assertTrue(provider.ssh_pod_ids)
+        self.assertTrue(all(pod_id == "pod-allocated" for pod_id in provider.ssh_pod_ids))
+        self.assertNotIn("permanently refused", output.getvalue())
 
     def test_handoff_exception_still_releases_exact_pod(self):
         provider = FakeProvider()

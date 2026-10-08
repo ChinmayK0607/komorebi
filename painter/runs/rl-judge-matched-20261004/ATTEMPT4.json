@@ -1,0 +1,17 @@
+{
+  "schema": "matched-campaign-attempt4-failure-v1",
+  "date": "2026-10-08",
+  "status": "released-before-handoff",
+  "source_commit": "21c00da9b4744798001f34b63310bc30d02d1a33",
+  "price_usd_per_hour": 3.72,
+  "elapsed_rental_clock_upper_seconds": 12.569036960601807,
+  "estimated_gpu_clock_cost_usd": 0.012988004859288535,
+  "optimizer_updates": 0,
+  "baseline_evaluations": 0,
+  "failure_category": "provider_ssh_readiness",
+  "failure": "Provider SDK reported ready; first actual SSH handshake refused. Prime/source/model transfers had not completed.",
+  "node_released": true,
+  "active_pods_confirmed": 0,
+  "actual_training_or_quality_result": false,
+  "next_decision": "Bound actual SSH readiness to samepod before handoff, then one differentavailablepair charged tosamecampaignbudget; no unboundedrentalretry."
+}

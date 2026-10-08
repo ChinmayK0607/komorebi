@@ -1,0 +1,28 @@
+{
+  "schema": "matched-ssh-readiness-parent-review-v1",
+  "date": "2026-10-08",
+  "status": "implemented-parent-reviewed-tests-passed",
+  "hypothesis": "An actual boundedSSH handshake andtrue command separates usablepods fromSDKready metadata beforePrime/source/modeltransfer.",
+  "unchanged": "Registered RL16initializer,data,judge rubric,allthreejudges,12updates andmatchingconfigs.",
+  "changes": [
+    "Resolveexactallocatedpod beforeprobe",
+    "Retrytransportreadinessfailureswithin120secondsandremainingrentalwindow",
+    "NoSFTPtransferbeforehealthyprobe",
+    "Do not retryauthentication/config/sourceverification errors",
+    "Retainouterfinallyexactpodrelease"
+  ],
+  "parent_validation": {
+    "allocator_tests": 12,
+    "campaign_tests": 12,
+    "total": 24,
+    "each_suite_external_timeout_seconds": 60,
+    "undefined_names": "passed",
+    "whitespace": "passed"
+  },
+  "test_scope": "Fakeprovider/SSH/bundlefixtures; noML,renderer,paidAPIorproviderallocation duringtests.",
+  "allocator_source_sha256": "fc98b22c1173a57099a01938babeab815f6135c3131b30f278adb8ade4fcd323",
+  "prior_source_commit": "21c00da9b4744798001f34b63310bc30d02d1a33",
+  "attempt4": "ATTEMPT4.json",
+  "scheduled_task_created": false,
+  "next_decision": "One bounded retry onanotheravailabletwo-H100offer,same$54.50newrentalcap/$4priorreserve; actualLinuxtrainingpending."
+}
