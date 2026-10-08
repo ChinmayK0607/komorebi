@@ -1,0 +1,41 @@
+{
+  "schema": "matched-continuation-live-pro-progress-v1",
+  "observed_utc": "2026-10-08T13:14:32.212962+00:00",
+  "status": "arm_pro_running",
+  "flash": {
+    "completed_optimizer_updates": 12,
+    "recovered_evaluation_complete": true,
+    "retrained_during_continuation": false,
+    "evidence": "LIVE-pro-step5.json"
+  },
+  "pro": {
+    "completed_optimizer_updates": 11,
+    "last_admitted_batch": 11,
+    "target_updates": 12,
+    "checkpoint8_public_metadata": [
+      {
+        "step": 8,
+        "repo_id": "CK0607/qwen3.8-27b-brush-painting",
+        "revision": "0cda351106f5c6062df8e8030d857f3dcd5430b6",
+        "path": "rl-judge-matched-20261004-pro/step_8/adapter_model.safetensors",
+        "bytes": 233590600,
+        "sha256": "3a654b9511270ee9cccf396a7635c394dd69767c3236ee379d8646d1765bfba4",
+        "private": false,
+        "verification_scope": "Anonymous pinned public HF/LFS metadata; no local weight download."
+      }
+    ]
+  },
+  "luna": {
+    "completed_optimizer_updates": 0,
+    "status": "pending_after_pro_evaluation"
+  },
+  "campaign_completed_optimizer_total": 23,
+  "gpu_rental_clock_estimate_usd_at_check": 12.98,
+  "rental_hours_at_check": 3.49,
+  "new_rental_cap_usd": 43.5,
+  "cost_scope": "Continuation rental clock only, not invoice; API separate.",
+  "source_commit": "5bfe80e5c96510ef04db37076d8b54c81c6943db",
+  "observation_scope": "Actual live supervisor/controller completed-counter and public pinned HF metadata. No new reward trend, quality judgement or utilization estimate.",
+  "next_decision": "Complete Pro12 and matched evaluation, then fresh independent Luna12; preserve public artifacts and release on completion/failure/budget limit.",
+  "scheduled_task_created": false
+}

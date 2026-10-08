@@ -1,7 +1,7 @@
 {
   "schema": "matched-continuation-allocation-record-v1",
   "attempt": 6,
-  "status": "arm_pro_step5_observed",
+  "status": "arm_pro_step11_observed",
   "rental_request_utc": "2026-10-08T09:43:54.658849+00:00",
   "source_commit": "5bfe80e5c96510ef04db37076d8b54c81c6943db",
   "source_bundle_sha256": "ff7d8eecdb0edcdbd92f17b88a031928895ece19c86176ce13bdc3e4815d6836",
@@ -17,7 +17,7 @@
   "flash_retraining_planned": false,
   "flash_completed_updates_preserved": 12,
   "new_completed_updates": {
-    "pro": 5,
+    "pro": 11,
     "luna": 0
   },
   "remaining_order": [
@@ -35,9 +35,9 @@
   "prime_bundle_verified": true,
   "source_and_gpu_verified": true,
   "detached_campaign_started": true,
-  "last_observed_utc": "2026-10-08T11:46:33.616094+00:00",
+  "last_observed_utc": "2026-10-08T13:14:32.212962+00:00",
   "last_observed_phase": "arm_pro_running",
   "flash_recovered_evaluation_complete": true,
-  "active_rental_clock_cost_estimate_usd": 7.43,
-  "latest_progress_evidence": "LIVE-pro-step5.json"
+  "active_rental_clock_cost_estimate_usd": 12.98,
+  "latest_progress_evidence": "LIVE-pro-step11.json"
 }
