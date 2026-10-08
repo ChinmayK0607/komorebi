@@ -20,7 +20,15 @@
   "hypothesis_record": "RETRY-attempt5.json",
   "source_public_evidence": "source-handoff-attempt5.json",
   "last_observed_reason": "fresh_rl16_baseline",
-  "last_observed_utc": "2026-10-08T05:56:13.922385+00:00",
+  "last_observed_utc": "2026-10-08T06:07:03.142115+00:00",
   "native_prime_config_verified": true,
-  "all_three_actual_launch_preflights_passed": true
+  "all_three_actual_launch_preflights_passed": true,
+  "live_baseline_receipts": {
+    "saved_receipts": 31,
+    "marked_valid": 29,
+    "marked_invalid": 2,
+    "generation_complete_receipt": false,
+    "scope": "Live saved render attempts/turns, not completed-case count or terminal-validity audit."
+  },
+  "rental_clock_cost_estimate_usd_at_observation": 1.03
 }
