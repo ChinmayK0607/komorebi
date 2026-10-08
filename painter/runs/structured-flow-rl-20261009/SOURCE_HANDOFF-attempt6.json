@@ -1,0 +1,12 @@
+{
+  "schema": "structured-flow-source-handoff-v1",
+  "attempt": 6,
+  "source_commit": "2c6c6018b479908c96b62888c3b1a638a298b795",
+  "bundle_sha256": "44d33d499255dd2510202202abc201813c4ec4b2876836f03f990786bdb75153",
+  "bundle_bytes": 3626998,
+  "gpu_allowance_usd": 18,
+  "prior_start_reserve_usd": 2,
+  "prior_gpu_clock_estimate_usd": 1.5943,
+  "status": "finite_controller_started",
+  "optimizer_updates_confirmed": 0
+}
