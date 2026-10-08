@@ -1,0 +1,14 @@
+{
+  "schema": "structured-flow-source-handoff-v1",
+  "attempt": 8,
+  "source_commit": "43d8f4f0b5a4ae7ed588e7b01e95c02bf93248dc",
+  "bundle_sha256": "f79329f06f212482d59e3faafe8383324518f58a97d10b537384da50eeee5fce",
+  "bundle_bytes": 3637015,
+  "gpu_allowance_usd": 17,
+  "prior_start_reserve_usd": 3,
+  "prior_gpu_clock_estimate_usd": 2.3662,
+  "large_mutable_storage": "node-local scratch",
+  "node_binding": "explicit verified Prime environment path",
+  "status": "finite_controller_started",
+  "optimizer_updates_confirmed": 0
+}
