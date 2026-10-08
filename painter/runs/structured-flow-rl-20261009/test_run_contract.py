@@ -7,6 +7,7 @@ import importlib.util
 import json
 import os
 from pathlib import Path
+import shlex
 import subprocess
 import sys
 import tempfile
@@ -303,6 +304,56 @@ mv "$flow_tmp" "$run_root/flow-supervision-build.json"
         self.assertIn('NoNewPrivs=1', helper)
         self.assertIn('Seccomp:', helper)
         self.assertIn('cap_eff', helper)
+
+    def test_prepare_node_prime_interpreter_probe_isolated_from_bootstrap(self):
+        """Run the actual preparation probe with deliberately split interpreters."""
+        try:
+            import pydantic  # noqa: F401
+        except Exception as exc:  # pragma: no cover - host-dependent test dependency
+            self.skipTest(f"test host lacks pydantic: {exc}")
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            bin_dir = root / "bin"
+            bin_dir.mkdir()
+            (bin_dir / "uname").write_text("#!/bin/sh\nprintf '%s\\n' Linux\n")
+            (bin_dir / "uname").chmod(0o755)
+            right_marker = root / "right-called"
+            wrong_marker = root / "wrong-called"
+            right = root / "prime-python"
+            right.write_text(
+                "#!/bin/sh\n"
+                f"printf '%s\\n' right > {shlex.quote(str(right_marker))}\n"
+                f"exec {shlex.quote(sys.executable)} \"$@\"\n"
+            )
+            right.chmod(0o755)
+            wrong = root / "bootstrap-python"
+            wrong.write_text(
+                "#!/bin/sh\n"
+                f"printf '%s\\n' wrong > {shlex.quote(str(wrong_marker))}\n"
+                "exit 97\n"
+            )
+            wrong.chmod(0o755)
+            environment = os.environ.copy()
+            environment.update({
+                "PATH": f"{bin_dir}{os.pathsep}{environment.get('PATH', '')}",
+                "PAINTER_PRIME_PYTHON": str(right),
+                "PAINTER_BOOTSTRAP_PYTHON": str(wrong),
+                "PAINTER_RUN_ROOT": str(RUN),
+                "PRIME_ROOT": str(root / "prime"),
+            })
+            result = subprocess.run(
+                ["bash", str(RUN / "prepare_node.sh"), "--interpreter-probe"],
+                cwd=RUN.parents[2],
+                env=environment,
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn('"schema": "structured-flow-prime-interpreter-probe-v1"', result.stdout)
+            self.assertTrue(right_marker.is_file())
+            self.assertFalse(wrong_marker.exists())
+            prepare = (RUN / "prepare_node.sh").read_text()
+            self.assertIn('"$PY_PRIME" "$RUN/prepare_structured_config.py"', prepare)
 
     def test_shell_scripts_compile(self):
         scripts = ["runtime_env.sh", "prepare_node.sh", "run.sh", "execute_single.sh", "execute_pipeline.sh", "evaluate.sh", "finalize.sh", "matched_baseline.sh"]

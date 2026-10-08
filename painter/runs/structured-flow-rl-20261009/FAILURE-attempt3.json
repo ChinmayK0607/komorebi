@@ -1,0 +1,22 @@
+{
+  "schema": "structured-flow-failure-v1",
+  "attempt": 3,
+  "status": "released",
+  "completed_optimizer_updates": 0,
+  "successful_preparation": [
+    "actual_sandboxed_browser_and_Node_checks",
+    "curriculum_240_train_60_heldout_proposals",
+    "lazy_32_train_16_heldout_manifest",
+    "public_policy_adapter_hashes"
+  ],
+  "failure": "Prime config validation called from lightweight bootstrap Python; pydantic unavailable there",
+  "source_commit": "3362b75c4405b0a5a471a3393d0f1c5fb7285189",
+  "gpu_clock_seconds": 246.82,
+  "estimated_gpu_cost_usd": 0.255,
+  "cumulative_gpu_clock_estimate_usd": 0.6154,
+  "cost_basis": "rental start to final release receipt; estimate not invoice; excludes API",
+  "public_evidence_receipt": "FAILURE_PUBLIC-attempt3.json",
+  "retry_cap_usd": 19.25,
+  "prior_attempt_reserve_usd": 0.75,
+  "next_decision": "bind every Prime-dependent helper to Prime venv; verify actual config validation under that interpreter before model serving"
+}

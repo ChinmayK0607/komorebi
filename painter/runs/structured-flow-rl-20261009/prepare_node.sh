@@ -7,7 +7,28 @@ REPO="$(cd "$RUN/../../.." && pwd -P)"
 source "$RUN/runtime_env.sh"
 validate_structured_bindings
 [[ "$(uname -s)" == Linux ]] || { echo 'Linux GPU node required' >&2; exit 1; }
-[[ $# == 0 ]] || { echo 'usage: prepare_node.sh' >&2; exit 2; }
+[[ $# == 0 || ( $# == 1 && "$1" == --interpreter-probe ) ]] || {
+  echo 'usage: prepare_node.sh [--interpreter-probe]' >&2; exit 2;
+}
+
+# Prime config validation imports pydantic from the pinned Prime environment;
+# the bootstrap interpreter intentionally has a smaller dependency set. Keep
+# the selection explicit and expose a cheap node-local probe for the operator
+# and regression tests before any renderer or model setup begins.
+PY_PRIME="${PAINTER_PRIME_PYTHON:-$PRIME_ROOT/.venv/bin/python}"
+if [[ "${1:-}" == --interpreter-probe ]]; then
+  [[ -x "$PY_PRIME" ]] || { echo "pinned Prime Python is missing: $PY_PRIME" >&2; exit 1; }
+  "$PY_PRIME" - <<'PY'
+import json
+import sys
+try:
+    import pydantic  # noqa: F401
+except Exception as exc:
+    raise SystemExit(f"Prime interpreter cannot import pydantic: {type(exc).__name__}: {exc}")
+print(json.dumps({"schema": "structured-flow-prime-interpreter-probe-v1", "executable": sys.executable, "pydantic": True}, sort_keys=True))
+PY
+  exit 0
+fi
 
 # Keep setup bounded on the rented node.  These guards run before any package
 # install or model/adapter transfer so a constrained image fails cheaply.
@@ -134,6 +155,7 @@ BOOTSTRAP_RUN="${PAINTER_BOOTSTRAP_RUN:-$REPO/painter/runs/text-pairwise-rl-2026
 bash "$BOOTSTRAP_RUN/setup_node.sh"
 PY_BOOT="${PAINTER_BOOTSTRAP_PYTHON:-$PAINTER_NODE_ROOT/bootstrap/bin/python}"
 [[ -x "$PY_BOOT" ]] || PY_BOOT=python3
+[[ -x "$PY_PRIME" ]] || { echo "pinned Prime Python is missing: $PY_PRIME" >&2; exit 1; }
 DOWNLOAD="${PAINTER_POLICY_DOWNLOAD_SCRIPT:-$REPO/painter/runs/text-pairwise-rl-20260928/download_public_adapter.py}"
 [[ -f "$DOWNLOAD" ]] || { echo 'pinned public adapter downloader is missing' >&2; exit 1; }
 
@@ -306,7 +328,7 @@ v=json.loads(Path(sys.argv[1]).read_text())
 print("1" if v.get("status")=="pending_runtime_frozen_anchors" else "0")
 PY
 )" == 1 ]] && CONFIG_ARGS+=(--allow-pending-anchors)
-"$PY_BOOT" "$RUN/prepare_structured_config.py" "${CONFIG_ARGS[@]}"
+"$PY_PRIME" "$RUN/prepare_structured_config.py" "${CONFIG_ARGS[@]}"
 if [[ -f "$RUN/native.toml" ]]; then
   cmp -s "$PROPOSED" "$RUN/native.toml" || { echo 'existing native.toml differs from frozen structured proposal' >&2; exit 1; }
 else
