@@ -1,0 +1,33 @@
+{
+  "schema": "structured-flow-failure-profile-v1",
+  "attempt": 10,
+  "phase": "runtime-preparation-and-matched-baseline-startup; includes target-amendment pause",
+  "gpu_denominator": 2,
+  "sample_interval_seconds": 10,
+  "samples": [
+    {
+      "gpu_index": 0,
+      "role": "inference_baseline",
+      "samples": 93,
+      "window_start_node_timestamp": "2026/10/09 00:37:31.569",
+      "window_end_node_timestamp": "2026/10/09 00:52:52.091",
+      "mean_gpu_utilization_percent": 0.3548387096774194,
+      "busy_fraction_at_10_percent_threshold": 0.021505376344086023
+    },
+    {
+      "gpu_index": 1,
+      "role": "trainer",
+      "samples": 93,
+      "window_start_node_timestamp": "2026/10/09 00:37:31.577",
+      "window_end_node_timestamp": "2026/10/09 00:52:52.093",
+      "mean_gpu_utilization_percent": 0.0,
+      "busy_fraction_at_10_percent_threshold": 0.0
+    }
+  ],
+  "optimizer_updates": 0,
+  "saturation": false,
+  "limitations": [
+    "GPU activity is baseline/model startup, not successful learning.",
+    "This is a sampled preparation window; not full-rental utilization."
+  ]
+}

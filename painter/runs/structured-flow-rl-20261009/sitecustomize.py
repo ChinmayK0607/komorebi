@@ -6,10 +6,13 @@ import runpy
 SOURCE = Path(__file__).resolve().parents[1] / "text-sft512-consistent-20260930" / "sitecustomize.py"
 runpy.run_path(str(SOURCE), run_name="structured_flow_sitecustomize")
 
-# The shared sitecustomize only installs the process-group guard.  The
-# structured-flow prompt hook is run-local and opt-in; it patches the native
-# RL taskset before Prime serializes tasks so the casebrief hint is real input.
-if __import__("os").environ.get("PAINTER_PRIME_ROLE") == "orchestrator":
+# The shared sitecustomize installs the process-group guard only for the RL
+# orchestrator.  Baseline/evaluation Prime processes are intentionally
+# ungrouped, but still need the run-local flow hook so their prompts match the
+# policy being evaluated.  Keep this role split here rather than weakening the
+# shared fail-closed group guard.
+_ROLE = __import__("os").environ.get("PAINTER_PRIME_ROLE")
+if _ROLE in {"orchestrator", "evaluation"}:
     from flow_prompt_hook import install
     result = install()
     if __import__("os").environ.get("PAINTER_STRUCTURED_FLOW_POLICY") == "1" and not result.get("installed"):

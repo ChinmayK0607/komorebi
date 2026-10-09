@@ -6,6 +6,10 @@ BASE="$(cd "$RUN/../text-sft512-consistent-20260930" && pwd -P)"
 # from a shell that inherited the previous eight-update setting.
 export PAINTER_RL_MAX_STEPS=20 PAINTER_MAX_UPDATES=20 PAINTER_CHECKPOINT_INTERVAL=4 PAINTER_EVAL_PREFERRED_STEP=20
 source "$RUN/runtime_env.sh"
+# Evaluation is intentionally outside the RL whole-group admission.  Set the
+# role before the transient evaluator patcher starts so an inherited
+# orchestrator value cannot activate the fail-closed RL guard.
+export PAINTER_PRIME_ROLE=evaluation
 validate_structured_bindings
 export PAINTER_RUN_ROOT="$RUN" PAINTER_RUN_NAME=structured-flow-rl-20261009
 export PAINTER_EVAL_MANIFEST="$RUN/curriculum/matched16-manifest.json"
@@ -27,7 +31,7 @@ text = source.read_text(encoding="utf-8")
 needle = 'PYTHONPATH="$REPO/painter"'
 replacement = (
     'PYTHONPATH="$REPO:$REPO/painter:$RUN" '
-    'PAINTER_PRIME_ROLE=orchestrator '
+    'PAINTER_PRIME_ROLE=evaluation '
     'PAINTER_STRUCTURED_FLOW_POLICY=1'
 )
 if text.count(needle) < 2:
@@ -40,5 +44,5 @@ text = text.replace(
 target.write_text(text, encoding="utf-8")
 target.chmod(0o700)
 PY
-export PAINTER_PRIME_ROLE=orchestrator PAINTER_STRUCTURED_FLOW_POLICY=1
+export PAINTER_PRIME_ROLE=evaluation PAINTER_STRUCTURED_FLOW_POLICY=1
 exec bash "$PATCHED_EVALUATOR" "$1" all "${2:-}"

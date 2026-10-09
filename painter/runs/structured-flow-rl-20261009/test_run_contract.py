@@ -518,9 +518,62 @@ class StructuredFlowRunTests(unittest.TestCase):
         self.assertLess(prepare.index('bash "$RUN/matched_baseline.sh"'), prepare.index('run_from_sft.py" --refresh-final-config'))
         self.assertNotIn('flow_demonstrations.py" render', prepare)
         self.assertIn('supervision_phase.py" --data', prepare)
-        self.assertIn('PAINTER_PRIME_ROLE=orchestrator', evaluator)
+        self.assertIn('PAINTER_PRIME_ROLE=evaluation', evaluator)
+        self.assertNotIn('PAINTER_PRIME_ROLE=orchestrator', evaluator)
         self.assertIn('PAINTER_STRUCTURED_FLOW_POLICY=1', evaluator)
         self.assertIn('PYTHONPATH="$REPO:$REPO/painter:$RUN"', evaluator)
+
+    def test_ungrouped_evaluation_role_keeps_flow_hook_without_training_guard(self):
+        """Baseline/eval must patch prompts without activating RL admission."""
+        import runpy
+
+        calls = []
+        flow = types.ModuleType("flow_prompt_hook")
+
+        def install():
+            calls.append("flow")
+            return {"installed": True}
+
+        flow.install = install
+        group = types.ModuleType("painter.consistent_group_admission")
+
+        def forbidden_group_install():
+            raise AssertionError("baseline/eval unexpectedly installed RL group guard")
+
+        group.install_from_environment = forbidden_group_install
+        with mock.patch.dict(
+            sys.modules,
+            {"flow_prompt_hook": flow, "painter.consistent_group_admission": group},
+            clear=False,
+        ), mock.patch.dict(
+            os.environ,
+            {"PAINTER_PRIME_ROLE": "evaluation", "PAINTER_STRUCTURED_FLOW_POLICY": "1"},
+            clear=False,
+        ):
+            runpy.run_path(str(RUN / "sitecustomize.py"), run_name="structured_flow_eval_sitecustomize")
+        self.assertEqual(calls, ["flow"])
+
+    def test_orchestrator_without_group_admission_fails_closed_before_training_imports(self):
+        """The RL role still fails before importing/creating training state."""
+        import runpy
+
+        calls = []
+        group = types.ModuleType("painter.consistent_group_admission")
+
+        def disabled_group_install():
+            calls.append("group")
+            return {"installed": False, "already_installed": False, "enabled": False}
+
+        group.install_from_environment = disabled_group_install
+        with mock.patch.dict(
+            sys.modules, {"painter.consistent_group_admission": group}, clear=False
+        ), mock.patch.dict(
+            os.environ, {"PAINTER_PRIME_ROLE": "orchestrator"}, clear=False
+        ):
+            os.environ.pop("PAINTER_STRUCTURED_FLOW_POLICY", None)
+            with self.assertRaises(SystemExit):
+                runpy.run_path(str(RUN / "sitecustomize.py"), run_name="structured_flow_rl_sitecustomize")
+        self.assertEqual(calls, ["group"])
 
     def test_clean_tracked_source_builds_receipts_outside_strict_output_dirs(self):
         """Exercise the actual builders with the same shell redirection shape.
@@ -654,6 +707,14 @@ mv "$flow_tmp" "$run_root/flow-supervision-build.json"
         self.assertIn('runtime_receipt.py', run)
         self.assertIn('PAINTER_RL_ADAPTER_SHA256="$ACTIVE_POLICY_SHA256"', run)
         self.assertIn('PAINTER_STRUCTURED_FLOW_POLICY=1', baseline)
+        self.assertIn('PAINTER_PRIME_ROLE=baseline', baseline)
+        self.assertIn('export PAINTER_PRIME_ROLE=baseline', baseline)
+        self.assertIn('PAINTER_PRIME_ROLE=evaluation', baseline)
+        self.assertIn('PAINTER_PRIME_ROLE=evaluation PAINTER_STRUCTURED_FLOW_POLICY=1', baseline)
+        self.assertIn('PAINTER_PRIME_ROLE=baseline PAINTER_STRUCTURED_FLOW_POLICY=0', baseline)
+        self.assertIn('evaluation-role-smoke.json', baseline)
+        self.assertLess(baseline.index('evaluation-role-smoke.json'), baseline.index('setsid env CUDA_VISIBLE_DEVICES'))
+        self.assertNotIn('PAINTER_PRIME_ROLE=orchestrator', baseline)
         self.assertNotIn('PAINTER_STRUCTURED_FLOW_POLICY="$PAINTER_STRUCTURED_FLOW_POLICY"', baseline)
         self.assertIn('CUDA_HOME=', baseline)
         self.assertIn('LD_LIBRARY_PATH="$CUDA_HOME/lib:', baseline)

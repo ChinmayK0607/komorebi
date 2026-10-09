@@ -8,6 +8,11 @@ set -Eeuo pipefail
 RUN="${PAINTER_RUN_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)}"
 REPO="$(cd "$RUN/../../.." && pwd -P)"
 source "$RUN/runtime_env.sh"
+# This script owns an ungrouped baseline/evaluation phase.  Override an
+# inherited RL role before the vLLM server or any Prime helper starts; the
+# native policy evaluation below switches to the flow-enabled evaluation role
+# explicitly.  The RL orchestrator remains role-gated in run.sh/Prime.
+export PAINTER_PRIME_ROLE=baseline
 validate_structured_bindings
 [[ "$(uname -s)" == Linux ]] || { echo 'matched baseline requires the Linux node' >&2; exit 1; }
 [[ $# == 0 || ( $# == 1 && "$1" == --preflight ) ]] || { echo 'usage: matched_baseline.sh [--preflight]' >&2; exit 2; }
@@ -58,6 +63,39 @@ if [[ "${1:-}" == --preflight ]]; then
 fi
 [[ ! -e "$OUT" ]] || { echo "baseline output already exists: $OUT" >&2; exit 1; }
 mkdir -p "$OUT/logs"
+# Prove the ungrouped evaluator role and run-local flow hook with the actual
+# Prime interpreter before starting the model server.  This imports only the
+# taskset/hook contract; it does not contact a model, judge, or renderer.
+EVALUATION_ROLE_SMOKE="$OUT/logs/evaluation-role-smoke.json"
+PYTHONPATH="$REPO:$REPO/painter:$RUN${PYTHONPATH:+:$PYTHONPATH}" \
+  PAINTER_PRIME_ROLE=evaluation PAINTER_STRUCTURED_FLOW_POLICY=1 \
+  PAINTER_RL_MANIFEST="$TRAIN_MANIFEST" PAINTER_EVAL_MANIFEST="$EVAL_MANIFEST" \
+  PAINTER_FLOW_HOOK_RECEIPT="$EVALUATION_ROLE_SMOKE" \
+  "$PY" - "$EVALUATION_ROLE_SMOKE" <<'PY'
+import json
+import os
+import sys
+from pathlib import Path
+
+receipt = Path(sys.argv[1])
+if os.environ.get("PAINTER_PRIME_ROLE") != "evaluation":
+    raise SystemExit("evaluator role smoke did not run as evaluation")
+if os.environ.get("PAINTER_STRUCTURED_FLOW_POLICY") != "1":
+    raise SystemExit("evaluator role smoke did not enable structured flow")
+if not receipt.is_file():
+    raise SystemExit(f"flow hook receipt was not written: {receipt}")
+value = json.loads(receipt.read_text(encoding="utf-8"))
+if value.get("schema") != "structured-flow-prompt-hook-v1" or not value.get("installed"):
+    raise SystemExit(f"flow hook did not install: {value}")
+if not value.get("evaluation_taskset_patched"):
+    raise SystemExit(f"evaluation taskset was not patched: {value}")
+print(json.dumps({
+    "role": os.environ["PAINTER_PRIME_ROLE"],
+    "flow_policy": os.environ["PAINTER_STRUCTURED_FLOW_POLICY"],
+    "flow_hook_installed": True,
+    "evaluation_taskset_patched": True,
+}, sort_keys=True))
+PY
 SERVER_PID=""
 cleanup() {
   local status=$?
@@ -96,7 +134,7 @@ PY
 done
 (( SECONDS < deadline )) || { echo 'baseline vLLM startup timeout' >&2; exit 1; }
 
-PYTHONPATH="$REPO:$REPO/painter:$RUN${PYTHONPATH:+:$PYTHONPATH}" PAINTER_STRUCTURED_FLOW_POLICY=1 PAINTER_BROWSER_ROOT="$BROWSER_ROOT" PLAYWRIGHT_BROWSERS_PATH="$BROWSER_ROOT" PAINTER_FROZEN_OPPONENT_ENDPOINT="http://127.0.0.1:$PORT/v1" \
+PYTHONPATH="$REPO:$REPO/painter:$RUN${PYTHONPATH:+:$PYTHONPATH}" PAINTER_PRIME_ROLE=baseline PAINTER_STRUCTURED_FLOW_POLICY=0 PAINTER_BROWSER_ROOT="$BROWSER_ROOT" PLAYWRIGHT_BROWSERS_PATH="$BROWSER_ROOT" PAINTER_FROZEN_OPPONENT_ENDPOINT="http://127.0.0.1:$PORT/v1" \
   "$PY" "$RUN/anchor_bank.py" materialize \
   --train-manifest "$TRAIN_MANIFEST" --heldout-manifest "$EVAL_MANIFEST" \
   --anchor-root "${PAINTER_ANCHOR_ROOT:-$RUN/curriculum/anchors}" \
@@ -104,7 +142,7 @@ PYTHONPATH="$REPO:$REPO/painter:$RUN${PYTHONPATH:+:$PYTHONPATH}" PAINTER_STRUCTU
   --run-root "$RUN" >"$OUT/logs/anchor-materialization.json"
 
 PYTHONPATH="$REPO:$REPO/painter:$RUN${PYTHONPATH:+:$PYTHONPATH}" \
-  PAINTER_PRIME_ROLE=orchestrator PAINTER_STRUCTURED_FLOW_POLICY=1 PAINTER_BROWSER_ROOT="$BROWSER_ROOT" PLAYWRIGHT_BROWSERS_PATH="$BROWSER_ROOT" PAINTER_RL_MANIFEST="$TRAIN_MANIFEST" PAINTER_EVAL_MANIFEST="$EVAL_MANIFEST" \
+  PAINTER_PRIME_ROLE=evaluation PAINTER_STRUCTURED_FLOW_POLICY=1 PAINTER_BROWSER_ROOT="$BROWSER_ROOT" PLAYWRIGHT_BROWSERS_PATH="$BROWSER_ROOT" PAINTER_RL_MANIFEST="$TRAIN_MANIFEST" PAINTER_EVAL_MANIFEST="$EVAL_MANIFEST" \
   PAINTER_FLOW_HOOK_RECEIPT="$OUT/structured-flow-hook-receipt.json" \
   "$PY" "$REPO/painter/native_painting_eval.py" --root "$REPO/painter" --manifest "$EVAL_MANIFEST" \
   --policy-label flash12-pre-warmup --model flash12-baseline --output-dir "$OUT/evaluation-rollouts" \
@@ -124,7 +162,7 @@ env PYTHONPATH="$REPO/painter:$RUN${PYTHONPATH:+:$PYTHONPATH}" PAINTER_LOCAL_API
   PAINTER_BROWSER_ROOT="$BROWSER_ROOT" PLAYWRIGHT_BROWSERS_PATH="$BROWSER_ROOT" PAINTER_REQUIRE_VALID_FINAL_ACTION=1 PAINTER_JS_SYNTAX_PREFLIGHT=1 \
   PAINTER_JUDGE_PROTOCOL="$PAINTER_JUDGE_PROTOCOL" PAINTER_JUDGE_FORMAT="$PAINTER_JUDGE_FORMAT" PAINTER_JUDGE_MODEL="$PAINTER_JUDGE_MODEL" \
   PAINTER_STRUCTURED_FLOW_POLICY=1 PAINTER_RL_MANIFEST="$TRAIN_MANIFEST" PAINTER_EVAL_MANIFEST="$EVAL_MANIFEST" \
-  PAINTER_PRIME_ROLE=orchestrator PAINTER_FLOW_HOOK_RECEIPT="$OUT/structured-flow-hook-receipt.json" \
+  PAINTER_PRIME_ROLE=evaluation PAINTER_FLOW_HOOK_RECEIPT="$OUT/structured-flow-hook-receipt.json" \
   bash -c 'cd "$1"; exec "$2" @ "$3" --no-serve --no-push' _ "$PRIME_ROOT" "$EVAL" "$OUT/eval.toml" >"$OUT/logs/eval.log" 2>&1
 
 "$PY" - "$OUT" "$FLASH" "$EVAL_MANIFEST" "${PAINTER_EVAL_SEED:-918210}" <<'PY'

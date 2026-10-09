@@ -1,0 +1,24 @@
+{
+  "schema": "structured-flow-public-source-amendment-v1",
+  "repo_id": "CK0607/komorebi-painter-experiments",
+  "repo_type": "dataset",
+  "revision": "f929fef4c918ae5fec1961a983ace3023afd2786",
+  "path": "sources/structured-flow-rl-20261009/baf4443120802dc864b8b5f0dd7dff511364ee38.bundle",
+  "sha256": "17d7691f31234f9dd1d3acae2fcce816f0714dc2fc00eb0e8609a6dac043fdb1",
+  "bytes": 3699504,
+  "source_commit": "baf4443120802dc864b8b5f0dd7dff511364ee38",
+  "bootstrap_source_commit": "94aa0e733c5b4c909b5ba2d8694650bd3a0dd726",
+  "target_rl_updates": 20,
+  "sft_updates": 4,
+  "checkpoints": [
+    4,
+    8,
+    12,
+    16,
+    20
+  ],
+  "public": true,
+  "cumulative_gpu_ceiling_usd": 20,
+  "original_rental_clock_preserved": true,
+  "anonymous_hash_verified": true
+}

@@ -1,0 +1,21 @@
+{
+  "schema": "structured-flow-target-amendment-deployment-v1",
+  "source_commit": "baf4443120802dc864b8b5f0dd7dff511364ee38",
+  "bootstrap_pipeline_source_commit": "94aa0e733c5b4c909b5ba2d8694650bd3a0dd726",
+  "public_bundle_revision": "f929fef4c918ae5fec1961a983ace3023afd2786",
+  "public_bundle_sha256": "17d7691f31234f9dd1d3acae2fcce816f0714dc2fc00eb0e8609a6dac043fdb1",
+  "rl_updates": 20,
+  "sft_updates": 4,
+  "checkpoints": [
+    4,
+    8,
+    12,
+    16,
+    20
+  ],
+  "original_rental_clock_preserved": true,
+  "new_node_allocated": false,
+  "optimizer_updates_before_amendment": 0,
+  "remote_bundle_hash_verified": true,
+  "owned_pipeline_resumed": true
+}

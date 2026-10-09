@@ -1,0 +1,22 @@
+{
+  "schema": "structured-flow-failure-v1",
+  "attempt": 10,
+  "phase": "matched-baseline-python-role-startup",
+  "optimizer_updates": 0,
+  "node_absence_independently_confirmed": true,
+  "archive_public_revision": "d50388563aeb30e3b691aaabf9a85d5efe803481",
+  "archive_sha256": "5c37ecd04fce6a7beee9a2afb7275be83e68f17c3f9f68bd1879e2cc33c41966",
+  "archive_bytes": 33749427,
+  "archive_anonymous_hash_verified": true,
+  "source_before_amendment": "94aa0e733c5b4c909b5ba2d8694650bd3a0dd726",
+  "amended_source": "baf4443120802dc864b8b5f0dd7dff511364ee38",
+  "requested_rl_updates": 20,
+  "failure": "Baseline evaluation inherited RL orchestrator role while whole-group admission was disabled; sitecustomize aborted before optimizer updates.",
+  "gpu_clock_estimate_usd": 2.5581,
+  "cumulative_gpu_clock_estimate_usd": 7.5749,
+  "cost_basis": "Original rental epoch to local release-event log mtime; estimate, not invoice; API excluded.",
+  "next_gpu_allowance_usd": 12.0,
+  "prior_attempt_reserve_usd": 8.0,
+  "cumulative_gpu_ceiling_usd": 20,
+  "recurring_automation": false
+}
