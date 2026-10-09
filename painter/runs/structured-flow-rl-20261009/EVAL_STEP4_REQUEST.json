@@ -1,0 +1,51 @@
+{
+  "schema": "structured-flow-matched-evaluation-request-v1",
+  "date": "2026-10-09",
+  "hypothesis": "Determine whether four saved RL updates improved heldout painting quality over their exact Flash12 initializer; training reward is not the decision criterion.",
+  "evaluation_only": true,
+  "training_updates_to_execute": 0,
+  "candidate": {
+    "repo": "CK0607/qwen3.8-27b-brush-painting",
+    "revision": "d4ae68d425b5728ffb69aeabce82dd54231486f2",
+    "prefix": "structured-flow-rl-20261009/step_4",
+    "adapter_sha256": "51e35b6fb48c2cf019309f928f292cd9852cfdd2af29abe3f8714d6c429922bf"
+  },
+  "matched_baseline": {
+    "revision": "1227a2427a8ae16014d2fdca4d1adb6855d3fa1c",
+    "prefix": "rl-judge-matched-20261004-flash/step_12",
+    "adapter_sha256": "c70c47ec0d6d7172b3bc25c4f54178919cf7c079cd9652fff3bc76db9e1eca79",
+    "evidence_repo": "CK0607/komorebi-painter-experiments",
+    "evidence_revision": "f72ee86cc24cb5fa3618c649aa1fe32ea22753ae",
+    "archive_sha256": "ff4efa37835b1a7e3c5e90a628d685f1e94f39cf3d13760e47abab834c1a90c3"
+  },
+  "fixed_reward_control": "SFT512; separate from matched initializer comparison",
+  "heldout": {
+    "cases": 16,
+    "manifest_sha256": "ee6c62716723d237f9f5dab81063d3c2efc20daced74ebeb18da8b1993233532",
+    "seed": 918210,
+    "max_turns": 3,
+    "max_tokens_per_turn": 8192,
+    "max_concurrent": 8,
+    "same_saved_casebrief_bytes": true,
+    "temperature": 1.0,
+    "enable_thinking": false,
+    "matched_baseline_valid_terminal_cases": 16,
+    "matched_baseline_episode_errors": 0
+  },
+  "judge": {
+    "model": "xiaomi/mimo-v2.6-flash",
+    "reasoning_effort": "medium",
+    "module": "painter.text_pairwise_consistent_side_judge_v2_generic",
+    "rubric_sha256": "d21e4644e7a3874a0694b2ad406420e733b7638222eb7717e7f5f91cbdf1613c",
+    "contrast": "candidate vs matched Flash12 images; SFT512 can be displayed separately"
+  },
+  "renderer_sha256": "dc6b9d837ed7be382784a6c84de1b64911506b17a19b499ce054c0c572e75794",
+  "gpu_budget": {
+    "fresh_allowance_usd": 3.0,
+    "prior_gpu_estimate_usd": 16.893,
+    "original_cumulative_ceiling_usd": 20.0,
+    "api_separate": true
+  },
+  "failure_accounting": "Keep all16 denominator cases; failed final actions and uncertain judgments are explicit, not dropped or imputed as visual preferences.",
+  "next_decision": "Inspect matched visuals, judged preferences and validity before additional training. No inference about code-flow supervision: supervised warmup remains pending."
+}

@@ -674,7 +674,7 @@ def operate(
             min(INVENTORY_TIMEOUT_SECONDS, _remaining(window, now)),
         )
         release_target = pod
-        event("pod_verified", topology={"gpus_per_node": 2, "num_train_gpus": 1, "num_infer_gpus": 1})
+        event("pod_verified", topology={"gpus_per_node": GPU_COUNT, "num_train_gpus": TRAIN_GPU_COUNT, "num_infer_gpus": INFER_GPU_COUNT})
         with api.ssh_connection(pod, timeout=min(30.0, _remaining(window, now))) as ssh:
             _remote_exec(ssh, "mkdir -p /root/painter/private /root/painter/logs && chmod 700 /root/painter/private", timeout=SSH_TIMEOUT_SECONDS, now=now, window=window)
             sftp = ssh.open_sftp()
@@ -696,7 +696,7 @@ def operate(
                 raise OperationError("source or GPU verification failed" + (f": {detail}" if detail else ""))
             memories = _gpu_memory(gpu_raw)
             if len(memories) != GPU_COUNT or min(memories, default=0) < MIN_GPU_MEMORY_MIB:
-                raise OperationError("remote GPU inventory is not exactly two 80GB-class devices")
+                raise OperationError(f"remote GPU inventory is not exactly {GPU_COUNT} configured 80GB-class device(s)")
             event("source_and_gpu_verified", source_commit=source_commit, gpu_count=len(memories), gpu_memory_min_mib=min(memories))
 
             def reconnect(deadline_window: RentalWindow = window) -> Any:
@@ -994,7 +994,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             "run_name": RUN_NAME,
             "experiment_name": EXPERIMENT_NAME,
             "gpu_cap_usd": window.cap_usd,
-            "topology": {"gpus_per_node": 2, "num_train_gpus": 1, "num_infer_gpus": 1},
+            "topology": {"gpus_per_node": GPU_COUNT, "num_train_gpus": TRAIN_GPU_COUNT, "num_infer_gpus": INFER_GPU_COUNT},
             "max_updates": 4,
             "judge": "xiaomi/mimo-v2.6-flash",
         }, sort_keys=True))

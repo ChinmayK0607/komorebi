@@ -149,7 +149,11 @@ validate_structured_bindings() {
   [[ "$PAINTER_JUDGE_MODEL" == xiaomi/mimo-v2.6-flash && "$PAINTER_JUDGE_EFFORT" == medium ]] || return 1
   [[ "$PAINTER_JUDGE_PROTOCOL" == text-paint-sft-pairwise-consistent-v1 ]] || return 1
   [[ "$PAINTER_JUDGE_FORMAT" == identity-joint-side-schema-v2-generic-v1 ]] || return 1
-  [[ "$PAINTER_GPUS_PER_NODE" == 2 && "$PAINTER_NUM_TRAIN_GPUS" == 1 && "$PAINTER_NUM_INFER_GPUS" == 1 ]] || return 1
+  if [[ "${PAINTER_EVALUATION_ONLY:-0}" == 1 ]]; then
+    [[ "$PAINTER_GPUS_PER_NODE" == 1 && "$PAINTER_NUM_TRAIN_GPUS" == 0 && "$PAINTER_NUM_INFER_GPUS" == 1 ]] || return 1
+  else
+    [[ "$PAINTER_GPUS_PER_NODE" == 2 && "$PAINTER_NUM_TRAIN_GPUS" == 1 && "$PAINTER_NUM_INFER_GPUS" == 1 ]] || return 1
+  fi
   [[ "$PAINTER_GROUP_SIZE" == 4 && "$PAINTER_INITIAL_INFLIGHT" == 32 && "$PAINTER_MAX_INFLIGHT" == 32 ]] || return 1
   [[ "$PAINTER_RL_MAX_STEPS" == 20 && "$PAINTER_MAX_UPDATES" == 20 && "$PAINTER_CHECKPOINT_INTERVAL" == 4 ]] || return 1
   [[ "$PAINTER_BATCH_SIZE" == 16 && "$PAINTER_LEARNING_RATE" == 1e-6 && "$PAINTER_MAX_POLICY_AGE" == 1 ]] || return 1

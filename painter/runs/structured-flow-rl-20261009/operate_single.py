@@ -33,8 +33,12 @@ base.REMOTE_JOB_PID = base.REMOTE_JOB_DIR / "structured-flow-remote-job.pid"
 base.REMOTE_JOB_EXIT = base.REMOTE_JOB_DIR / "structured-flow-remote-job-exit.json"
 base.REMOTE_JOB_STDOUT = base.REMOTE_JOB_DIR / "structured-flow-remote-job.stdout.log"
 base.REMOTE_JOB_STDERR = base.REMOTE_JOB_DIR / "structured-flow-remote-job.stderr.log"
-base.GPU_COUNT = 2
-base.TRAIN_GPU_COUNT = 1
+EVALUATION_ONLY = os.environ.get("PAINTER_EVALUATION_ONLY", "0")
+if EVALUATION_ONLY not in {"0", "1"}:
+    raise ValueError("PAINTER_EVALUATION_ONLY must be 0 or 1")
+EVALUATION_ONLY = EVALUATION_ONLY == "1"
+base.GPU_COUNT = 1 if EVALUATION_ONLY else 2
+base.TRAIN_GPU_COUNT = 0 if EVALUATION_ONLY else 1
 base.INFER_GPU_COUNT = 1
 
 
@@ -46,23 +50,52 @@ def _detached_job_command(*, source_commit: str, rental_start_epoch: float, pric
         "PAINTER_GATEWAY_ENV_FILE": str(base.REMOTE_GATEWAY),
         "PAINTER_RUN_ROOT": str(base.REMOTE_RUN),
         "PAINTER_RUN_NAME": base.RUN_NAME,
-        "PAINTER_GPUS_PER_NODE": "2",
-        "PAINTER_NUM_TRAIN_GPUS": "1",
+        "PAINTER_GPUS_PER_NODE": "1" if EVALUATION_ONLY else "2",
+        "PAINTER_NUM_TRAIN_GPUS": "0" if EVALUATION_ONLY else "1",
         "PAINTER_NUM_INFER_GPUS": "1",
         "PAINTER_STRUCTURED_FLOW_POLICY": "1",
         "PAINTER_CODE_SUPERVISION_ENABLED": "1",
         "PAINTER_RUN_SUPERVISION": "1",
-        # The remaining bounded restart reserves 45m for matched evaluation,
-        # archive, release, and completion margin before the 20-step target.
-        "PAINTER_RESERVE_SECONDS": "2700",
+        # The evaluator owns a shorter archive/release tail; the training
+        # branch retains its historical restart reserve.
+        "PAINTER_RESERVE_SECONDS": "120" if EVALUATION_ONLY else "2700",
         "HF_CHECKPOINT_REPO": "CK0607/qwen3.8-27b-brush-painting",
         "HF_CHECKPOINT_RUN": "structured-flow-rl-20261009-sft-warmup",
     }
+    if EVALUATION_ONLY:
+        values.update({
+            "PAINTER_EVALUATION_ONLY": "1",
+            "PAINTER_EVAL_PREFERRED_STEP": "4",
+            "PAINTER_EVAL_SCOPE": "all",
+            "PAINTER_EVAL_EXPECTED_COUNT": "16",
+            "PAINTER_EVAL_SEED": "918210",
+            "PAINTER_EVAL_MAX_CONCURRENT": "8",
+            "PAINTER_MAX_TURNS": "3",
+            "PAINTER_JUDGE_MODEL": "xiaomi/mimo-v2.6-flash",
+            "PAINTER_JUDGE_EFFORT": "medium",
+            "PAINTER_JUDGE_FORMAT": "identity-joint-side-schema-v2-generic-v1",
+            "PAINTER_JUDGE_PROTOCOL": "text-paint-sft-pairwise-consistent-v1",
+            "PAINTER_RUN_WARMUP": "0",
+            "PAINTER_WARMUP_REQUIRED": "0",
+            "PAINTER_RUN_SUPERVISION": "0",
+            "PAINTER_RESTORE_SUPERVISION_EVIDENCE": "0",
+            "PAINTER_CODE_SUPERVISION_ENABLED": "0",
+            "PAINTER_STRUCTURED_FLOW_POLICY": "1",
+            "PAINTER_RESTORE_ANCHOR_EVIDENCE": "1",
+            "PAINTER_ANCHOR_EVIDENCE_SHA256": "9ec7942d8666f09ff794d635d306b6f1cfb6d440f55186fec32f6c1befb5ffdb",
+            "PAINTER_ANCHOR_EVIDENCE_URL": "https://huggingface.co/datasets/CK0607/komorebi-painter-experiments/resolve/cec8e7133738b03337ee4cae3f1c3fffdd91bc7f/runs/structured-flow-rl-20261009/evidence.tar.gz",
+            "PAINTER_REUSE_MATCHED_BASELINE_EVIDENCE": "1",
+            "PAINTER_MATCHED_BASELINE_EVIDENCE_SHA256": "ff4efa37835b1a7e3c5e90a628d685f1e94f39cf3d13760e47abab834c1a90c3",
+            "PAINTER_MATCHED_BASELINE_EVIDENCE_URL": "https://huggingface.co/datasets/CK0607/komorebi-painter-experiments/resolve/f72ee86cc24cb5fa3618c649aa1fe32ea22753ae/runs/structured-flow-rl-20261009/evidence.tar.gz",
+            # Both the success and failure archive paths use this protected
+            # remote token file; its contents never enter the command string.
+            "PAINTER_RECOVERY_TOKEN_FILE": str(base.REMOTE_TOKEN),
+        })
     # Warmup remains required by default.  The only supported bypass is an
     # explicit paired opt-in: both flags must be zero so prepare_node records
     # a pending supervision receipt instead of silently skipping SFT.
-    run_warmup = os.environ.get("PAINTER_RUN_WARMUP", "1")
-    warmup_required = os.environ.get("PAINTER_WARMUP_REQUIRED", "1")
+    run_warmup = os.environ.get("PAINTER_RUN_WARMUP", "0" if EVALUATION_ONLY else "1")
+    warmup_required = os.environ.get("PAINTER_WARMUP_REQUIRED", "0" if EVALUATION_ONLY else "1")
     if run_warmup not in {"0", "1"} or warmup_required not in {"0", "1"}:
         raise ValueError("PAINTER_RUN_WARMUP and PAINTER_WARMUP_REQUIRED must be 0 or 1")
     if run_warmup != warmup_required:
@@ -74,7 +107,7 @@ def _detached_job_command(*, source_commit: str, rental_start_epoch: float, pric
         "PAINTER_RUN_WARMUP": run_warmup,
         "PAINTER_WARMUP_REQUIRED": warmup_required,
     })
-    reuse_baseline = os.environ.get("PAINTER_REUSE_MATCHED_BASELINE_EVIDENCE", "0")
+    reuse_baseline = os.environ.get("PAINTER_REUSE_MATCHED_BASELINE_EVIDENCE", "1" if EVALUATION_ONLY else "0")
     if reuse_baseline not in {"0", "1"}:
         raise ValueError("PAINTER_REUSE_MATCHED_BASELINE_EVIDENCE must be 0 or 1")
     # matched_baseline.sh owns the pinned attempt16 URL/SHA defaults.  Forward
@@ -101,7 +134,7 @@ def _detached_job_command(*, source_commit: str, rental_start_epoch: float, pric
             raise ValueError("PAINTER_PRIME_SEED_ROOT must be absolute")
         values["PAINTER_PRIME_SEED_ENABLED"] = "1"
         values["PAINTER_PRIME_SEED_ROOT"] = seed_root
-    restore = os.environ.get("PAINTER_RESTORE_ANCHOR_EVIDENCE", "0")
+    restore = os.environ.get("PAINTER_RESTORE_ANCHOR_EVIDENCE", "1" if EVALUATION_ONLY else "0")
     if restore not in {"0", "1"}:
         raise ValueError("PAINTER_RESTORE_ANCHOR_EVIDENCE must be 0 or 1")
     if restore == "1":
@@ -151,7 +184,8 @@ def _detached_job_command(*, source_commit: str, rental_start_epoch: float, pric
         f"{key}={shlex.quote(value)}"
         for key, value in values.items()
     )
-    execute = shlex.quote(str(base.REMOTE_RUN / "execute_single.sh"))
+    execute_name = "recover_evaluation.sh" if EVALUATION_ONLY else "execute_single.sh"
+    execute = shlex.quote(str(base.REMOTE_RUN / execute_name))
     args = " ".join(shlex.quote(str(value)) for value in (rental_start_epoch, price_usd_per_hour, cap_usd))
     exit_tmp = shlex.quote(str(base.REMOTE_JOB_EXIT) + ".tmp")
     inner = (
@@ -200,6 +234,50 @@ def _remote_summary(*args, **kwargs):
     preparation = value.get("preparation", {})
     if preparation.get("schema") == "structured-flow-rl-preparation-v1":
         value["phase_ready"] = True
+    if EVALUATION_ONLY:
+        sftp = args[0] if args else kwargs.get("sftp")
+        timeout = max(0.1, min(float(kwargs.get("timeout", 5.0)), 1.0))
+        recovery = {}
+        terminal = {}
+        if sftp is not None:
+            try:
+                raw = base._sftp_read(sftp, str(base.REMOTE_RUN / "evaluation-recovery-receipt.json"), timeout=timeout)
+                recovery = base._json_bytes(raw) or {}
+            except Exception:
+                recovery = {}
+            try:
+                raw = base._sftp_read(sftp, str(base.REMOTE_RUN / "terminal-receipt.json"), timeout=timeout)
+                terminal = base._json_bytes(raw) or {}
+            except Exception:
+                terminal = {}
+        archived_preparation = value.get("preparation", {})
+        archived_deployment = value.get("config", {}).get("deployment")
+        value["evaluation_recovery"] = {
+            "schema": recovery.get("schema"),
+            "status": recovery.get("status"),
+            "mode": recovery.get("mode"),
+            "topology": recovery.get("topology"),
+            "manifest_sha256": recovery.get("evaluation", {}).get("manifest_sha256") if isinstance(recovery.get("evaluation"), dict) else None,
+        }
+        value["preparation"] = {
+            "schema": "structured-flow-evaluation-recovery-preparation-v1",
+            "mode": "evaluation_only",
+            "training_ready": False,
+            "evaluation_ready": recovery.get("mode") == "evaluation_only",
+            "archived_training_preparation": archived_preparation,
+        }
+        value["config"]["archived_training_deployment"] = archived_deployment
+        value["config"]["deployment"] = {"type": "single_node", "gpus_per_node": 1, "num_train_gpus": 0, "num_infer_gpus": 1}
+        value["phase_ready"] = recovery.get("mode") == "evaluation_only" and recovery.get("status") == "prepared_no_training"
+        value["training_ready"] = False
+        if isinstance(terminal, dict):
+            value["terminal"].update({
+                "recovery_status": terminal.get("status"),
+                "exit_code": terminal.get("exit_code"),
+                "checkpoint4_public_complete": terminal.get("checkpoint4_public_complete"),
+                "archive_hash_verified": terminal.get("archive", {}).get("hash_verified") if isinstance(terminal.get("archive"), dict) else None,
+                "public_archive_hash_verified": terminal.get("archive", {}).get("public_hash_verified") if isinstance(terminal.get("archive"), dict) else None,
+            })
     return value
 
 
@@ -207,6 +285,16 @@ base._remote_summary = _remote_summary
 
 
 def _validate_config_summary(summary):
+    if EVALUATION_ONLY:
+        recovery = summary.get("evaluation_recovery", {})
+        topology = summary.get("config", {}).get("deployment")
+        if recovery.get("schema") != "structured-flow-evaluation-recovery-v1" or recovery.get("mode") != "evaluation_only":
+            raise base.OperationError("remote preparation is not evaluation-only ready")
+        if topology != {"type": "single_node", "gpus_per_node": 1, "num_train_gpus": 0, "num_infer_gpus": 1}:
+            raise base.OperationError("remote evaluation topology is not one inference GPU with no trainer")
+        if summary.get("preparation", {}).get("training_ready") is not False:
+            raise base.OperationError("evaluation receipt must not claim RL training readiness")
+        return
     preparation = summary.get("preparation", {})
     if preparation.get("schema") != "structured-flow-rl-preparation-v1":
         raise base.OperationError("remote preparation is not structured-flow ready")
@@ -246,7 +334,8 @@ def main(argv=None) -> int:
         raise SystemExit("source-commit must be an immutable full hash")
     if args.plan_only:
         import json
-        print(json.dumps({"schema": "structured-flow-single-operation-plan-v1", "run_name": base.RUN_NAME, "experiment_name": base.EXPERIMENT_NAME, "gpu_cap_usd": window.cap_usd, "topology": {"gpus_per_node": 2, "num_train_gpus": 1, "num_infer_gpus": 1}, "max_updates": 20, "checkpoint_steps": [4, 8, 12, 16, 20], "judge": {"model": "xiaomi/mimo-v2.6-flash", "effort": "medium"}, "source_bundle_bytes": source_bundle.stat().st_size, "credentials_validated": True}, sort_keys=True))
+        topology = {"gpus_per_node": base.GPU_COUNT, "num_train_gpus": base.TRAIN_GPU_COUNT, "num_infer_gpus": base.INFER_GPU_COUNT}
+        print(json.dumps({"schema": "structured-flow-single-operation-plan-v1", "run_name": base.RUN_NAME, "experiment_name": base.EXPERIMENT_NAME, "gpu_cap_usd": window.cap_usd, "mode": "evaluation_only" if EVALUATION_ONLY else "training", "topology": topology, "max_updates": 0 if EVALUATION_ONLY else 20, "checkpoint_steps": [4] if EVALUATION_ONLY else [4, 8, 12, 16, 20], "judge": {"model": "xiaomi/mimo-v2.6-flash", "effort": "medium"}, "source_bundle_bytes": source_bundle.stat().st_size, "credentials_validated": True}, sort_keys=True))
         return 0
     return base.operate(window=window, source_bundle=source_bundle, source_commit=args.source_commit, hf_token_file=token, gateway_env_file=gateway, output_root=args.output_root)
 
