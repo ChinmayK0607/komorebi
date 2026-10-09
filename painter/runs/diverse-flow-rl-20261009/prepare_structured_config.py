@@ -71,8 +71,10 @@ def prepare(
     hardware_profile_name: str | None = None,
     batch_size: int = 16,
     group_size: int = 4,
-    initial_inflight: int = 32,
-    max_inflight: int = 32,
+    # Each episode launches two external judge views.  Keep the pilot's
+    # provider pressure bounded while preserving the batch/group contract.
+    initial_inflight: int = 16,
+    max_inflight: int = 16,
     renderer: str | None = None,
     renderer_python: str | None = None,
     activation_cpu_offload: bool = True,
@@ -220,8 +222,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--num-infer-gpus", type=int)
     parser.add_argument("--batch-size", type=int, default=16)
     parser.add_argument("--group-size", type=int, default=4)
-    parser.add_argument("--initial-inflight", type=int, default=32)
-    parser.add_argument("--max-inflight", type=int, default=32)
+    parser.add_argument("--initial-inflight", type=int, default=16)
+    parser.add_argument("--max-inflight", type=int, default=16)
     parser.add_argument("--renderer")
     parser.add_argument("--renderer-python")
     parser.add_argument("--no-activation-cpu-offload", action="store_true")

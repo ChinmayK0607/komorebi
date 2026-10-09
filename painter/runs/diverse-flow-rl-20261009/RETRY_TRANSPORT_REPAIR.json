@@ -1,0 +1,56 @@
+{
+  "schema": "diverse-flow-transport-repair-v1",
+  "date": "2026-10-09",
+  "status": "reviewed_ready_for_source_handoff",
+  "hypothesis": "Retrying failed judge transports and limiting active episodes to 16 will reduce censored whole groups enough to keep the trainer supplied without changing the visual rubric, group validity rule, curriculum, policy initializer, optimizer, or matched evaluation.",
+  "matched_parent": {
+    "policy": "rl-judge-matched-20261004-flash/step_12 plus the already public four-update supervised adapter",
+    "opponent": "photo-curriculum-sft-20260922-balanced/step_512",
+    "curriculum_manifest_sha256": "3c413455710b4d0cbe93571cd50a76b027458371f574ebcf3eb4957f3a23a953"
+  },
+  "failure_evidence": {
+    "completed_updates": 1,
+    "second_batch_trainable_samples": 14,
+    "requested_batch_size": 16,
+    "whole_groups_observed": 22,
+    "whole_groups_admitted": 8,
+    "whole_groups_rejected": 14,
+    "dominant_transport_error": "TimeoutError",
+    "root_cause": "provider_error receipts omitted parse_error, and retry control incorrectly treated absence of parse_error as a completed call"
+  },
+  "changes": {
+    "judge_attempts": 2,
+    "retry_when": "no assessment, including provider_error and parse_error",
+    "censor_after_exhaustion": true,
+    "raw_call_receipts_preserved": true,
+    "initial_inflight": 16,
+    "max_inflight": 16,
+    "previous_initial_inflight": 32,
+    "previous_max_inflight": 32
+  },
+  "unchanged": {
+    "batch_size": 16,
+    "group_size": 4,
+    "whole_group_admission": "strict",
+    "judge_model": "xiaomi/mimo-v2.6-flash",
+    "judge_effort": "medium",
+    "learning_rate": 0.000001,
+    "updates": 20,
+    "checkpoint_steps": [4, 8, 12, 16, 20],
+    "train_tasks": 96,
+    "heldout_tasks": 32
+  },
+  "validation": {
+    "diverse_flow_tests_passed": 53,
+    "judge_transport_tests_passed": 9,
+    "python_compile": "passed",
+    "diff_check": "passed"
+  },
+  "stop_conditions": [
+    "finite GPU cap is reached",
+    "controller or source identity validation fails",
+    "transport failures again prevent a complete training batch",
+    "required checkpoint or evidence preservation fails"
+  ],
+  "result_claim": "No repaired-run optimizer or visual result exists yet."
+}

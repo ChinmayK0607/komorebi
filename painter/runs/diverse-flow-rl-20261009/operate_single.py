@@ -596,7 +596,7 @@ def _validate_config_summary(summary):
     if preparation.get("schema") != "Diverse-flow-rl-preparation-v1":
         raise base.OperationError("remote preparation is not Diverse-flow ready")
     config = summary.get("config", {})
-    expected = (("updates", 20), ("checkpoint_steps", [4, 8, 12, 16, 20]), ("checkpoint_interval", 4), ("batch_size", 16), ("group_size", 4), ("initial_inflight", 32), ("max_inflight", 32))
+    expected = (("updates", 20), ("checkpoint_steps", [4, 8, 12, 16, 20]), ("checkpoint_interval", 4), ("batch_size", 16), ("group_size", 4), ("initial_inflight", 16), ("max_inflight", 16))
     if any(config.get(key) != value for key, value in expected):
         raise base.OperationError("remote config shape does not match Diverse-flow pilot")
     profile = hardware_profile.get(HARDWARE_PROFILE)

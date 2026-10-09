@@ -203,7 +203,12 @@ async def _call_with_retry(*, key: str, model: str, brief: str, a: Path, b: Path
                                        reasoning=reasoning)
         call["attempt"] = attempt + 1
         calls.append(call)
-        if "assessment" in call or "parse_error" not in call:
+        # Transport failures are deliberately recorded without ``parse_error``.
+        # Treat every call without an assessment as retryable so a provider
+        # timeout cannot be mistaken for a completed judgment.  The bounded
+        # attempt count still censors the pair after repeated failures and
+        # preserves every raw call receipt for audit.
+        if "assessment" in call:
             break
     if calls and "assessment" in calls[-1]:
         return {"assessment": calls[-1]["assessment"], "calls": calls}

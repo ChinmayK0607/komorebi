@@ -1,7 +1,7 @@
 {
   "schema": "diverse-flow-live-h100-retry-v1",
-  "observed_at": "2026-10-09T15:10:00Z",
-  "status": "running_first_optimizer_update_confirmed",
+  "observed_at": "2026-10-09T15:20:00Z",
+  "status": "stopped_after_judge_transport_stall",
   "hypothesis": "A balanced 96-task curriculum, canonical code-flow warmup, strict whole-group admission, and the existing generic MiMo Flash visual rubric can continue the recovered painting policy without the stone-heavy curriculum collapse seen in the preceding pilot.",
   "matched_baseline": {
     "scope": "32 held-out tasks",
@@ -61,6 +61,19 @@
     "trainer_peak_memory_gib": 73.4,
     "elapsed_from_training_loop_start": "14m31s"
   },
+  "terminal_observation": {
+    "controller_elapsed_seconds": 2705.4118649959564,
+    "completed_optimizer_updates": 1,
+    "second_batch_trainable_samples": 14,
+    "requested_batch_size": 16,
+    "whole_groups_observed": 22,
+    "whole_groups_admitted": 8,
+    "whole_groups_rejected": 14,
+    "dominant_failure": "one or both swapped-order judge views returned provider TimeoutError and were not retried",
+    "root_cause": "_call_with_retry treated a provider_error response without parse_error as terminal success for retry control",
+    "decision": "interrupt before further GPU waste, preserve the controller journal, release the node, repair and test transport retry before relaunch",
+    "evidence_limit": "The interrupt occurred before checkpoint 4 and before controller archival. No checkpoint or matched visual result exists for this attempt."
+  },
   "utilization_observations": {
     "scope": "live point observations during startup, rollout generation, and the first backward pass; not a run-level average",
     "inference": "GPU 0 repeatedly measured near 98-100% while generating",
@@ -69,17 +82,19 @@
     "reason": "Roles overlap after the first admitted batch, but trainer MFU is 11.8% and the initial rollout queue auto-trimmed from 32 toward 16-18."
   },
   "cost": {
-    "retry_estimate_usd_at_observation": 2.153,
+    "retry_estimate_usd_at_observation": 2.7805621945791774,
     "prior_campaign_estimate_usd": 5.3440923,
-    "combined_estimate_usd": 7.4970923,
+    "combined_estimate_usd": 8.124654494579177,
     "retry_hard_cap_usd": 14.6,
     "notes": "Rental-clock estimates only; API cost is excluded and these are not provider invoices."
   },
   "open_checks": [
-    "Measure steady-state update latency after one-time compilation.",
+    "Fix and regression-test provider-error retry control before relaunch.",
+    "Bound live judge pressure; 32 rollout slots produced up to two simultaneous judge calls per episode and the inference queue later reached 26 active episodes.",
+    "Measure steady-state update latency after one-time compilation on the repaired run.",
     "Audit the recurring FSDP2 view-tensor warning before promoting a checkpoint; the first update remained finite but the warning mentions possible skipped pre-backward hooks.",
     "Verify nonzero finite adapter deltas at checkpoint 4.",
-    "Archive and hash-verify the matched panel, rollouts, metrics, and checkpoints before releasing the node.",
+    "Archive and hash-verify the matched panel, rollouts, metrics, and checkpoints before releasing the next successful node.",
     "Do not claim visual improvement until matched checkpoint evaluation is complete."
   ]
 }

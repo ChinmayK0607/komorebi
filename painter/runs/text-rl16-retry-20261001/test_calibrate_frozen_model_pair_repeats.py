@@ -64,6 +64,50 @@ class _Response:
 
 
 class ModelTransportTests(unittest.TestCase):
+    def _retry_kwargs(self):
+        return {
+            "key": "external",
+            "model": "xiaomi/mimo-v2.6-pro",
+            "brief": "Paint a connected subject.",
+            "a": Path("left.png"),
+            "b": Path("right.png"),
+            "a_id": "left-id",
+            "b_id": "right-id",
+        }
+
+    def test_transport_error_is_retried_and_later_assessment_is_admitted(self):
+        failed = {"provider_error": "TimeoutError", "raw_response": ""}
+        recovered = {"assessment": _assessment(), "raw_response": "{}"}
+        with mock.patch.object(transport, "_view", side_effect=[failed, recovered]) as view:
+            result = asyncio.run(transport._call_with_retry(**self._retry_kwargs()))
+
+        self.assertIsNotNone(result["assessment"])
+        self.assertEqual(view.call_count, 2)
+        self.assertEqual([call["attempt"] for call in result["calls"]], [1, 2])
+        self.assertEqual(result["calls"][0]["provider_error"], "TimeoutError")
+
+    def test_repeated_transport_errors_remain_censored_after_bounded_retry(self):
+        failed = {"provider_error": "TimeoutError", "raw_response": ""}
+        with mock.patch.object(transport, "_view", side_effect=[failed.copy(), failed.copy()]) as view:
+            result = asyncio.run(transport._call_with_retry(**self._retry_kwargs()))
+
+        self.assertIsNone(result["assessment"])
+        self.assertEqual(result["error"], "incomplete_evidence")
+        self.assertEqual(view.call_count, 2)
+        self.assertEqual([call["attempt"] for call in result["calls"]], [1, 2])
+        self.assertTrue(all("provider_error" in call for call in result["calls"]))
+
+    def test_repeated_parse_errors_remain_censored_and_preserve_receipts(self):
+        failed = {"parse_error": "malformed_json", "raw_response": "not-json"}
+        with mock.patch.object(transport, "_view", side_effect=[failed.copy(), failed.copy()]) as view:
+            result = asyncio.run(transport._call_with_retry(**self._retry_kwargs()))
+
+        self.assertIsNone(result["assessment"])
+        self.assertEqual(result["error"], "incomplete_evidence")
+        self.assertEqual(view.call_count, 2)
+        self.assertEqual([call["parse_error"] for call in result["calls"]], ["malformed_json", "malformed_json"])
+        self.assertEqual([call["raw_response"] for call in result["calls"]], ["not-json", "not-json"])
+
     def test_payload_binds_requested_model_schema_and_swapped_ids(self):
         model = "xiaomi/mimo-v2.6-pro"
         with tempfile.TemporaryDirectory() as temp:
