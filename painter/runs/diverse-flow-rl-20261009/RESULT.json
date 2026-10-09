@@ -1,0 +1,115 @@
+{
+  "schema": "diverse-flow-terminal-result-v1",
+  "run_id": "diverse-flow-rl-20261009",
+  "recorded_at": "2026-10-10",
+  "status": "stopped_after_reward_reversal",
+  "decision": "do_not_promote_step_12_as_a_general_replacement",
+  "hypothesis": "Four gentle code-flow SFT updates followed by Flash-judged RL on a diverse curriculum improve heldout readability, spatial coherence, aesthetics, and executable painting validity.",
+  "matched_controls": [
+    "exact starting Flash RL step 12",
+    "same-run post-code-SFT adapter",
+    "frozen SFT step 512 reference"
+  ],
+  "immutable_inputs": {
+    "source_commit": "250aa5e43e5b445c2212f8cfff3699a22831fe61",
+    "prime_revision": "26b3131d2716a4f8210b165df584b83b4bc54f61",
+    "base_model": "Qwen/Qwen3.8-27B",
+    "base_model_revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+    "starting_policy_revision": "1227a2427a8ae16014d2fdca4d1adb6855d3fa1c",
+    "starting_policy_sha256": "c70c47ec0d6d7172b3bc25c4f54178919cf7c079cd9652fff3bc76db9e1eca79",
+    "frozen_sft_revision": "adf687e5b321514eda7be6eab050434fdc8e44ff",
+    "frozen_sft_sha256": "bea72b066986faa1b92b9dc539c710093181ee916b99323e2b2498f318ac1740",
+    "curriculum_sha256": "49262afcb3138fe4e21f2c98cff84a6bf3acb513c23d8762306c7ffb0a390f95",
+    "renderer_sha256": "dc6b9d837ed7be382784a6c84de1b64911506b17a19b499ce054c0c572e75794",
+    "p5_brush_sha256": "db5b0094cb223529a8c5fc3bbba7bf8f2d5b5f5a5c0a847062194feaf917d16b",
+    "judge_model": "xiaomi/mimo-v2.6-flash",
+    "judge_effort": "medium",
+    "judge_rubric_sha256": "d21e4644e7a3874a0694b2ad406420e733b7638222eb7717e7f5f91cbdf1613c"
+  },
+  "training": {
+    "sft_updates": 4,
+    "rl_updates_completed": 15,
+    "rl_updates_requested": 20,
+    "learning_rate": 1e-6,
+    "batch_size": 16,
+    "rollouts_per_prompt": 4,
+    "rewards_by_step": [0.1042, 0.2812, 0.3958, 0.1875, 0.2708, 0.3125, 0.2917, 0.3958, 0.3125, 0.1667, 0.3125, 0.1354, 0.1771, 0.2917, 0.1875],
+    "five_step_means": [0.2479, 0.29584, 0.22084],
+    "stop_reason": "The third five-update window fell below both preceding windows; the reward was bouncing rather than improving consistently.",
+    "numerical_health": "No KL, gradient-norm, or loss instability was observed through update 15."
+  },
+  "selected_checkpoint": {
+    "step": 12,
+    "repository": "CK0607/qwen3.8-27b-brush-painting",
+    "revision": "603e4d52f49d765dad0dd4f226fe8f9dc7bf9900",
+    "prefix": "diverse-flow-rl-20261009/step_12",
+    "adapter_sha256": "b75f07209a43fba36c9456cf06ce1214d1634d3f6d23b3b777fcd1c3a3ada763",
+    "selection_reason": "Latest publicly verified checkpoint available before the early stop."
+  },
+  "matched_evaluation": {
+    "cases_requested": 32,
+    "cases_completed": 32,
+    "starting_valid": 32,
+    "post_code_sft_valid": 32,
+    "rl_step_12_valid": 31,
+    "frozen_sft_valid": 32,
+    "rl_invalid_case": "df-s2-he-connected-windmill-01",
+    "manual_audit": "Mixed: some objects and scenes gained contrast or specificity, while other cases lost recognizable structure or object relationships. This does not establish broad heldout improvement."
+  },
+  "rollout_forensics": {
+    "completed_rollouts": 391,
+    "scored_rollouts": 369,
+    "censored_rollouts": 22,
+    "trainer_annotated_rollouts": 267,
+    "optimizer_consumed_rollouts": 240,
+    "buffered_at_stop": 27,
+    "completed_but_not_trainer_annotated": 124,
+    "groups_observed": 105,
+    "groups_without_reward_contrast": 11,
+    "stage_mean_rewards": {
+      "stage_1_single_forms": 0.2491,
+      "stage_2_connected_objects": 0.2953,
+      "stage_3_spatial_pairs": 0.1905,
+      "stage_4_simple_scenes": 0.2622
+    },
+    "family_exposure_range": [10, 27],
+    "conclusion": "The balanced-mixed manifest was not an advancing curriculum. Asynchronous completion, whole-group censorship and cancellation produced uneven family exposure and substantial rollout waste; spatial-pair tasks had the weakest reward signal. A subsequent run needs stratified family sampling, explicit stage advancement, and a judge-uncertainty recovery policy rather than more mixed sampling."
+  },
+  "renderer_profile": {
+    "receipts": 1041,
+    "valid": 793,
+    "seconds_p50": 6.686,
+    "seconds_p90": 22.729,
+    "seconds_p95": 40.287,
+    "seconds_p99": 180.073,
+    "seconds_max": 180.088,
+    "over_30_seconds": 71,
+    "over_60_seconds": 46,
+    "over_120_seconds": 39,
+    "conclusion": "The median is usable, but the approximately 180-second tail caused cancellations and wasted inference work."
+  },
+  "utilization": {
+    "measurement_window": "409 one-second samples from RL start",
+    "inference_gpu_mean_percent": 97.885,
+    "inference_gpu_busy_fraction_ge_90_percent": 0.9584,
+    "inference_gpu_busy_fraction_ge_10_percent": 0.9951,
+    "trainer_gpu_mean_percent": 17.839,
+    "trainer_gpu_busy_fraction_ge_90_percent": 0.1565,
+    "trainer_gpu_busy_fraction_ge_10_percent": 0.2127,
+    "conclusion": "Policy inference was saturated; the trainer was not, because it waited for rollout rendering and external judgments."
+  },
+  "cost": {
+    "gpu_node_rate_usd_per_hour": 3.70,
+    "controller_elapsed_seconds": 8551.68,
+    "estimated_gpu_rental_usd": 8.79,
+    "gpu_cap_usd": 15,
+    "api_cost": "separate and not reconstructed from an invoice"
+  },
+  "evidence": {
+    "public_archive": "https://huggingface.co/datasets/CK0607/komorebi-painter-experiments/resolve/main/runs/diverse-flow-rl-20261009/evidence.tar.gz",
+    "archive_sha256": "22a864ff2dd48119ad3d4c129557ec2cd9333b26b1c09dff8b4d4be22ffc1cc9",
+    "local_viewer": "local-evidence/review-step12/index.html",
+    "active_gpu_nodes_after_release": 0
+  },
+  "next_decision": "Keep the existing Flash12 starting policy as the general checkpoint. Before another paid run, remove the renderer timeout tail and replace balanced-mixed sampling with equal family exposure plus explicit stage advancement, then evaluate that single change on this same matched panel. Do not scale this checkpoint merely because isolated cases improved."
+}
