@@ -1,0 +1,53 @@
+{
+  "schema": "diverse-flow-sft-failure-v1",
+  "observed_date": "2026-10-09",
+  "source_commit": "60919b1c07969664c8e4d35a6ef93b4efe1984fd",
+  "status": "failed_before_optimizer_update",
+  "failure_phase": "sft_runtime_contract_validation",
+  "failure": {
+    "type": "missing_explicit_audit_field",
+    "message": "Prepared initialization/optimizer audit does not match runtime",
+    "missing_field": "step_zero_export_required",
+    "prepared_initialization_mode": "trained_adapter",
+    "prepared_optimizer": "fresh",
+    "required_value": false,
+    "observed_value": null
+  },
+  "completed_work": {
+    "frozen_sft_anchors": 128,
+    "matched_starting_cases": 32,
+    "matched_starting_valid_final_canvases": 32,
+    "matched_starting_service_failures": 0,
+    "supervised_train_rows": 12,
+    "supervised_validation_rows": 2,
+    "supervised_mask_audit": "passed"
+  },
+  "optimization": {
+    "sft_updates": 0,
+    "rl_updates": 0,
+    "weights_loaded_for_training": false,
+    "gradients_computed": false
+  },
+  "public_evidence": {
+    "repo_id": "CK0607/komorebi-painter-experiments",
+    "revision": "c35b77c6d3a858ab224f0812f1ed73e0150d1525",
+    "path": "runs/diverse-flow-rl-20261009/evidence.tar.gz",
+    "sha256": "ddd90296e2c6562cb24bc8f8033f439c4925e77002ad8eabca2723c38323eaac",
+    "bytes": 147029432,
+    "anonymous_download_hash_verified": true
+  },
+  "gpu_accounting": {
+    "whole_node_usd_per_hour": 1.52,
+    "attempt_estimate_usd": 3.5078433140860668,
+    "prior_attempt_estimate_usd": 0.4755689783043332,
+    "cumulative_estimate_usd": 3.9834122923904,
+    "scope": "rental clock estimate with a five-second release allowance; API excluded; not an invoice",
+    "next_conservative_allowance_usd": 15,
+    "campaign_cap_usd": 20
+  },
+  "node": {
+    "released": true,
+    "owned_run_nodes_remaining": 0
+  },
+  "next_decision": "Write the explicit boolean audit field for both initializer modes, test the actual preparation/runtime contract, then restore this run's hash-verified anchors and matched starting panel before a bounded retry."
+}

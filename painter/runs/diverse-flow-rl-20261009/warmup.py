@@ -89,6 +89,22 @@ MIXED_OVERRIDE_ROOT = Path(__file__).resolve().parent / "prime_runtime/integrati
 MIXED_OVERRIDE_FILES = ("update_audit.py", "group_validation.py")
 
 
+def initialization_contract(mode: str, *, init_adapter: str | None) -> dict[str, Any]:
+    """Return the explicit initialization fields consumed by the SFT runtime."""
+    if mode not in {"trained_adapter", "fresh_base"}:
+        raise ValueError(f"unsupported initialization mode: {mode}")
+    if mode == "trained_adapter" and not init_adapter:
+        raise ValueError("trained_adapter initialization requires an adapter")
+    if mode == "fresh_base" and init_adapter is not None:
+        raise ValueError("fresh_base initialization cannot carry an adapter")
+    return {
+        "initialization_mode": mode,
+        "init_adapter": init_adapter,
+        "step_zero_export_required": mode == "fresh_base",
+        "optimizer": "fresh",
+    }
+
+
 def sha256_bytes(value: bytes) -> str:
     return hashlib.sha256(value).hexdigest()
 
@@ -780,10 +796,11 @@ def prepare(args: argparse.Namespace) -> dict[str, Any]:
     write_toml(output / "warmup.toml", config)
     _write_json(output / "config.json", config)
     _write_json(output / "resolved.setup.json", {
-        "schema": "Diverse-flow-sft-initialization-v1", "initialization_mode": "trained_adapter",
-        "init_adapter": parent["path"], "parent_adapter_sha256": parent["sha256"],
+        "schema": "Diverse-flow-sft-initialization-v1",
+        **initialization_contract("trained_adapter", init_adapter=parent["path"]),
+        "parent_adapter_sha256": parent["sha256"],
         "parent_adapter_revision": parent["revision"], "parent_adapter_prefix": parent["prefix"],
-        "optimizer": "fresh", "native_resume": False, "before_first_forward": True,
+        "native_resume": False, "before_first_forward": True,
         "prime_commit": PRIME_COMMIT, "base_model": MODEL_ID, "base_revision": MODEL_REVISION,
         "max_steps": MAX_STEPS, "batch_size": BATCH_SIZE, "micro_batch_size": MICRO_BATCH_SIZE,
         "learning_rate": LEARNING_RATE, "rank": LORA_RANK, "alpha": LORA_ALPHA,

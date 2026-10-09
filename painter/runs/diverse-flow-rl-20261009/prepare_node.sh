@@ -401,50 +401,113 @@ fi
 [[ -f "$TRAIN_PROPOSAL" && -f "$HELDOUT_PROPOSAL" ]] || {
   echo 'Diverse-flow train/heldout proposals are missing' >&2; exit 1;
 }
-# An earlier paid native batch can be reused only through this explicit,
-# hash-pinned public-evidence restore.  The restore helper admits the anchor
-# tree and native-generation traces/manifests, refuses symlinks/traversal and
-# model material, and never overwrites a different existing file.  It is off
-# by default so a normal preparation remains independent of the archive.
+# A same-run retry is the only path that may consume paid evidence. It uses
+# one immutable public archive for frozen anchors, admitted manifests,
+# casebriefs, and the matched Flash12 baseline. The normal fresh path remains
+# independent of this archive.
+# anchor-evidence restore is intentionally disabled for every fresh path.
+SAME_RUN_RESUME="${PAINTER_RESUME_SAME_RUN_ARCHIVE:-0}"
 RESTORE_ANCHOR_EVIDENCE="${PAINTER_RESTORE_ANCHOR_EVIDENCE:-0}"
-[[ "$RESTORE_ANCHOR_EVIDENCE" == 0 || "$RESTORE_ANCHOR_EVIDENCE" == 1 ]] || {
-  echo 'PAINTER_RESTORE_ANCHOR_EVIDENCE must be 0 or 1' >&2; exit 1;
-}
-if [[ "$RESTORE_ANCHOR_EVIDENCE" == 1 ]]; then
-  echo 'Diverse-flow anchor-evidence restore is intentionally disabled; fresh 32-case anchors are materialized by the run-owned curriculum path' >&2
-  exit 1
-  # Kept below for historical audit context only; it must never silently
-  # consume the prior structured-flow native pool.
-  RESTORE_SHA256="${PAINTER_ANCHOR_EVIDENCE_SHA256:-0c7fac0092ebdb94eb4f1e32d7d4df6a91e0d4908bf14ab7a0cc2ff476510266}"
-  RESTORE_URL="${PAINTER_ANCHOR_EVIDENCE_URL:-}"
-  [[ -n "$RESTORE_URL" ]] || { echo 'anchor evidence restore requires an explicit new-run archive URL; prior-run archives are disabled' >&2; exit 1; }
+REUSE_MATCHED_BASELINE="${PAINTER_REUSE_MATCHED_BASELINE_EVIDENCE:-0}"
+for value in "$SAME_RUN_RESUME" "$RESTORE_ANCHOR_EVIDENCE" "$REUSE_MATCHED_BASELINE"; do
+  [[ "$value" == 0 || "$value" == 1 ]] || {
+    echo 'resume, anchor restore, and matched-baseline reuse bits must be 0 or 1' >&2; exit 1;
+  }
+done
+if [[ "$SAME_RUN_RESUME" == 1 ]]; then
+  RESTORE_ANCHOR_EVIDENCE=1
+  REUSE_MATCHED_BASELINE=1
+elif [[ "$RESTORE_ANCHOR_EVIDENCE" == 1 || "$REUSE_MATCHED_BASELINE" == 1 ]]; then
+  [[ "$RESTORE_ANCHOR_EVIDENCE" == 1 && "$REUSE_MATCHED_BASELINE" == 1 ]] || {
+    echo 'anchor restore and matched-baseline reuse must be enabled together for a same-run retry' >&2; exit 1;
+  }
+  SAME_RUN_RESUME=1
+fi
+if [[ "$SAME_RUN_RESUME" == 1 ]]; then
+  RESTORE_SHA256="${PAINTER_SAME_RUN_ARCHIVE_SHA256:-${PAINTER_ANCHOR_EVIDENCE_SHA256:-ddd90296e2c6562cb24bc8f8033f439c4925e77002ad8eabca2723c38323eaac}}"
+  RESTORE_URL="${PAINTER_SAME_RUN_ARCHIVE_URL:-${PAINTER_ANCHOR_EVIDENCE_URL:-https://huggingface.co/datasets/CK0607/komorebi-painter-experiments/resolve/c35b77c6d3a858ab224f0812f1ed73e0150d1525/runs/diverse-flow-rl-20261009/evidence.tar.gz}}"
+  for value in "${PAINTER_SAME_RUN_ARCHIVE_SHA256:-}" "${PAINTER_ANCHOR_EVIDENCE_SHA256:-}" "${PAINTER_MATCHED_BASELINE_EVIDENCE_SHA256:-}"; do
+    [[ -z "$value" || "$value" == ddd90296e2c6562cb24bc8f8033f439c4925e77002ad8eabca2723c38323eaac ]] || {
+      echo 'same-run archive SHA-256 is not the pinned public archive' >&2; exit 1;
+    }
+  done
+  for value in "${PAINTER_SAME_RUN_ARCHIVE_URL:-}" "${PAINTER_ANCHOR_EVIDENCE_URL:-}" "${PAINTER_MATCHED_BASELINE_EVIDENCE_URL:-}"; do
+    [[ -z "$value" || "$value" == https://huggingface.co/datasets/CK0607/komorebi-painter-experiments/resolve/c35b77c6d3a858ab224f0812f1ed73e0150d1525/runs/diverse-flow-rl-20261009/evidence.tar.gz ]] || {
+      echo 'same-run archive URL is not the pinned credential-free public revision' >&2; exit 1;
+    }
+  done
+  [[ "$RESTORE_SHA256" == ddd90296e2c6562cb24bc8f8033f439c4925e77002ad8eabca2723c38323eaac ]] || {
+    echo 'same-run archive SHA-256 is not the pinned public archive' >&2; exit 1;
+  }
+  [[ "$RESTORE_URL" == https://huggingface.co/datasets/CK0607/komorebi-painter-experiments/resolve/c35b77c6d3a858ab224f0812f1ed73e0150d1525/runs/diverse-flow-rl-20261009/evidence.tar.gz ]] || {
+    echo 'same-run archive URL is not the pinned credential-free public revision' >&2; exit 1;
+  }
+  [[ -z "${PAINTER_ANCHOR_EVIDENCE_ARCHIVE:-}" && -z "${PAINTER_MATCHED_BASELINE_EVIDENCE_ARCHIVE:-}" ]] || {
+    echo 'same-run resume accepts only the pinned public URL; local archive overrides are disabled' >&2; exit 1;
+  }
+  export PAINTER_RESUME_SAME_RUN_ARCHIVE=1
+  export PAINTER_SAME_RUN_ARCHIVE_URL="$RESTORE_URL" PAINTER_SAME_RUN_ARCHIVE_SHA256="$RESTORE_SHA256"
+  export PAINTER_ANCHOR_EVIDENCE_URL="$RESTORE_URL" PAINTER_ANCHOR_EVIDENCE_SHA256="$RESTORE_SHA256"
+  export PAINTER_MATCHED_BASELINE_EVIDENCE_URL="$RESTORE_URL" PAINTER_MATCHED_BASELINE_EVIDENCE_SHA256="$RESTORE_SHA256"
   RESTORE_SCRIPT="$RUN/restore_anchor_evidence.py"
   [[ -f "$RESTORE_SCRIPT" ]] || { echo 'anchor evidence restore helper is missing' >&2; exit 1; }
-  RESTORE_ARGS=(--run-root "$RUN" --sha256 "$RESTORE_SHA256")
-  if [[ -n "${PAINTER_ANCHOR_EVIDENCE_ARCHIVE:-}" ]]; then
-    RESTORE_ARGS+=(--archive "$PAINTER_ANCHOR_EVIDENCE_ARCHIVE")
-  else
-    RESTORE_ARGS+=(--url "$RESTORE_URL")
-  fi
+  RESTORE_ARGS=(--run-root "$RUN" --sha256 "$RESTORE_SHA256" --url "$RESTORE_URL")
   PYTHONPATH="$REPO:$REPO/painter:$RUN${PYTHONPATH:+:$PYTHONPATH}" \
     "$PY_PRIME" "$RESTORE_SCRIPT" "${RESTORE_ARGS[@]}" \
     >"${PAINTER_ANCHOR_RESTORE_SUMMARY:-$RUN/anchor-restore-summary.json}"
+  # Restore the exact admitted manifests and casebriefs after the 128-anchor
+  # tree. This is metadata-only: the validator makes no model/renderer/judge
+  # request and binds every row to the current proposal and flow source.
+  ANCHOR_ROOT="${PAINTER_ANCHOR_ROOT:-$RUN/curriculum/anchors}"
+  PYTHONPATH="$REPO:$REPO/painter:$RUN${PYTHONPATH:+:$PYTHONPATH}" \
+    "$PY_PRIME" - "$RUN" "$TRAIN_MANIFEST" "$EVAL_MANIFEST" "$TRAIN_PROPOSAL" "$HELDOUT_PROPOSAL" "$ANCHOR_ROOT" "$RESTORE_SHA256" "$RESTORE_URL" <<'PY' \
+    >"${PAINTER_CACHED_ANCHOR_RESTORE_SUMMARY:-$RUN/cached-anchor-restore-summary.json}"
+import importlib.util
+import json
+import sys
+from pathlib import Path
+
+run = Path(sys.argv[1])
+train_manifest, heldout_manifest = (Path(value) for value in sys.argv[2:4])
+train_proposal, heldout_proposal, anchor_root = (Path(value) for value in sys.argv[4:7])
+archive_sha, archive_url = sys.argv[7:9]
+spec = importlib.util.spec_from_file_location("diverse_flow_restore_resume", run / "restore_anchor_evidence.py")
+if spec is None or spec.loader is None:
+    raise SystemExit("cannot load same-run restore helper")
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+value = module.restore_cached_pilot_manifests(
+    run_root=run, expected_sha256=archive_sha,
+    train_proposal=train_proposal, heldout_proposal=heldout_proposal,
+    anchor_root=anchor_root, train_manifest=train_manifest,
+    heldout_manifest=heldout_manifest, flow_source=run / "flow_demonstrations.py",
+    url=archive_url,
+)
+if value.get("generator_calls") != 0 or value.get("train_rows") != 96 or value.get("heldout_cases") != 32:
+    raise SystemExit(f"same-run cached manifest restore is not the exact 96/32 set: {json.dumps(value, sort_keys=True)}")
+print(json.dumps(value, sort_keys=True))
+PY
+  [[ -f "$TRAIN_MANIFEST" && -f "$EVAL_MANIFEST" ]] || {
+    echo 'same-run archive did not restore the admitted 96/32 manifests' >&2; exit 1;
+  }
 fi
 # The fixed-anchor files are produced after the owned inference server has
 # loaded the frozen SFT alias.  Stage an explicit lazy manifest for preflight;
 # run_from_sft.py replaces these bytes with the hash-verified pilot manifests
 # before Prime creates the orchestrator.
-if [[ ! -f "$TRAIN_MANIFEST" || ! -f "$EVAL_MANIFEST" ]]; then
-  "$PY_BOOT" "$RUN/anchor_bank.py" prepare-lazy \
-    --train-proposal "$TRAIN_PROPOSAL" --heldout-proposal "$HELDOUT_PROPOSAL" \
-    --train-output "$TRAIN_MANIFEST" --heldout-output "$EVAL_MANIFEST"
+if [[ "$SAME_RUN_RESUME" == 0 ]]; then
+  if [[ ! -f "$TRAIN_MANIFEST" || ! -f "$EVAL_MANIFEST" ]]; then
+    "$PY_BOOT" "$RUN/anchor_bank.py" prepare-lazy \
+      --train-proposal "$TRAIN_PROPOSAL" --heldout-proposal "$HELDOUT_PROPOSAL" \
+      --train-output "$TRAIN_MANIFEST" --heldout-output "$EVAL_MANIFEST"
+  fi
+  # Older lazy manifests may predate casebrief propagation. Repair only those
+  # adjacent inputs in place, preserving any existing verified anchor fields,
+  # before the evaluator-role smoke loads all 32 real heldout tasks.
+  "$PY_BOOT" "$RUN/anchor_bank.py" ensure-casebriefs \
+    --train-manifest "$TRAIN_MANIFEST" --heldout-manifest "$EVAL_MANIFEST" \
+    --proposal-root "$RUN/curriculum" >"$RUN/casebrief-repair.json"
 fi
-# Older lazy manifests may predate casebrief propagation. Repair only those
-# adjacent inputs in place, preserving any existing verified anchor fields,
-# before the evaluator-role smoke loads all 32 real heldout tasks.
-"$PY_BOOT" "$RUN/anchor_bank.py" ensure-casebriefs \
-  --train-manifest "$TRAIN_MANIFEST" --heldout-manifest "$EVAL_MANIFEST" \
-  --proposal-root "$RUN/curriculum" >"$RUN/casebrief-repair.json"
 RENDERER="${PAINTER_RENDERER_PATH:-$RUN/vendor/integrations/watercolour/renderer.py}"
 RENDERER_PYTHON="${PAINTER_RENDERER_PYTHON_PATH:-$RUN/renderer-env/bin/python}"
 [[ -f "$RENDERER" && -x "$RENDERER_PYTHON" ]] || { echo 'explicit renderer runtime is unavailable' >&2; exit 1; }

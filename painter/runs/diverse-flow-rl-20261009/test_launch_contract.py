@@ -60,6 +60,49 @@ class DiverseFlowLaunchContractTests(unittest.TestCase):
         self.assertIn('helpers_for_hooks', trainer)
         self.assertIn('structured-flow-sft-source-manifest-v1', (RUN / "warmup.py").read_text())
 
+    def test_initialization_report_matches_runtime_for_both_modes(self):
+        warmup = load("diverse_flow_warmup_initialization_contract", RUN / "warmup.py")
+        runtime = (RUN.parent / "structured-flow-rl-20261009/sft_source/mixed_sft/train.py").read_text()
+        self.assertIn("setup_report.get('step_zero_export_required')", runtime)
+        for mode, adapter, expected in (
+            ("trained_adapter", "/node/parent-adapter", False),
+            ("fresh_base", None, True),
+        ):
+            report = warmup.initialization_contract(mode, init_adapter=adapter)
+            self.assertIs(report["step_zero_export_required"], expected)
+            self.assertEqual(report["step_zero_export_required"], mode == "fresh_base")
+            self.assertEqual(report["optimizer"], "fresh")
+
+    def test_prepare_writes_explicit_trained_adapter_step_zero_contract(self):
+        warmup = load("diverse_flow_warmup_prepare_contract", RUN / "warmup.py")
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            train = root / "train.jsonl"
+            dev = root / "dev.jsonl"
+            train.write_text("")
+            dev.write_text("")
+            parent = {
+                "path": str(root / "parent-adapter"), "sha256": "a" * 64,
+                "revision": "revision", "prefix": "prefix",
+            }
+            args = SimpleNamespace(
+                output=root / "prepared", parent_adapter=root / "parent-adapter",
+                train=train, dev=dev, approval_manifest=None,
+                model_dir=root / "model", run_name="Diverse-flow-sft-warmup",
+            )
+            with patch.object(warmup, "verify_parent_adapter", return_value=parent), \
+                 patch.object(warmup, "validate_inputs", return_value={"status": "approved"}), \
+                 patch.object(warmup, "build_schedule", return_value=[]), \
+                 patch.object(warmup, "build_schedule_receipt", return_value={"mode": "legacy_ordered_painting"}), \
+                 patch.object(warmup, "validate_warmup_schedule"), \
+                 patch.object(warmup, "build_config", return_value={}):
+                warmup.prepare(args)
+            report = json.loads((root / "prepared" / "resolved.setup.json").read_text())
+            self.assertEqual(report["initialization_mode"], "trained_adapter")
+            self.assertIs(report["step_zero_export_required"], False)
+            self.assertEqual(report["step_zero_export_required"], report["initialization_mode"] == "fresh_base")
+            self.assertEqual(report["optimizer"], "fresh")
+
     def test_role_isolation_and_renderer_receipts_are_explicit(self):
         baseline = (RUN / "matched_baseline.sh").read_text()
         evaluate = (RUN / "evaluate.sh").read_text()

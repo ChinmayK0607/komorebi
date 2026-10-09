@@ -49,13 +49,21 @@ BROWSER_ROOT="${PAINTER_BROWSER_ROOT:-${PLAYWRIGHT_BROWSERS_PATH:-$RUN/browsers}
 MODEL="${MODEL_DIR:-$PAINTER_NODE_ROOT/model-cache/qwen/1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0}"
 PORT="${PAINTER_BASELINE_PORT:-8000}"
 
-# This run always creates a fresh 32-case baseline panel.  Cached evidence
-# from the prior structured-flow run has a different admission and is
-# intentionally rejected so it cannot contaminate this comparison.
-if [[ "${PAINTER_REUSE_MATCHED_BASELINE_EVIDENCE:-0}" == 1 ]]; then
-  echo 'cached baseline reuse is disabled for Diverse-flow; generate the fresh 32-case panel' >&2
-  exit 1
-fi
+# A same-run retry may reuse the one hash-pinned public panel.  The branch is
+# entered only for pre-warmup; post-warmup evaluation remains a fresh policy
+# comparison against the restored baseline.
+SAME_RUN_RESUME="${PAINTER_RESUME_SAME_RUN_ARCHIVE:-0}"
+REUSE_MATCHED_BASELINE="${PAINTER_REUSE_MATCHED_BASELINE_EVIDENCE:-0}"
+[[ "$SAME_RUN_RESUME" == 0 || "$SAME_RUN_RESUME" == 1 ]] || {
+  echo 'PAINTER_RESUME_SAME_RUN_ARCHIVE must be 0 or 1' >&2; exit 1;
+}
+[[ "$REUSE_MATCHED_BASELINE" == 0 || "$REUSE_MATCHED_BASELINE" == 1 ]] || {
+  echo 'PAINTER_REUSE_MATCHED_BASELINE_EVIDENCE must be 0 or 1' >&2; exit 1;
+}
+[[ "$SAME_RUN_RESUME" == 1 ]] && REUSE_MATCHED_BASELINE=1
+[[ "$REUSE_MATCHED_BASELINE" == 0 || "$SAME_RUN_RESUME" == 1 ]] || {
+  echo 'matched-baseline reuse requires the canonical same-run archive resume' >&2; exit 1;
+}
 
 for required in "$PY" "$VLLM" "$EVAL" "$MODEL/config.json" "$POLICY_POINTER" "$FROZEN_POINTER" "$RUN/anchor_bank.py" "$RUN/renderer-selection-receipt.json" "$RENDERER" "$RENDERER_PYTHON"; do
   [[ -e "$required" ]] || { echo "missing baseline input: $required" >&2; exit 1; }
@@ -85,6 +93,85 @@ PY
 [[ "$SELECTED_RENDERER_RESOLVED" == "$RENDERER_RESOLVED" && "$SELECTED_RENDERER_SHA" =~ ^[0-9a-f]{64}$ && "$SELECTED_ASSETS_SHA" =~ ^[0-9a-f]{64}$ ]] || {
   echo 'renderer path/hash is not bound to renderer-selection-receipt.json' >&2; exit 1;
 }
+if [[ "$PHASE" == pre-warmup && "$REUSE_MATCHED_BASELINE" == 1 ]]; then
+  CACHE_ARCHIVE_SHA="${PAINTER_SAME_RUN_ARCHIVE_SHA256:-${PAINTER_MATCHED_BASELINE_EVIDENCE_SHA256:-${PAINTER_ANCHOR_EVIDENCE_SHA256:-ddd90296e2c6562cb24bc8f8033f439c4925e77002ad8eabca2723c38323eaac}}}"
+  CACHE_URL="${PAINTER_SAME_RUN_ARCHIVE_URL:-${PAINTER_MATCHED_BASELINE_EVIDENCE_URL:-${PAINTER_ANCHOR_EVIDENCE_URL:-https://huggingface.co/datasets/CK0607/komorebi-painter-experiments/resolve/c35b77c6d3a858ab224f0812f1ed73e0150d1525/runs/diverse-flow-rl-20261009/evidence.tar.gz}}}"
+  for value in "${PAINTER_SAME_RUN_ARCHIVE_SHA256:-}" "${PAINTER_ANCHOR_EVIDENCE_SHA256:-}" "${PAINTER_MATCHED_BASELINE_EVIDENCE_SHA256:-}"; do
+    [[ -z "$value" || "$value" == ddd90296e2c6562cb24bc8f8033f439c4925e77002ad8eabca2723c38323eaac ]] || {
+      echo 'same-run baseline archive SHA-256 is not the pinned public archive' >&2; exit 1;
+    }
+  done
+  for value in "${PAINTER_SAME_RUN_ARCHIVE_URL:-}" "${PAINTER_ANCHOR_EVIDENCE_URL:-}" "${PAINTER_MATCHED_BASELINE_EVIDENCE_URL:-}"; do
+    [[ -z "$value" || "$value" == https://huggingface.co/datasets/CK0607/komorebi-painter-experiments/resolve/c35b77c6d3a858ab224f0812f1ed73e0150d1525/runs/diverse-flow-rl-20261009/evidence.tar.gz ]] || {
+      echo 'same-run baseline archive URL is not the pinned credential-free public revision' >&2; exit 1;
+    }
+  done
+  [[ "$CACHE_ARCHIVE_SHA" == ddd90296e2c6562cb24bc8f8033f439c4925e77002ad8eabca2723c38323eaac ]] || {
+    echo 'same-run baseline archive SHA-256 is not the pinned public archive' >&2; exit 1;
+  }
+  [[ "$CACHE_URL" == https://huggingface.co/datasets/CK0607/komorebi-painter-experiments/resolve/c35b77c6d3a858ab224f0812f1ed73e0150d1525/runs/diverse-flow-rl-20261009/evidence.tar.gz ]] || {
+    echo 'same-run baseline archive URL is not the pinned credential-free public revision' >&2; exit 1;
+  }
+  [[ -z "${PAINTER_MATCHED_BASELINE_EVIDENCE_ARCHIVE:-}" && -z "${PAINTER_ANCHOR_EVIDENCE_ARCHIVE:-}" ]] || {
+    echo 'same-run baseline reuse accepts only the pinned public URL; local archive overrides are disabled' >&2; exit 1;
+  }
+  [[ -x "$PY" && -f "$RUN/restore_anchor_evidence.py" && -f "$EVAL_MANIFEST" ]] || {
+    echo 'same-run baseline reuse requires Prime Python, the restore helper, and the restored 32-case manifest' >&2; exit 1;
+  }
+  CACHE_RESTORE_ARGS=(
+    --run-root "$RUN" --sha256 "$CACHE_ARCHIVE_SHA" --mode baseline
+    --renderer-sha256 "${PAINTER_RENDERER_SHA256:-$SELECTED_RENDERER_SHA}"
+    --renderer "$RENDERER" --eval-manifest "$EVAL_MANIFEST"
+    --flow-source "$RUN/flow_demonstrations.py"
+    --policy-sha256 "$PAINTER_POLICY_SHA256"
+    --policy-revision "$PAINTER_POLICY_REVISION"
+    --policy-prefix "$PAINTER_POLICY_PREFIX"
+    --seed "${PAINTER_EVAL_SEED:-918210}"
+    --url "$CACHE_URL"
+  )
+  PYTHONPATH="$REPO:$REPO/painter:$RUN${PYTHONPATH:+:$PYTHONPATH}" \
+    "$PY" "$RUN/restore_anchor_evidence.py" "${CACHE_RESTORE_ARGS[@]}" >"$RUN/baseline-restore.json"
+  mkdir -p "$OUT/logs"
+  "$PY" - "$OUT" "$RUN" "$CACHE_ARCHIVE_SHA" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+out, run, archive_sha = Path(sys.argv[1]), Path(sys.argv[2]), sys.argv[3]
+restore = json.loads((run / "baseline-restore.json").read_text(encoding="utf-8"))
+validation = restore.get("validation")
+if restore.get("source_archive_sha256") != archive_sha or not isinstance(validation, dict):
+    raise SystemExit("same-run baseline archive identity changed during restore")
+evaluation = validation.get("eval", {})
+rollouts = validation.get("rollouts", {})
+if evaluation.get("seed") != 918210 or evaluation.get("max_turns") != 3 or evaluation.get("max_tokens") != 8192:
+    raise SystemExit("same-run baseline is not the pinned 32-case Flash12 evaluation")
+if validation.get("prompt", {}).get("case_count") != 32 or rollouts.get("receipt_count", 0) < 32:
+    raise SystemExit("same-run baseline does not contain the complete 32-case panel")
+value = {
+    "schema": "Diverse-flow-matched-baseline-reuse-v1",
+    "status": "reused_cached_baseline_no_generation",
+    "source_archive_sha256": archive_sha,
+    "baseline_restore_receipt": str(run / "baseline-restore.json"),
+    "generator_calls": 0,
+    "model_calls": 0,
+    "renderer_calls": 0,
+    "judge_calls": 0,
+    "train_rows": 96,
+    "heldout_cases": 32,
+    "invalid_or_censored_retained": bool(validation.get("invalid_or_censored_retained")),
+    "limitations": [
+        "This retry reused the hash-verified same-run Flash12 panel; no baseline model, renderer, or judge call was made.",
+        "Invalid and censored baseline receipts remain in the restored evidence tree.",
+    ],
+}
+out.mkdir(parents=True, exist_ok=True)
+(out / "baseline-reuse-receipt.json").write_text(json.dumps(value, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+print(json.dumps(value, sort_keys=True))
+PY
+  echo "MATCHED_${PHASE^^}_BASELINE_REUSED: $OUT"
+  exit 0
+fi
 [[ -d "$BROWSER_ROOT" ]] || { echo "native evaluation browser root is missing: $BROWSER_ROOT" >&2; exit 1; }
 [[ -d "$CUDA_HOME" ]] || { echo "CUDA 13 runtime directory is missing: $CUDA_HOME" >&2; exit 1; }
 export CUDA_HOME

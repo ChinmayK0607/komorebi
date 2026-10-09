@@ -326,12 +326,86 @@ def _detached_job_command(*, source_commit: str, rental_start_epoch: float, pric
         "PAINTER_RUN_WARMUP": run_warmup,
         "PAINTER_WARMUP_REQUIRED": warmup_required,
     })
+    # Same-run resume is one atomic opt-in. Both legacy phase bits are kept in
+    # the command for node-side compatibility, but their coordinates are
+    # always replaced by this exact credential-free public URL/SHA pin.
+    same_run_resume = os.environ.get("PAINTER_RESUME_SAME_RUN_ARCHIVE", "0")
+    restore_anchor = os.environ.get("PAINTER_RESTORE_ANCHOR_EVIDENCE", "0")
     reuse_baseline = os.environ.get("PAINTER_REUSE_MATCHED_BASELINE_EVIDENCE", "0")
+    if same_run_resume not in {"0", "1"}:
+        raise ValueError("PAINTER_RESUME_SAME_RUN_ARCHIVE must be 0 or 1")
+    if restore_anchor not in {"0", "1"}:
+        raise ValueError("PAINTER_RESTORE_ANCHOR_EVIDENCE must be 0 or 1")
     if reuse_baseline not in {"0", "1"}:
         raise ValueError("PAINTER_REUSE_MATCHED_BASELINE_EVIDENCE must be 0 or 1")
-    # matched_baseline.sh owns the fresh-panel path. Forward only the strict
-    # no-reuse bit; prior-run archive coordinates never enter this command.
+    if same_run_resume == "1":
+        restore_anchor = reuse_baseline = "1"
+    elif restore_anchor == "1" or reuse_baseline == "1":
+        if restore_anchor != "1" or reuse_baseline != "1":
+            raise ValueError("anchor restore and matched-baseline reuse must be enabled together for a same-run retry")
+        same_run_resume = "1"
+    values["PAINTER_RESUME_SAME_RUN_ARCHIVE"] = same_run_resume
+    values["PAINTER_RESTORE_ANCHOR_EVIDENCE"] = restore_anchor
     values["PAINTER_REUSE_MATCHED_BASELINE_EVIDENCE"] = reuse_baseline
+    if same_run_resume == "1":
+        archive_sha = os.environ.get(
+            "PAINTER_SAME_RUN_ARCHIVE_SHA256",
+            os.environ.get("PAINTER_ANCHOR_EVIDENCE_SHA256", "ddd90296e2c6562cb24bc8f8033f439c4925e77002ad8eabca2723c38323eaac"),
+        )
+        archive_url = os.environ.get(
+            "PAINTER_SAME_RUN_ARCHIVE_URL",
+            os.environ.get(
+                "PAINTER_ANCHOR_EVIDENCE_URL",
+                "https://huggingface.co/datasets/CK0607/komorebi-painter-experiments/resolve/"
+                "c35b77c6d3a858ab224f0812f1ed73e0150d1525/runs/diverse-flow-rl-20261009/evidence.tar.gz",
+            ),
+        )
+        pinned_sha = "ddd90296e2c6562cb24bc8f8033f439c4925e77002ad8eabca2723c38323eaac"
+        pinned_url = (
+            "https://huggingface.co/datasets/CK0607/komorebi-painter-experiments/resolve/"
+            "c35b77c6d3a858ab224f0812f1ed73e0150d1525/runs/diverse-flow-rl-20261009/evidence.tar.gz"
+        )
+        for name in (
+            "PAINTER_SAME_RUN_ARCHIVE_SHA256",
+            "PAINTER_ANCHOR_EVIDENCE_SHA256",
+            "PAINTER_MATCHED_BASELINE_EVIDENCE_SHA256",
+        ):
+            value = os.environ.get(name)
+            if value and value != pinned_sha:
+                raise ValueError("same-run resume requires the pinned public archive URL and SHA-256")
+        for name in (
+            "PAINTER_SAME_RUN_ARCHIVE_URL",
+            "PAINTER_ANCHOR_EVIDENCE_URL",
+            "PAINTER_MATCHED_BASELINE_EVIDENCE_URL",
+        ):
+            value = os.environ.get(name)
+            if value and value != pinned_url:
+                raise ValueError("same-run resume requires the pinned public archive URL and SHA-256")
+        if archive_sha != pinned_sha or archive_url != pinned_url:
+            raise ValueError("same-run resume requires the pinned public archive URL and SHA-256")
+        parsed = urllib.parse.urlparse(archive_url)
+        if (
+            parsed.scheme != "https"
+            or parsed.netloc != "huggingface.co"
+            or parsed.username
+            or parsed.password
+            or parsed.query
+            or parsed.fragment
+        ):
+            raise ValueError("same-run archive URL must be a credential-free pinned HTTPS Hugging Face URL")
+        if any(os.environ.get(name) for name in (
+            "PAINTER_ANCHOR_EVIDENCE_ARCHIVE",
+            "PAINTER_MATCHED_BASELINE_EVIDENCE_ARCHIVE",
+        )):
+            raise ValueError("same-run resume accepts only the pinned public URL; local archives are disabled")
+        values.update({
+            "PAINTER_SAME_RUN_ARCHIVE_SHA256": pinned_sha,
+            "PAINTER_SAME_RUN_ARCHIVE_URL": pinned_url,
+            "PAINTER_ANCHOR_EVIDENCE_SHA256": pinned_sha,
+            "PAINTER_ANCHOR_EVIDENCE_URL": pinned_url,
+            "PAINTER_MATCHED_BASELINE_EVIDENCE_SHA256": pinned_sha,
+            "PAINTER_MATCHED_BASELINE_EVIDENCE_URL": pinned_url,
+        })
     # Keep this opt-in: the controller's environment can select a node-local
     # filesystem for the large model and Prime checkout, while credentials
     # remain under REMOTE_ROOT/private.  An unset value preserves the reviewed
