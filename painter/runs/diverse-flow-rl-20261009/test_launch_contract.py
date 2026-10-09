@@ -54,6 +54,8 @@ class DiverseFlowLaunchContractTests(unittest.TestCase):
         trainer = (RUN / "train_from_sft.py").read_text()
         self.assertIn('WORLD_SIZE', trainer)
         self.assertIn('expected_world != 2', trainer)
+        self.assertIn('prime_runtime', trainer)
+        self.assertIn('helpers_for_hooks', trainer)
         self.assertIn('structured-flow-sft-source-manifest-v1', (RUN / "warmup.py").read_text())
 
     def test_role_isolation_and_renderer_receipts_are_explicit(self):
@@ -138,6 +140,20 @@ class DiverseFlowLaunchContractTests(unittest.TestCase):
             self.assertEqual(receipt["upload_override"]["schema"], "Diverse-flow-upload-token-override-v1")
             self.assertEqual(receipt["upload_override"]["backend_sha256"], warmup.sha256_file(backend))
             self.assertIn("HF_TOKEN_PATH", wrapper.read_text())
+            original_init = (source / "watercolour_sft/init_adapter.py").read_bytes()
+            runtime_init = runtime / "integrations/prime/watercolour_sft/init_adapter.py"
+            archived_init = runtime / "integrations/prime/watercolour_sft/init_adapter.py.archived.py"
+            self.assertIn("Diverse-flow-multirank-lora-init-v1", runtime_init.read_text())
+            self.assertEqual(archived_init.read_bytes(), original_init)
+            self.assertEqual(
+                receipt["prime_hook_override"]["original_files"]["integrations/prime/watercolour_sft/init_adapter.py"],
+                warmup.sha256_file(archived_init),
+            )
+            update_audit = runtime / "integrations/speedpainting/mixed_sft/update_audit.py"
+            group_validation = runtime / "integrations/speedpainting/mixed_sft/group_validation.py"
+            self.assertIn("all_gather_object", update_audit.read_text())
+            self.assertIn("rank_reports", update_audit.read_text())
+            self.assertIn("group-validation.rank", group_validation.read_text())
         warmup_shell = (RUN / "warmup.sh").read_text()
         self.assertIn("structured-flow-rl-20261009/sft_source/mixed_sft", warmup_shell)
 

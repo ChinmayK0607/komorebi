@@ -83,6 +83,10 @@ FLOW_STATE_ALIASES = {
 NATIVE_TASK_FAMILY = "painting"
 SCHEDULE_RESERVED_FIELDS = frozenset({"scheduled_step", "scheduled_slot", "schedule_group"})
 WARMUP_SCHEDULE_SCHEMA = "structured-flow-warmup-schedule-v1"
+PRIME_OVERRIDE_ROOT = Path(__file__).resolve().parent / "prime_runtime/integrations/prime/watercolour_sft"
+PRIME_OVERRIDE_FILES = ("init_adapter.py", "export_adapter.py")
+MIXED_OVERRIDE_ROOT = Path(__file__).resolve().parent / "prime_runtime/integrations/speedpainting/mixed_sft"
+MIXED_OVERRIDE_FILES = ("update_audit.py", "group_validation.py")
 
 
 def sha256_bytes(value: bytes) -> str:
@@ -909,10 +913,34 @@ def materialize_source_layout(source_root: Path, output: Path) -> Path:
             shutil.copyfile(source, mixed_dest / source.name)
         else:
             _link_or_copy(source, mixed_dest / source.name)
+    for name in MIXED_OVERRIDE_FILES:
+        override = MIXED_OVERRIDE_ROOT / name
+        if not override.is_file():
+            raise FileNotFoundError(f"run-owned mixed-SFT override is missing: {override}")
+        target = mixed_dest / name
+        archived = mixed_dest / f"{name}.archived.py"
+        shutil.copyfile(target, archived)
+        if target.is_symlink() or target.exists():
+            target.unlink()
+        shutil.copyfile(override, target)
     for source in full_prime.iterdir():
         if source.name == "__pycache__":
             continue
         _link_or_copy(source, prime_dest / source.name)
+    # Keep the archived helper bytes under explicit names, then install the
+    # run-owned DTensor-aware hooks.  The source manifest and receipt continue
+    # to identify the original paid supervision package; override hashes are
+    # recorded separately so provenance is never rewritten.
+    for name in PRIME_OVERRIDE_FILES:
+        override = PRIME_OVERRIDE_ROOT / name
+        if not override.is_file():
+            raise FileNotFoundError(f"run-owned Prime override is missing: {override}")
+        target = prime_dest / name
+        archived = prime_dest / f"{name}.archived.py"
+        shutil.copyfile(target, archived)
+        if target.is_symlink() or target.exists():
+            target.unlink()
+        shutil.copyfile(override, target)
     scripts = source_root / "scripts"
     if not scripts.is_dir() and packaged and source_root.parent.joinpath("scripts").is_dir():
         scripts = source_root.parent / "scripts"
@@ -951,7 +979,22 @@ def source_identity(source_root: Path) -> dict[str, Any]:
         "integrations/prime/watercolour_sft/model_profiles.py",
         "scripts/upload_checkpoints.py",
     ]
-    values = {relative: sha256_file(source_root / relative) for relative in relative_files}
+    original_values = {}
+    override_values = {}
+    for relative in relative_files:
+        path = source_root / relative
+        if relative in {
+            "integrations/prime/watercolour_sft/init_adapter.py",
+            "integrations/prime/watercolour_sft/export_adapter.py",
+            "integrations/speedpainting/mixed_sft/update_audit.py",
+            "integrations/speedpainting/mixed_sft/group_validation.py",
+        }:
+            archived = path.with_name(path.name + ".archived.py")
+            if archived.is_file():
+                override_values[relative] = sha256_file(path)
+                path = archived
+        original_values[relative] = sha256_file(path)
+    values = original_values
     manifest = source_root / "manifest.json"
     override = source_root / "scripts/upload_checkpoints_backend.py"
     override_receipt = None
@@ -963,7 +1006,35 @@ def source_identity(source_root: Path) -> dict[str, Any]:
         }
     return {"source_root": str(source_root), "prime_commit": PRIME_COMMIT, "files": values,
             "manifest_sha256": sha256_file(manifest) if manifest.is_file() else None,
-            "upload_override": override_receipt}
+            "upload_override": override_receipt,
+            "prime_hook_override": {
+                "schema": "Diverse-flow-multirank-lora-hooks-v1",
+                "original_files": {
+                    key: values[key]
+                    for key in (
+                        "integrations/prime/watercolour_sft/init_adapter.py",
+                        "integrations/prime/watercolour_sft/export_adapter.py",
+                    )
+                    if key in values
+                },
+                "override_files": {
+                    key: value for key, value in override_values.items()
+                    if key.startswith("integrations/prime/")
+                },
+            } if any(key.startswith("integrations/prime/") for key in override_values) else None,
+            "mixed_hook_override": {
+                "schema": "Diverse-flow-multirank-mixed-sft-hooks-v1",
+                "original_files": {
+                    key: values[key] for key in values
+                    if key in {
+                        "integrations/speedpainting/mixed_sft/update_audit.py",
+                        "integrations/speedpainting/mixed_sft/group_validation.py",
+                    }
+                },
+                "override_files": {
+                    key: value for key, value in override_values.items() if key.startswith("integrations/speedpainting/mixed_sft/")
+                },
+            } if any(key.startswith("integrations/speedpainting/") for key in override_values) else None}
 
 
 def build_train_command(runtime_root: Path, config_path: Path, python: str = sys.executable) -> list[str]:

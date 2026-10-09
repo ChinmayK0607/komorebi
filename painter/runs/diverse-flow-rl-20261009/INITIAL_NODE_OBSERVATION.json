@@ -1,0 +1,21 @@
+{
+  "schema": "diverse-flow-initial-node-observation-v1",
+  "status": "paused_before_model_start_for_multirank_initializer_correction",
+  "source_commit": "2a96b95a7c53cc29a8145b68af8cb40ea7c120f9",
+  "rental_start_epoch": 1791540555.0841348,
+  "observed_epoch": 1791540918.10258,
+  "whole_node_usd_hour": 1.52,
+  "gpu_cap_usd": 20,
+  "gpu_type": "L40S",
+  "physical_gpus": 4,
+  "actual_capacity_mib_each": 49140,
+  "optimizer_updates_confirmed": 0,
+  "memory_snapshot_mib_each": 0,
+  "utilization_status": "instantaneous pre-model snapshot only; no interval utilization claim",
+  "corrective_action": "Runtime-local multi-rank adapter initialization and audit support; restart on same node/original rental epoch",
+  "source_transfer": {
+    "prime_bundle": "complete history, verified before allocation",
+    "initial_shallow_bundle_attempts_rented_gpu": false
+  },
+  "gpu_rental_estimate_usd_to_observation": 0.15327445466253495
+}

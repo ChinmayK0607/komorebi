@@ -17,10 +17,19 @@ def main() -> None:
     root = Path(__file__).resolve().parent
     brush_root = Path(os.environ.get("BRUSH_ROOT", root / "source" / "brush-rl")).resolve(strict=True)
     helpers = brush_root / "integrations" / "prime" / "watercolour_sft"
+    # The archived Prime helper is retained byte-for-byte for provenance, but
+    # this run owns a reviewed DTensor-aware initializer/exporter override.
+    # Put only that small directory first; model profiles and upload helpers
+    # continue to come from the pinned BRUSH_ROOT tree.
+    override_helpers = root / "prime_runtime" / "integrations" / "prime" / "watercolour_sft"
+    if (override_helpers / "init_adapter.py").is_file() and (override_helpers / "export_adapter.py").is_file():
+        helpers_for_hooks = override_helpers
+    else:
+        helpers_for_hooks = helpers
     mixed = brush_root / "integrations" / "speedpainting" / "mixed_sft"
     if not (helpers / "init_adapter.py").is_file() or not (helpers / "export_adapter.py").is_file():
         raise FileNotFoundError(f"reviewed Prime adapter helpers are missing under {brush_root}")
-    sys.path[:0] = [str(helpers), str(mixed), str(root)]
+    sys.path[:0] = [str(helpers_for_hooks), str(helpers), str(mixed), str(root)]
 
     from model_profiles import profile, verify_snapshot
 
