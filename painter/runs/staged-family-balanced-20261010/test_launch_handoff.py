@@ -11,6 +11,7 @@ import tempfile
 import tomllib
 import unittest
 from unittest.mock import patch
+from pydantic import BaseModel, ConfigDict, ValidationError
 
 
 RUN = Path(__file__).resolve().parent
@@ -106,6 +107,56 @@ class LaunchHandoffTests(unittest.TestCase):
             )
             self.assertEqual((one_plus_one["deployment"]["num_train_gpus"], one_plus_one["deployment"]["num_infer_gpus"]), (1, 1))
             self.assertEqual((two_plus_two["deployment"]["num_train_gpus"], two_plus_two["deployment"]["num_infer_gpus"]), (2, 2))
+
+    def test_config_places_scoring_timeout_under_prime_agent_schema(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            model = root / CONFIG.BASE_MODEL_REVISION
+            model.mkdir()
+            (model / "config.json").write_text("{}\n", encoding="utf-8")
+            materialized = root / "materialized"
+            materialized.mkdir()
+            repo = root / "repo"
+            repo.mkdir()
+            config = CONFIG.build_config(
+                model=model,
+                node_root=root / "node",
+                materialized_root=materialized,
+                repo_root=repo,
+            )
+            env = config["orchestrator"]["train"]["source"][0]["env"]
+            self.assertEqual(env["timeout"], {"episode": 3600})
+            self.assertEqual(env["agent"]["timeout"]["scoring"], 600)
+
+            class PrimeTimeout(BaseModel):
+                episode: int
+                model_config = ConfigDict(extra="forbid")
+
+            class PrimeAgentTimeout(BaseModel):
+                rollout: int
+                scoring: int
+                model_config = ConfigDict(extra="forbid")
+
+            class PrimeAgent(BaseModel):
+                timeout: PrimeAgentTimeout
+                model_config = ConfigDict(extra="forbid")
+
+            class PrimeEnv(BaseModel):
+                timeout: PrimeTimeout
+                agent: PrimeAgent
+                model_config = ConfigDict(extra="forbid")
+
+            corrected = {
+                "timeout": env["timeout"],
+                "agent": {"timeout": env["agent"]["timeout"]},
+            }
+            PrimeEnv.model_validate(corrected)
+            misplaced = {
+                "timeout": {**env["timeout"], "scoring": 600},
+                "agent": {"timeout": {"rollout": 1200}},
+            }
+            with self.assertRaises(ValidationError):
+                PrimeEnv.model_validate(misplaced)
 
     def test_prepare_helpers_accept_venv_links_but_reject_escape(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -218,6 +269,9 @@ class LaunchHandoffTests(unittest.TestCase):
         self.assertNotIn("Orchestrator()", CANARY_SOURCE)
         self.assertNotIn("Orchestrator.setup(", CANARY_SOURCE)
         self.assertIn('"renderer_root": str(renderer_root)', CANARY_SOURCE)
+        self.assertIn("from prime_rl.configs.rl import RLConfig", CANARY_SOURCE)
+        self.assertIn("RLConfig.model_validate(config)", CANARY_SOURCE)
+        self.assertIn('"prime_config_validation":', CANARY_SOURCE)
 
     def test_renderer_canary_uses_fake_interpreter_without_chromium(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

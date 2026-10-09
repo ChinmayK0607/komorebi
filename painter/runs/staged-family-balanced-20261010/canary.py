@@ -228,12 +228,18 @@ def _read_config(path: Path) -> dict[str, Any]:
 
 def _probe_code() -> str:
     # The probe intentionally does not instantiate or call Orchestrator.setup.
-    # Importing the class is enough to verify the hook's patched setup target
-    # while CUDA visibility is empty and no Prime launcher is called.
+    # Validate the complete pinned config before importing the patched class;
+    # this catches schema drift without starting Prime or any worker process.
     return """
 import json
+import sys
+import tomllib
+from pathlib import Path
+from prime_rl.configs.rl import RLConfig
 from prime_rl.orchestrator.orchestrator import Orchestrator
 from runtime_binding import install_from_environment, INSTALL_SENTINEL
+config = tomllib.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+RLConfig.model_validate(config)
 result = install_from_environment()
 if result.get("run_id") != "staged-family-balanced-20261010":
     raise RuntimeError("staged hook returned the wrong run ID")
@@ -244,6 +250,7 @@ if not marker:
     raise RuntimeError("staged hook did not patch pinned Prime Orchestrator.setup")
 print(json.dumps({
     "status": "import_and_hook_passed",
+    "rl_config_validation": "passed",
     "prime_module": str(Orchestrator.__module__),
     "hook_marker": INSTALL_SENTINEL,
     "already_installed": bool(result.get("already_installed")),
@@ -279,7 +286,7 @@ def _runtime_environment(*, prepare_receipt: dict[str, Any], source_root: Path, 
     }
 
 
-def run_probe(*, prime_python: Path, source_root: Path, repo_root: Path, state_path: Path, runtime_env: dict[str, str]) -> dict[str, Any]:
+def run_probe(*, prime_python: Path, config_path: Path, source_root: Path, repo_root: Path, state_path: Path, runtime_env: dict[str, str]) -> dict[str, Any]:
     prime_python = PREP._runtime_executable(prime_python, "pinned Prime Python", prime_python.parent.parent)
     env = {
         key: value
@@ -309,7 +316,7 @@ def run_probe(*, prime_python: Path, source_root: Path, repo_root: Path, state_p
     env.update(runtime_env)
     try:
         completed = subprocess.run(
-            [str(prime_python), "-c", _probe_code()],
+            [str(prime_python), "-c", _probe_code(), str(config_path)],
             env=env,
             capture_output=True,
             text=True,
@@ -329,7 +336,7 @@ def run_probe(*, prime_python: Path, source_root: Path, repo_root: Path, state_p
         result = json.loads(lines[-1])
     except json.JSONDecodeError as exc:
         raise RuntimeError("pinned Prime/runtime hook probe did not emit JSON") from exc
-    if not isinstance(result, dict) or result.get("status") != "import_and_hook_passed":
+    if not isinstance(result, dict) or result.get("status") != "import_and_hook_passed" or result.get("rl_config_validation") != "passed":
         raise RuntimeError("pinned Prime/runtime hook probe returned an unverified receipt")
     return result
 
@@ -362,6 +369,7 @@ def canary(*, source_root: Path, node_root: Path, materialized_root: Path, rende
     state_path = node_root / "runtime-state.json"
     probe = run_probe(
         prime_python=prime_python,
+        config_path=config_path,
         source_root=source_root,
         repo_root=repo_root,
         state_path=state_path,
@@ -401,6 +409,10 @@ def canary(*, source_root: Path, node_root: Path, materialized_root: Path, rende
         "materialized": materialized,
         "config": {"path": str(config_path), "sha256": sha256_file(config_path), "receipt_sha256": sha256_file(config_receipt_path)},
         "probe": probe,
+        "prime_config_validation": {
+            "status": probe.get("rl_config_validation"),
+            "model": "prime_rl.configs.rl.RLConfig",
+        },
         "renderer_probe": renderer_probe,
         "cuda_visibility": "CUDA_VISIBLE_DEVICES empty; no CUDA/runtime allocation attempted",
         "runtime_environment": {

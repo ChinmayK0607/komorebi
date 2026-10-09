@@ -171,7 +171,7 @@ def build_config(
     source = config["orchestrator"]["train"]["source"][0]
     source["name"] = "staged-family-balanced"
     source["env"]["timeout"]["episode"] = 3600
-    source["env"]["timeout"]["scoring"] = 600
+    source["env"]["agent"]["timeout"]["scoring"] = 600
     taskset = source["env"]["taskset"]
     taskset.update({
         "id": "native_painting_rl",

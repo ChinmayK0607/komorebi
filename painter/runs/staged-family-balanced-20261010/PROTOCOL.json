@@ -71,7 +71,7 @@
   },
   "config": {
     "path": "config.json",
-    "sha256": "de2c98619e2a2e6968750f4165d66b8743539e7fcdf415437648c43c3b7dbf4d"
+    "sha256": "072b172020228d8c09350b4e7067595999b43024c576d160f383e25ad638ed49"
   },
   "receipt": {
     "path": "receipt.json",
@@ -191,7 +191,7 @@
       },
       "prepare_config": {
         "path": "prepare_config.py",
-        "sha256": "65ba75630adc7c11ead4bffdfa22f123c4447518e27a8c00b3ac16fa82899f3f"
+        "sha256": "d15d75ec99652d1b73fa743a4951fd03344559ac4a581d981581eff67896e96a"
       },
       "prepare_node": {
         "path": "prepare_node.py",
@@ -199,7 +199,7 @@
       },
       "canary": {
         "path": "canary.py",
-        "sha256": "ea19d265c068825ac1f727b2ec162ae9001f10ca34423ec40853add9ed12b6a8"
+        "sha256": "15b56d5c80b8adc4ff3ae8dd3ef81d2c7fdde885b453ed518e0de58a40186573"
       },
       "launch": {
         "path": "launch.sh",
@@ -269,7 +269,7 @@
     },
     "canary_scope": {
       "status": "prepared_not_run",
-      "scope": "pinned Prime import hook plus one bounded real renderer probe",
+      "scope": "pinned Prime RLConfig model validation and import hook plus one bounded real renderer probe",
       "orchestrator_setup_called": false,
       "gpu_or_cuda": false,
       "network": false,
