@@ -1,0 +1,14 @@
+{
+  "source_commit": "e54d0d656443ee8d48d90689c8c057d76750972a",
+  "bundle_sha256": "53d2088066e7afcdfabe8db3b108b23f16f14a733f1e541394c01219fa89f6f2",
+  "public_revision": "688263b8808acd8119a584a92881ff39f22ae404",
+  "public_source_url": "https://huggingface.co/datasets/CK0607/komorebi-painter-experiments/resolve/688263b8808acd8119a584a92881ff39f22ae404/sources/structured-flow-rl-20261009/e54d0d656443ee8d48d90689c8c057d76750972a.bundle",
+  "anonymously_verified": true,
+  "same_node": true,
+  "original_rental_epoch_retained": true,
+  "same_rental_cap_usd": 7,
+  "no_new_gpu_allocation": true,
+  "failed_source_preserved_on_node": true,
+  "failed_archive_public_hash_verified": true,
+  "finite_replacement_controller_started": true
+}
