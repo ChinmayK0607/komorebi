@@ -1,14 +1,22 @@
-"""Whole-group admission for the consistent visual-judge RL run.
+"""Admission for the consistent visual-judge RL run.
 
 Prime's pinned ``TrainSink`` calls ``Algorithm.finalize_group`` before
 ``TrainSource.on_result``.  A failed or uncertain reward would therefore be
 omitted from GRPO's reward tensor before the curriculum hook could reject the
 group.  This module provides a small, opt-in guard for the run launcher:
 
-* the original ``on_result`` still observes every completed group and updates
-  sampler/accounting state;
-* invalid groups return ``False`` from admission and skip group scoring; and
-* complete groups of the configured size delegate both hooks unchanged.
+* uncertain/error traces are marked non-trainable, without changing their
+  recorded reward evidence or removing the surrounding episode;
+* Prime's group algorithm sees only the scored traces, so its native
+  group-centered advantages remain intact; and
+* groups with at least three scored traces can train as partial groups, while
+  smaller groups still return ``False`` from admission.
+
+The three-trace lower bound is deliberate: it avoids fabricating a reward for
+an unresolved judgment while retaining enough within-prompt contrast for a
+stable centered group.  A full group is still bounded by the configured Prime
+group size.  Telemetry records every excluded trace ID and the resulting
+scored count so a run can be audited without guessing a score.
 
 The Prime classes are imported only by :func:`install_prime_guard`, so this
 module remains usable for local preflight tests without Prime installed.
@@ -28,6 +36,7 @@ CONSISTENT_PROTOCOL = "text-paint-sft-pairwise-consistent-v1"
 GROUP_SIZE_ENV = "PAINTER_WHOLE_GROUP_SIZE"
 ENABLE_ENV = "PAINTER_WHOLE_GROUP_ADMISSION"
 INSTALL_SENTINEL = "_painter_consistent_group_guard"
+MIN_SCORED_GROUP_SIZE = 3
 
 _UNCERTAIN_REWARD_STATUSES = frozenset({
     "judge_uncertain",
@@ -63,6 +72,11 @@ def _write_telemetry(guard: "WholeGroupAdmissionGuard", check: GroupCheck, decis
         "schema": "consistent-group-admission-telemetry-v1",
         "group_size": guard.group_size,
         "observed_size": check.observed_size,
+        "scored_size": check.scored_size,
+        "minimum_scored_size": guard.minimum_scored_size,
+        "scored_members": list(check.scored_members),
+        "excluded_members": list(check.excluded_members),
+        "invalid_members": list(check.invalid_members),
         "decision": decision,
         "reason": check.reason,
         "groups_observed": guard.groups_observed,
@@ -78,12 +92,15 @@ def _write_telemetry(guard: "WholeGroupAdmissionGuard", check: GroupCheck, decis
 
 @dataclass(frozen=True)
 class GroupCheck:
-    """Auditable result of the pre-GRPO whole-group check."""
+    """Auditable result of the pre-GRPO scored-subset check."""
 
     valid: bool
     reason: str | None = None
     observed_size: int = 0
     invalid_members: tuple[str, ...] = ()
+    scored_size: int = 0
+    scored_members: tuple[str, ...] = ()
+    excluded_members: tuple[str, ...] = ()
 
 
 def _member_id(member: Any, index: int) -> str:
@@ -114,30 +131,78 @@ def _trace_uncertainty(trace: Any) -> str | None:
     return None
 
 
-def check_group(group: Iterable[Any], *, group_size: int = 8) -> GroupCheck:
-    """Validate group cardinality and reward/error state before GRPO.
+def _trace_is_trainable(trace: Any) -> bool:
+    agent = getattr(trace, "agent", None)
+    return getattr(agent, "trainable", True) is not False
 
-    ``group`` is materialized once because Prime supplies a list but tests and
-    future adapters may pass another iterable.  A missing trace is treated as
-    an unresolved rollout; an explicit model-invalid canvas is valid when the
-    trace itself completed and carries its real zero score.
+
+def _trace_id(trace: Any, index: int) -> str:
+    value = getattr(trace, "id", None)
+    return str(value) if value is not None else f"trace-{index}"
+
+
+def _mark_excluded_trace(trace: Any, reason: str) -> None:
+    """Exclude one unsafe trace while preserving its raw evidence.
+
+    Prime's GRPO implementation filters on ``trace.agent.trainable`` before
+    constructing the reward tensor.  Changing that flag is the smallest
+    run-local hook that preserves the trace and its ``None``/uncertain reward,
+    while ensuring it cannot enter scoring, transport, or batching.
     """
 
-    if isinstance(group, (str, bytes)):
-        members = [group]
-    else:
-        members = list(group)
-    if len(members) != group_size:
-        return GroupCheck(False, "wrong_group_size", len(members))
+    agent = getattr(trace, "agent", None)
+    if agent is not None and hasattr(agent, "trainable"):
+        agent.trainable = False
+    info = getattr(trace, "info", None)
+    if isinstance(info, dict):
+        info.setdefault(
+            "consistent_group_admission",
+            {
+                "status": (
+                    "excluded_error_trace"
+                    if reason in {"episode_error", "trace_error"}
+                    else "excluded_uncertain_trace"
+                ),
+                "reason": reason,
+            },
+        )
+
+
+def _exclude_group_traces(group: Iterable[Any]) -> None:
+    """Mark error/uncertain traces before any Prime group algorithm runs."""
+
+    for episode in group:
+        traces = getattr(episode, "traces", None)
+        traces = [episode] if traces is None else list(traces)
+        episode_error = (
+            getattr(episode, "ok", True) is False
+            or (
+                getattr(episode, "error", None) is not None
+                and getattr(episode, "error", None) is not False
+                and getattr(episode, "error", None) != ""
+            )
+        )
+        for trace in traces:
+            reason = "episode_error" if episode_error else _trace_uncertainty(trace)
+            if reason is not None:
+                _mark_excluded_trace(trace, reason)
+
+
+def _collect_group_members(group: Iterable[Any]) -> tuple[list[Any], list[str], list[str], list[str]]:
+    """Return materialized episodes plus scored, excluded, and invalid IDs."""
+
+    members = [group] if isinstance(group, (str, bytes)) else list(group)
+    scored: list[str] = []
+    excluded: list[str] = []
     invalid: list[str] = []
-    for index, episode in enumerate(members):
-        member = _member_id(episode, index)
+    for episode_index, episode in enumerate(members):
+        episode_id = _member_id(episode, episode_index)
         if getattr(episode, "ok", True) is False:
-            invalid.append(f"{member}:episode_error")
+            invalid.append(f"{episode_id}:episode_error")
             continue
         episode_error = getattr(episode, "error", None)
         if episode_error is not None and episode_error is not False and episode_error != "":
-            invalid.append(f"{member}:episode_error")
+            invalid.append(f"{episode_id}:episode_error")
             continue
         traces = getattr(episode, "traces", None)
         if traces is None:
@@ -146,26 +211,77 @@ def check_group(group: Iterable[Any], *, group_size: int = 8) -> GroupCheck:
         else:
             traces = list(traces)
         if not traces:
-            invalid.append(f"{member}:missing_trace")
+            invalid.append(f"{episode_id}:missing_trace")
             continue
-        reasons = [reason for trace in traces if (reason := _trace_uncertainty(trace))]
-        if reasons:
-            invalid.append(f"{member}:{reasons[0]}")
-    if invalid:
-        return GroupCheck(False, "uncertain_or_error", len(members), tuple(invalid))
-    return GroupCheck(True, observed_size=len(members))
+        for trace_index, trace in enumerate(traces):
+            trace_id = _trace_id(trace, trace_index)
+            reason = _trace_uncertainty(trace)
+            if reason is not None:
+                excluded.append(f"{trace_id}:{reason}")
+                continue
+            if _trace_is_trainable(trace):
+                scored.append(trace_id)
+    return members, scored, excluded, invalid
+
+
+def check_group(
+    group: Iterable[Any], *, group_size: int = 8, minimum_scored: int = MIN_SCORED_GROUP_SIZE
+) -> GroupCheck:
+    """Validate group bounds and reward/error state before GRPO.
+
+    ``group`` is materialized once because Prime supplies a list but tests and
+    future adapters may pass another iterable.  A missing trace is treated as
+    an unresolved rollout; an explicit model-invalid canvas is valid when the
+    trace itself completed and carries its real zero score.  Prime's native
+    GRPO implementation centers over the trainable traces it receives, so a
+    group is admissible whenever that scored subset has at least
+    ``minimum_scored`` members and the observed episode count does not exceed
+    the configured full-group size.
+    """
+
+    if isinstance(group_size, bool) or not isinstance(group_size, int) or group_size < 1:
+        raise ValueError("group_size must be a positive integer")
+    if isinstance(minimum_scored, bool) or not isinstance(minimum_scored, int) or minimum_scored < 1:
+        raise ValueError("minimum_scored must be a positive integer")
+    members, scored, excluded, invalid = _collect_group_members(group)
+    observed_size = len(members)
+    all_invalid = tuple(invalid) + tuple(excluded)
+    if observed_size > group_size:
+        return GroupCheck(
+            False, "wrong_group_size", observed_size, all_invalid, len(scored),
+            tuple(scored), tuple(excluded),
+        )
+    if len(scored) < minimum_scored:
+        reason = "insufficient_scored_members" if (excluded or invalid) else "insufficient_group_size"
+        return GroupCheck(
+            False, reason, observed_size, all_invalid, len(scored),
+            tuple(scored), tuple(excluded),
+        )
+    return GroupCheck(
+        True, observed_size=observed_size, invalid_members=all_invalid,
+        scored_size=len(scored), scored_members=tuple(scored), excluded_members=tuple(excluded),
+    )
 
 
 class WholeGroupAdmissionGuard:
-    """Call the original Prime admission hook while rejecting unsafe groups."""
+    """Call Prime's admission hook while excluding unsafe traces."""
 
-    def __init__(self, original: Callable[[list[Any]], bool], *, group_size: int = 8) -> None:
+    def __init__(
+        self,
+        original: Callable[[list[Any]], bool],
+        *,
+        group_size: int = 8,
+        minimum_scored: int = MIN_SCORED_GROUP_SIZE,
+    ) -> None:
         if not callable(original):
             raise TypeError("original admission hook must be callable")
         if isinstance(group_size, bool) or not isinstance(group_size, int) or group_size < 1:
             raise ValueError("group_size must be a positive integer")
+        if isinstance(minimum_scored, bool) or not isinstance(minimum_scored, int) or minimum_scored < 1:
+            raise ValueError("minimum_scored must be a positive integer")
         self.original = original
         self.group_size = group_size
+        self.minimum_scored_size = minimum_scored
         self.last_check: GroupCheck | None = None
         self.groups_observed = 0
         self.groups_admitted = 0
@@ -174,40 +290,50 @@ class WholeGroupAdmissionGuard:
         self.rejections_by_reason: Counter[str] = Counter()
 
     def __call__(self, group: list[Any]) -> bool:
-        check = check_group(group, group_size=self.group_size)
+        check = check_group(
+            group, group_size=self.group_size, minimum_scored=self.minimum_scored_size
+        )
         self.last_check = check
         self.groups_observed += 1
+        # Mark unresolved traces before delegating, including rejected groups.
+        # This keeps curriculum observation safe and leaves the full episode
+        # objects available for receipt/accounting inspection.
+        _exclude_group_traces(group)
         if not check.valid:
             self.groups_rejected += 1
             self.rejections_by_reason[check.reason or "invalid_group"] += 1
             _emit_group_log(
-                "consistent whole-group admission rejected group: size=%d reason=%s "
+                "consistent group admission rejected group: size=%d scored=%d reason=%s "
                 "observed=%d rejected=%d",
-                check.observed_size, check.reason or "invalid_group",
+                check.observed_size, check.scored_size, check.reason or "invalid_group",
                 self.groups_observed, self.groups_rejected,
             )
-            _write_telemetry(self, check, "reject_uncertain_or_error")
+            _write_telemetry(
+                self, check, f"reject_{check.reason or 'invalid_group'}"
+            )
         # Invoke Prime's hook for every completed group so sampler observation
-        # and admission counters remain intact.  The guard overrides only the
-        # final decision for incomplete/error/uncertain groups.
+        # and admission counters remain intact.  Uncertain traces have already
+        # been marked non-trainable, so Prime's own group logic observes only
+        # the scored subset without receiving a fabricated reward.
         delegated = bool(self.original(group))
         if not check.valid:
             return False
         if not delegated:
             self.delegate_rejections += 1
             _emit_group_log(
-                "consistent whole-group admission delegated rejection: size=%d "
+                "consistent group admission delegated rejection: size=%d scored=%d "
                 "observed=%d admitted=%d rejected=%d delegate_rejections=%d",
-                check.observed_size, self.groups_observed, self.groups_admitted,
+                check.observed_size, check.scored_size, self.groups_observed, self.groups_admitted,
                 self.groups_rejected, self.delegate_rejections,
             )
             _write_telemetry(self, check, "reject_delegate")
             return False
         self.groups_admitted += 1
         _emit_group_log(
-            "consistent whole-group admission accepted: size=%d observed=%d "
+            "consistent group admission accepted: size=%d scored=%d excluded=%d observed=%d "
             "admitted=%d rejected=%d",
-            check.observed_size, self.groups_observed, self.groups_admitted,
+            check.observed_size, check.scored_size, len(check.excluded_members),
+            self.groups_observed, self.groups_admitted,
             self.groups_rejected,
         )
         _write_telemetry(self, check, "admit")
@@ -218,6 +344,7 @@ class WholeGroupAdmissionGuard:
 
         return {
             "group_size": self.group_size,
+            "minimum_scored_size": self.minimum_scored_size,
             "groups_observed": self.groups_observed,
             "groups_admitted": self.groups_admitted,
             "groups_rejected": self.groups_rejected,
@@ -228,9 +355,31 @@ class WholeGroupAdmissionGuard:
 
 def _group_guarded_finalize(original: Callable[..., Any], *, group_size: int) -> Callable[..., Any]:
     async def guarded(self: Any, group: list[Any]) -> Any:
-        if not check_group(group, group_size=group_size).valid:
+        check = check_group(group, group_size=group_size)
+        # Exclude unresolved traces before Prime's GRPO code builds its reward
+        # tensor.  Prime then centers advantages over the remaining traces.
+        _exclude_group_traces(group)
+        if not check.valid:
             return None
         return await original(self, group)
+
+    return guarded
+
+
+def _episode_guarded_finalize(original: Callable[..., Any]) -> Callable[..., Any]:
+    """Exclude unsafe traces before Prime snapshots group survivors.
+
+    Prime's ``TrainSink.process_group`` computes its local ``survivors`` list
+    before invoking ``Algorithm.finalize_group``.  Group-time exclusion alone
+    is therefore too late: an info-only uncertain trace could remain in that
+    stale list and reach ``trace_to_samples`` without an advantage stream.
+    ``process_episode`` runs this hook before the group is assembled, so the
+    existing Prime survivor snapshot already omits the trace.
+    """
+
+    async def guarded(self: Any, episode: Any) -> Any:
+        _exclude_group_traces([episode])
+        return await original(self, episode)
 
     return guarded
 
@@ -248,14 +397,19 @@ def install_prime_guard(*, group_size: int = 8) -> dict[str, Any]:
     from prime_rl.orchestrator.train_source import TrainSource
 
     if getattr(TrainSource, INSTALL_SENTINEL, None):
+        metadata = getattr(TrainSource, INSTALL_SENTINEL)
         return {
             "installed": False,
             "already_installed": True,
-            "group_size": int(getattr(TrainSource, INSTALL_SENTINEL)["group_size"]),
+            "group_size": int(metadata["group_size"]),
+            "episode_finalize_guard": bool(metadata.get("episode_finalize_guard")),
             "protocol": CONSISTENT_PROTOCOL,
         }
     original_on_result = TrainSource.on_result
+    original_finalize_episode = getattr(Algorithm, "finalize_episode", None)
     original_finalize_group = Algorithm.finalize_group
+    if not callable(original_finalize_episode):
+        raise RuntimeError("pinned Prime Algorithm.finalize_episode is unavailable")
 
     def guarded_on_result(self: Any, group: list[Any]) -> bool:
         guard = getattr(self, "_painter_whole_group_admission_guard", None)
@@ -267,11 +421,14 @@ def install_prime_guard(*, group_size: int = 8) -> dict[str, Any]:
         return guard(group)
 
     TrainSource.on_result = guarded_on_result
+    Algorithm.finalize_episode = _episode_guarded_finalize(original_finalize_episode)
     Algorithm.finalize_group = _group_guarded_finalize(original_finalize_group, group_size=group_size)
     metadata = {
         "group_size": group_size,
         "protocol": CONSISTENT_PROTOCOL,
+        "episode_finalize_guard": True,
         "original_on_result": original_on_result,
+        "original_finalize_episode": original_finalize_episode,
         "original_finalize_group": original_finalize_group,
     }
     setattr(TrainSource, INSTALL_SENTINEL, metadata)
@@ -279,8 +436,13 @@ def install_prime_guard(*, group_size: int = 8) -> dict[str, Any]:
         "consistent whole-group admission installed: protocol=%s group_size=%d",
         CONSISTENT_PROTOCOL, group_size,
     )
-    return {"installed": True, "already_installed": False, "group_size": group_size,
-            "protocol": CONSISTENT_PROTOCOL}
+    return {
+        "installed": True,
+        "already_installed": False,
+        "group_size": group_size,
+        "episode_finalize_guard": True,
+        "protocol": CONSISTENT_PROTOCOL,
+    }
 
 
 def install_from_environment() -> dict[str, Any]:
@@ -307,6 +469,7 @@ __all__ = [
     "CONSISTENT_PROTOCOL",
     "ENABLE_ENV",
     "GROUP_SIZE_ENV",
+    "MIN_SCORED_GROUP_SIZE",
     "GroupCheck",
     "WholeGroupAdmissionGuard",
     "check_group",

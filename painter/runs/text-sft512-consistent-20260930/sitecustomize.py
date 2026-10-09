@@ -110,6 +110,7 @@ def _activate() -> None:
                     "role": "orchestrator",
                     "installed": bool(result.get("installed")),
                     "already_installed": bool(result.get("already_installed")),
+                    "episode_finalize_guard": bool(result.get("episode_finalize_guard")),
                     "protocol": os.environ.get("PAINTER_JUDGE_PROTOCOL"),
                     "group_size": int(os.environ["PAINTER_WHOLE_GROUP_SIZE"]),
                 },

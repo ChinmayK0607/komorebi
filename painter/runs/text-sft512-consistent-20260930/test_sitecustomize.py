@@ -192,6 +192,9 @@ class SitecustomizeActivationTests(unittest.TestCase):
 
     def test_orchestrator_child_calls_explicit_guard_and_writes_receipt(self):
         class FakeAlgorithm:
+            async def finalize_episode(self, _episode):
+                return None
+
             async def finalize_group(self, _group):
                 return None
 
@@ -223,6 +226,7 @@ class SitecustomizeActivationTests(unittest.TestCase):
                 spec.loader.exec_module(module)
             data = json.loads(receipt.read_text())
             self.assertTrue(data["installed"])
+            self.assertTrue(data["episode_finalize_guard"])
             self.assertEqual(data["role"], "orchestrator")
             self.assertEqual(data["group_size"], 8)
         finally:
