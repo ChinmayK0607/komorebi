@@ -1,0 +1,22 @@
+{
+  "schema": "structured-flow-failure-v1",
+  "source_commit": "f1ec461c10c965508a4f75628f371db1562f58a9",
+  "failure_phase": "cached_manifest_restore_before_training",
+  "root_cause": "cache_loader_expected_incorrect_painter_prefixed_native_manifest_schema",
+  "supervised_optimizer_updates": 0,
+  "rl_optimizer_updates": 0,
+  "public_evidence": {
+    "revision": "ac04367cf2c8981939a73396f0f651c9381a0979",
+    "sha256": "6a8b5cc0e1314859eaef0440480bf326e43e21b67b03cc9b8731246be9ef8eb3",
+    "bytes": 33711702,
+    "anonymous_download": true,
+    "remote_lfs_sha256_verified": true
+  },
+  "node_absent_confirmed": true,
+  "gpu_clock_conservative_estimate_usd": 0.299,
+  "prior_estimated_gpu_usd": 10.4953,
+  "cumulative_conservative_estimate_usd": 10.7943,
+  "cost_is_invoice": false,
+  "api_cost_separate": true,
+  "next_decision": "production schema corrected; complete cached artifact restore executed before next rental; twenty RL updates with unresolved SFT pending"
+}

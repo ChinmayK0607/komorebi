@@ -28,9 +28,14 @@ def load_module(path: Path, name: str):
 
 
 class MatchedBaselineReuseTests(unittest.TestCase):
+    def test_accepts_unwrapped_flow_source_member(self):
+        restore = load_module(RUN / "restore_anchor_evidence.py", "structured_flow_restore_unwrapped_test")
+        self.assertEqual(restore._curriculum_member("flow_demonstrations.py"), (("flow_demonstrations.py",), "flow_source"))
+
     def test_restores_exact_archived_admitted_manifests_and_disabled_casebriefs(self):
         restore = load_module(RUN / "restore_anchor_evidence.py", "structured_flow_restore_admitted_test")
         curriculum = load_module(RUN / "prepare_curriculum.py", "structured_flow_curriculum_admitted_test")
+        materialize = load_module(RUN / "materialize.py", "structured_flow_materialize_admitted_test")
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             run = root / "run"
@@ -80,7 +85,7 @@ class MatchedBaselineReuseTests(unittest.TestCase):
                 }
             train_rows = [admitted(case_id) for case_id in plan["train_ids"][:-1]]
             heldout_rows = [admitted(case_id) for case_id in plan["heldout_ids"]]
-            common = {"schema": "painter.native-painting-rl-structured-flow-v1", "run_id": curriculum.RUN_ID, "status": "admitted_with_verified_frozen_sft512_anchors"}
+            common = {"schema": materialize.curriculum.NATIVE_SCHEMA, "run_id": curriculum.RUN_ID, "status": "admitted_with_verified_frozen_sft512_anchors"}
             train_value = {**common, "split": "train", "native_rl_compatible": True, "rows": train_rows}
             heldout_value = {**common, "split": "heldout", "native_rl_compatible": False, "rows": heldout_rows, "cases": heldout_rows}
             archive_root = root / "archive" / "runs" / curriculum.RUN_ID

@@ -1,0 +1,73 @@
+{
+  "schema": "complete-actual-paid-cache-parent-review-v1",
+  "archive_sha256": "ff4efa37835b1a7e3c5e90a628d685f1e94f39cf3d13760e47abab834c1a90c3",
+  "actual_archive_used": true,
+  "complete_cached_manifest_restore_executed": true,
+  "complete_baseline_restore_executed": true,
+  "same_original_node_paths_in_manifests": true,
+  "metadata_io_projected_to_temporary_files": true,
+  "generator_model_renderer_processor_judge_calls": 0,
+  "admitted_manifest_result": {
+    "schema": "structured-flow-cached-anchor-reuse-v1",
+    "status": "reused_archived_admitted_pilot",
+    "source_archive_sha256": "ff4efa37835b1a7e3c5e90a628d685f1e94f39cf3d13760e47abab834c1a90c3",
+    "source_kind": "local_archive",
+    "generator_calls": 0,
+    "train_rows": 31,
+    "heldout_cases": 16,
+    "casebrief_count": 47,
+    "casebrief_mode": "disabled_casebrief_with_flow_hook",
+    "flow_source_sha256": "0b64cec3c9566fbfba776cdba9fb1c4ab91138a73f305aa6090e63988770b93a",
+    "train_manifest_sha256": "a5a7651c7363ba5876c46ab39f146bae6e803b59cad8aa674f5402b79a99a694",
+    "heldout_manifest_sha256": "ee6c62716723d237f9f5dab81063d3c2efc20daced74ebeb18da8b1993233532",
+    "manifest_members": [
+      "curriculum/.materialized-pilot-m_tgr81x/pilot-train-manifest.json",
+      "curriculum/.materialized-pilot-m_tgr81x/pilot-heldout-manifest.json",
+      "curriculum/.materialized-pilot-m_tgr81x/matched16-manifest.json"
+    ]
+  },
+  "manifest_replay_status": "reused_archived_admitted_pilot",
+  "baseline_files": 130,
+  "baseline_validation": {
+    "schema": "structured-flow-matched-baseline-evidence-restore-v1",
+    "status": "validated_cached_baseline",
+    "policy": {
+      "adapter_sha256": "c70c47ec0d6d7172b3bc25c4f54178919cf7c079cd9652fff3bc76db9e1eca79",
+      "revision": "1227a2427a8ae16014d2fdca4d1adb6855d3fa1c",
+      "prefix": "rl-judge-matched-20261004-flash/step_12"
+    },
+    "eval": {
+      "manifest_sha256": "ee6c62716723d237f9f5dab81063d3c2efc20daced74ebeb18da8b1993233532",
+      "seed": 918210,
+      "max_turns": 3,
+      "max_tokens": 8192
+    },
+    "prompt": {
+      "manifest_sha256": "ee6c62716723d237f9f5dab81063d3c2efc20daced74ebeb18da8b1993233532",
+      "case_count": 16,
+      "casebrief_count": 16,
+      "casebrief_mode": "disabled_casebrief",
+      "flow_source_sha256": "0b64cec3c9566fbfba776cdba9fb1c4ab91138a73f305aa6090e63988770b93a",
+      "native_system_sha256": "6e690ce8fd009d1b5c2421d20d8fc468a4742503ca36e46d2d41de665a279350",
+      "flow_hint_sha256": "99d3c81c4ed7b1282d23b561d8f44dfa0efb781eaadb6aff1aa8aa625da20260",
+      "flow_system_sha256": "1a78e3babb416f3d8f08590f7ee05a2052e35d1f66c4f6fb1027587200c042fc"
+    },
+    "renderer_sha256": "dc6b9d837ed7be382784a6c84de1b64911506b17a19b499ce054c0c572e75794",
+    "rollouts": {
+      "receipt_count": 35,
+      "valid_receipts": 35,
+      "invalid_receipts": 0,
+      "missing_png": 0,
+      "hash_mismatch": 0,
+      "renderer_bound_receipts": 35
+    },
+    "invalid_or_censored_retained": false
+  },
+  "baseline_replay_status": "restored_verified_cached_baseline",
+  "limitations": [
+    "Filesystem I/O projected locally; no Linux model, renderer, processor, or optimizer executed by this review.",
+    "Thirty-five valid PNG receipts do not establish sixteen valid final actions. Raw traces and failed programs are retained; the invalid_or_censored_retained field only denotes explicit receipt classification.",
+    "Canonical code-flow hint and supervised warmup remain pending; actual saved disabled-marker prompt conditions are preserved."
+  ],
+  "structured_tests_passed": 109
+}

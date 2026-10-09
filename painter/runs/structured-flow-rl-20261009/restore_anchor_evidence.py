@@ -705,7 +705,7 @@ def _curriculum_member(name: str) -> tuple[tuple[str, ...], str] | None:
     path = PurePosixPath(name)
     if path.is_absolute() or any(part in {"", ".", ".."} for part in path.parts):
         raise ValueError(f"unsafe cached pilot archive member: {name!r}")
-    if path.parts[-1] == "flow_demonstrations.py" and RUN_ID in path.parts:
+    if path.parts[-1] == "flow_demonstrations.py" and (len(path.parts) == 1 or RUN_ID in path.parts):
         return path.parts, "flow_source"
     try:
         curriculum_index = path.parts.index("curriculum")
@@ -725,7 +725,7 @@ def _curriculum_member(name: str) -> tuple[tuple[str, ...], str] | None:
 
 
 def _manifest_rows(value: Mapping[str, object], *, name: str, expected_count: int) -> list[dict[str, object]]:
-    if value.get("schema") != "painter.native-painting-rl-structured-flow-v1" or value.get("run_id") != RUN_ID:
+    if value.get("schema") != "native-painting-rl-structured-flow-v1" or value.get("run_id") != RUN_ID:
         raise ValueError(f"cached {name} manifest is not the pinned native structured-flow manifest")
     rows = value.get("rows")
     if not isinstance(rows, list) or len(rows) != expected_count:
