@@ -225,7 +225,7 @@ timeout --signal TERM --kill-after 60 "$eval_budget" bash "$RUN/evaluate.sh" 4 a
 # The target wrapper routes this to finalize_evaluation_recovery.py. It does
 # not invoke the generic SFT512-only finalizer.
 PAINTER_EVALUATION_ONLY=1 bash "$RUN/finalize.sh" 4
-"$PY_PRIME" "$RUN/build_recovery_review.py" --manifest "$RUN/curriculum/matched16-manifest.json" --baseline-root "$RUN/matched-baseline/pre-step12/evaluation-rollouts" --candidate-root "$RUN/validation/step-4-all/eval/evaluation-rollouts" --output "$RUN/recovery-review"
+"$PY_PRIME" "$RUN/build_recovery_review.py" --manifest "$RUN/curriculum/matched16-manifest.json" --baseline-root "$RUN/matched-baseline/pre-step12/evaluation-rollouts" --candidate-root "$RUN/validation/step-4-all/eval" --output "$RUN/recovery-review"
 
 # Build screened local evidence. Publishing is explicit and requires a caller
 # supplied owner-only token path; credentials are never read by default.

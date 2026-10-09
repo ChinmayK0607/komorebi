@@ -1,0 +1,164 @@
+{
+  "analysis": {
+    "collection_correction": "Actual traces and PNGs are sibling folders under eval. The local review/judge use eval as candidate root; the deployed node gallery used its artifact subfolder. Raw traces were preserved and the next shell invocation has regression coverage.",
+    "no_generalization_claim": "Only16 heldout stone/key prompts and one seeded episode per policy; four ambiguous pairs and two invalid outputs limit conclusions.",
+    "observed_visual_failures": [
+      "Some subjects become faint or fragmented despite valid rendering.",
+      "Key components can become disconnected, clipped, or lose a readable shaft/bow/teeth relation.",
+      "Some stones gain grounding and softer facets; others fragment into floating, disconnected faces."
+    ]
+  },
+  "date": "2026-10-09",
+  "decision": "Do not promote or scale checkpoint4: quality evidence is mixed and terminal program validity regressed. Retain Flash12, repair/execute the pending supervised code-flow phase before another RL comparison.",
+  "evidence": {
+    "raw_judgments": "painter/runs/structured-flow-rl-20261009/local-evidence/eval-step4/flash-judgments",
+    "review": "painter/runs/structured-flow-rl-20261009/local-evidence/eval-step4/review/index.html",
+    "selected_public_checkpoint": "https://huggingface.co/CK0607/qwen3.8-27b-brush-painting/tree/d4ae68d425b5728ffb69aeabce82dd54231486f2/structured-flow-rl-20261009/step_4"
+  },
+  "gpu_cost": {
+    "api_separate": true,
+    "conservative_release_margin_seconds": 60,
+    "cumulative_pilot_estimate_usd": 18.6083,
+    "evaluation_estimate_usd": 1.5582,
+    "not_invoice": true,
+    "owned_node_absence_confirmed": true,
+    "pilot_ceiling_usd": 20,
+    "prior_pilot_estimate_usd": 17.0501,
+    "release_request_utc": "2026-10-09T08:38:47.787335+00:00",
+    "rental_seconds_to_release_request": 1384.2663378715515,
+    "whole_node_usd_hour": 3.884
+  },
+  "gpu_utilization": {
+    "generation_window": {
+      "busy_fraction_utilization_ge_10": 0.9393939393939394,
+      "end_utc": "2026-10-09 08:37:12",
+      "mean_utilization_percent": 93.3030303030303,
+      "samples_per_gpu": 33,
+      "start_utc": "2026-10-09 08:31:44"
+    },
+    "limitation": "Fresh-node model download and runtime startup dominate the rental; the generation GPU was busy but this is not full-pipeline saturation.",
+    "physical_gpus": 1,
+    "pipeline_saturated": false,
+    "role": "evaluation inference; no trainer",
+    "sample_seconds": 10,
+    "whole_profile": {
+      "busy_fraction_utilization_ge_10": 0.26666666666666666,
+      "end_utc": "2026/10/09 08:37:30.404",
+      "mean_utilization_percent": 25.866666666666667,
+      "samples_per_gpu": 120,
+      "start_utc": "2026/10/09 08:17:39.968"
+    }
+  },
+  "hypothesis": "Four additional RL updates improve heldout paintings relative to their exact Flash12 starting policy while retaining program validity.",
+  "identities": {
+    "candidate": {
+      "adapter_sha256": "51e35b6fb48c2cf019309f928f292cd9852cfdd2af29abe3f8714d6c429922bf",
+      "prefix": "structured-flow-rl-20261009/step_4",
+      "repo": "CK0607/qwen3.8-27b-brush-painting",
+      "revision": "d4ae68d425b5728ffb69aeabce82dd54231486f2"
+    },
+    "generation_source_commit": "746e7bee3168854f862e57e38844f12d0c4922e6",
+    "heldout_manifest_sha256": "ee6c62716723d237f9f5dab81063d3c2efc20daced74ebeb18da8b1993233532",
+    "local_viewer_source_commit": "5313ca8",
+    "public_generation_evidence": {
+      "anonymous_hash_verified": true,
+      "bytes": 55961281,
+      "path": "runs/structured-flow-rl-20261009/evaluation-step-4-evidence.tar.gz",
+      "repo": "CK0607/komorebi-painter-experiments",
+      "revision": "773f61f99e993fda6c1d79e57af09ae5b3befb8f",
+      "schema": "structured-flow-public-eval-verification-v1",
+      "sha256": "877f0381f9aafda8a36e068758d94d01a3302236334bf0c01f303b3aa0a44c49"
+    },
+    "renderer": {
+      "path": "/root/painter/repo/painter/runs/structured-flow-rl-20261009/vendor/integrations/watercolour/renderer.py",
+      "sha256": "6181fb904a0c5dcd580f5c3cb01eaf341a14b7a15479e811d99ebb10b70bc841"
+    },
+    "reward_opponent": {
+      "adapter_sha256": "bea72b066986faa1b92b9dc539c710093181ee916b99323e2b2498f318ac1740",
+      "policy": "frozen SFT512 reward opponent",
+      "prefix": "photo-curriculum-sft-20260922-balanced/step_512",
+      "repo": "CK0607/qwen3.8-27b-brush-painting",
+      "revision": "adf687e5b321514eda7be6eab050434fdc8e44ff"
+    },
+    "starting_policy": {
+      "adapter_sha256": "c70c47ec0d6d7172b3bc25c4f54178919cf7c079cd9652fff3bc76db9e1eca79",
+      "archive_repo": "CK0607/komorebi-painter-experiments",
+      "archive_revision": "f72ee86cc24cb5fa3618c649aa1fe32ea22753ae",
+      "archive_sha256": "ff4efa37835b1a7e3c5e90a628d685f1e94f39cf3d13760e47abab834c1a90c3",
+      "policy": "Flash12 starting policy",
+      "prefix": "rl-judge-matched-20261004-flash/step_12",
+      "repo": "CK0607/qwen3.8-27b-brush-painting",
+      "revision": "1227a2427a8ae16014d2fdca4d1adb6855d3fa1c"
+    }
+  },
+  "judging": {
+    "censored_scores_not_imputed": true,
+    "completion_tokens": 39670,
+    "cost_is_response_reported_not_invoice": true,
+    "effort": "medium",
+    "format_version": "identity-joint-side-schema-v2-generic-v1",
+    "invalid_candidate_cases": 2,
+    "missing_or_failed_api_cases": 0,
+    "model": "xiaomi/mimo-v2.6-flash",
+    "prompt_tokens": 59130,
+    "protocol": "text-paint-sft-pairwise-consistent-v1",
+    "reasoning_tokens": 22374,
+    "recorded_calls": 39,
+    "reported_gateway_cost_usd": 0.0171642576,
+    "uncertain_pairs": 4
+  },
+  "quality": {
+    "comparable_visual": 10,
+    "expected": 16,
+    "invalid_or_censored": 6,
+    "losses": 4,
+    "mean_score": 0.5,
+    "ties": 0,
+    "validity": {
+      "comparable_visual_pairs": 10,
+      "expected_cases": 16,
+      "invalid_or_censored_cases": 6,
+      "valid_checkpoint4_terminal": 14,
+      "valid_flash12_terminal": 16
+    },
+    "wins": 6
+  },
+  "renderer": {
+    "attempts": 38,
+    "attempts_are_not_terminal_episode_counts": true,
+    "invalid_attempts": 8,
+    "max_elapsed_seconds": 45.505,
+    "mean_elapsed_seconds": 7.36471052631579,
+    "median_elapsed_seconds": 6.304,
+    "program_error_counts": {
+      "No brush or color set. Call brush.set('brushName', color) before drawing.": 2,
+      "ctx is not defined": 3,
+      "gr.beginDraw is not a function": 3
+    },
+    "timeouts": 0,
+    "valid_attempts": 30
+  },
+  "schema": "structured-flow-matched-eval-result-v1",
+  "scope": {
+    "canonical_code_flow_supervision_executed": false,
+    "families": [
+      "faceted stone",
+      "connected key"
+    ],
+    "heldout_cases": 16,
+    "max_concurrent": 8,
+    "max_tokens_per_turn": 8192,
+    "max_turns": 3,
+    "new_training_in_this_evaluation": false,
+    "prior_pilot_completed_updates": 5,
+    "prior_requested_updates": 20,
+    "reference_to_painting_evaluated": false,
+    "seed": 918210,
+    "selected_checkpoint_additional_updates": 4,
+    "sft_warmup_executed": false,
+    "task": "text-to-painting",
+    "temperature": 1.0,
+    "thinking": false
+  },
+  "status": "complete"
+}

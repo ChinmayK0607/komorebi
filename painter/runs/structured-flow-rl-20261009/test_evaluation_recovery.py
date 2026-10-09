@@ -179,6 +179,42 @@ class EvaluationRecoveryTest(unittest.TestCase):
             self.assertTrue(item["terminal_valid"])
             self.assertTrue(item["completed_at_cap"])
 
+    def test_recovery_gallery_reads_sibling_traces_and_rollouts_from_eval_root(self) -> None:
+        viewer = load("build_recovery_review")
+        script = (HERE / "recover_evaluation.sh").read_text(encoding="utf-8")
+        self.assertIn('--candidate-root "$RUN/validation/step-4-all/eval"', script)
+        self.assertNotIn('--candidate-root "$RUN/validation/step-4-all/eval/evaluation-rollouts"', script)
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            manifest = root / "manifest.json"
+            manifest.write_text(json.dumps({"cases": [{"id": f"case-{i}"} for i in range(16)]}))
+            eval_root = root / "eval"
+            trace_root = eval_root / "native_painting--consistent-step-4--null--trace"
+            trace_root.mkdir(parents=True)
+            image = eval_root / "evaluation-rollouts" / "case-0" / "trace-0" / "turn-1" / "painting.png"
+            image.parent.mkdir(parents=True)
+            image.write_bytes(b"checkpoint-4-final")
+            import hashlib
+
+            image_hash = hashlib.sha256(image.read_bytes()).hexdigest()
+            node_path = "/root/painter/repo/painter/runs/structured-flow-rl-20261009/validation/step-4-all/eval/evaluation-rollouts/case-0/trace-0/turn-1/painting.png"
+            trace = {
+                "task": {"data": {"id": "case-0"}},
+                "stop_condition": "user_closed",
+                "info": {
+                    "final_canvas": node_path,
+                    "final_canvas_valid": True,
+                    "operational_cutoff": True,
+                    "turns": [{"turn": 3, "valid": True, "canvas": node_path, "canvas_sha256": image_hash}],
+                },
+            }
+            (trace_root / "traces.jsonl").write_text(json.dumps(trace) + "\n")
+            review = viewer.collect(manifest=manifest, baseline_root=root / "baseline", candidate_root=eval_root)
+            item = review["rows"][0]["checkpoint4"]
+            self.assertEqual(item["status"], "valid_terminal")
+            self.assertTrue(item["terminal_valid"])
+            self.assertEqual(Path(item["path"]), image.resolve())
+
     def test_preflight_is_portable_and_declares_no_trainer(self) -> None:
         script = HERE / "recover_evaluation.sh"
         result = subprocess.run(["bash", str(script), "1", "5.70", "3", "--preflight"], cwd=HERE, text=True, capture_output=True, check=True)
