@@ -1093,6 +1093,8 @@ mv "$flow_tmp" "$run_root/flow-supervision-build.json"
         self.assertIn('CUDA_HOME=', baseline)
         self.assertIn('LD_LIBRARY_PATH="$CUDA_HOME/lib:', baseline)
         self.assertIn('"frozen_anchor"', (RUN / "runtime_receipt.py").read_text())
+        frozen_opponent = (RUN.parents[2] / "painter/frozen_opponent.py").read_text()
+        self.assertIn('environment["PAINTER_PRIME_ROLE"] = "evaluation"', frozen_opponent)
         self.assertIn('PAINTER_BROWSER_ROOT="$RUN/browsers"', evaluate)
         self.assertIn('PLAYWRIGHT_BROWSERS_PATH="$RUN/browsers"', evaluate)
         self.assertIn('export PLAYWRIGHT_BROWSERS_PATH="${PLAYWRIGHT_BROWSERS_PATH:-$PAINTER_BROWSER_ROOT}"', runtime)

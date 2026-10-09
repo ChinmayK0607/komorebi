@@ -578,6 +578,11 @@ def generate_frozen_opponent(spec: OpponentSpec) -> Path | Mapping[str, Any]:
     generated = generated.replace(taskset_marker, renderer_config, 1)
     config_path.write_text(generated)
     environment = os.environ.copy()
+    # This evaluator is a separate, ungrouped native-eval process launched
+    # while the RL orchestrator is alive.  Do not let it inherit the
+    # orchestrator role and install the trainer's whole-group guard; its own
+    # renderer children set their narrower ``renderer`` role at render time.
+    environment["PAINTER_PRIME_ROLE"] = "evaluation"
     environment["PYTHONPATH"] = str(workspace_root) + os.pathsep + environment.get("PYTHONPATH", "")
     environment.setdefault("WANDB_MODE", "disabled")
     try:
