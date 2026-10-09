@@ -1,0 +1,32 @@
+{
+  "schema": "structured-flow-live-observation-v1",
+  "observed_utc": "2026-10-09T00:36:00.001865+00:00",
+  "phase": "bootstrap-package-download",
+  "remote_detached_job_started": true,
+  "optimizer_updates_observed": 0,
+  "experiment_source_commit": "94aa0e733c5b4c909b5ba2d8694650bd3a0dd726",
+  "operation_commit": "b441371",
+  "public_source_revision": "a4ae30fb63154e13cbb5f92b009d4264a7d17d79",
+  "new_allocation_for_takeover": false,
+  "price_usd_per_whole_node_hour": 3.7,
+  "current_rental_clock_estimate_usd": 1.4957,
+  "previous_attempts_clock_estimate_usd": 5.0168,
+  "cumulative_clock_estimate_usd": 6.5125,
+  "cumulative_gpu_ceiling_usd": 20,
+  "cost_basis": "Elapsed original rental clock; estimate, not invoice; API excluded.",
+  "pypi_probe": {
+    "elapsed_seconds": 12.850499,
+    "bytes": 646034,
+    "bytes_per_second": 50273,
+    "meaning": "One HTTP package-index download, not model/training throughput."
+  },
+  "uv_wheel_download_advancing": true,
+  "policy_initializer": "matched-flash-step12",
+  "planned_sft_updates": 4,
+  "planned_rl_updates": 8,
+  "prepared_briefs_train": 240,
+  "prepared_briefs_heldout": 60,
+  "pilot_admitted_train_expected": 31,
+  "pilot_heldout_expected": 16,
+  "recurring_automation": false
+}
