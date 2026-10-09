@@ -48,6 +48,62 @@ class StructuredFlowRunTests(unittest.TestCase):
             train = json.loads((root / "train.json").read_text())
             self.assertTrue(all("opponent" not in row and row["lazy_opponent"]["model_alias"] == "sft-step512" for row in train["rows"]))
             self.assertTrue(all(row["max_turns"] == 3 for row in train["rows"]))
+            heldout = json.loads((root / "heldout.json").read_text())
+            for row in [*train["rows"], *heldout["cases"]]:
+                casebrief = Path(row["casebrief"])
+                self.assertTrue(casebrief.is_file())
+                self.assertEqual(hashlib.sha256(casebrief.read_bytes()).hexdigest(), row["casebrief_sha256"])
+                self.assertTrue(casebrief.read_text().startswith("[SYSTEM]\n"))
+                self.assertIn("\n\n[USER]\n", casebrief.read_text())
+            hook = load("structured_flow_lazy_manifest_hook_contract", RUN / "flow_prompt_hook.py")
+            with mock.patch.dict(
+                os.environ,
+                {"PAINTER_RL_MANIFEST": str(root / "train.json"), "PAINTER_EVAL_MANIFEST": str(root / "heldout.json")},
+                clear=False,
+            ):
+                train_rows, _ = hook._manifest_rows("PAINTER_RL_MANIFEST")
+                eval_rows, _ = hook._manifest_rows("PAINTER_EVAL_MANIFEST")
+            self.assertEqual(len(train_rows), 32)
+            self.assertEqual(len(eval_rows), 16)
+            self.assertTrue(all(hook._parse_casebrief(Path(row["casebrief"]))[1] for row in eval_rows.values()))
+            from pydantic import BaseModel, ConfigDict
+
+            class FrozenData(BaseModel):
+                model_config = ConfigDict(frozen=True)
+                task_id: str
+                reference: str
+                system_prompt: str
+
+            class FrozenTask(BaseModel):
+                model_config = ConfigDict(frozen=True)
+                data: FrozenData
+
+            for row in [*train["rows"], *heldout["cases"]]:
+                reference = Path(str(row["reference"]))
+                if not reference.is_absolute():
+                    reference = (root / "proposal" / reference).resolve()
+                original = FrozenTask(data=FrozenData(
+                    task_id=str(row["id"]), reference=str(reference), system_prompt="native"
+                ))
+                patched = hook._patch_task(original, row)
+                self.assertIsNot(patched, original)
+                self.assertEqual(original.data.system_prompt, "native")
+                system, user = hook._parse_casebrief(Path(row["casebrief"]))
+                self.assertTrue(system)
+                self.assertEqual(user, reference.read_text().strip())
+            heldout["cases"][0].pop("casebrief")
+            heldout["cases"][0].pop("casebrief_sha256")
+            heldout["cases"][0]["opponent"] = "preserve-this-anchor.png"
+            (root / "heldout.json").write_text(json.dumps(heldout))
+            repair = bank.ensure_casebriefs(
+                train_manifest=root / "train.json",
+                heldout_manifest=root / "heldout.json",
+                proposal_root=root / "proposal",
+            )
+            self.assertEqual(repair, {"train_repaired": 0, "heldout_repaired": 1})
+            repaired = json.loads((root / "heldout.json").read_text())["cases"][0]
+            self.assertEqual(repaired["opponent"], "preserve-this-anchor.png")
+            self.assertTrue(Path(repaired["casebrief"]).is_file())
 
     def test_config_cli_accepts_pending_manifest_only_with_explicit_flag(self):
         config = load("structured_flow_config_contract", RUN / "prepare_structured_config.py")
@@ -547,6 +603,8 @@ class StructuredFlowRunTests(unittest.TestCase):
         self.assertIn('FLOW_BUILD_TMP="$RUN/.flow-supervision-build.json.$$"', prepare)
         self.assertNotIn('>"$SUPERVISION_ROOT/build.json"', prepare)
         self.assertIn('restore_anchor_evidence.py', prepare)
+        self.assertIn('"$RUN/anchor_bank.py" ensure-casebriefs', prepare)
+        self.assertLess(prepare.index('ensure-casebriefs'), prepare.index('bash "$RUN/matched_baseline.sh"'))
         self.assertLess(prepare.index('restore_anchor_evidence.py'), prepare.index('anchor_bank.py" prepare-lazy'))
         self.assertIn('seed_prime_checkout.py', prepare)
         self.assertLess(prepare.index('seed_prime_checkout.py'), prepare.index('bash "$BOOTSTRAP_RUN/setup_node.sh"'))

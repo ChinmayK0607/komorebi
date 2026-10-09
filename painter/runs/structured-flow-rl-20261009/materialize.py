@@ -26,14 +26,7 @@ sys.modules[spec.name] = curriculum
 spec.loader.exec_module(curriculum)
 
 CHECKPOINT_SHA256 = "bea72b066986faa1b92b9dc539c710093181ee916b99323e2b2498f318ac1740"
-FLOW_HINT = (
-    "Plan before writing code: identify the subject hierarchy, placement, and "
-    "largest shapes first; then make explicit canvas, palette, and brush "
-    "choices. Revise by preserving correct structure and changing one control "
-    "at a time. After observing the actual canvas, either return one meaningful "
-    "complete painting revision or respond FINISHED when it satisfies the brief. "
-    "For a paint action, return only executable painting code in the assistant turn."
-)
+FLOW_HINT = curriculum.FLOW_HINT
 
 
 def sha256_file(path: Path) -> str:
@@ -52,30 +45,9 @@ def _write_json(path: Path, value: Any) -> None:
 
 
 def _casebrief(row: dict[str, Any], proposal_root: Path, output_root: Path, *, enabled: bool) -> None:
-    original = Path(str(row["reference"]))
-    if not original.is_absolute():
-        original = proposal_root / original
-    original = original.resolve()
-    if original.is_symlink() or not original.is_file():
-        raise FileNotFoundError(f"prompt is missing: {original}")
-    original_hash = sha256_file(original)
-    if original_hash != row.get("reference_sha256"):
-        raise ValueError(f"prompt hash mismatch for {row['id']}")
-    body = original.read_text(encoding="utf-8").strip()
-    hint = FLOW_HINT if enabled else "Structured-flow hint is disabled for this run."
-    text = f"[SYSTEM]\n{hint}\n\n[USER]\n{body}\n"
-    relative = Path("casebriefs") / str(row["split"]) / f"{row['id']}.txt"
-    target = output_root / relative
-    target.parent.mkdir(parents=True, exist_ok=True)
-    target.write_text(text, encoding="utf-8")
-    row["source_prompt"] = str(original)
-    row["source_prompt_sha256"] = original_hash
     # Keep the immutable native reference and its provenance hash unchanged;
     # the casebrief is an adjacent runtime hint consumed only when enabled.
-    row["casebrief"] = str(target.resolve())
-    row["casebrief_sha256"] = sha256_file(target)
-    row["flow_policy_enabled"] = enabled
-    row["system_hint_sha256"] = hashlib.sha256((hint + "\n").encode("utf-8")).hexdigest()
+    curriculum.write_casebrief(row, proposal_root, output_root, enabled=enabled)
 
 
 def materialize_pilot(

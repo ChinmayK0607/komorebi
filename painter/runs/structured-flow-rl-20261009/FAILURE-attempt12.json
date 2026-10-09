@@ -1,0 +1,19 @@
+{
+  "schema": "structured-flow-failure-v1",
+  "attempt": 12,
+  "failure": "pre-serving_real_task_load_missing_casebrief_in_lazy_heldout_manifest",
+  "optimizer_updates_observed": 0,
+  "source_commit": "2fede88648ff077864e0d673769a0068a037d7e0",
+  "public_archive_repo": "CK0607/komorebi-painter-experiments",
+  "public_archive_revision": "6dee92a8851be752de18e1b5102ed60b632a6d78",
+  "public_archive_path": "runs/structured-flow-rl-20261009/evidence.tar.gz",
+  "public_archive_sha256": "da4c5c80e3f9209765b83646b2cb3376e030f521f39ad04d4e705729a1e1b66c",
+  "public_archive_bytes": 33675714,
+  "public_anonymous_download_verified": true,
+  "owned_node_absence_confirmed": true,
+  "price_usd_per_hour": 3.72,
+  "gpu_clock_cost_estimate_usd": 0.2354,
+  "cumulative_gpu_clock_cost_estimate_usd": 8.224,
+  "gpu_cost_method": "allocation receipt epoch to final controller release log modification time (conservative includes paused cleanup); not invoice; API excluded",
+  "recurring_automation": false
+}

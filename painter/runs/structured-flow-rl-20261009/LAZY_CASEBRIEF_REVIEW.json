@@ -1,0 +1,25 @@
+{
+  "schema": "structured-flow-parent-review-v1",
+  "date_utc": "2026-10-09",
+  "failure_source_commit": "2fede88648ff077864e0d673769a0068a037d7e0",
+  "reviewed_changes": [
+    "canonical flow hint shared by lazy and admitted manifests",
+    "hash-bound casebriefs emitted for all32train16heldout before serving",
+    "missing legacy casebrief repair preserves anchor admission metadata"
+  ],
+  "parent_validation": {
+    "all48_generated_lazy_rows_applied_to_frozen_pydantic_task_and_data": true,
+    "casebrief_hashes_checked": true,
+    "original_objects_unchanged": true,
+    "structured_unit_tests": 93,
+    "shell_syntax": true,
+    "model_render_judge_calls": 0,
+    "actual_linux_16_task_smoke_pending": true
+  },
+  "rl_updates": 20,
+  "sft_updates": 4,
+  "next_gpu_allowance_usd": 11.5,
+  "prior_gpu_reserve_usd": 8.5,
+  "cumulative_gpu_ceiling_usd": 20,
+  "recurring_automation": false
+}

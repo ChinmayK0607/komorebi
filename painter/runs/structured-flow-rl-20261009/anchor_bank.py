@@ -257,6 +257,14 @@ def _lazy_row(row: Mapping[str, Any]) -> dict[str, Any]:
 
 def prepare_lazy(*, train_proposal: Path, heldout_proposal: Path, train_output: Path, heldout_output: Path) -> dict[str, Any]:
     train_rows, heldout_rows = _pilot_rows(train_proposal.resolve(), heldout_proposal.resolve())
+    # The matched baseline's real evaluator taskset loads this lazy manifest
+    # before runtime anchor admission. Emit the same hash-bound casebriefs now
+    # so heldout evaluation cannot reach a missing-flow-input failure.
+    lazy_root = train_output.resolve().parent
+    for row in train_rows:
+        curriculum.write_casebrief(row, train_proposal.resolve().parent, lazy_root, enabled=True)
+    for row in heldout_rows:
+        curriculum.write_casebrief(row, heldout_proposal.resolve().parent, lazy_root, enabled=True)
     train_doc = {
         "schema": "structured-flow-lazy-pilot-manifest-v1",
         "run_id": curriculum.RUN_ID,
@@ -278,6 +286,70 @@ def prepare_lazy(*, train_proposal: Path, heldout_proposal: Path, train_output: 
     _write_json(train_output, train_doc)
     _write_json(heldout_output, heldout_doc)
     return {"status": train_doc["status"], "train_rows": len(train_rows), "heldout_cases": len(heldout_rows)}
+
+
+def ensure_casebriefs(
+    *,
+    train_manifest: Path,
+    heldout_manifest: Path,
+    proposal_root: Path | None = None,
+    train_proposal_root: Path | None = None,
+    heldout_proposal_root: Path | None = None,
+) -> dict[str, int]:
+    """Backfill lazy casebriefs without replacing anchor/admission fields.
+
+    A resumed preparation may already have lazy JSON manifests from an older
+    source revision.  Re-running ``prepare-lazy`` would discard any verified
+    anchor fields, so repair only missing or hash-invalid casebrief entries in
+    place before the real evaluator taskset is loaded.
+    """
+
+    train_manifest = train_manifest.expanduser().resolve()
+    heldout_manifest = heldout_manifest.expanduser().resolve()
+    fallback_root = proposal_root or train_proposal_root or heldout_proposal_root
+    if fallback_root is None:
+        raise ValueError("a proposal root is required for casebrief repair")
+    train_proposal_root = (train_proposal_root or fallback_root).expanduser().resolve()
+    heldout_proposal_root = (heldout_proposal_root or fallback_root).expanduser().resolve()
+    train_doc = json.loads(train_manifest.read_text(encoding="utf-8"))
+    heldout_doc = json.loads(heldout_manifest.read_text(encoding="utf-8"))
+    train_rows = train_doc.get("rows")
+    heldout_rows = heldout_doc.get("cases") or heldout_doc.get("rows")
+    if not isinstance(train_rows, list) or not isinstance(heldout_rows, list):
+        raise ValueError("lazy manifests must contain train rows and heldout cases")
+
+    def repair(rows: list[dict[str, Any]], manifest: Path, source_root: Path) -> int:
+        repaired = 0
+        for row in rows:
+            raw = row.get("casebrief")
+            casebrief = Path(str(raw)) if isinstance(raw, str) and raw else Path()
+            if not casebrief.is_absolute():
+                casebrief = manifest.parent / casebrief
+            valid = (
+                casebrief.is_file()
+                and not casebrief.is_symlink()
+                and isinstance(row.get("casebrief_sha256"), str)
+                and sha256_file(casebrief) == row.get("casebrief_sha256")
+            )
+            if valid:
+                text = casebrief.read_text(encoding="utf-8")
+                valid = text.startswith("[SYSTEM]\n") and "\n\n[USER]\n" in text
+            if valid:
+                continue
+            curriculum.write_casebrief(row, source_root, manifest.parent, enabled=True)
+            repaired += 1
+        return repaired
+
+    repaired_train = repair(train_rows, train_manifest, train_proposal_root)
+    repaired_heldout = repair(heldout_rows, heldout_manifest, heldout_proposal_root)
+    train_doc["rows"] = train_rows
+    heldout_doc["rows"] = heldout_rows
+    heldout_doc["cases"] = heldout_rows
+    if repaired_train:
+        _write_json(train_manifest, train_doc)
+    if repaired_heldout:
+        _write_json(heldout_manifest, heldout_doc)
+    return {"train_repaired": repaired_train, "heldout_repaired": repaired_heldout}
 
 def _is_final(doc: Mapping[str, Any], expected: int) -> bool:
     rows = doc.get("rows") or doc.get("cases")
@@ -994,6 +1066,11 @@ def main(argv: list[str] | None = None) -> int:
     lazy.add_argument("--heldout-proposal", type=Path, required=True)
     lazy.add_argument("--train-output", type=Path, required=True)
     lazy.add_argument("--heldout-output", type=Path, required=True)
+    brief = sub.add_parser("ensure-casebriefs")
+    brief.add_argument("--train-manifest", type=Path, required=True)
+    brief.add_argument("--heldout-manifest", type=Path, required=True)
+    brief.add_argument("--proposal-root", type=Path, required=True)
+    brief.add_argument("--heldout-proposal-root", type=Path)
     mat = sub.add_parser("materialize")
     mat.add_argument("--train-manifest", type=Path, required=True)
     mat.add_argument("--heldout-manifest", type=Path, required=True)
@@ -1003,6 +1080,13 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     if args.command == "prepare-lazy":
         value = prepare_lazy(train_proposal=args.train_proposal, heldout_proposal=args.heldout_proposal, train_output=args.train_output, heldout_output=args.heldout_output)
+    elif args.command == "ensure-casebriefs":
+        value = ensure_casebriefs(
+            train_manifest=args.train_manifest,
+            heldout_manifest=args.heldout_manifest,
+            train_proposal_root=args.proposal_root,
+            heldout_proposal_root=args.heldout_proposal_root or args.proposal_root,
+        )
     else:
         value = materialize(train_manifest=args.train_manifest, heldout_manifest=args.heldout_manifest, anchor_root=args.anchor_root, output_dir=args.output_dir, run_root=args.run_root)
     print(json.dumps(value, sort_keys=True))

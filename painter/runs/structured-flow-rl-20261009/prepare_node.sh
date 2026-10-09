@@ -355,6 +355,12 @@ if [[ ! -f "$TRAIN_MANIFEST" || ! -f "$EVAL_MANIFEST" ]]; then
     --train-proposal "$TRAIN_PROPOSAL" --heldout-proposal "$HELDOUT_PROPOSAL" \
     --train-output "$TRAIN_MANIFEST" --heldout-output "$EVAL_MANIFEST"
 fi
+# Older lazy manifests may predate casebrief propagation. Repair only those
+# adjacent inputs in place, preserving any existing verified anchor fields,
+# before the evaluator-role smoke loads all 16 real heldout tasks.
+"$PY_BOOT" "$RUN/anchor_bank.py" ensure-casebriefs \
+  --train-manifest "$TRAIN_MANIFEST" --heldout-manifest "$EVAL_MANIFEST" \
+  --proposal-root "$RUN/curriculum" >"$RUN/casebrief-repair.json"
 RENDERER="${PAINTER_RENDERER_PATH:-$RUN/vendor/integrations/watercolour/renderer.py}"
 RENDERER_PYTHON="${PAINTER_RENDERER_PYTHON_PATH:-$RUN/renderer-env/bin/python}"
 [[ -f "$RENDERER" && -x "$RENDERER_PYTHON" ]] || { echo 'explicit renderer runtime is unavailable' >&2; exit 1; }

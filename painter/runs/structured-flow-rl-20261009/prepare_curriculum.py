@@ -88,6 +88,18 @@ FLOW_GUIDANCE: dict[int, str] = {
     4: "Paint the simplified scene and inspect its three depth bands. Revise only if a concrete revision will improve the brief; otherwise finish.",
 }
 
+# The casebrief is a separate, hash-bound runtime input.  Keep its canonical
+# system text in the curriculum module so both the pre-anchor lazy handoff and
+# the post-anchor materializer emit identical files.
+FLOW_HINT = (
+    "Plan before writing code: identify the subject hierarchy, placement, and "
+    "largest shapes first; then make explicit canvas, palette, and brush "
+    "choices. Revise by preserving correct structure and changing one control "
+    "at a time. After observing the actual canvas, either return one meaningful "
+    "complete painting revision or respond FINISHED when it satisfies the brief. "
+    "For a paint action, return only executable painting code in the assistant turn."
+)
+
 
 def sha256_bytes(value: bytes) -> str:
     return hashlib.sha256(value).hexdigest()
@@ -99,6 +111,41 @@ def sha256_file(path: Path) -> str:
         for block in iter(lambda: stream.read(1024 * 1024), b""):
             value.update(block)
     return value.hexdigest()
+
+
+def write_casebrief(
+    row: dict[str, Any], proposal_root: Path, output_root: Path, *, enabled: bool
+) -> None:
+    """Write the flow casebrief for a lazy or admitted manifest row.
+
+    Lazy manifests are loaded by the real evaluation taskset before frozen
+    anchors are admitted, so they need the same casebrief contract as the
+    final materialized manifests.  The immutable reference text remains
+    separate and hash-checked.
+    """
+
+    original = Path(str(row["reference"]))
+    if not original.is_absolute():
+        original = proposal_root / original
+    original = original.resolve()
+    if original.is_symlink() or not original.is_file():
+        raise FileNotFoundError(f"prompt is missing: {original}")
+    original_hash = sha256_file(original)
+    if original_hash != row.get("reference_sha256"):
+        raise ValueError(f"prompt hash mismatch for {row['id']}")
+    body = original.read_text(encoding="utf-8").strip()
+    hint = FLOW_HINT if enabled else "Structured-flow hint is disabled for this run."
+    text = f"[SYSTEM]\n{hint}\n\n[USER]\n{body}\n"
+    relative = Path("casebriefs") / str(row["split"]) / f"{row['id']}.txt"
+    target = output_root / relative
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(text, encoding="utf-8")
+    row["source_prompt"] = str(original)
+    row["source_prompt_sha256"] = original_hash
+    row["casebrief"] = str(target.resolve())
+    row["casebrief_sha256"] = sha256_file(target)
+    row["flow_policy_enabled"] = enabled
+    row["system_hint_sha256"] = sha256_bytes((hint + "\n").encode("utf-8"))
 
 
 def _json_write(path: Path, value: Any) -> None:
