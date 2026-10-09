@@ -60,6 +60,114 @@ class DiverseFlowLaunchContractTests(unittest.TestCase):
         self.assertIn('helpers_for_hooks', trainer)
         self.assertIn('structured-flow-sft-source-manifest-v1', (RUN / "warmup.py").read_text())
 
+    def test_validation_preflight_requires_rank_coverage_and_targets(self):
+        warmup = load("diverse_flow_validation_preflight_contract", RUN / "warmup.py")
+        row = lambda ident, text="target": {
+            "id": ident,
+            "messages": [{"role": "assistant", "content": [{"type": "text", "text": text}]}],
+        }
+        with self.assertRaisesRegex(ValueError, "rank coverage"):
+            warmup.validate_validation_rows([row("one"), row("two")])
+        with self.assertRaisesRegex(ValueError, "zero assistant-target"):
+            warmup.validate_validation_rows([row("one"), row("two"), row("three", "")])
+        coverage = warmup.validate_validation_rows([row("one"), row("two"), row("three")])
+        self.assertEqual(coverage["rows"], 3)
+        self.assertEqual(coverage["world_size"], 3)
+
+    def test_supervision_export_moves_one_complete_group_for_native_validation(self):
+        supervision = load("diverse_flow_supervision_rebalance_contract", RUN / "supervision_phase.py")
+        train = [
+            {"source_group": f"family-{group}", "flow_stage": stage, "split": "train"}
+            for group in range(5)
+            for stage in ("block_in", "improved_final", "finish")
+        ]
+        dev = [
+            {"source_group": "heldout", "flow_stage": stage, "split": "dev"}
+            for stage in ("block_in", "improved_final")
+        ]
+        moved_train, moved_dev, moved_group = supervision.rebalance_validation_rows(train, dev)
+        self.assertEqual(len(moved_train), 12)
+        self.assertEqual(len(moved_dev), 5)
+        self.assertEqual(moved_group, "family-4")
+        self.assertEqual({row["source_group"] for row in moved_train} & {row["source_group"] for row in moved_dev}, set())
+        self.assertTrue(all(row["split"] == "dev" for row in moved_dev if row["source_group"] == moved_group))
+
+    def test_sft_resume_requires_immutable_public_archive_pin(self):
+        warmup = load("diverse_flow_sft_resume_pin_contract", RUN / "warmup.py")
+        warmup.validate_sft_resume_archive_pin(
+            url=warmup.SFT_RESUME_ARCHIVE_URL,
+            expected_sha256=warmup.SFT_RESUME_ARCHIVE_SHA256,
+        )
+        with self.assertRaisesRegex(ValueError, "pinned public revision"):
+            warmup.validate_sft_resume_archive_pin(
+                url=warmup.SFT_RESUME_ARCHIVE_URL.replace(warmup.SFT_RESUME_ARCHIVE_REVISION, "main"),
+                expected_sha256=warmup.SFT_RESUME_ARCHIVE_SHA256,
+            )
+
+    def test_training_receipt_accepts_plural_gpu_ordinals_only_with_exact_updates(self):
+        warmup = load("diverse_flow_training_receipt_contract", RUN / "warmup.py")
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            output = root / "output"
+            checkpoint = root / "train-output" / "run" / "artifacts" / "adapters" / "step_4"
+            output.mkdir(parents=True)
+            checkpoint.mkdir(parents=True)
+            parent = {"path": str(root / "parent"), "sha256": "a" * 64, "revision": "r", "prefix": "p"}
+            (output / "warmup-input-receipt.json").write_text(json.dumps({"parent_adapter": parent, "training": {}, "data": {}}))
+            (output / "sft-mask-audit.json").write_text("{}")
+            (output / "source-receipt.json").write_text("{}")
+            audit = root / "optimizer-update-audit.jsonl"
+            audit.write_text("native audit\n")
+            training = {
+                "schema": "Diverse-flow-sft-training-receipt-v1", "status": "training_finished",
+                "gpu_ordinals": ["0", "1", "2"], "world_size": 3,
+                "max_steps": 4, "completed_updates": 4,
+                "optimizer_audit": str(audit), "optimizer_audit_sha256": "b" * 64,
+                "prime_commit": warmup.PRIME_COMMIT, "parent_adapter_sha256": parent["sha256"],
+                "mask_audit": str(output / "sft-mask-audit.json"), "command": ["torchrun", "--nproc-per-node=3"],
+            }
+            (output / "warmup-training-receipt.json").write_text(json.dumps(training))
+            args = SimpleNamespace(output=output, checkpoint_root=root / "train-output", parent_adapter=root / "parent")
+            checkpoint_record = {"step": 4, "path": str(checkpoint), "sha256": "c" * 64}
+            audit_record = {"path": str(audit.resolve()), "sha256": "b" * 64, "updates": 4}
+            with patch.object(warmup, "verify_parent_adapter", return_value=parent), \
+                 patch.object(warmup, "_checkpoint_dirs", return_value=[checkpoint]), \
+                 patch.object(warmup, "validate_checkpoint", return_value=checkpoint_record), \
+                 patch.object(warmup, "find_optimizer_audit", return_value=audit), \
+                 patch.object(warmup, "validate_optimizer_audit", return_value=audit_record):
+                receipt = warmup.write_final_receipt(args)
+            self.assertEqual(receipt["training_receipt"]["gpu_ordinals"], ["0", "1", "2"])
+            training["gpu_ordinals"] = ["0", "1"]
+            (output / "warmup-training-receipt.json").write_text(json.dumps(training))
+            with patch.object(warmup, "verify_parent_adapter", return_value=parent), \
+                 patch.object(warmup, "_checkpoint_dirs", return_value=[checkpoint]), \
+                 patch.object(warmup, "validate_checkpoint", return_value=checkpoint_record), \
+                 patch.object(warmup, "find_optimizer_audit", return_value=audit), \
+                 patch.object(warmup, "validate_optimizer_audit", return_value=audit_record):
+                with self.assertRaisesRegex(ValueError, "bounded GPU run"):
+                    warmup.write_final_receipt(args)
+
+    def test_optimizer_audit_requires_four_native_rank_records(self):
+        warmup = load("diverse_flow_optimizer_audit_contract", RUN / "warmup.py")
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "optimizer-update-audit.jsonl"
+            records = []
+            for step in range(1, 5):
+                rank = {
+                    "completed_updates": step, "all_finite": True, "changed_elements": 2,
+                    "changed_tensors": 1, "method": warmup.UPDATE_AUDIT_METHOD,
+                }
+                records.append({
+                    "schema": warmup.UPDATE_AUDIT_SCHEMA, "completed_updates": step,
+                    "all_finite": True, "changed_elements": 6, "changed_tensors": 3,
+                    "world_size": 3, "rank_reports": [dict(rank) for _ in range(3)],
+                })
+            path.write_text("\n".join(json.dumps(record) for record in records) + "\n")
+            self.assertEqual(warmup.validate_optimizer_audit(path)["updates"], 4)
+            path.write_text("\n".join(json.dumps(record) for record in records[:3]) + "\n")
+            with self.assertRaisesRegex(ValueError, "expected 4 optimizer audit records"):
+                warmup.validate_optimizer_audit(path)
+
     def test_initialization_report_matches_runtime_for_both_modes(self):
         warmup = load("diverse_flow_warmup_initialization_contract", RUN / "warmup.py")
         runtime = (RUN.parent / "structured-flow-rl-20261009/sft_source/mixed_sft/train.py").read_text()

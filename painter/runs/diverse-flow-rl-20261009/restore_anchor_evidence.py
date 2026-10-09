@@ -31,12 +31,12 @@ LEGACY_RUN_ID = "structured-flow-rl-20261009"
 # the revision in the URL and bind it again to the downloaded bytes; callers
 # must not substitute a local path, a moving ``main`` URL, or another run's
 # evidence archive.
-SAME_RUN_ARCHIVE_REVISION = "c35b77c6d3a858ab224f0812f1ed73e0150d1525"
+SAME_RUN_ARCHIVE_REVISION = "2de12b59875fbdd5cc0f206f79eed12c8ee9f43b"
 SAME_RUN_ARCHIVE_URL = (
     "https://huggingface.co/datasets/CK0607/komorebi-painter-experiments/resolve/"
     f"{SAME_RUN_ARCHIVE_REVISION}/runs/{RUN_ID}/evidence.tar.gz"
 )
-SAME_RUN_ARCHIVE_SHA256 = "ddd90296e2c6562cb24bc8f8033f439c4925e77002ad8eabca2723c38323eaac"
+SAME_RUN_ARCHIVE_SHA256 = "41f527d104e1e5fe52ef83369e3fd089ba153ce2e3112ae25d4da25f682881ef"
 ANCHOR_REL = Path("curriculum/anchors")
 MAX_MEMBER_BYTES = 256 * 1024 * 1024
 MAX_TOTAL_BYTES = 2 * 1024 * 1024 * 1024

@@ -350,20 +350,20 @@ def _detached_job_command(*, source_commit: str, rental_start_epoch: float, pric
     if same_run_resume == "1":
         archive_sha = os.environ.get(
             "PAINTER_SAME_RUN_ARCHIVE_SHA256",
-            os.environ.get("PAINTER_ANCHOR_EVIDENCE_SHA256", "ddd90296e2c6562cb24bc8f8033f439c4925e77002ad8eabca2723c38323eaac"),
+            os.environ.get("PAINTER_ANCHOR_EVIDENCE_SHA256", "41f527d104e1e5fe52ef83369e3fd089ba153ce2e3112ae25d4da25f682881ef"),
         )
         archive_url = os.environ.get(
             "PAINTER_SAME_RUN_ARCHIVE_URL",
             os.environ.get(
                 "PAINTER_ANCHOR_EVIDENCE_URL",
                 "https://huggingface.co/datasets/CK0607/komorebi-painter-experiments/resolve/"
-                "c35b77c6d3a858ab224f0812f1ed73e0150d1525/runs/diverse-flow-rl-20261009/evidence.tar.gz",
+                "2de12b59875fbdd5cc0f206f79eed12c8ee9f43b/runs/diverse-flow-rl-20261009/evidence.tar.gz",
             ),
         )
-        pinned_sha = "ddd90296e2c6562cb24bc8f8033f439c4925e77002ad8eabca2723c38323eaac"
+        pinned_sha = "41f527d104e1e5fe52ef83369e3fd089ba153ce2e3112ae25d4da25f682881ef"
         pinned_url = (
             "https://huggingface.co/datasets/CK0607/komorebi-painter-experiments/resolve/"
-            "c35b77c6d3a858ab224f0812f1ed73e0150d1525/runs/diverse-flow-rl-20261009/evidence.tar.gz"
+            "2de12b59875fbdd5cc0f206f79eed12c8ee9f43b/runs/diverse-flow-rl-20261009/evidence.tar.gz"
         )
         for name in (
             "PAINTER_SAME_RUN_ARCHIVE_SHA256",

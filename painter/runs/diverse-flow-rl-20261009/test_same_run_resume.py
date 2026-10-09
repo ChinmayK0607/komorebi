@@ -16,9 +16,9 @@ from unittest.mock import patch
 RUN = Path(__file__).resolve().parent
 PINNED_URL = (
     "https://huggingface.co/datasets/CK0607/komorebi-painter-experiments/resolve/"
-    "c35b77c6d3a858ab224f0812f1ed73e0150d1525/runs/diverse-flow-rl-20261009/evidence.tar.gz"
+    "2de12b59875fbdd5cc0f206f79eed12c8ee9f43b/runs/diverse-flow-rl-20261009/evidence.tar.gz"
 )
-PINNED_SHA = "ddd90296e2c6562cb24bc8f8033f439c4925e77002ad8eabca2723c38323eaac"
+PINNED_SHA = "41f527d104e1e5fe52ef83369e3fd089ba153ce2e3112ae25d4da25f682881ef"
 
 
 def load(name: str, path: Path):
@@ -37,7 +37,7 @@ class SameRunResumeTests(unittest.TestCase):
         self.assertEqual(restore.SAME_RUN_ARCHIVE_SHA256, PINNED_SHA)
         restore.validate_same_run_archive_pin(url=PINNED_URL, expected_sha256=PINNED_SHA)
         with self.assertRaises(ValueError):
-            restore.validate_same_run_archive_pin(url=PINNED_URL.replace("c35b77c6", "main0000"), expected_sha256=PINNED_SHA)
+            restore.validate_same_run_archive_pin(url=PINNED_URL.replace("2de12b59875f", "main000000000"), expected_sha256=PINNED_SHA)
         with self.assertRaises(ValueError):
             restore.validate_same_run_archive_pin(url=PINNED_URL, expected_sha256="0" * 64)
 
@@ -162,7 +162,7 @@ class SameRunResumeTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             with self.assertRaisesRegex(ValueError, "pinned public revision"):
-                restore.restore(run_root=root, expected_sha256=PINNED_SHA, url=PINNED_URL.replace("c35b77c6", "main0000"))
+                restore.restore(run_root=root, expected_sha256=PINNED_SHA, url=PINNED_URL.replace("2de12b59875f", "main000000000"))
 
     def test_baseline_binds_archived_and_installed_manifest_hashes(self):
         restore = load("diverse_flow_resume_baseline_hash_contract", RUN / "restore_anchor_evidence.py")

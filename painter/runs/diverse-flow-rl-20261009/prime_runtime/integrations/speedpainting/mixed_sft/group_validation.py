@@ -17,7 +17,7 @@ EXTRA='''        import json as _json
 
         def _record_group_validation(_step, _phase, _mean_loss):
             """Record per-family validation after the aggregate loss exists."""
-            _groups = sorted({r.get("mixture_group") or r.get("task_family") or "unspecified" for r in val_raw_dataset})
+            _groups = sorted({r.get("mixture_group") or r.get("task_family") or r.get("source_group") or "unspecified" for r in val_raw_dataset})
             _record = {
                 "schema": OVERRIDE_SCHEMA,
                 "trainer_step": _step,
@@ -28,7 +28,7 @@ EXTRA='''        import json as _json
             }
             for _group in _groups:
                 _raw = val_raw_dataset.filter(
-                    lambda r: (r.get("mixture_group") or r.get("task_family") or "unspecified") == _group
+                    lambda r: (r.get("mixture_group") or r.get("task_family") or r.get("source_group") or "unspecified") == _group
                 )
                 _ds = setup_dataset(
                     tokenizer,

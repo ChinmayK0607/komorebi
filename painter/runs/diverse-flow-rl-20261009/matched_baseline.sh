@@ -94,22 +94,22 @@ PY
   echo 'renderer path/hash is not bound to renderer-selection-receipt.json' >&2; exit 1;
 }
 if [[ "$PHASE" == pre-warmup && "$REUSE_MATCHED_BASELINE" == 1 ]]; then
-  CACHE_ARCHIVE_SHA="${PAINTER_SAME_RUN_ARCHIVE_SHA256:-${PAINTER_MATCHED_BASELINE_EVIDENCE_SHA256:-${PAINTER_ANCHOR_EVIDENCE_SHA256:-ddd90296e2c6562cb24bc8f8033f439c4925e77002ad8eabca2723c38323eaac}}}"
-  CACHE_URL="${PAINTER_SAME_RUN_ARCHIVE_URL:-${PAINTER_MATCHED_BASELINE_EVIDENCE_URL:-${PAINTER_ANCHOR_EVIDENCE_URL:-https://huggingface.co/datasets/CK0607/komorebi-painter-experiments/resolve/c35b77c6d3a858ab224f0812f1ed73e0150d1525/runs/diverse-flow-rl-20261009/evidence.tar.gz}}}"
+  CACHE_ARCHIVE_SHA="${PAINTER_SAME_RUN_ARCHIVE_SHA256:-${PAINTER_MATCHED_BASELINE_EVIDENCE_SHA256:-${PAINTER_ANCHOR_EVIDENCE_SHA256:-41f527d104e1e5fe52ef83369e3fd089ba153ce2e3112ae25d4da25f682881ef}}}"
+  CACHE_URL="${PAINTER_SAME_RUN_ARCHIVE_URL:-${PAINTER_MATCHED_BASELINE_EVIDENCE_URL:-${PAINTER_ANCHOR_EVIDENCE_URL:-https://huggingface.co/datasets/CK0607/komorebi-painter-experiments/resolve/2de12b59875fbdd5cc0f206f79eed12c8ee9f43b/runs/diverse-flow-rl-20261009/evidence.tar.gz}}}"
   for value in "${PAINTER_SAME_RUN_ARCHIVE_SHA256:-}" "${PAINTER_ANCHOR_EVIDENCE_SHA256:-}" "${PAINTER_MATCHED_BASELINE_EVIDENCE_SHA256:-}"; do
-    [[ -z "$value" || "$value" == ddd90296e2c6562cb24bc8f8033f439c4925e77002ad8eabca2723c38323eaac ]] || {
+    [[ -z "$value" || "$value" == 41f527d104e1e5fe52ef83369e3fd089ba153ce2e3112ae25d4da25f682881ef ]] || {
       echo 'same-run baseline archive SHA-256 is not the pinned public archive' >&2; exit 1;
     }
   done
   for value in "${PAINTER_SAME_RUN_ARCHIVE_URL:-}" "${PAINTER_ANCHOR_EVIDENCE_URL:-}" "${PAINTER_MATCHED_BASELINE_EVIDENCE_URL:-}"; do
-    [[ -z "$value" || "$value" == https://huggingface.co/datasets/CK0607/komorebi-painter-experiments/resolve/c35b77c6d3a858ab224f0812f1ed73e0150d1525/runs/diverse-flow-rl-20261009/evidence.tar.gz ]] || {
+    [[ -z "$value" || "$value" == https://huggingface.co/datasets/CK0607/komorebi-painter-experiments/resolve/2de12b59875fbdd5cc0f206f79eed12c8ee9f43b/runs/diverse-flow-rl-20261009/evidence.tar.gz ]] || {
       echo 'same-run baseline archive URL is not the pinned credential-free public revision' >&2; exit 1;
     }
   done
-  [[ "$CACHE_ARCHIVE_SHA" == ddd90296e2c6562cb24bc8f8033f439c4925e77002ad8eabca2723c38323eaac ]] || {
+  [[ "$CACHE_ARCHIVE_SHA" == 41f527d104e1e5fe52ef83369e3fd089ba153ce2e3112ae25d4da25f682881ef ]] || {
     echo 'same-run baseline archive SHA-256 is not the pinned public archive' >&2; exit 1;
   }
-  [[ "$CACHE_URL" == https://huggingface.co/datasets/CK0607/komorebi-painter-experiments/resolve/c35b77c6d3a858ab224f0812f1ed73e0150d1525/runs/diverse-flow-rl-20261009/evidence.tar.gz ]] || {
+  [[ "$CACHE_URL" == https://huggingface.co/datasets/CK0607/komorebi-painter-experiments/resolve/2de12b59875fbdd5cc0f206f79eed12c8ee9f43b/runs/diverse-flow-rl-20261009/evidence.tar.gz ]] || {
     echo 'same-run baseline archive URL is not the pinned credential-free public revision' >&2; exit 1;
   }
   [[ -z "${PAINTER_MATCHED_BASELINE_EVIDENCE_ARCHIVE:-}" && -z "${PAINTER_ANCHOR_EVIDENCE_ARCHIVE:-}" ]] || {

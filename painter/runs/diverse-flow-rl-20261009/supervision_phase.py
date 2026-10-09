@@ -36,10 +36,12 @@ LEGACY_APPROVAL_SCHEMA = "painter.structured-flow-approval-candidates.v1"
 MAX_JUDGE_CONCURRENCY = 4
 DEFAULT_WORKERS = 4
 PAIR_TIMEOUT_SECONDS = 300
-MIN_TRAIN_FAMILIES = 5
+MIN_TRAIN_FAMILIES = 4
 MIN_DEV_FAMILIES = 1
-MIN_FINISH_ROWS = 5
+MIN_FINISH_ROWS = 4
 MAX_FINISH_ROWS = 8
+VALIDATION_WORLD_SIZE = 3
+FLOW_STATES = ("construction", "revision", "finish")
 STRONG_CONSENSUS = {"initial_agreement", "three_of_four", "four_of_four"}
 FLASH_MODEL = "xiaomi/mimo-v2.6-flash"
 HEX64 = set("0123456789abcdef")
@@ -473,6 +475,7 @@ def _write_filtered_exports(root: Path, approval: Mapping[str, Any], render_mani
         seen.add(group)
         finish_candidates.append(_finish_row(row, root))
     train.extend(finish_candidates)
+    train, dev, moved_group = rebalance_validation_rows(train, dev)
     train_groups = {str(row["source_group"]) for row in train}
     dev_groups = {str(row["source_group"]) for row in dev}
     provenance = {
@@ -480,6 +483,7 @@ def _write_filtered_exports(root: Path, approval: Mapping[str, Any], render_mani
         "source_manifest_schema": str(manifest.get("schema")),
         "source_manifest_sha256": flow.file_sha256(root / "manifest.json"),
     }
+
     if len(train_groups) < MIN_TRAIN_FAMILIES or len(dev_groups) < MIN_DEV_FAMILIES or len(finish_candidates) < MIN_FINISH_ROWS:
         # flow.export_sft writes its complete candidate split as an audit
         # artifact.  Do not leave those unfiltered files at the warmup input
@@ -495,6 +499,8 @@ def _write_filtered_exports(root: Path, approval: Mapping[str, Any], render_mani
             "requirements": {"train_families": MIN_TRAIN_FAMILIES, "dev_families": MIN_DEV_FAMILIES, "finish_rows": MIN_FINISH_ROWS},
             "actual": {"train_families": len(train_groups), "dev_families": len(dev_groups), "finish_rows": len(finish_candidates)},
             "flow_export": exported,
+            "validation_rebalance": {"world_size": VALIDATION_WORLD_SIZE, "moved_source_group": moved_group,
+                                     "train_rows": len(train), "dev_rows": len(dev)},
         }
         write_json(root / "supervision-phase.json", receipt)
         return receipt
@@ -510,8 +516,45 @@ def _write_filtered_exports(root: Path, approval: Mapping[str, Any], render_mani
         "requirements": {"train_families": MIN_TRAIN_FAMILIES, "dev_families": MIN_DEV_FAMILIES, "finish_rows": MIN_FINISH_ROWS},
         "actual": {"train_families": len(train_groups), "dev_families": len(dev_groups), "finish_rows": len(finish_candidates), "train_rows": len(train), "dev_rows": len(dev)},
         "flow_export": exported,
+        "validation_rebalance": {"world_size": VALIDATION_WORLD_SIZE, "moved_source_group": moved_group,
+                                  "train_rows": len(train), "dev_rows": len(dev)},
         "paths": {"approved_sft": "sft-approved.jsonl", "train": "train.jsonl", "dev": "dev.jsonl"},
     }
+
+
+def rebalance_validation_rows(
+    train: Sequence[Mapping[str, Any]],
+    dev: Sequence[Mapping[str, Any]],
+    *,
+    world_size: int = VALIDATION_WORLD_SIZE,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]], str | None]:
+    """Move one complete source group when distributed validation is undersized."""
+    train_rows = [dict(row) for row in train]
+    dev_rows = [dict(row) for row in dev]
+    moved_group = None
+    if len(dev_rows) < world_size:
+        by_group: dict[str, list[dict[str, Any]]] = {}
+        for row in train_rows:
+            by_group.setdefault(str(row["source_group"]), []).append(row)
+        train_groups = set(by_group)
+        candidates = [
+            group for group, grouped in by_group.items()
+            if len(grouped) == len(FLOW_STATES)
+            and {str(row.get("flow_state") or row.get("flow_stage")) for row in grouped}
+            in ({"construction", "revision", "finish"}, {"block_in", "improved_final", "finish"})
+            and len(train_groups - {group}) >= MIN_TRAIN_FAMILIES
+        ]
+        if not candidates:
+            raise ValueError("warmup validation needs one complete three-state train group to reach rank coverage")
+        moved_group = sorted(candidates)[-1]
+        moved = by_group[moved_group]
+        for row in moved:
+            row["split"] = "dev"
+        train_rows = [row for row in train_rows if str(row["source_group"]) != moved_group]
+        dev_rows.extend(moved)
+    if len(dev_rows) < world_size:
+        raise ValueError("warmup validation export has fewer rows than the native process group")
+    return train_rows, dev_rows, moved_group
 
 
 

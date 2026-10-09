@@ -17,12 +17,17 @@ import importlib.util
 import json
 import os
 from pathlib import Path
+from pathlib import PurePosixPath
 import re
 import shutil
 import subprocess
 import sys
+import tarfile
+import tempfile
 from typing import Any, Mapping, Sequence
 import tomllib
+import urllib.parse
+import urllib.request
 
 
 RUN_ID = "diverse-flow-rl-20261009"
@@ -39,14 +44,16 @@ FLASH12_SHA256 = "c70c47ec0d6d7172b3bc25c4f54178919cf7c079cd9652fff3bc76db9e1eca
 LORA_RANK = 16
 LORA_ALPHA = 32
 LORA_TENSORS = 992
-# The approved subset may be as small as 15/2: five train families with
-# three rich rows each and one held-out family with two diagnostic rows. The
-# four-update schedule consumes 12 unique train rows, balanced by flow state.
-MIN_TRAIN_ROWS = 15
+# The distributed evaluator needs at least one validation example on every
+# warmup rank.  The smallest admitted export is therefore 12/5: four train
+# families with three rich rows each (the four-update schedule consumes all
+# twelve) and one complete held-out family plus the moved three-state family.
+WARMUP_WORLD_SIZE = 3
+MIN_TRAIN_ROWS = 12
 MAX_TRAIN_ROWS = 32
-MIN_DEV_ROWS = 2
+MIN_DEV_ROWS = WARMUP_WORLD_SIZE
 MAX_DEV_ROWS = 8
-MIN_TRAIN_FAMILIES = 5
+MIN_TRAIN_FAMILIES = 4
 MIN_DEV_FAMILIES = 1
 MAX_STEPS = 4
 BATCH_SIZE = 3
@@ -87,6 +94,18 @@ PRIME_OVERRIDE_ROOT = Path(__file__).resolve().parent / "prime_runtime/integrati
 PRIME_OVERRIDE_FILES = ("init_adapter.py", "export_adapter.py")
 MIXED_OVERRIDE_ROOT = Path(__file__).resolve().parent / "prime_runtime/integrations/speedpainting/mixed_sft"
 MIXED_OVERRIDE_FILES = ("update_audit.py", "group_validation.py")
+UPDATE_AUDIT_SCHEMA = "Diverse-flow-multirank-update-audit-v1"
+UPDATE_AUDIT_METHOD = "exact pre/post native optimizer step CUDA tensor comparison"
+SFT_RESUME_ARCHIVE_REVISION = "2de12b59875fbdd5cc0f206f79eed12c8ee9f43b"
+SFT_RESUME_ARCHIVE_URL = (
+    "https://huggingface.co/datasets/CK0607/komorebi-painter-experiments/resolve/"
+    f"{SFT_RESUME_ARCHIVE_REVISION}/runs/{RUN_ID}/evidence.tar.gz"
+)
+SFT_RESUME_ARCHIVE_SHA256 = "41f527d104e1e5fe52ef83369e3fd089ba153ce2e3112ae25d4da25f682881ef"
+SFT_RESUME_ARCHIVE_BYTES = 147153715
+SFT_RESUME_ADAPTER_SHA256 = "3764357ff249d85354b649628b7462e5dd30b55f05f6992f7559ac8b5aabe4cf"
+SFT_RESUME_UPLOAD_COMMIT = "fa84b440316f7cf7e89ebcc20e34b5c366a8013b"
+SFT_RESUME_PARENT_SHA256 = FLASH12_SHA256
 
 
 def initialization_contract(mode: str, *, init_adapter: str | None) -> dict[str, Any]:
@@ -318,6 +337,44 @@ def sha256_text(value: str) -> str:
     return sha256_bytes(value.encode("utf-8"))
 
 
+def validate_validation_rows(rows: Sequence[Mapping[str, Any]], *, world_size: int = WARMUP_WORLD_SIZE) -> dict[str, Any]:
+    """Reject validation pools that cannot make a synchronized native batch.
+
+    Prime shards validation rows by rank.  A pool smaller than the process
+    group leaves one rank empty; the rank-safe evaluation loop then exits
+    before any rank contributes a loss, producing the misleading all-NaN
+    receipt seen in the failed warmup.  Keep this gate independent of Prime so
+    it runs during controller-side preparation, before renting a node.
+    """
+    if type(world_size) is not int or world_size < 1:
+        raise ValueError("validation world size must be a positive integer")
+    rows = list(rows)
+    if len(rows) < world_size:
+        raise ValueError(
+            f"warmup validation requires at least {world_size} rows for synchronized rank coverage; got {len(rows)}"
+        )
+    zero_target: list[str] = []
+    for index, row in enumerate(rows):
+        ident = str(row.get("id") or f"row-{index}")
+        messages = row.get("messages")
+        target = ""
+        if isinstance(messages, list) and messages and isinstance(messages[-1], Mapping):
+            target = "".join(_text_parts(messages[-1].get("content")))
+        if not target.strip():
+            zero_target.append(ident)
+    if zero_target:
+        raise ValueError(
+            "warmup validation has zero assistant-target rows: " + ", ".join(zero_target[:8])
+        )
+    return {
+        "rows": len(rows),
+        "world_size": world_size,
+        "min_rows_per_rank": len(rows) // world_size,
+        "remainder_rows": len(rows) % world_size,
+        "zero_target_rows": [],
+    }
+
+
 def resolve_warmup_gpu(environ: Mapping[str, str] | None = None) -> str:
     """Select exactly three physical ordinals for the Prime warmup process group."""
     environ = os.environ if environ is None else environ
@@ -325,8 +382,8 @@ def resolve_warmup_gpu(environ: Mapping[str, str] | None = None) -> str:
     if requested == "inherit":
         requested = environ.get("CUDA_VISIBLE_DEVICES", "").strip()
     ordinals = [item.strip() for item in requested.split(",") if item.strip()]
-    if len(ordinals) != 3 or len(set(ordinals)) != 3 or any(not re.fullmatch(r"[0-9]+", item) for item in ordinals):
-        raise ValueError("PAINTER_WARMUP_GPUS must name exactly three distinct visible GPU ordinals")
+    if len(ordinals) != WARMUP_WORLD_SIZE or len(set(ordinals)) != WARMUP_WORLD_SIZE or any(not re.fullmatch(r"[0-9]+", item) for item in ordinals):
+        raise ValueError(f"PAINTER_WARMUP_GPUS must name exactly {WARMUP_WORLD_SIZE} distinct visible GPU ordinals")
     return ",".join(ordinals)
 
 
@@ -339,6 +396,7 @@ def validate_inputs(train_path: Path, dev_path: Path, approval_path: Path | None
     approval, approval_sha = _load_approval(approval_path)
     if not MIN_TRAIN_ROWS <= len(train) <= MAX_TRAIN_ROWS or not MIN_DEV_ROWS <= len(dev) <= MAX_DEV_ROWS:
         raise ValueError(f"warmup requires {MIN_TRAIN_ROWS}..{MAX_TRAIN_ROWS} train and {MIN_DEV_ROWS}..{MAX_DEV_ROWS} dev rows after approval")
+    validation_coverage = validate_validation_rows(dev)
     seen: set[str] = set()
     groups: dict[str, set[str]] = {"train": set(), "dev": set()}
     records: dict[str, list[dict[str, Any]]] = {}
@@ -374,6 +432,7 @@ def validate_inputs(train_path: Path, dev_path: Path, approval_path: Path | None
             split: {state: sum(record["flow_state"] == state for record in records[split]) for state in FLOW_STATES}
             for split in ("train", "dev")
         },
+        "validation_coverage": validation_coverage,
         "rows": records,
     }
 
@@ -691,6 +750,8 @@ def processor_audit(config_path: Path, output: Path, brush_root: Path) -> dict[s
     result: list[dict[str, Any]] = []
     dataset_dir = Path(resolved.data.name)
     paths = {"train": dataset_dir / "train.jsonl", "validation": dataset_dir / "validation.jsonl"}
+    validation_rows = _read_jsonl(paths["validation"])
+    validation_coverage = validate_validation_rows(validation_rows)
     previous_capacity = os.environ.get("CAPACITY_STATE_COMPLETE")
     try:
         for mask_mode, capacity_flag in _processor_mask_modes():
@@ -747,6 +808,18 @@ def processor_audit(config_path: Path, output: Path, brush_root: Path) -> dict[s
             os.environ.pop("CAPACITY_STATE_COMPLETE", None)
         else:
             os.environ["CAPACITY_STATE_COMPLETE"] = previous_capacity
+    capacity_validation = [
+        item for item in result
+        if item.get("split") == "validation" and item.get("mask_mode") == "capacity_prefill"
+    ]
+    if len(capacity_validation) != len(validation_rows) or any(
+        item.get("status") != "required_pass"
+        or item.get("expected_assistant_tokens", 0) <= 0
+        or item.get("supervised_tokens", 0) <= 0
+        or item.get("exact_target_match") is not True
+        for item in capacity_validation
+    ):
+        raise ValueError("capacity_prefill validation rows do not all have exact assistant-target loss masks")
     mode_reports = {
         mode: {
             "capacity_state_complete": flag == "1",
@@ -761,7 +834,8 @@ def processor_audit(config_path: Path, output: Path, brush_root: Path) -> dict[s
               "mask_modes": mode_reports, "runtime_capacity_state_complete": True,
               "no_truncation": True, "processor_class": type(renderer._processor).__name__,
               "train_rows": len(_read_jsonl(paths["train"])),
-              "validation_rows": len(_read_jsonl(paths["validation"])),
+              "validation_rows": len(validation_rows),
+              "validation_coverage": validation_coverage,
               "max_tokens": max((r["total_tokens"] for r in result), default=0), "examples": result,
               "config_sha256": sha256_file(config_path),
               "dataset_sha256": {split: sha256_file(path) for split, path in paths.items()}}
@@ -809,6 +883,7 @@ def prepare(args: argparse.Namespace) -> dict[str, Any]:
                     "data": {"source_train_sha256": source_train_sha, "train_sha256": train_sha,
                              "dev_sha256": dev_sha, "validation_sha256": validation_sha,
                              "source_train_rows": len(train_rows), "scheduled_train_rows": len(scheduled_rows), "dev_rows": len(dev_rows),
+                             "validation_coverage": receipt.get("validation_coverage"),
                              "flow_state_pattern": [list(pattern) for pattern in WARMUP_STATE_PATTERN],
                              "flow_state_pool_offsets": dict(WARMUP_STATE_POOL_OFFSETS),
                              "schedule": {"path": str(output / "schedule.json"), "sha256": sha256_file(output / "schedule.json"),
@@ -1222,14 +1297,19 @@ def train(args: argparse.Namespace) -> dict[str, Any]:
             "stderr_tail": _safe_log_tail(stderr_path, secret=hf_token),
         })
         raise
+    optimizer_audit_path = find_optimizer_audit(output)
+    optimizer_audit = validate_optimizer_audit(optimizer_audit_path)
     _write_json(prepared / "warmup-training-receipt.json", {
         "schema": "Diverse-flow-sft-training-receipt-v1", "status": "training_finished",
-        "gpu_ordinals": warmup_gpus.split(","), "world_size": 3, "prime_commit": PRIME_COMMIT, "hf_checkpoint_run": upload_run,
+        "gpu_ordinals": warmup_gpus.split(","), "world_size": WARMUP_WORLD_SIZE,
+        "max_steps": MAX_STEPS, "completed_updates": optimizer_audit["updates"],
+        "optimizer_audit": str(optimizer_audit_path), "optimizer_audit_sha256": optimizer_audit["sha256"],
+        "prime_commit": PRIME_COMMIT, "hf_checkpoint_run": upload_run,
         "parent_adapter_sha256": parent["sha256"], "mask_audit": str(audit_path), "command": command,
     })
     return {"status": "training_finished", "output_dir": str(output), "audit": str(audit_path), "command": command,
             "parent_adapter": parent, "prime_commit": PRIME_COMMIT, "hf_checkpoint_run": upload_run,
-            "warmup_gpus": warmup_gpus.split(","), "world_size": 3}
+            "warmup_gpus": warmup_gpus.split(","), "world_size": WARMUP_WORLD_SIZE}
 
 
 def _checkpoint_dirs(root: Path) -> list[Path]:
@@ -1267,12 +1347,181 @@ def validate_optimizer_audit(path: Path) -> dict[str, Any]:
     if len(records) != MAX_STEPS:
         raise ValueError(f"expected {MAX_STEPS} optimizer audit records, got {len(records)}")
     for expected_step, record in enumerate(records, 1):
+        if not isinstance(record, Mapping) or record.get("schema") != UPDATE_AUDIT_SCHEMA:
+            raise ValueError("optimizer audit schema does not identify the native multirank hook")
+        if record.get("world_size") != WARMUP_WORLD_SIZE:
+            raise ValueError("optimizer audit world size does not match the bounded warmup")
         if record.get("completed_updates") != expected_step or record.get("all_finite") is not True:
             raise ValueError("optimizer audit does not confirm four finite ordered updates")
         if int(record.get("changed_elements", 0)) <= 0 or int(record.get("changed_tensors", 0)) <= 0:
             raise ValueError("optimizer audit reports an update with no changed adapter tensors")
+        rank_reports = record.get("rank_reports")
+        if not isinstance(rank_reports, list) or len(rank_reports) != WARMUP_WORLD_SIZE:
+            raise ValueError("optimizer audit does not contain one native report per rank")
+        for rank_report in rank_reports:
+            if not isinstance(rank_report, Mapping) or rank_report.get("completed_updates") != expected_step:
+                raise ValueError("optimizer audit rank reports are not ordered")
+            if rank_report.get("method") != UPDATE_AUDIT_METHOD or rank_report.get("all_finite") is not True:
+                raise ValueError("optimizer audit rank report is not finite native optimizer evidence")
+            if int(rank_report.get("changed_elements", 0)) <= 0 or int(rank_report.get("changed_tensors", 0)) <= 0:
+                raise ValueError("optimizer audit rank reports an update with no changed adapter tensors")
     return {"path": str(path.resolve()), "sha256": sha256_file(path), "updates": MAX_STEPS,
             "all_finite": True, "changed_elements": [int(record["changed_elements"]) for record in records]}
+
+
+def validate_sft_resume_archive_pin(*, url: str, expected_sha256: str, expected_bytes: int = SFT_RESUME_ARCHIVE_BYTES) -> None:
+    """Accept only the immutable public archive for the completed SFT step."""
+    if url != SFT_RESUME_ARCHIVE_URL:
+        raise ValueError("SFT resume archive URL does not match the pinned public revision")
+    if expected_sha256 != SFT_RESUME_ARCHIVE_SHA256:
+        raise ValueError("SFT resume archive SHA-256 does not match the pinned public archive")
+    if expected_bytes != SFT_RESUME_ARCHIVE_BYTES:
+        raise ValueError("SFT resume archive byte count does not match the pinned public archive")
+    parsed = urllib.parse.urlparse(url)
+    if parsed.scheme != "https" or parsed.netloc != "huggingface.co" or parsed.username or parsed.password or parsed.query or parsed.fragment:
+        raise ValueError("SFT resume archive URL must be credential-free HTTPS Hugging Face")
+
+
+def _download_verified(url: str, destination: Path, *, expected_sha256: str, expected_bytes: int) -> None:
+    request = urllib.request.Request(url, headers={"User-Agent": "Diverse-flow-SFT-resume/1"})
+    digest = hashlib.sha256()
+    total = 0
+    temporary = destination.with_name(destination.name + ".partial")
+    if temporary.exists() or temporary.is_symlink():
+        temporary.unlink()
+    try:
+        with urllib.request.urlopen(request, timeout=300) as response, temporary.open("wb") as stream:
+            while True:
+                block = response.read(1024 * 1024)
+                if not block:
+                    break
+                total += len(block)
+                if total > expected_bytes:
+                    raise ValueError("downloaded SFT resume artifact exceeds its immutable byte count")
+                digest.update(block)
+                stream.write(block)
+        if total != expected_bytes or digest.hexdigest() != expected_sha256:
+            raise ValueError("downloaded SFT resume artifact hash/byte count mismatch")
+        temporary.replace(destination)
+    finally:
+        if temporary.exists() or temporary.is_symlink():
+            temporary.unlink()
+
+
+def _archive_member_bytes(archive: tarfile.TarFile, suffix: str) -> bytes:
+    matches = []
+    for member in archive.getmembers():
+        name = member.name
+        if not member.isfile():
+            continue
+        path = PurePosixPath(name)
+        if path.is_absolute() or any(part in {"", ".", ".."} for part in path.parts):
+            raise ValueError(f"SFT resume archive contains an unsafe member: {name}")
+        if name.startswith("warmup-output/") and name.endswith(suffix):
+            matches.append(member)
+    if len(matches) != 1:
+        raise ValueError(f"SFT resume archive must contain exactly one warmup member ending in {suffix!r}")
+    stream = archive.extractfile(matches[0])
+    if stream is None:
+        raise ValueError(f"SFT resume archive member is unreadable: {matches[0].name}")
+    return stream.read()
+
+
+def _write_resume_file(path: Path, data: bytes) -> None:
+    if path.is_symlink() or path.exists():
+        if not path.is_file() or path.read_bytes() != data:
+            raise ValueError(f"refusing to replace an existing resumed SFT file: {path}")
+        return
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_bytes(data)
+
+
+def resume_public_sft(args: argparse.Namespace) -> dict[str, Any]:
+    """Restore the verified public step-4 adapter and skip native SFT."""
+    if sys.platform != "linux":
+        raise RuntimeError("SFT resume runs on the Linux training node")
+    prepared = args.prepared.expanduser().resolve()
+    input_receipt = json.loads((prepared / "warmup-input-receipt.json").read_text(encoding="utf-8"))
+    if input_receipt.get("status") != "prepared_requires_node_processor_audit":
+        raise ValueError("warmup input receipt is not a prepared warmup")
+    parent = verify_parent_adapter(args.parent_adapter)
+    if parent["sha256"] != input_receipt.get("parent_adapter", {}).get("sha256") or parent["sha256"] != SFT_RESUME_PARENT_SHA256:
+        raise ValueError("SFT resume parent adapter does not match the immutable Flash12 parent")
+    validate_sft_resume_archive_pin(url=args.archive_url, expected_sha256=args.archive_sha256)
+    verify_prime_pin(args.prime_root)
+    runtime = materialize_source_layout(args.source_root, prepared)
+    validate_warmup_schedule(
+        prepared / "data", prepared / "schedule.json",
+        runtime / "integrations/speedpainting/mixed_sft/scheduled_data.py",
+    )
+    _write_json(prepared / "source-receipt.json", source_identity(runtime))
+    processor_audit(prepared / "warmup.toml", prepared / "sft-mask-audit.json", runtime)
+
+    with tempfile.TemporaryDirectory(prefix="diverse-flow-sft-resume-") as temporary:
+        archive_path = Path(temporary) / "evidence.tar.gz"
+        _download_verified(args.archive_url, archive_path,
+                           expected_sha256=args.archive_sha256, expected_bytes=SFT_RESUME_ARCHIVE_BYTES)
+        with tarfile.open(archive_path, "r:gz") as archive:
+            hf_upload = json.loads(_archive_member_bytes(archive, "step_4/hf-upload.json"))
+            validation_bytes = _archive_member_bytes(archive, "step_4/validation.json")
+            validation = json.loads(validation_bytes)
+            adapter_config = _archive_member_bytes(archive, "step_4/adapter_config.json")
+            audit_bytes = _archive_member_bytes(archive, "optimizer-update-audit.jsonl")
+            archived_training = json.loads(_archive_member_bytes(archive, "warmup-training-receipt.json"))
+        if (
+            hf_upload.get("repo_id") != "CK0607/qwen3.8-27b-brush-painting"
+            or hf_upload.get("commit") != SFT_RESUME_UPLOAD_COMMIT
+            or hf_upload.get("path") != "diverse-flow-rl-20261009-sft-warmup/step_4"
+            or hf_upload.get("verified") is not True
+            or hf_upload.get("private") is not False
+            or validation.get("step") != MAX_STEPS
+            or validation.get("finite") is not True
+            or validation.get("sha256") != SFT_RESUME_ADAPTER_SHA256
+            or hf_upload.get("files", {}).get("adapter_model.safetensors", {}).get("sha256") != SFT_RESUME_ADAPTER_SHA256
+            or hf_upload.get("files", {}).get("adapter_config.json", {}).get("sha256") != sha256_bytes(adapter_config)
+            or hf_upload.get("files", {}).get("validation.json", {}).get("sha256") != sha256_bytes(validation_bytes)
+        ):
+            raise ValueError("public SFT resume metadata does not identify the verified step-4 adapter")
+        audit_path = prepared / "train-output" / args.run_name / "artifacts" / "optimizer-update-audit.jsonl"
+        _write_resume_file(audit_path, audit_bytes)
+        optimizer_audit = validate_optimizer_audit(audit_path)
+        checkpoint = prepared / "train-output" / args.run_name / "artifacts" / "adapters" / "step_4"
+        _write_resume_file(checkpoint / "adapter_config.json", adapter_config)
+        _write_resume_file(checkpoint / "validation.json", validation_bytes)
+        _write_resume_file(checkpoint / "hf-upload.json", json.dumps(hf_upload, sort_keys=True, separators=(",", ":")).encode() + b"\n")
+        weight = checkpoint / "adapter_model.safetensors"
+        if weight.is_symlink() or weight.exists():
+            if not weight.is_file() or sha256_file(weight) != SFT_RESUME_ADAPTER_SHA256:
+                raise ValueError("existing resumed step-4 adapter differs from the immutable public checkpoint")
+        else:
+            weight.parent.mkdir(parents=True, exist_ok=True)
+            weight_url = (
+                f"https://huggingface.co/{hf_upload['repo_id']}/resolve/{hf_upload['commit']}/"
+                f"{hf_upload['path']}/adapter_model.safetensors"
+            )
+            expected_bytes = int(hf_upload["files"]["adapter_model.safetensors"]["bytes"])
+            _download_verified(weight_url, weight,
+                               expected_sha256=SFT_RESUME_ADAPTER_SHA256, expected_bytes=expected_bytes)
+        marker = checkpoint / ".finished"
+        _write_resume_file(marker, b"public-sft-resume-step-4\n")
+        command = archived_training.get("command")
+        if not isinstance(command, list) or f"--nproc-per-node={WARMUP_WORLD_SIZE}" not in command:
+            raise ValueError("archived SFT training receipt does not confirm the three-rank launch")
+        _write_json(prepared / "warmup-training-receipt.json", {
+            "schema": "Diverse-flow-sft-training-receipt-v1", "status": "training_finished",
+            "gpu_ordinals": [str(index) for index in range(WARMUP_WORLD_SIZE)],
+            "world_size": WARMUP_WORLD_SIZE, "max_steps": MAX_STEPS, "completed_updates": MAX_STEPS,
+            "optimizer_audit": str(audit_path), "optimizer_audit_sha256": optimizer_audit["sha256"],
+            "prime_commit": PRIME_COMMIT, "hf_checkpoint_run": hf_upload["path"].split("/", 1)[0],
+            "parent_adapter_sha256": parent["sha256"], "mask_audit": str(prepared / "sft-mask-audit.json"),
+            "command": command,
+            "resume": {"archive_url": args.archive_url, "archive_sha256": args.archive_sha256,
+                        "archive_bytes": SFT_RESUME_ARCHIVE_BYTES, "adapter_sha256": SFT_RESUME_ADAPTER_SHA256,
+                        "upload_commit": SFT_RESUME_UPLOAD_COMMIT, "source": "public_hf_checkpoint"},
+        })
+    return {"status": "training_finished", "resumed": True, "step": MAX_STEPS,
+            "adapter_sha256": SFT_RESUME_ADAPTER_SHA256, "optimizer_updates": optimizer_audit["updates"],
+            "archive_sha256": args.archive_sha256}
 
 
 def find_optimizer_audit(root: Path) -> Path:
@@ -1297,8 +1546,30 @@ def write_final_receipt(args: argparse.Namespace) -> dict[str, Any]:
     if training_receipt_path.is_symlink() or not training_receipt_path.is_file():
         raise ValueError("warmup training receipt is missing")
     training_receipt = json.loads(training_receipt_path.read_text(encoding="utf-8"))
-    if training_receipt.get("status") != "training_finished" or training_receipt.get("gpu_ordinal") not in {"0", "1"}:
+    ordinals = training_receipt.get("gpu_ordinals")
+    command = training_receipt.get("command")
+    if (
+        training_receipt.get("schema") != "Diverse-flow-sft-training-receipt-v1"
+        or training_receipt.get("status") != "training_finished"
+        or not isinstance(ordinals, list)
+        or len(ordinals) != WARMUP_WORLD_SIZE
+        or len(set(ordinals)) != WARMUP_WORLD_SIZE
+        or any(not isinstance(item, str) or not re.fullmatch(r"[0-9]+", item) for item in ordinals)
+        or training_receipt.get("world_size") != WARMUP_WORLD_SIZE
+        or training_receipt.get("max_steps") != MAX_STEPS
+        or training_receipt.get("completed_updates") != MAX_STEPS
+        or not isinstance(command, list)
+        or f"--nproc-per-node={WARMUP_WORLD_SIZE}" not in command
+        or training_receipt.get("parent_adapter_sha256") != parent["sha256"]
+        or training_receipt.get("prime_commit") != PRIME_COMMIT
+    ):
         raise ValueError("warmup training receipt does not confirm the bounded GPU run")
+    receipt_audit = Path(str(training_receipt.get("optimizer_audit", ""))).expanduser()
+    if receipt_audit.resolve() != optimizer_audit_path.resolve() or training_receipt.get("optimizer_audit_sha256") != optimizer_audit["sha256"]:
+        raise ValueError("warmup training receipt does not bind the verified native optimizer audit")
+    receipt_mask = Path(str(training_receipt.get("mask_audit", ""))).expanduser()
+    if receipt_mask.resolve() != (output / "sft-mask-audit.json").resolve():
+        raise ValueError("warmup training receipt does not bind the prepared mask audit")
     adapter_path = Path(checkpoints[-1]["path"])
     selected_sha = checkpoints[-1]["sha256"]
     if selected_sha == parent["sha256"]:
@@ -1309,7 +1580,11 @@ def write_final_receipt(args: argparse.Namespace) -> dict[str, Any]:
                "parent_adapter": parent, "prime_commit": PRIME_COMMIT, "training": input_receipt["training"],
                "data": input_receipt["data"], "mask_audit": {"path": str(output / "sft-mask-audit.json"), "sha256": sha256_file(output / "sft-mask-audit.json")},
                "source": json.loads((output / "source-receipt.json").read_text(encoding="utf-8")),
-               "training_receipt": {"path": str(training_receipt_path), "sha256": sha256_file(training_receipt_path), "gpu_ordinal": training_receipt["gpu_ordinal"]},
+               "training_receipt": {"path": str(training_receipt_path), "sha256": sha256_file(training_receipt_path),
+                                    "gpu_ordinals": training_receipt["gpu_ordinals"],
+                                    "world_size": training_receipt["world_size"],
+                                    "max_steps": training_receipt["max_steps"],
+                                    "completed_updates": training_receipt["completed_updates"]},
                "checkpoints": checkpoints, "optimizer_audit": optimizer_audit, "optimizer_updates_verified": MAX_STEPS,
                "adapter_changed_from_parent": {"changed": True, "parent_sha256": parent["sha256"], "warmup_sha256": selected_sha},
                "selected_adapter_path": str(adapter_path), "selected_adapter_sha256": selected_sha,
@@ -1334,6 +1609,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     p.add_argument("--prepared", type=Path, required=True); p.add_argument("--source-root", type=Path, required=True); p.add_argument("--prime-root", type=Path, required=True)
     p.add_argument("--parent-adapter", type=Path, required=True); p.add_argument("--output-dir", type=Path, required=True); p.add_argument("--run-name", default="Diverse-flow-sft-warmup"); p.add_argument("--python", default=sys.executable)
     p.set_defaults(handler=train)
+    p = commands.add_parser("resume")
+    p.add_argument("--prepared", type=Path, required=True); p.add_argument("--source-root", type=Path, required=True); p.add_argument("--prime-root", type=Path, required=True)
+    p.add_argument("--parent-adapter", type=Path, required=True); p.add_argument("--run-name", default="Diverse-flow-sft-warmup")
+    p.add_argument("--archive-url", default=SFT_RESUME_ARCHIVE_URL); p.add_argument("--archive-sha256", default=SFT_RESUME_ARCHIVE_SHA256)
+    p.set_defaults(handler=resume_public_sft)
     p = commands.add_parser("receipt")
     p.add_argument("--output", type=Path, required=True); p.add_argument("--checkpoint-root", type=Path, required=True); p.add_argument("--parent-adapter", type=Path, required=True)
     p.set_defaults(handler=write_final_receipt)

@@ -424,22 +424,22 @@ elif [[ "$RESTORE_ANCHOR_EVIDENCE" == 1 || "$REUSE_MATCHED_BASELINE" == 1 ]]; th
   SAME_RUN_RESUME=1
 fi
 if [[ "$SAME_RUN_RESUME" == 1 ]]; then
-  RESTORE_SHA256="${PAINTER_SAME_RUN_ARCHIVE_SHA256:-${PAINTER_ANCHOR_EVIDENCE_SHA256:-ddd90296e2c6562cb24bc8f8033f439c4925e77002ad8eabca2723c38323eaac}}"
-  RESTORE_URL="${PAINTER_SAME_RUN_ARCHIVE_URL:-${PAINTER_ANCHOR_EVIDENCE_URL:-https://huggingface.co/datasets/CK0607/komorebi-painter-experiments/resolve/c35b77c6d3a858ab224f0812f1ed73e0150d1525/runs/diverse-flow-rl-20261009/evidence.tar.gz}}"
+  RESTORE_SHA256="${PAINTER_SAME_RUN_ARCHIVE_SHA256:-${PAINTER_ANCHOR_EVIDENCE_SHA256:-41f527d104e1e5fe52ef83369e3fd089ba153ce2e3112ae25d4da25f682881ef}}"
+  RESTORE_URL="${PAINTER_SAME_RUN_ARCHIVE_URL:-${PAINTER_ANCHOR_EVIDENCE_URL:-https://huggingface.co/datasets/CK0607/komorebi-painter-experiments/resolve/2de12b59875fbdd5cc0f206f79eed12c8ee9f43b/runs/diverse-flow-rl-20261009/evidence.tar.gz}}"
   for value in "${PAINTER_SAME_RUN_ARCHIVE_SHA256:-}" "${PAINTER_ANCHOR_EVIDENCE_SHA256:-}" "${PAINTER_MATCHED_BASELINE_EVIDENCE_SHA256:-}"; do
-    [[ -z "$value" || "$value" == ddd90296e2c6562cb24bc8f8033f439c4925e77002ad8eabca2723c38323eaac ]] || {
+    [[ -z "$value" || "$value" == 41f527d104e1e5fe52ef83369e3fd089ba153ce2e3112ae25d4da25f682881ef ]] || {
       echo 'same-run archive SHA-256 is not the pinned public archive' >&2; exit 1;
     }
   done
   for value in "${PAINTER_SAME_RUN_ARCHIVE_URL:-}" "${PAINTER_ANCHOR_EVIDENCE_URL:-}" "${PAINTER_MATCHED_BASELINE_EVIDENCE_URL:-}"; do
-    [[ -z "$value" || "$value" == https://huggingface.co/datasets/CK0607/komorebi-painter-experiments/resolve/c35b77c6d3a858ab224f0812f1ed73e0150d1525/runs/diverse-flow-rl-20261009/evidence.tar.gz ]] || {
+    [[ -z "$value" || "$value" == https://huggingface.co/datasets/CK0607/komorebi-painter-experiments/resolve/2de12b59875fbdd5cc0f206f79eed12c8ee9f43b/runs/diverse-flow-rl-20261009/evidence.tar.gz ]] || {
       echo 'same-run archive URL is not the pinned credential-free public revision' >&2; exit 1;
     }
   done
-  [[ "$RESTORE_SHA256" == ddd90296e2c6562cb24bc8f8033f439c4925e77002ad8eabca2723c38323eaac ]] || {
+  [[ "$RESTORE_SHA256" == 41f527d104e1e5fe52ef83369e3fd089ba153ce2e3112ae25d4da25f682881ef ]] || {
     echo 'same-run archive SHA-256 is not the pinned public archive' >&2; exit 1;
   }
-  [[ "$RESTORE_URL" == https://huggingface.co/datasets/CK0607/komorebi-painter-experiments/resolve/c35b77c6d3a858ab224f0812f1ed73e0150d1525/runs/diverse-flow-rl-20261009/evidence.tar.gz ]] || {
+  [[ "$RESTORE_URL" == https://huggingface.co/datasets/CK0607/komorebi-painter-experiments/resolve/2de12b59875fbdd5cc0f206f79eed12c8ee9f43b/runs/diverse-flow-rl-20261009/evidence.tar.gz ]] || {
     echo 'same-run archive URL is not the pinned credential-free public revision' >&2; exit 1;
   }
   [[ -z "${PAINTER_ANCHOR_EVIDENCE_ARCHIVE:-}" && -z "${PAINTER_MATCHED_BASELINE_EVIDENCE_ARCHIVE:-}" ]] || {
@@ -607,7 +607,7 @@ if [[ "${PAINTER_RUN_WARMUP:-1}" == 1 && "$PAINTER_CODE_SUPERVISION_ENABLED" == 
   if [[ "$RESTORE_SUPERVISION_EVIDENCE" == 1 && -f "$SUPERVISION_ROOT/render-manifest.json" && -f "$SUPERVISION_ROOT/approval-candidates.json" ]]; then
     # Reuse only the restored paid render/judge facts.  This validates the
     # current flow prompt/source/renderer hashes, then regenerates the
-    # bounded 15/2 rich export without rendering or calling Flash, even if an
+    # bounded 12/5 rich export without rendering or calling Flash, even if an
     # older archive also carried filtered JSONL from a previous gate.
     PYTHONPATH="$REPO:$REPO/painter:$RUN${PYTHONPATH:+:$PYTHONPATH}" \
       "$PY_PRIME" "$RUN/supervision_phase.py" --data "$SUPERVISION_ROOT" \

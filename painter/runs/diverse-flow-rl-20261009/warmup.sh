@@ -82,10 +82,20 @@ fi
 
 # ``train`` repeats the processor audit immediately before torchrun and fails
 # before the first optimizer construction when any mask or length check fails.
-"$PYTHON" "$RUN/warmup.py" train \
-  --prepared "$OUTPUT" --source-root "$SOURCE_ROOT" --prime-root "$PRIME" \
-  --parent-adapter "$PARENT" --output-dir "$OUTPUT/train-output" \
-  --run-name "$RUN_NAME" --python "$PYTHON"
+# A same-run retry may instead restore the already verified public step-4
+# adapter; it still runs the current processor audit before validation.
+if [[ "${PAINTER_RESUME_SAME_RUN_ARCHIVE:-0}" == 1 ]]; then
+  "$PYTHON" "$RUN/warmup.py" resume \
+    --prepared "$OUTPUT" --source-root "$SOURCE_ROOT" --prime-root "$PRIME" \
+    --parent-adapter "$PARENT" --run-name "$RUN_NAME" \
+    --archive-url "${PAINTER_SAME_RUN_ARCHIVE_URL:?same-run archive URL is required}" \
+    --archive-sha256 "${PAINTER_SAME_RUN_ARCHIVE_SHA256:?same-run archive SHA-256 is required}"
+else
+  "$PYTHON" "$RUN/warmup.py" train \
+    --prepared "$OUTPUT" --source-root "$SOURCE_ROOT" --prime-root "$PRIME" \
+    --parent-adapter "$PARENT" --output-dir "$OUTPUT/train-output" \
+    --run-name "$RUN_NAME" --python "$PYTHON"
+fi
 
 "$PYTHON" "$RUN/warmup.py" receipt \
   --output "$OUTPUT" --checkpoint-root "$OUTPUT/train-output" --parent-adapter "$PARENT"
