@@ -1,0 +1,28 @@
+{
+  "schema": "structured-flow-live-observation-v1",
+  "observed_epoch": 1791518576.43808,
+  "source_commit": "6a2edb50cc203dada9c39f5d3fda19532c5219ab",
+  "linux_actual_runtime_probe": {
+    "api": "Runtime.run_uv_script",
+    "child_role": "harness",
+    "parent_role": "orchestrator",
+    "runtime": "verifiers.v1.runtimes.subprocess.SubprocessRuntime",
+    "schema": "structured-flow-prime-runtime-harness-probe-v1"
+  },
+  "linux_runtime_probe_sha256": "6b0bfdbafd60e13c094270a30d9b70198b97c713b836a261efa5e1aede8c017a",
+  "admitted_train": 31,
+  "matched_heldout": 16,
+  "warmup_status": "pending_explicit_rl_only",
+  "rl_updates_target": 20,
+  "rl_optimizer_updates_observed": 0,
+  "checkpoint_steps": [
+    4,
+    8,
+    12,
+    16,
+    20
+  ],
+  "baseline_reused": true,
+  "new_baseline_model_renderer_judge_calls": 0,
+  "gpu_pipeline_saturation_claimed": false
+}
