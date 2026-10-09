@@ -1,0 +1,51 @@
+{
+  "campaign_gpu_accounting": {
+    "cumulative_estimate_usd": 4.158635486237208,
+    "estimate_basis": "rental clock through release request plus five seconds; not an invoice; API spend excluded",
+    "next_retry_cap_usd": 15.0,
+    "remaining_reserve_under_20_usd": 0.841364513762791,
+    "this_attempt_estimate_usd": 0.17522319384680857
+  },
+  "failure": {
+    "exception": "NameError: name 'step' is not defined",
+    "location": "generated effective_prime_train.py:174",
+    "stage": "SFT initialization after model, parent adapter, optimizer, scheduler, processor and datasets; before first forward pass",
+    "sft_optimizer_updates": 0,
+    "rl_optimizer_updates": 0
+  },
+  "inputs": {
+    "public_source_revision": "8c619682fb10bc3fec6d7b07c0be58b60e85dc65",
+    "source_commit": "5c71c97ab67dd4e181d6e601cf6f7d78552219b4"
+  },
+  "node": {
+    "gpu_count": 4,
+    "gpu_type": "L40S",
+    "memory_mib_per_gpu": 49140,
+    "price_usd_per_whole_node_hour": 1.52,
+    "provider_inventory_after_release": 0,
+    "released": true
+  },
+  "preserved_evidence": {
+    "archive_bytes": 147044272,
+    "archive_sha256": "4e7ac3d4bc6872f4b88395a6306383fafcbb6083bc598f03fe6141df1cb90862",
+    "hf_revision": "1f26d8cc5ecf3cc8db8834d1e8eeb9a423f0f997",
+    "path": "runs/diverse-flow-rl-20261009/evidence.tar.gz",
+    "public_hash_verified_by_finite_controller": true,
+    "repository": "CK0607/komorebi-painter-experiments"
+  },
+  "progress_before_failure": {
+    "baseline_generator_calls": 0,
+    "baseline_heldout_cases": 32,
+    "baseline_status": "reused_cached_baseline_no_generation",
+    "exact_assistant_target_mask_audit": "passed",
+    "multimodal_processor": "Qwen3VLProcessor",
+    "optimizer": "fresh AdamW",
+    "parent_adapter": "Flash12",
+    "scheduler_steps": 4,
+    "supervised_dev_rows": 2,
+    "supervised_train_rows": 15
+  },
+  "root_cause": "The run-local group-validation transform inserted a record using step, phase and mean_loss at train-function scope before the inner validation function or training loop defined those names.",
+  "schema": "diverse-flow-sft-failure-v3",
+  "status": "failed_pre_forward_node_released"
+}

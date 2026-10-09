@@ -208,9 +208,11 @@ class DiverseFlowLaunchContractTests(unittest.TestCase):
             RUN / "prime_runtime/integrations/speedpainting/mixed_sft/group_validation.py",
         )
         source = (
-            "def run_validation(step: int) -> None:\n"
+            "def train(config):\n"
+            "    def run_validation(step: int) -> None:\n"
+            "        val_dataloader = None\n"
+            "        mean_loss, nan_count = run_eval_loop(val_dataloader)\n"
             "    gc_handler = GarbageCollection(config.gc.interval) if config.gc else None\n"
-            "def train():\n"
             "    run_validation(0)\n"
             "    # Write final checkpoint\n"
             "    pass\n"
@@ -226,6 +228,77 @@ class DiverseFlowLaunchContractTests(unittest.TestCase):
             self.assertEqual(fake_module.__dict__["OVERRIDE_SCHEMA"], group.OVERRIDE_SCHEMA)
             self.assertIn("os", fake_module.__dict__)
             self.assertTrue(callable(fake_module.__dict__["train"]))
+
+    def test_generated_group_hook_executes_at_preloop_anchor_and_after_validation_loss(self):
+        group = load(
+            "diverse_flow_group_validation_execution_contract",
+            RUN / "prime_runtime/integrations/speedpainting/mixed_sft/group_validation.py",
+        )
+
+        source = """
+def train(config):
+    val_raw_dataset = config.val_raw_dataset
+    tokenizer = "tokenizer"
+    renderer = "renderer"
+    multimodal = False
+    progress = config.progress
+    logger = config.logger
+
+    def setup_dataset(tokenizer, data, cp, max_epochs, raw_dataset, renderer, multimodal):
+        return raw_dataset
+
+    def setup_dataloader(dataset, data):
+        return dataset
+
+    def run_eval_loop(data_iter):
+        return 1.25, 0
+
+    def run_validation(step: int) -> None:
+        val_dataset = setup_dataset(tokenizer, config.val.data, config.model.cp, max_epochs=1,
+                                    raw_dataset=val_raw_dataset, renderer=renderer, multimodal=multimodal)
+        val_dataloader = setup_dataloader(val_dataset, config.val.data)
+        mean_loss, nan_count = run_eval_loop(val_dataloader)
+
+    gc_handler = GarbageCollection(config.gc.interval) if config.gc else None
+    while True:
+        run_validation(progress.step)
+        break
+
+    # Write final checkpoint
+"""
+        group.SOURCE_SHA = hashlib.sha256(source.encode()).hexdigest()
+
+        class Dataset(list):
+            def filter(self, predicate):
+                return Dataset(row for row in self if predicate(row))
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            config = SimpleNamespace(
+                val=SimpleNamespace(data=SimpleNamespace()),
+                gc=None,
+                model=SimpleNamespace(cp=1),
+                run_dir=root,
+                progress=SimpleNamespace(step=3),
+                logger=SimpleNamespace(info=lambda message: None),
+                val_raw_dataset=Dataset([{"task_family": "family"}, {"task_family": "family"}]),
+            )
+            effective = group.transform(source)
+            compile(effective, str(root / "effective_prime_train.py"), "exec")
+            namespace = {"OVERRIDE_SCHEMA": group.OVERRIDE_SCHEMA, "os": group.os}
+            exec(compile(effective, str(root / "effective_prime_train.py"), "exec"), namespace)
+            with patch.dict(group.os.environ, {"RANK": "0", "WORLD_SIZE": "1"}, clear=False):
+                namespace["train"](config)
+
+            records = [json.loads(line) for line in (root / "artifacts/group-validation.jsonl").read_text().splitlines()]
+            self.assertEqual([record["phase"] for record in records], ["initialization", "before_optimizer", "after_optimizer"])
+            self.assertIsNone(records[0]["aggregate_nll"])
+            self.assertEqual(records[0]["completed_updates"], 0)
+            self.assertEqual(records[1]["trainer_step"], 3)
+            self.assertEqual(records[1]["completed_updates"], 2)
+            self.assertEqual(records[2]["completed_updates"], 3)
+            self.assertEqual(records[1]["groups"]["family"]["examples"], 2)
+            self.assertEqual(records[1]["groups"]["family"]["assistant_token_mean_nll"], 1.25)
 
     def test_run_owned_source_guard_accepts_own_blob_and_rejects_tamper(self):
         helper = RUN / "verify_run_owned_inputs.py"

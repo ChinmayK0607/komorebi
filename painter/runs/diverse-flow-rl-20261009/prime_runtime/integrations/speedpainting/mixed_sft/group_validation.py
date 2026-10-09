@@ -14,32 +14,71 @@ SOURCE_SHA='08c0ab3284000ee9b3fd0853a7007aedac21b221e66c675c621927c063b46ad0'
 OVERRIDE_SCHEMA='Diverse-flow-multirank-group-validation-v1'
 
 EXTRA='''        import json as _json
-        _groups = sorted({r.get("mixture_group") or r.get("task_family") or "unspecified" for r in val_raw_dataset})
-        _record = {"schema": OVERRIDE_SCHEMA, "trainer_step": step, "completed_updates": step if phase == "after_optimizer" else max(0, step-1), "phase": phase, "aggregate_nll": mean_loss, "groups": {}}
-        for _group in _groups:
-            _raw = val_raw_dataset.filter(lambda r: (r.get("mixture_group") or r.get("task_family") or "unspecified") == _group)
-            _ds = setup_dataset(tokenizer, config.val.data, config.model.cp, max_epochs=1, raw_dataset=_raw, renderer=renderer, multimodal=multimodal)
-            _loss, _nans = run_eval_loop(setup_dataloader(_ds, config.val.data))
-            _record["groups"][_group] = {"examples": len(_raw), "assistant_token_mean_nll": _loss, "nan_batches": _nans}
+
+        def _record_group_validation(_step, _phase, _mean_loss):
+            """Record per-family validation after the aggregate loss exists."""
+            _groups = sorted({r.get("mixture_group") or r.get("task_family") or "unspecified" for r in val_raw_dataset})
+            _record = {
+                "schema": OVERRIDE_SCHEMA,
+                "trainer_step": _step,
+                "completed_updates": _step if _phase == "after_optimizer" else max(0, _step - 1),
+                "phase": _phase,
+                "aggregate_nll": _mean_loss,
+                "groups": {},
+            }
+            for _group in _groups:
+                _raw = val_raw_dataset.filter(
+                    lambda r: (r.get("mixture_group") or r.get("task_family") or "unspecified") == _group
+                )
+                _ds = setup_dataset(
+                    tokenizer,
+                    config.val.data,
+                    config.model.cp,
+                    max_epochs=1,
+                    raw_dataset=_raw,
+                    renderer=renderer,
+                    multimodal=multimodal,
+                )
+                _loss, _nans = run_eval_loop(setup_dataloader(_ds, config.val.data))
+                _record["groups"][_group] = {
+                    "examples": len(_raw),
+                    "assistant_token_mean_nll": _loss,
+                    "nan_batches": _nans,
+                }
+            with _path.open("a") as _file:
+                _file.write(_json.dumps(_record) + "\\n")
+            logger.info("Group validation: " + _json.dumps(_record))
+
         _rank = int(os.environ.get("RANK", "0"))
         _world = int(os.environ.get("WORLD_SIZE", "1"))
         _path = config.run_dir / "artifacts" / (
             "group-validation.jsonl" if _world == 1 else f"group-validation.rank{_rank}.jsonl"
         )
         _path.parent.mkdir(parents=True, exist_ok=True)
+        _initial_record = {
+            "schema": OVERRIDE_SCHEMA,
+            "trainer_step": progress.step,
+            "completed_updates": 0,
+            "phase": "initialization",
+            "aggregate_nll": None,
+            "groups": {},
+        }
         with _path.open("a") as _file:
-            _file.write(_json.dumps(_record) + "\\n")
-        logger.info("Group validation: " + _json.dumps(_record))
+            _file.write(_json.dumps(_initial_record) + "\\n")
+        logger.info("Group validation initialized: " + _json.dumps(_initial_record))
 
 '''
 
 def transform(source):
     if hashlib.sha256(source.encode()).hexdigest()!=SOURCE_SHA:raise ValueError('Unrecognized PRIME SFT trainer; inspect before instrumentation')
     source=source.replace('def run_validation(step: int) -> None:', 'def run_validation(step: int, phase: str = "before_optimizer") -> None:')
+    validation_anchor='        mean_loss, nan_count = run_eval_loop(val_dataloader)\n'
+    if source.count(validation_anchor)!=1:raise ValueError('Validation result insertion anchor mismatch')
+    source=source.replace(validation_anchor, validation_anchor+'        _record_group_validation(step, phase, mean_loss)\n')
     anchor='    gc_handler = GarbageCollection(config.gc.interval) if config.gc else None\n'
     if source.count(anchor)!=1:raise ValueError('Validation insertion anchor mismatch')
     indent = anchor[:len(anchor) - len(anchor.lstrip())]
-    extra = textwrap.indent(textwrap.dedent(EXTRA), indent)
+    extra = textwrap.indent(textwrap.dedent(EXTRA).strip('\n'), indent) + '\n'
     source=source.replace(anchor,extra+anchor)
     anchor='    # Write final checkpoint\n'
     if source.count(anchor)!=1:raise ValueError('Final validation anchor mismatch')
