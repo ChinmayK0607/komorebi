@@ -38,11 +38,11 @@ class FinalConfigRefreshTests(unittest.TestCase):
                 encoding="utf-8",
             )
             manifest = root / "train.json"
-            manifest.write_text(json.dumps({"rows": [{} for _ in range(88)]}), encoding="utf-8")
+            manifest.write_text(json.dumps({"rows": [{} for _ in range(96)]}), encoding="utf-8")
             (root / "rl-config-receipt.json").write_text(json.dumps({
                 "hardware_profile": "l40s_4",
-                "curriculum": {"active_rows": 0},
-                "manifest_sha256": "stale",
+                "curriculum": {"active_rows": 96},
+                "manifest_sha256": run_from_sft._sha256(manifest),
                 "updates": 20,
                 "effective_updates": 20,
                 "checkpoint_steps": [4, 8, 12, 16, 20],
@@ -55,6 +55,8 @@ class FinalConfigRefreshTests(unittest.TestCase):
                 "max_inflight": 32,
             }), encoding="utf-8")
 
+            prepare_calls = []
+
             def fake_spec(*_args, **_kwargs):
                 return SimpleNamespace(
                     name="diverse_flow_final_config_test",
@@ -63,8 +65,14 @@ class FinalConfigRefreshTests(unittest.TestCase):
 
             def fake_module(_spec):
                 def prepare(*, output, **kwargs):
+                    prepare_calls.append(kwargs)
                     output.write_text("[model]\nname = \"/models/policy\"\n", encoding="utf-8")
                     output.with_name("rl-config-receipt.json").write_text(json.dumps({
+                        "curriculum": {"active_rows": 96},
+                        "manifest_sha256": run_from_sft._sha256(manifest),
+                        "updates": 20,
+                        "effective_updates": 20,
+                        "checkpoint_steps": [4, 8, 12, 16, 20],
                         "initial_inflight": kwargs["initial_inflight"],
                         "max_inflight": kwargs["max_inflight"],
                     }), encoding="utf-8")
@@ -73,11 +81,19 @@ class FinalConfigRefreshTests(unittest.TestCase):
 
             with patch.object(run_from_sft.importlib.util, "spec_from_file_location", side_effect=fake_spec), \
                     patch.object(run_from_sft.importlib.util, "module_from_spec", side_effect=fake_module):
-                run_from_sft._refresh_final_config(config, manifest, 88)
+                run_from_sft._refresh_final_config(config, manifest, 96)
 
             receipt = json.loads((root / "rl-config-receipt.json").read_text(encoding="utf-8"))
+            self.assertEqual(len(prepare_calls), 1)
+            self.assertEqual(prepare_calls[0]["initial_inflight"], 16)
+            self.assertEqual(prepare_calls[0]["max_inflight"], 16)
             self.assertEqual(receipt["initial_inflight"], 16)
             self.assertEqual(receipt["max_inflight"], 16)
+
+            with patch.object(run_from_sft.importlib.util, "spec_from_file_location", side_effect=AssertionError("unexpected refresh")):
+                run_from_sft._refresh_final_config(config, manifest, 96)
+
+            self.assertEqual(len(prepare_calls), 1)
 
 
 if __name__ == "__main__":

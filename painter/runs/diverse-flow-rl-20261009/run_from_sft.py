@@ -54,6 +54,8 @@ def _refresh_final_config(config_path: Path, manifest_path: Path, admitted_count
         and receipt.get("updates") == 20
         and receipt.get("effective_updates") == 20
         and receipt.get("checkpoint_steps") == [4, 8, 12, 16, 20]
+        and receipt.get("initial_inflight") == AMENDED_INITIAL_INFLIGHT
+        and receipt.get("max_inflight") == AMENDED_MAX_INFLIGHT
     ):
         return
     if not 88 <= admitted_count <= 96:

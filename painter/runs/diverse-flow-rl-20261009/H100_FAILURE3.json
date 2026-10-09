@@ -1,0 +1,41 @@
+{
+  "schema": "diverse-flow-h100-failure-v3",
+  "date": "2026-10-09",
+  "status": "released_before_rl",
+  "source_commit": "77082fa0b936cf88496e1df27b42a4690c0623ac",
+  "source_bundle_sha256": "4047dd0bb10d7548f67ff9dea8a29c18108cdbb2882b115af8ea0959c458a036",
+  "completed": [
+    "source and two-GPU topology verification",
+    "public four-update SFT adapter restore and hash verification",
+    "32-case post-warmup matched panel generation"
+  ],
+  "failure": {
+    "phase": "strict resolved-config validation before RL launch",
+    "message": "remote config shape does not match Diverse-flow pilot",
+    "root_cause": "the finalized-receipt no-op guard checked rows, manifest, updates and checkpoints but omitted the amended inflight fields, so a complete legacy 32/32 receipt bypassed regeneration",
+    "rl_optimizer_updates": 0,
+    "judge_reward_calls": 0,
+    "quality_result": false
+  },
+  "repair": {
+    "no_op_requires_initial_inflight": 16,
+    "no_op_requires_max_inflight": 16,
+    "exact_archive_replay": "the real archived 96-row finalized receipt regenerated 16/16 and passed every strict gated field locally",
+    "rubric_or_reward_change": false,
+    "whole_group_validity_change": false
+  },
+  "cost": {
+    "elapsed_seconds_to_release_request": 1193.8086199760437,
+    "attempt_gpu_estimate_usd": 1.2269699705309338,
+    "prior_campaign_estimate_usd": 9.104178530005397,
+    "combined_campaign_estimate_usd": 10.331148500536331,
+    "notes": "Rental-clock estimates only; API cost is excluded and values are not provider invoices."
+  },
+  "evidence": {
+    "controller_journal": "private/launch-v10/operations-single.jsonl",
+    "allocation_receipt": "private/launch-v10/allocation-receipt.json",
+    "pod_inventory_after_release": "no active pods",
+    "archive_preserved": false,
+    "limitation": "The remote panel was not archived after fail-closed config validation and is not treated as a result."
+  }
+}
