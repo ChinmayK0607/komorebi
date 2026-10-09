@@ -71,7 +71,7 @@
   },
   "config": {
     "path": "config.json",
-    "sha256": "10b8649082d0907901a1cf5fc3b6687cb1c456111fbf9144ce733edf657040b6"
+    "sha256": "6149adf064b668620da9d340f2b47c70851ac5fbb56a8777ad62bba725fe8f6c"
   },
   "receipt": {
     "path": "receipt.json",
@@ -199,7 +199,7 @@
       },
       "canary": {
         "path": "canary.py",
-        "sha256": "ac43e03e08803493df5dbea1555d79e40f46ed92cad2f672bf97d229e4bed7a4"
+        "sha256": "c06d69ab1846ddd99a1ddff6633ef5ce7d46f569c2b72728fcb0cf1901a47bff"
       },
       "launch": {
         "path": "launch.sh",
@@ -211,7 +211,7 @@
       },
       "run_from_sft": {
         "path": "run_from_sft.py",
-        "sha256": "f8d6fc87d702ba50930545547f1fc185a5fa3879e86e5ab76ccfbba03f2383d0"
+        "sha256": "19ca23b9be3bc1aecc82f91bc2c3848478b289131b4d5c910a66e286d9fd7016"
       },
       "runtime_binding": {
         "path": "runtime_binding.py",

@@ -203,6 +203,7 @@ class LaunchHandoffTests(unittest.TestCase):
 
     def test_staged_wrapper_uses_photo_runner_and_forwards_activation(self) -> None:
         self.assertIn('SOURCE = RUN.parent / "photo-curriculum-rl-20260922" / "run_from_sft.py"', WRAPPER_SOURCE)
+        self.assertIn("ensure_hf_snapshot_file", WRAPPER_SOURCE)
         self.assertIn("base._orchestrator_env = _staged_orchestrator_env", WRAPPER_SOURCE)
         self.assertIn("base.main()", WRAPPER_SOURCE)
         self.assertIn("ORIGINAL_ORCHESTRATOR_ENV = base._orchestrator_env", WRAPPER_SOURCE)
@@ -218,6 +219,48 @@ class LaunchHandoffTests(unittest.TestCase):
         ):
             self.assertIn(key, WRAPPER_SOURCE)
 
+    def test_staged_wrapper_accepts_trusted_snapshot_links_but_rejects_escape(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+
+            def adapter(name: str, payload: bytes) -> tuple[Path, Path]:
+                cache = root / name
+                snapshot = cache / "snapshots" / "pinned"
+                blobs = cache / "blobs"
+                snapshot.mkdir(parents=True)
+                blobs.mkdir()
+                weight_blob = blobs / (hashlib.sha256(payload).hexdigest() * 2)
+                weight_blob.write_bytes(payload)
+                config_blob = blobs / ("config-" + name)
+                config_blob.write_bytes(b"{}\n")
+                (snapshot / "adapter_model.safetensors").symlink_to(Path("../../blobs") / weight_blob.name)
+                (snapshot / "adapter_config.json").symlink_to(Path("../../blobs") / config_blob.name)
+                return snapshot, snapshot / "adapter_model.safetensors"
+
+            policy, policy_weights = adapter("policy-cache", b"policy-fixture")
+            frozen, frozen_weights = adapter("frozen-cache", b"frozen-fixture")
+            environment = {
+                "WATERCOLOUR_INIT_ADAPTER": str(policy),
+                "PAINTER_FROZEN_SFT_ADAPTER": str(frozen),
+                "PAINTER_FROZEN_SFT_ALIAS": "sft-step512",
+            }
+            with patch.object(WRAPPER, "POLICY_SHA256", hashlib.sha256(policy_weights.read_bytes()).hexdigest()), patch.object(
+                WRAPPER, "FROZEN_SFT_SHA256", hashlib.sha256(frozen_weights.read_bytes()).hexdigest()
+            ), patch.dict(os.environ, environment, clear=False):
+                values = WRAPPER._adapter_environment()
+            self.assertEqual(values["WATERCOLOUR_INIT_ADAPTER"], str(policy.resolve()))
+            self.assertEqual(values["PAINTER_FROZEN_SFT_ADAPTER"], str(frozen.resolve()))
+
+            outside = root / "outside.safetensors"
+            outside.write_bytes(b"escape")
+            policy_weights.unlink()
+            policy_weights.symlink_to(outside)
+            with patch.object(WRAPPER, "POLICY_SHA256", hashlib.sha256(b"escape").hexdigest()), patch.object(
+                WRAPPER, "FROZEN_SFT_SHA256", hashlib.sha256(frozen_weights.read_bytes()).hexdigest()
+            ), patch.dict(os.environ, environment, clear=False):
+                with self.assertRaises(ValueError):
+                    WRAPPER._adapter_environment()
+
     def test_staged_wrapper_builds_child_environment_without_recursion(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -226,7 +269,9 @@ class LaunchHandoffTests(unittest.TestCase):
             policy.mkdir()
             frozen.mkdir()
             (policy / "adapter_model.safetensors").write_bytes(b"policy-fixture")
+            (policy / "adapter_config.json").write_text("{}\n", encoding="utf-8")
             (frozen / "adapter_model.safetensors").write_bytes(b"frozen-fixture")
+            (frozen / "adapter_config.json").write_text("{}\n", encoding="utf-8")
             old_policy_sha = WRAPPER.POLICY_SHA256
             old_frozen_sha = WRAPPER.FROZEN_SFT_SHA256
             WRAPPER.POLICY_SHA256 = hashlib.sha256(b"policy-fixture").hexdigest()
@@ -273,6 +318,60 @@ class LaunchHandoffTests(unittest.TestCase):
         self.assertIn("RLConfig.model_validate(config)", CANARY_SOURCE)
         self.assertIn('"prime_config_validation":', CANARY_SOURCE)
         self.assertIn('env["PATH"] = os.pathsep.join((str(prime_bin), "/usr/local/bin", "/usr/bin", "/bin"))', CANARY_SOURCE)
+        self.assertIn("_hf_snapshot_file", CANARY_SOURCE)
+
+    def test_canary_validates_trusted_snapshot_adapter_files_before_probe(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+
+            def adapter(name: str, payload: bytes) -> tuple[Path, Path]:
+                cache = root / name
+                snapshot = cache / "snapshots" / "pinned"
+                blobs = cache / "blobs"
+                snapshot.mkdir(parents=True)
+                blobs.mkdir()
+                weight_blob = blobs / (hashlib.sha256(payload).hexdigest() * 2)
+                weight_blob.write_bytes(payload)
+                config_blob = blobs / ("config-" + name)
+                config_blob.write_bytes(b"{}\n")
+                (snapshot / "adapter_model.safetensors").symlink_to(Path("../../blobs") / weight_blob.name)
+                (snapshot / "adapter_config.json").symlink_to(Path("../../blobs") / config_blob.name)
+                return snapshot, snapshot / "adapter_model.safetensors"
+
+            policy, policy_weights = adapter("policy-cache", b"policy-fixture")
+            frozen, frozen_weights = adapter("frozen-cache", b"frozen-fixture")
+            policy_sha = hashlib.sha256(policy_weights.read_bytes()).hexdigest()
+            frozen_sha = hashlib.sha256(frozen_weights.read_bytes()).hexdigest()
+            receipt = {
+                "policy_initializer": {"path": str(policy), "weights_sha256": policy_sha},
+                "frozen_sft": {"path": str(frozen), "weights_sha256": frozen_sha},
+            }
+            (root / "source").mkdir()
+            (root / "node").mkdir()
+            with patch.dict(CANARY.CONFIG.POLICY, {"sha256": policy_sha}), patch.dict(
+                CANARY.CONFIG.FROZEN_SFT, {"sha256": frozen_sha}
+            ):
+                environment = CANARY._runtime_environment(
+                    prepare_receipt=receipt,
+                    source_root=root / "source",
+                    node_root=root / "node",
+                )
+            self.assertEqual(environment["WATERCOLOUR_INIT_ADAPTER"], str(policy.resolve()))
+            self.assertEqual(environment["PAINTER_FROZEN_SFT_ADAPTER"], str(frozen.resolve()))
+
+            outside = root / "outside.safetensors"
+            outside.write_bytes(b"escape")
+            policy_weights.unlink()
+            policy_weights.symlink_to(outside)
+            with patch.dict(CANARY.CONFIG.POLICY, {"sha256": hashlib.sha256(b"escape").hexdigest()}), patch.dict(
+                CANARY.CONFIG.FROZEN_SFT, {"sha256": frozen_sha}
+            ):
+                with self.assertRaises(ValueError):
+                    CANARY._runtime_environment(
+                        prepare_receipt=receipt,
+                        source_root=root / "source",
+                        node_root=root / "node",
+                    )
 
     def test_renderer_canary_uses_fake_interpreter_without_chromium(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

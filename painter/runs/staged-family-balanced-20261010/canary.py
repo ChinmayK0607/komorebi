@@ -269,9 +269,13 @@ def _runtime_environment(*, prepare_receipt: dict[str, Any], source_root: Path, 
         raise ValueError("preparation receipt adapter hashes are not pinned")
     policy_path = PREP._directory(Path(str(policy.get("path", ""))), "policy initializer")
     frozen_path = PREP._directory(Path(str(frozen.get("path", ""))), "frozen SFT adapter")
-    if PREP.sha256_file(policy_path / "adapter_model.safetensors") != CONFIG.POLICY["sha256"]:
+    policy_weights = PREP._hf_snapshot_file(policy_path / "adapter_model.safetensors", "policy initializer weights")
+    PREP._hf_snapshot_file(policy_path / "adapter_config.json", "policy initializer config")
+    frozen_weights = PREP._hf_snapshot_file(frozen_path / "adapter_model.safetensors", "frozen SFT adapter weights")
+    PREP._hf_snapshot_file(frozen_path / "adapter_config.json", "frozen SFT adapter config")
+    if PREP.sha256_file(policy_weights) != CONFIG.POLICY["sha256"]:
         raise ValueError("policy initializer bytes changed after preparation")
-    if PREP.sha256_file(frozen_path / "adapter_model.safetensors") != CONFIG.FROZEN_SFT["sha256"]:
+    if PREP.sha256_file(frozen_weights) != CONFIG.FROZEN_SFT["sha256"]:
         raise ValueError("frozen SFT adapter bytes changed after preparation")
     return {
         "WATERCOLOUR_INIT_ADAPTER": str(policy_path),

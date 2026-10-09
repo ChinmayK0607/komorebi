@@ -18,6 +18,13 @@ import sys
 
 
 RUN = Path(__file__).resolve().parent
+BOOTSTRAP_SPEC = importlib.util.spec_from_file_location(
+    "staged_bootstrap_for_adapter_validation", RUN / "bootstrap.py"
+)
+if BOOTSTRAP_SPEC is None or BOOTSTRAP_SPEC.loader is None:
+    raise RuntimeError("bootstrap.py is unavailable for adapter validation")
+BOOTSTRAP = importlib.util.module_from_spec(BOOTSTRAP_SPEC)
+BOOTSTRAP_SPEC.loader.exec_module(BOOTSTRAP)
 SOURCE = RUN.parent / "photo-curriculum-rl-20260922" / "run_from_sft.py"
 spec = importlib.util.spec_from_file_location("staged_photo_run_from_sft", SOURCE)
 if spec is None or spec.loader is None:
@@ -60,7 +67,7 @@ def _sha256(path: Path) -> str:
 
 
 def _adapter_environment() -> dict[str, str]:
-    """Return both exact adapter paths after checking their pinned bytes."""
+    """Return both adapter paths after checking trusted files and pinned bytes."""
 
     values: dict[str, str] = {}
     for name, expected, label in (
@@ -70,14 +77,22 @@ def _adapter_environment() -> dict[str, str]:
         raw = os.environ.get(name)
         if not raw:
             raise ValueError(f"{name} is required for the staged recovered-policy run")
-        path = Path(raw).expanduser().resolve(strict=True)
-        weights = path / "adapter_model.safetensors"
-        if not weights.is_file() or weights.is_symlink():
-            raise ValueError(f"{label} weights are missing or symlinked")
+        path = Path(raw).expanduser().absolute()
+        if path.is_symlink() or not path.is_dir():
+            raise ValueError(f"{label} adapter directory is missing or symlinked: {path}")
+        try:
+            weights = BOOTSTRAP.ensure_hf_snapshot_file(
+                path / "adapter_model.safetensors", f"{label} weights"
+            )
+            BOOTSTRAP.ensure_hf_snapshot_file(
+                path / "adapter_config.json", f"{label} config"
+            )
+        except (BOOTSTRAP.BootstrapError, OSError, RuntimeError) as exc:
+            raise ValueError(f"{label} files are not trusted Hugging Face snapshot files") from exc
         actual = _sha256(weights)
         if actual != expected:
             raise ValueError(f"{label} SHA-256 is {actual}, expected {expected}")
-        values[name] = str(path)
+        values[name] = str(path.resolve(strict=True))
     if values["WATERCOLOUR_INIT_ADAPTER"] == values["PAINTER_FROZEN_SFT_ADAPTER"]:
         raise ValueError("policy initializer and frozen SFT adapter must be distinct")
     alias = os.environ.get("PAINTER_FROZEN_SFT_ALIAS", FROZEN_SFT_ALIAS)
