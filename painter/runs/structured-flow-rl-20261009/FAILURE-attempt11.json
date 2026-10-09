@@ -1,0 +1,20 @@
+{
+  "schema": "structured-flow-failure-v1",
+  "attempt": 11,
+  "failure": "frozen_NativePaintingData_system_prompt_mutation_in_flow_hook",
+  "optimizer_updates_observed": 0,
+  "source_commit": "ff60622dea6ed598a88c1ae5efc257e0605a0d8f",
+  "public_archive_repo": "CK0607/komorebi-painter-experiments",
+  "public_archive_revision": "2832357284c031bf19286af435e0beee26be687b",
+  "public_archive_path": "runs/structured-flow-rl-20261009/evidence.tar.gz",
+  "public_archive_sha256": "b78470306390c898cf5d4421d40c515a0e182481b2eec0c3cb5c9c42dd3b8e6e",
+  "public_archive_bytes": 33750895,
+  "public_anonymous_download_verified": true,
+  "owned_node_absence_confirmed": true,
+  "price_usd_per_hour": 3.72,
+  "controller_to_release_seconds": 370.4084429740906,
+  "gpu_cost_method": "allocation receipt epoch to final release-request event log mtime; estimated rental clock, not invoice; API excluded",
+  "recurring_automation": false,
+  "gpu_clock_cost_estimate_usd": 0.4137,
+  "cumulative_gpu_clock_cost_estimate_usd": 7.9886
+}

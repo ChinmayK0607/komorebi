@@ -102,6 +102,42 @@ class StructuredFlowRunTests(unittest.TestCase):
                 os.environ.pop("PAINTER_STRUCTURED_FLOW_POLICY", None)
                 os.environ.pop("PAINTER_RL_MANIFEST", None)
 
+    def test_flow_hook_copies_frozen_pydantic_task_data(self):
+        """The real Prime models are frozen; patching must return a new task."""
+        from pydantic import BaseModel, ConfigDict
+
+        hook = load("structured_flow_prompt_hook_frozen_contract", RUN / "flow_prompt_hook.py")
+
+        class FrozenData(BaseModel):
+            model_config = ConfigDict(frozen=True)
+            task_id: str
+            reference: str
+            system_prompt: str
+
+        class FrozenTask(BaseModel):
+            model_config = ConfigDict(frozen=True)
+            data: FrozenData
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            reference = root / "brief.txt"
+            reference.write_text("Paint one orb.\n")
+            casebrief = root / "casebrief.txt"
+            casebrief.write_text("[SYSTEM]\nUse hierarchy.\n\n[USER]\nPaint one orb.\n")
+            row = {
+                "id": "case-1",
+                "casebrief": str(casebrief),
+                "casebrief_sha256": hashlib.sha256(casebrief.read_bytes()).hexdigest(),
+            }
+            task = FrozenTask(data=FrozenData(
+                task_id="case-1", reference=str(reference), system_prompt="native"
+            ))
+            patched = hook._patch_task(task, row)
+            self.assertIsNot(patched, task)
+            self.assertIsNot(patched.data, task.data)
+            self.assertEqual(task.data.system_prompt, "native")
+            self.assertIn("Use hierarchy.", patched.data.system_prompt)
+
     def test_supervisor_source_has_arm_bound_and_no_old_checkpoint_cadence(self):
         text = (RUN / "finite_supervisor.py").read_text()
         self.assertIn("base.CHECKPOINT_STEPS = ()", text)
@@ -713,6 +749,8 @@ mv "$flow_tmp" "$run_root/flow-supervision-build.json"
         self.assertIn('PAINTER_PRIME_ROLE=evaluation PAINTER_STRUCTURED_FLOW_POLICY=1', baseline)
         self.assertIn('PAINTER_PRIME_ROLE=baseline PAINTER_STRUCTURED_FLOW_POLICY=0', baseline)
         self.assertIn('evaluation-role-smoke.json', baseline)
+        self.assertIn('NativePaintingTaskset', baseline)
+        self.assertIn('evaluation_tasks_loaded', baseline)
         self.assertLess(baseline.index('evaluation-role-smoke.json'), baseline.index('setsid env CUDA_VISIBLE_DEVICES'))
         self.assertNotIn('PAINTER_PRIME_ROLE=orchestrator', baseline)
         self.assertNotIn('PAINTER_STRUCTURED_FLOW_POLICY="$PAINTER_STRUCTURED_FLOW_POLICY"', baseline)

@@ -14,6 +14,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import copy
 from pathlib import Path
 from typing import Any, Mapping
 
@@ -69,7 +70,68 @@ def _brief_from_reference(task: Any) -> str:
     return reference.read_text(encoding="utf-8").strip()
 
 
-def _patch_task(task: Any, row: Mapping[str, Any]) -> None:
+def _validated_model_copy(value: Any, updates: Mapping[str, Any]) -> Any:
+    """Return a validated copy of a Pydantic model when one is supplied.
+
+    Prime's current ``TaskData`` and ``Task`` models are frozen.  Assigning a
+    field in place works with the lightweight contract fake but raises during
+    a real taskset load.  Revalidate the complete payload so the copy keeps
+    the native model type and all immutable metadata.
+    """
+
+    model_dump = getattr(value, "model_dump", None)
+    model_validate = getattr(type(value), "model_validate", None)
+    if callable(model_dump) and callable(model_validate):
+        payload = model_dump(mode="python")
+        if not isinstance(payload, dict):
+            raise TypeError(f"cannot copy {type(value).__name__}: model_dump is not an object")
+        payload.update(updates)
+        return model_validate(payload)
+
+    # Keep compatibility with the pinned v1-style model API used by older
+    # Prime images while preferring validated parsing over raw ``copy``.
+    model_dict = getattr(value, "dict", None)
+    parse_obj = getattr(type(value), "parse_obj", None)
+    if callable(model_dict) and callable(parse_obj):
+        payload = model_dict()
+        if not isinstance(payload, dict):
+            raise TypeError(f"cannot copy {type(value).__name__}: dict is not an object")
+        payload.update(updates)
+        return parse_obj(payload)
+
+    copier = getattr(value, "model_copy", None) or getattr(value, "copy", None)
+    if callable(copier):
+        return copier(update=dict(updates))
+    # The offline contract uses a SimpleNamespace task data object.  Preserve
+    # that compatibility without mutating the original; real frozen Prime
+    # models take one of the validated branches above.
+    clone = copy.copy(value)
+    try:
+        for name, updated in updates.items():
+            setattr(clone, name, updated)
+    except (AttributeError, TypeError) as exc:
+        raise TypeError(f"task data does not support an immutable validated copy: {type(value).__name__}") from exc
+    return clone
+
+
+def _task_with_data(task: Any, data: Any) -> Any:
+    """Return ``task`` with ``data`` replaced without mutating a frozen task."""
+
+    model_copy = getattr(task, "model_copy", None)
+    if callable(model_copy):
+        return model_copy(update={"data": data})
+    copier = getattr(task, "copy", None)
+    if callable(copier):
+        return copier(update={"data": data})
+    clone = copy.copy(task)
+    try:
+        clone.data = data
+    except (AttributeError, TypeError) as exc:
+        raise TypeError(f"task does not support an immutable data replacement: {type(task).__name__}") from exc
+    return clone
+
+
+def _patch_task(task: Any, row: Mapping[str, Any]) -> Any:
     data = task.data
     casebrief_value = row.get("casebrief")
     if not isinstance(casebrief_value, str) or not casebrief_value:
@@ -82,8 +144,12 @@ def _patch_task(task: Any, row: Mapping[str, Any]) -> None:
         raise ValueError(f"casebrief user brief differs from native reference for {data.task_id}")
     marker = "\n[STRUCTURED_FLOW_POLICY]\n"
     if marker.strip() in str(data.system_prompt):
-        return
-    data.system_prompt = str(data.system_prompt) + marker + system_hint
+        return task
+    patched_data = _validated_model_copy(
+        data,
+        {"system_prompt": str(data.system_prompt) + marker + system_hint},
+    )
+    return _task_with_data(task, patched_data)
 
 
 def install() -> dict[str, Any]:
@@ -100,12 +166,13 @@ def install() -> dict[str, Any]:
 
         def load(self):
             tasks = list(original(self))
+            patched = []
             for task in tasks:
                 ident = str(task.data.task_id)
                 if ident not in rows:
                     raise ValueError(f"structured-flow task is absent from the manifest hook map: {ident}")
-                _patch_task(task, rows[ident])
-            return tasks
+                patched.append(_patch_task(task, rows[ident]))
+            return patched
 
         taskset_cls.load = load
 

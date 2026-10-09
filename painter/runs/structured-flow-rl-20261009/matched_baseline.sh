@@ -89,11 +89,30 @@ if value.get("schema") != "structured-flow-prompt-hook-v1" or not value.get("ins
     raise SystemExit(f"flow hook did not install: {value}")
 if not value.get("evaluation_taskset_patched"):
     raise SystemExit(f"evaluation taskset was not patched: {value}")
+# Loading the real taskset is the boundary that exercises frozen
+# NativePaintingData/Task models.  Do not replace this with a SimpleNamespace
+# contract: a successful import alone would miss immutable-data failures.
+from painter.native_painting import NativePaintingConfig, NativePaintingTaskset
+
+manifest = Path(os.environ["PAINTER_EVAL_MANIFEST"]).resolve()
+config = NativePaintingConfig(
+    root=str(manifest.parent),
+    manifest=str(manifest),
+    expected_count=16,
+    max_turns=3,
+    policy_label="flash12-pre-warmup",
+)
+tasks = list(NativePaintingTaskset(config).load())
+if len(tasks) != 16:
+    raise SystemExit(f"evaluation taskset loaded {len(tasks)} tasks, expected 16")
+if any("[STRUCTURED_FLOW_POLICY]" not in str(task.data.system_prompt) for task in tasks):
+    raise SystemExit("structured flow hint missing from a loaded evaluation task")
 print(json.dumps({
     "role": os.environ["PAINTER_PRIME_ROLE"],
     "flow_policy": os.environ["PAINTER_STRUCTURED_FLOW_POLICY"],
     "flow_hook_installed": True,
     "evaluation_taskset_patched": True,
+    "evaluation_tasks_loaded": len(tasks),
 }, sort_keys=True))
 PY
 SERVER_PID=""

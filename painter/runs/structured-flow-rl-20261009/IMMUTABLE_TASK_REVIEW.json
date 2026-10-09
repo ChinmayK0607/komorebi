@@ -1,0 +1,26 @@
+{
+  "schema": "structured-flow-parent-review-v1",
+  "date_utc": "2026-10-09",
+  "failure_source_commit": "ff60622dea6ed598a88c1ae5efc257e0605a0d8f",
+  "failure": "mutating frozen Pydantic task data during actual taskset load",
+  "reviewed_changes": [
+    "validated immutable copy of task data",
+    "copy task wrapper and return patched tasks from both taskset hooks",
+    "real 16-task evaluator load before vLLM startup"
+  ],
+  "parent_validation": {
+    "structured_unit_tests": 93,
+    "all_passed": true,
+    "shell_syntax": true,
+    "python_compile": true,
+    "diff_check": true,
+    "actual_linux_task_load_pending": true
+  },
+  "experiment_changed": false,
+  "rl_updates": 20,
+  "sft_updates": 4,
+  "next_gpu_allowance_usd": 11.75,
+  "prior_gpu_reserve_usd": 8.25,
+  "cumulative_gpu_ceiling_usd": 20,
+  "recurring_automation": false
+}
