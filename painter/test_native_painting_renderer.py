@@ -2,6 +2,7 @@ import hashlib
 import json
 import os
 import subprocess
+import sys
 import tempfile
 import threading
 import unittest
@@ -89,6 +90,26 @@ class NativePaintingRendererTests(unittest.TestCase):
             command = run.call_args.args[0]
             self.assertEqual(command[command.index("--timeout") + 1], "177")
             self.assertEqual(run.call_args.kwargs["timeout"], 197)
+            self.assertEqual(run.call_args.kwargs["env"]["PAINTER_PRIME_ROLE"], "renderer")
+
+    def test_renderer_interpreter_starts_with_renderer_role_without_rendering(self):
+        """The lightweight child startup cannot activate the RL guard."""
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            environment = renderer_module._renderer_child_environment(root)
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    "-c",
+                    "import os; print(os.environ['PAINTER_PRIME_ROLE'])",
+                ],
+                env=environment,
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(result.stdout.strip(), "renderer")
 
     def test_deadline_rejects_out_of_range_values(self):
         for value in ("0", "181", "not-an-int"):

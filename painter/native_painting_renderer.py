@@ -316,6 +316,18 @@ def render_timeout_seconds() -> int:
     return value
 
 
+def _renderer_child_environment(root: Path) -> dict[str, str]:
+    """Return the environment for the isolated renderer interpreter."""
+
+    child_env = os.environ.copy()
+    # The renderer is a lightweight, untrusted task process.  It must never
+    # inherit the RL orchestrator role, which activates Prime-only guards in
+    # environments that contain only the renderer dependencies.
+    child_env["PAINTER_PRIME_ROLE"] = "renderer"
+    child_env.setdefault("PLAYWRIGHT_BROWSERS_PATH", str(root / "browsers"))
+    return child_env
+
+
 def _run_js_syntax_preflight(source: Path) -> str | None:
     """Check JavaScript Script grammar without executing the submitted code.
 
@@ -421,11 +433,7 @@ def render_action(
         str(renderer), str(source), "--output", str(output), "--timeout", str(deadline_seconds),
         "--backend", "swiftshader",
     ]
-    child_env = os.environ.copy()
-    # The node bootstrap stores Playwright in the run workspace.  Explicitly
-    # pass that location so eval workers launched by vf/Prime do not fall back
-    # to a per-user cache under /tmp.
-    child_env.setdefault("PLAYWRIGHT_BROWSERS_PATH", str(root / "browsers"))
+    child_env = _renderer_child_environment(root)
     completed = _run_renderer_process(
         command,
         env=child_env,
