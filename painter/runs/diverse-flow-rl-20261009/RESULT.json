@@ -60,10 +60,13 @@
     "completed_rollouts": 391,
     "scored_rollouts": 369,
     "censored_rollouts": 22,
-    "trainer_annotated_rollouts": 267,
+    "trainer_annotation_records": 267,
+    "unique_trainer_annotated_rollouts": 240,
+    "duplicate_trainer_annotation_records": 27,
     "optimizer_consumed_rollouts": 240,
-    "buffered_at_stop": 27,
-    "completed_but_not_trainer_annotated": 124,
+    "completed_but_not_trainer_annotated": 151,
+    "groups_with_uncertain_judgment": 19,
+    "scored_sibling_rollouts_discarded_with_uncertain_groups": 51,
     "groups_observed": 105,
     "groups_without_reward_contrast": 11,
     "stage_mean_rewards": {
@@ -73,20 +76,30 @@
       "stage_4_simple_scenes": 0.2622
     },
     "family_exposure_range": [10, 27],
-    "conclusion": "The balanced-mixed manifest was not an advancing curriculum. Asynchronous completion, whole-group censorship and cancellation produced uneven family exposure and substantial rollout waste; spatial-pair tasks had the weakest reward signal. A subsequent run needs stratified family sampling, explicit stage advancement, and a judge-uncertainty recovery policy rather than more mixed sampling."
+    "conclusion": "The balanced-mixed manifest was not an advancing curriculum. Asynchronous completion, whole-group censorship and cancellation produced uneven family exposure and substantial rollout waste; spatial-pair tasks had the weakest reward signal. A subsequent run needs stratified family sampling, explicit stage advancement, and refill or partial-group handling for judge uncertainty rather than fabricated rewards or more mixed sampling."
   },
   "renderer_profile": {
-    "receipts": 1041,
+    "profile_scope": "all recovered-v11 training painting receipts",
+    "receipts": 1081,
     "valid": 793,
-    "seconds_p50": 6.686,
-    "seconds_p90": 22.729,
-    "seconds_p95": 40.287,
+    "seconds_p50": 6.692,
+    "seconds_p95": 39.936,
     "seconds_p99": 180.073,
     "seconds_max": 180.088,
-    "over_30_seconds": 71,
-    "over_60_seconds": 46,
-    "over_120_seconds": 39,
+    "at_or_over_120_seconds": 40,
+    "hard_timeouts": 35,
+    "tail_without_no_loop": 24,
+    "tail_with_no_loop": 16,
     "conclusion": "The median is usable, but the approximately 180-second tail caused cancellations and wasted inference work."
+  },
+  "renderer_repair": {
+    "source_commit": "0f2b060",
+    "hard_cap_seconds": 90,
+    "process_grace_seconds": 5,
+    "missing_no_loop_preflight": true,
+    "explicit_parent_watchdog_receipts": true,
+    "historical_tradeoff": "The 90-second cap would have shortened 37 invalid receipts and censored 6 historically valid slow receipts; the noLoop preflight would have rejected 24 of the >=120-second tail cases before browser launch.",
+    "focused_tests": "44 passed"
   },
   "utilization": {
     "measurement_window": "409 one-second samples from RL start",
