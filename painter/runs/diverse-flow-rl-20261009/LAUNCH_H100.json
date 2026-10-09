@@ -1,0 +1,49 @@
+{
+  "budget": {
+    "attempt_cap_usd": 15.0,
+    "campaign_cumulative_before_attempt_usd": 4.401026322174072,
+    "gpu_only": true,
+    "whole_node_rate_usd_per_hour": 3.7
+  },
+  "evidence_at_observation": {
+    "matched_baseline_reused_without_generation": true,
+    "optimizer_updates": 0,
+    "post_sft_evaluation": "completed_remotely_but_not_preserved",
+    "public_sft_adapter_hash_verified": true,
+    "supervision_split": {
+      "dev_rows": 5,
+      "train_rows": 12
+    }
+  },
+  "hardware": {
+    "gpu_memory_mib_each": 81559,
+    "inference_gpus": 1,
+    "profile": "h100_2",
+    "trainer_gpus": 1,
+    "whole_node_gpus": 2
+  },
+  "immutable_inputs": {
+    "frozen_sft_prefix": "photo-curriculum-sft-20260922-balanced/step_512",
+    "frozen_sft_revision": "adf687e5b321514eda7be6eab050434fdc8e44ff",
+    "policy_initializer_prefix": "rl-judge-matched-20261004-flash/step_12",
+    "policy_initializer_revision": "1227a2427a8ae16014d2fdca4d1adb6855d3fa1c",
+    "prime_commit": "26b3131d2716a4f8210b165df584b83b4bc54f61",
+    "source_bundle_sha256": "758ffee50cf8fb7490827f9c4d91f7ae287a431e909586f18f54e52d584061a8",
+    "source_commit": "be3e56d9cfac5b0e4bcc15186ff0561830b13b16"
+  },
+  "planned_scope": {
+    "checkpoint_steps": [
+      4,
+      8,
+      12,
+      16,
+      20
+    ],
+    "heldout_rows": 32,
+    "judge": "xiaomi/mimo-v2.6-flash",
+    "requested_rl_updates": 20,
+    "train_rows": 96
+  },
+  "schema": "diverse-flow-h100-launch-v1",
+  "status": "failed_before_rl_and_released"
+}

@@ -1,0 +1,46 @@
+{
+  "accounting": {
+    "api_cost_included": false,
+    "campaign_cumulative_before_attempt_usd": 4.401026322174072,
+    "conservative_gpu_estimate_usd": 0.943066,
+    "elapsed_seconds_through_release_request": 917.5782840251923,
+    "estimated_campaign_cumulative_usd": 5.344092322174072,
+    "not_an_invoice": true,
+    "remaining_under_20_usd_campaign_ceiling": 14.655907677825928,
+    "whole_node_rate_usd_per_hour": 3.7
+  },
+  "completed_scope": {
+    "matched_baseline_reused_without_generation": true,
+    "post_sft_evaluation_reached_terminal_generation_before_rl_preparation": true,
+    "public_sft_adapter_hash_verified": true,
+    "rl_optimizer_updates": 0,
+    "supervision_split": {
+      "dev_rows": 5,
+      "train_rows": 12
+    }
+  },
+  "evidence_limitations": [
+    "The controller rejected the remote summary before archive recovery, then released the node as designed.",
+    "The completed remote post-SFT panel was not copied or uploaded before release and is not treated as a result.",
+    "Observed live artifact counts were progress indicators, not a preserved auditable evaluation result."
+  ],
+  "failure": {
+    "controller_message": "remote inference topology does not match hardware profile h100_2",
+    "root_cause": "The shared remote summary intentionally projected only generic rl-config fields. The diverse-flow wrapper refreshed update and checkpoint fields but did not copy inference_parallelism from the verified rl-config receipt, so strict h100_2 validation compared a missing field with tensor_parallel_size=1 and failed closed.",
+    "stage": "controller validation after post-SFT evaluation and before RL launch"
+  },
+  "hardware": {
+    "gpu_memory_mib_each": 81559,
+    "profile": "h100_2",
+    "whole_node_gpus": 2
+  },
+  "immutable_inputs": {
+    "prime_commit": "26b3131d2716a4f8210b165df584b83b4bc54f61",
+    "source_bundle_sha256": "758ffee50cf8fb7490827f9c4d91f7ae287a431e909586f18f54e52d584061a8",
+    "source_commit": "be3e56d9cfac5b0e4bcc15186ff0561830b13b16"
+  },
+  "next_decision": "Add inference_parallelism and deployment to the run-specific remote summary projection, prove exact h100_2 acceptance and wrong-or-missing topology rejection, then retry from the same public SFT adapter and matched baseline under the remaining campaign ceiling.",
+  "node_status": "released_and_provider_inventory_empty",
+  "schema": "diverse-flow-h100-failure-v1",
+  "status": "infrastructure_failure_before_rl"
+}

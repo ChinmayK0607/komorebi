@@ -516,6 +516,12 @@ def _remote_summary(*args, **kwargs):
                     "updates": receipt.get("updates"),
                     "requested_updates": receipt.get("requested_updates", receipt.get("updates")),
                     "checkpoint_steps": receipt.get("checkpoint_steps"),
+                    # The shared controller summary deliberately omits these
+                    # run-specific topology fields.  Refresh both from the
+                    # receipt so validation observes the exact config that
+                    # was prepared for the selected hardware profile.
+                    "deployment": receipt.get("deployment"),
+                    "inference_parallelism": receipt.get("inference_parallelism"),
                 })
         except Exception:
             # The shared summary has already captured the bounded observation;

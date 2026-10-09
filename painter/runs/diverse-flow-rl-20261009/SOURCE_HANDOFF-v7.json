@@ -1,0 +1,30 @@
+{
+  "anonymous_verification": {
+    "bytes_match": true,
+    "sha256": "758ffee50cf8fb7490827f9c4d91f7ae287a431e909586f18f54e52d584061a8"
+  },
+  "bundle": {
+    "bytes": 3943113,
+    "git_commit": "be3e56d9cfac5b0e4bcc15186ff0561830b13b16",
+    "sha256": "758ffee50cf8fb7490827f9c4d91f7ae287a431e909586f18f54e52d584061a8"
+  },
+  "public_source": {
+    "path": "execution-source/diverse-flow-rl-20261009/be3e56d9cfac5b0e4bcc15186ff0561830b13b16/source.bundle",
+    "repository": "CK0607/komorebi-painter-experiments",
+    "repository_type": "dataset",
+    "revision": "c7ea2e18733599f76e0457276faaab731866e195"
+  },
+  "review": {
+    "hardware_profiles": [
+      "l40s_4",
+      "h100_2"
+    ],
+    "h100_dry_run": "one trainer plus one inference GPU, public step-4 SFT resume required",
+    "offline_tests_passed": 51,
+    "python_compile": "passed",
+    "shell_parse": "passed",
+    "source_diff_check": "passed"
+  },
+  "schema": "diverse-flow-public-source-handoff-v7",
+  "status": "public_anonymously_hash_verified"
+}
