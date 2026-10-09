@@ -1,0 +1,26 @@
+{
+  "anonymous_verification": {
+    "bytes_match": true,
+    "sha256": "866288cbbdc0659a3a83d99082a9eb4eef183caccbb7f2602cdb6effaf7b1316"
+  },
+  "bundle": {
+    "bytes": 3948659,
+    "git_commit": "a3bb0157be628db9a774b7dca1b0894d166ecb04",
+    "sha256": "866288cbbdc0659a3a83d99082a9eb4eef183caccbb7f2602cdb6effaf7b1316"
+  },
+  "public_source": {
+    "path": "execution-source/diverse-flow-rl-20261009/a3bb0157be628db9a774b7dca1b0894d166ecb04/source.bundle",
+    "repository": "CK0607/komorebi-painter-experiments",
+    "repository_type": "dataset",
+    "revision": "dbafbdfa019fc45b4359976de024d4185bf6731f"
+  },
+  "review": {
+    "offline_tests_passed": 53,
+    "python_compile": "passed",
+    "remote_summary_h100_acceptance": "passed",
+    "remote_summary_missing_or_wrong_topology_rejection": "passed",
+    "source_diff_check": "passed"
+  },
+  "schema": "diverse-flow-public-source-handoff-v8",
+  "status": "public_anonymously_hash_verified"
+}
