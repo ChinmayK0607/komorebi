@@ -546,9 +546,15 @@ def materialize_manifest(
     if selected is not None and len(selected) != len(selected_ids or ()):
         raise ValueError("selected_ids must be unique")
     admitted: list[dict[str, Any]] = []
-    for row in rows:
-        if selected is not None and str(row["id"]) not in selected:
-            continue
+    if selected is None:
+        selected_rows = rows
+    else:
+        by_id = {str(row["id"]): row for row in rows}
+        if not selected <= set(by_id):
+            missing = sorted(selected - set(by_id))
+            raise ValueError(f"selected IDs are absent from proposal: {missing[:3]}")
+        selected_rows = [by_id[ident] for ident in selected_ids or ()]
+    for row in selected_rows:
         admitted.append(_admitted_row(row, proposal, anchor_root, checkpoint_sha256, provenance))
     if selected is not None and {str(row["id"]) for row in admitted} != selected:
         missing = sorted(selected - {str(row["id"]) for row in admitted})
@@ -676,8 +682,14 @@ def materialize_pilot_manifests(
     anchor_root: Path,
     *,
     frozen_sft512_checkpoint_sha256: str,
+    admitted_train_ids: Sequence[str] | None = None,
 ) -> dict[str, Any]:
-    """Materialize only the 32/16 pilot after verifying its anchors."""
+    """Materialize the registered first-32/16 pilot after verifying anchors.
+
+    ``admitted_train_ids`` is an optional train-only censoring result.  It must
+    be a subset of the deterministic first-32 plan; heldout selection is never
+    reduced or substituted.
+    """
 
     checkpoint_sha256 = _validate_checkpoint_hash(frozen_sft512_checkpoint_sha256)
     train_proposal = train_proposal.expanduser().resolve()
@@ -690,6 +702,15 @@ def materialize_pilot_manifests(
     if train_doc.get("schema") != SCHEMA or heldout_doc.get("schema") != SCHEMA:
         raise ValueError("pilot requires structured-flow proposals")
     plan = build_pilot_plan(train_doc.get("rows", []), heldout_doc.get("rows", []))
+    selected_train_ids = list(plan["train_ids"])
+    if admitted_train_ids is not None:
+        selected_train_ids = [str(ident) for ident in admitted_train_ids]
+        if len(selected_train_ids) != len(set(selected_train_ids)):
+            raise ValueError("admitted_train_ids must be unique")
+        if not set(selected_train_ids) <= set(plan["train_ids"]):
+            raise ValueError("admitted train IDs must be a subset of the registered first-32 pilot")
+        if not 24 <= len(selected_train_ids) <= len(plan["train_ids"]):
+            raise ValueError("admitted train count must be in [24, 32]")
     output_dir.mkdir(parents=True, exist_ok=True)
     train_result = materialize_manifest(
         train_proposal,
@@ -697,7 +718,7 @@ def materialize_pilot_manifests(
         anchor_root,
         split="train",
         frozen_sft512_checkpoint_sha256=checkpoint_sha256,
-        selected_ids=plan["train_ids"],
+        selected_ids=selected_train_ids,
     )
     heldout_result = materialize_manifest(
         heldout_proposal,
@@ -712,6 +733,8 @@ def materialize_pilot_manifests(
         "run_id": RUN_ID,
         "status": "prepared_with_verified_anchors",
         "pilot_plan": plan,
+        "registered_train_ids": list(plan["train_ids"]),
+        "admitted_train_ids": selected_train_ids,
         "frozen_sft512_checkpoint_sha256": checkpoint_sha256,
         "train": train_result,
         "heldout": heldout_result,

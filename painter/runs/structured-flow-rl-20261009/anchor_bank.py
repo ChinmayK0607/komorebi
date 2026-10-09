@@ -50,6 +50,7 @@ MAX_COMPLETION_TOKENS = 8192
 CONTEXT_LENGTH = 32768
 MAX_GENERATION_WORKERS = 8
 MAX_ANCHOR_RESAMPLES = 1
+MIN_ADMITTED_TRAIN_ROWS = 24
 
 
 def _browser_root(run_root: Path) -> Path:
@@ -279,7 +280,7 @@ def prepare_lazy(*, train_proposal: Path, heldout_proposal: Path, train_output: 
     return {"status": train_doc["status"], "train_rows": len(train_rows), "heldout_cases": len(heldout_rows)}
 
 def _is_final(doc: Mapping[str, Any], expected: int) -> bool:
-    rows = doc.get("rows")
+    rows = doc.get("rows") or doc.get("cases")
     return (
         isinstance(rows, list)
         and len(rows) == expected
@@ -782,6 +783,55 @@ def _batch_with_bounded_resample(
     return provenance, failures
 
 
+def _failure_attempts(record: Mapping[str, Any]) -> list[dict[str, Any]]:
+    """Return the chronological attempts represented by a failure record."""
+    nested = [record[key] for key in ("initial", "retry") if isinstance(record.get(key), Mapping)]
+    if nested:
+        return [dict(value) for value in nested]
+    return [dict(record)]
+
+
+def _classify_train_censoring(
+    train_rows: list[Mapping[str, Any]],
+    heldout_rows: list[Mapping[str, Any]],
+    failures: Mapping[str, Mapping[str, Any]],
+) -> tuple[set[str], list[dict[str, Any]]]:
+    """Admit only bounded model-invalid train failures for censoring.
+
+    The registered pilot IDs are fixed before generation.  A heldout failure,
+    an infrastructure/unavailable status, or a failure outside that pilot is
+    always fatal.  This function performs no retry or model call.
+    """
+    train_ids = {str(row["id"]) for row in train_rows}
+    heldout_ids = {str(row["id"]) for row in heldout_rows}
+    excluded: set[str] = set()
+    records: list[dict[str, Any]] = []
+    for case_id, record in sorted(failures.items()):
+        attempts = _failure_attempts(record)
+        statuses = {str(attempt.get("status") or "") for attempt in attempts}
+        if case_id in heldout_ids:
+            raise RuntimeError(f"heldout anchor failed; censoring is train-only: {case_id}")
+        if case_id not in train_ids:
+            raise RuntimeError(f"anchor failure is outside the registered pilot: {case_id}")
+        if not statuses or statuses != {"invalid_model_output"}:
+            raise RuntimeError(f"anchor failure is infrastructure or otherwise non-censorable: {case_id}")
+        latest_retry = max(int(attempt.get("retry_index", -1)) for attempt in attempts)
+        if latest_retry != MAX_ANCHOR_RESAMPLES:
+            raise RuntimeError(f"anchor failure has not exhausted the bounded retry: {case_id}")
+        excluded.add(case_id)
+        records.append({
+            "case_id": case_id,
+            "reason": "invalid_model_output_after_bounded_retry",
+            "attempts": attempts,
+        })
+    admitted = len(train_rows) - len(excluded)
+    if admitted < MIN_ADMITTED_TRAIN_ROWS:
+        raise RuntimeError(
+            f"censoring would leave only {admitted} train anchors; minimum is {MIN_ADMITTED_TRAIN_ROWS}"
+        )
+    return excluded, records
+
+
 def materialize(*, train_manifest: Path, heldout_manifest: Path, anchor_root: Path, output_dir: Path, run_root: Path) -> dict[str, Any]:
     train_manifest = train_manifest.resolve()
     heldout_manifest = heldout_manifest.resolve()
@@ -792,10 +842,14 @@ def materialize(*, train_manifest: Path, heldout_manifest: Path, anchor_root: Pa
     heldout_doc = json.loads(heldout_manifest.read_text(encoding="utf-8"))
     train_rows = _rows(train_manifest)
     heldout_rows = _rows(heldout_manifest)
-    if _is_final(train_doc, 32) and _is_final(heldout_doc, 16):
-        return {"status": "already_materialized", "train_rows": 32, "heldout_cases": 16}
+    if _is_final(heldout_doc, 16) and _is_final(train_doc, len(train_rows)) and MIN_ADMITTED_TRAIN_ROWS <= len(train_rows) <= 32:
+        return {"status": "already_materialized", "train_rows": len(train_rows), "heldout_cases": 16}
     if len(train_rows) != 32 or len(heldout_rows) != 16:
-        raise ValueError("lazy pilot must contain exactly 32 train and 16 heldout rows")
+        raise ValueError("lazy pilot must contain exactly 32 train and 16 heldout rows before admission")
+    original_train_manifest_sha256 = sha256_file(train_manifest)
+    original_heldout_manifest_sha256 = sha256_file(heldout_manifest)
+    registered_train_ids = [str(row["id"]) for row in train_rows]
+    registered_heldout_ids = [str(row["id"]) for row in heldout_rows]
     anchor_root.mkdir(parents=True, exist_ok=True)
     receipt_root = anchor_root / "native-generation"
     receipt_root.mkdir(parents=True, exist_ok=True)
@@ -826,6 +880,7 @@ def materialize(*, train_manifest: Path, heldout_manifest: Path, anchor_root: Pa
         "resume_protocol": RESUME_PROTOCOL,
         "anchors": provenance,
     })
+    excluded_train_ids, exclusions = _classify_train_censoring(train_rows, heldout_rows, failures)
     if failures:
         failure_path = anchor_root / "native-generation" / "anchor-failures.json"
         _write_json(failure_path, {
@@ -834,8 +889,9 @@ def materialize(*, train_manifest: Path, heldout_manifest: Path, anchor_root: Pa
             "max_resamples": MAX_ANCHOR_RESAMPLES,
             "failures": failures,
         })
-        failed_ids = ", ".join(sorted(failures))
-        raise RuntimeError(f"frozen anchor generation left invalid model outputs after one resample: {failed_ids}")
+        if not exclusions:
+            failed_ids = ", ".join(sorted(failures))
+            raise RuntimeError(f"frozen anchor generation left non-censorable failures: {failed_ids}")
 
     train_proposal = proposal_root / "train-proposal.json"
     heldout_proposal = proposal_root / "heldout-proposal.json"
@@ -859,19 +915,75 @@ def materialize(*, train_manifest: Path, heldout_manifest: Path, anchor_root: Pa
         output_root=staging,
         frozen_sft512_checkpoint_sha256=CHECKPOINT_SHA256,
         flow_policy_enabled=os.environ.get("PAINTER_STRUCTURED_FLOW_POLICY") == "1",
+        excluded_train_ids=excluded_train_ids,
+        registered_train_ids=registered_train_ids,
     )
     final_train = staging / "pilot-train-manifest.json"
     final_eval = staging / "matched16-manifest.json"
+    staged_train_doc = json.loads(final_train.read_text(encoding="utf-8"))
+    staged_eval_doc = json.loads(final_eval.read_text(encoding="utf-8"))
+    staged_train_rows = staged_train_doc.get("rows")
+    staged_eval_rows = staged_eval_doc.get("cases") or staged_eval_doc.get("rows")
+    expected_admitted_ids = [ident for ident in registered_train_ids if ident not in excluded_train_ids]
+    if [str(row.get("id")) for row in staged_train_rows or []] != expected_admitted_ids:
+        raise RuntimeError("materializer changed the registered train selection before censoring")
+    if [str(row.get("id")) for row in staged_eval_rows or []] != registered_heldout_ids:
+        raise RuntimeError("materializer changed the registered heldout selection")
+    original_train_path = staging / "pilot-train-manifest-original.json"
+    original_eval_path = staging / "pilot-heldout-manifest-original.json"
+    # Preserve the registered lazy 32/16 handoff explicitly as unadmitted
+    # source evidence; the native materializer has already selected and
+    # verified only the admitted train IDs above.
+    shutil.copyfile(train_manifest, original_train_path)
+    shutil.copyfile(heldout_manifest, original_eval_path)
+    if excluded_train_ids:
+        staged_train_doc["status"] = "admitted_with_verified_frozen_sft512_anchors_censored_model_invalid"
+        _write_json(final_train, staged_train_doc)
+    materialization_receipt = staging / "pilot-materialization-receipt.json"
+    if materialization_receipt.is_file():
+        receipt = json.loads(materialization_receipt.read_text(encoding="utf-8"))
+        receipt["status"] = "prepared_with_verified_anchors_and_train_censoring" if excluded_train_ids else receipt.get("status")
+        receipt["train_rows"] = len(staged_train_rows)
+        receipt["original_train_rows"] = len(registered_train_ids)
+        receipt["excluded_train_ids"] = sorted(excluded_train_ids)
+        receipt["train_manifest_sha256"] = sha256_file(final_train)
+        _write_json(materialization_receipt, receipt)
+    _write_json(staging / "anchor-admission.json", {
+        "schema": "structured-flow-anchor-admission-v1",
+        "registered_train_count": len(registered_train_ids),
+        "registered_heldout_count": len(registered_heldout_ids),
+        "admitted_train_count": len(staged_train_rows),
+        "admitted_heldout_count": len(staged_eval_rows),
+        "registered_train_ids": registered_train_ids,
+        "registered_heldout_ids": registered_heldout_ids,
+        "excluded_train_ids": sorted(excluded_train_ids),
+        "excluded_train": exclusions,
+        "registered_train_manifest_sha256": original_train_manifest_sha256,
+        "registered_heldout_manifest_sha256": original_heldout_manifest_sha256,
+        "original_train_manifest_sha256": sha256_file(original_train_path),
+        "original_heldout_manifest_sha256": sha256_file(original_eval_path),
+        "admitted_train_manifest_sha256": sha256_file(final_train),
+        "admitted_heldout_manifest_sha256": sha256_file(final_eval),
+        "max_resamples": MAX_ANCHOR_RESAMPLES,
+        "minimum_admitted_train_rows": MIN_ADMITTED_TRAIN_ROWS,
+    })
     shutil.copyfile(final_train, train_manifest.with_name(train_manifest.name + ".final.tmp"))
     Path(train_manifest.with_name(train_manifest.name + ".final.tmp")).replace(train_manifest)
     shutil.copyfile(final_eval, heldout_manifest.with_name(heldout_manifest.name + ".final.tmp"))
     Path(heldout_manifest.with_name(heldout_manifest.name + ".final.tmp")).replace(heldout_manifest)
     # Preserve the official named artifacts alongside the replaced config path.
-    for name in ("pilot-train-manifest.json", "pilot-heldout-manifest.json", "matched16-manifest.json", "pilot-manifest-receipt.json", "pilot-materialization-receipt.json"):
+    for name in ("pilot-train-manifest.json", "pilot-heldout-manifest.json", "matched16-manifest.json", "pilot-train-manifest-original.json", "pilot-heldout-manifest-original.json", "pilot-manifest-receipt.json", "pilot-materialization-receipt.json", "anchor-admission.json"):
         source = staging / name
         if source.is_file():
             shutil.copyfile(source, run_root / "curriculum" / name)
-    return {"status": "materialized", "train_rows": 32, "heldout_cases": 16, "anchor_provenance": str(anchor_root / curriculum.ANCHOR_PROVENANCE_FILE)}
+    return {
+        "status": "materialized",
+        "train_rows": len(staged_train_rows),
+        "heldout_cases": 16,
+        "excluded_train_ids": sorted(excluded_train_ids),
+        "anchor_provenance": str(anchor_root / curriculum.ANCHOR_PROVENANCE_FILE),
+        "anchor_admission": str(run_root / "curriculum" / "anchor-admission.json"),
+    }
 
 
 def main(argv: list[str] | None = None) -> int:

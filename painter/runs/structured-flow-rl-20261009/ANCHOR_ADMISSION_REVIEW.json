@@ -1,0 +1,43 @@
+{
+  "actual_archive_sha256": "1e72323dfd9bdcf97f857708b02e2b22deebee125c30dbff7488702cfb3896a8",
+  "actual_new_model_calls": 0,
+  "actual_parent_exercise": "build_proposal -> public-archive restore -> prepare_lazy -> real anchor_bank.materialize -> repeat materialize; matching archived renderer identities; model generation patched to raise",
+  "admitted_counts": {
+    "heldout": 16,
+    "train": 31
+  },
+  "diff_check": "passed",
+  "excluded_train_ids": [
+    "sf-s2-tr-connected-bicycle-00"
+  ],
+  "focused_tests_passed": 75,
+  "gpu_budget": {
+    "next_allowance_usd": 14.75,
+    "previous_start_reserve_usd": 5.25,
+    "total_ceiling_usd": 20
+  },
+  "limitations": [
+    "No new local rendering, model inference or optimizer update was performed.",
+    "RL missing-noLoop early rejection remains unimplemented; malformed programs may consume the native timeout.",
+    "Only confirmed model-invalid training anchors after one retry can be censored; heldout and infrastructure failures are not scored or censored."
+  ],
+  "recurring_automation_created": false,
+  "registered_counts": {
+    "heldout": 16,
+    "train": 32
+  },
+  "repeated_materialization_status": "already_materialized",
+  "schema": "structured-flow-anchor-admission-parent-review-v1",
+  "shell_syntax": "passed",
+  "source_sha256": {
+    "anchor_bank.py": "d713daedb8420be10c62484c826bf098c7a77f51f15ea0b9e22435198b90c728",
+    "materialize.py": "3e8755c4c5bc045e151aad6e5c8f68ad69cf03b98e4b60307a8a9a8984e620ec",
+    "node_validate.py": "93df4af0763caed35bb4ff49be516f75453d5126891aab793dfb075348073973",
+    "prepare_curriculum.py": "389ef518c8f0c28b3c8a891076c4b6c1837aecd094c1703a4766dfc5a6c4b811",
+    "prepare_node.sh": "acd3bbf6d73761facfc30f5dea8847bcc6d1a8d37c2edb55758fa409d3ddf038",
+    "run_from_sft.py": "67f9f0cdd473366667fef3c7ec945e3bc918a5c47fff8fa4762746e5fd0a1ec7",
+    "test_anchor_admission.py": "3f02599d1c7a21360aa4f8190d275321b5c9d6b98af2ece5e3c8ce9d8390e029",
+    "test_prepare_curriculum.py": "511808eede014de381238ef61931a15698219a6e8ba0380a0080344acc8acff5",
+    "test_run_contract.py": "a58631dbad574c554ea67ab8f0c870c3f29c8384c16be2ad9245bef977e5204c"
+  }
+}

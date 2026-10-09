@@ -126,6 +126,29 @@ class StructuredFlowCurriculumTests(unittest.TestCase):
                 self.assertEqual(row["frozen_sft512_checkpoint_sha256"], CHECKPOINT)
                 self.assertEqual(MODULE.sha256_file(Path(row["opponent"])), row["opponent_sha256"])
 
+    def test_selected_materialization_preserves_registered_order_and_rejects_missing_ids(self):
+        with TemporaryDirectory() as temp:
+            root = Path(temp)
+            proposal, anchors, _ = self._build_with_anchors(root / "complete")
+            proposal_rows = json.loads(proposal.read_text())["rows"]
+            selected = [str(proposal_rows[1]["id"]), str(proposal_rows[0]["id"])]
+            output = root / "selected.json"
+            MODULE.materialize_manifest(
+                proposal, output, anchors,
+                frozen_sft512_checkpoint_sha256=CHECKPOINT,
+                selected_ids=selected,
+            )
+            self.assertEqual(
+                [row["id"] for row in json.loads(output.read_text())["rows"]],
+                selected,
+            )
+            with self.assertRaisesRegex(ValueError, "absent"):
+                MODULE.materialize_manifest(
+                    proposal, root / "missing.json", anchors,
+                    frozen_sft512_checkpoint_sha256=CHECKPOINT,
+                    selected_ids=[selected[0], "not-registered"],
+                )
+
     def test_stage_manifests_keep_unique_ids_and_exact_quarter_replay(self):
         with TemporaryDirectory() as temp:
             root = Path(temp)

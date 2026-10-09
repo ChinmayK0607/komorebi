@@ -86,6 +86,8 @@ def materialize_pilot(
     output_root: Path,
     frozen_sft512_checkpoint_sha256: str = CHECKPOINT_SHA256,
     flow_policy_enabled: bool = False,
+    excluded_train_ids: set[str] | None = None,
+    registered_train_ids: list[str] | None = None,
 ) -> dict[str, Any]:
     if frozen_sft512_checkpoint_sha256 != CHECKPOINT_SHA256:
         raise ValueError("the pilot is bound to the immutable SFT512 checkpoint hash")
@@ -96,12 +98,26 @@ def materialize_pilot(
     if output_root.exists() and any(output_root.iterdir()):
         raise FileExistsError(f"refusing to overwrite nonempty materialization root: {output_root}")
     output_root.mkdir(parents=True, exist_ok=True)
+    excluded_train_ids = set(excluded_train_ids or ())
+    pilot_plan = curriculum.build_pilot_plan(
+        json.loads(train_proposal.read_text(encoding="utf-8")).get("rows", []),
+        json.loads(heldout_proposal.read_text(encoding="utf-8")).get("rows", []),
+    )
+    registered_train_ids = [str(ident) for ident in (registered_train_ids or pilot_plan["train_ids"])]
+    if len(registered_train_ids) != len(set(registered_train_ids)) or set(registered_train_ids) != set(pilot_plan["train_ids"]):
+        raise ValueError("registered train IDs must equal the deterministic first-32 pilot")
+    if not excluded_train_ids <= set(registered_train_ids):
+        raise ValueError("censored train IDs are outside the registered first-32 pilot")
+    admitted_train_ids = [ident for ident in registered_train_ids if ident not in excluded_train_ids]
+    if not 24 <= len(admitted_train_ids) <= 32:
+        raise ValueError("censoring would leave fewer than 24 admitted train rows")
     # The curriculum module owns pilot selection and provenance checks.  Keep
     # that contract in one place so later additions (trace IDs, source groups,
     # or stage balancing) cannot weaken this wrapper.
     curriculum.materialize_pilot_manifests(
         train_proposal, heldout_proposal, output_root, anchor_root,
         frozen_sft512_checkpoint_sha256=frozen_sft512_checkpoint_sha256,
+        admitted_train_ids=admitted_train_ids,
     )
     train_path = output_root / "pilot-train-manifest.json"
     heldout_path = output_root / "pilot-heldout-manifest.json"
@@ -109,8 +125,13 @@ def materialize_pilot(
     heldout_doc = json.loads(heldout_path.read_text(encoding="utf-8"))
     train = train_doc.get("rows")
     heldout = heldout_doc.get("cases") or heldout_doc.get("rows")
-    if not isinstance(train, list) or not isinstance(heldout, list) or len(train) != 32 or len(heldout) != 16:
-        raise ValueError("curriculum pilot materializer did not produce the required 32/16 manifests")
+    if not isinstance(train, list) or not isinstance(heldout, list) or len(train) != len(admitted_train_ids) or len(heldout) != 16:
+        raise ValueError("curriculum pilot materializer did not produce the registered admitted train/heldout manifests")
+    train_ids = {str(row.get("id")) for row in train}
+    if [str(row.get("id")) for row in train] != admitted_train_ids:
+        raise ValueError("curriculum pilot materializer changed the registered train order")
+    if len(train_ids) != len(train) or not 24 <= len(train) <= 32:
+        raise ValueError("materialized train rows must remain within the bounded pilot range")
     # The full proposal keeps six turns for later stages.  The bounded launch
     # is deliberately a three-turn pilot; set this after admission so the
     # native task loader cannot pick up the proposal default from a row.
@@ -135,6 +156,8 @@ def materialize_pilot(
         "run_id": curriculum.RUN_ID,
         "status": "prepared_with_verified_anchors",
         "train_rows": len(train),
+        "original_train_rows": len(registered_train_ids),
+        "excluded_train_ids": sorted(excluded_train_ids),
         "heldout_cases": len(heldout),
         "full_train_rows": 240,
         "full_heldout_rows": 60,
@@ -144,7 +167,7 @@ def materialize_pilot(
         "flow_policy_enabled": flow_policy_enabled,
         "anchors_verified": True,
         "limitations": [
-            "Only 32 train and 16 heldout anchors are admitted for the bounded pilot.",
+            "The registered first-32 train rows are selected before any model-invalid censoring.",
             "The remaining 208 train and 44 heldout rows remain prepared proposals until rendered and hash-verified.",
             "This step did not render, run a model, judge an image, train, or contact a provider.",
         ],

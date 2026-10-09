@@ -395,6 +395,10 @@ rm -f "$PROPOSED"
 trap - EXIT
 if [[ "$PAINTER_RUN_MATCHED_BASELINE" == 1 ]]; then
   bash "$RUN/matched_baseline.sh"
+  # Anchor admission may censor only exhausted model-invalid train cases.
+  # Rebind Prime's expected count and receipt before warmup or any later
+  # node validation can consume the pre-admission 32-row config.
+  "$PY_PRIME" "$RUN/run_from_sft.py" --refresh-final-config "$RUN/native.toml" "$TRAIN_MANIFEST"
 fi
 # Produce the rich multimodal warmup rows on the Linux node when the
 # controller did not provide an already reviewed set.  supervision_phase.py
@@ -488,7 +492,9 @@ run = Path(sys.argv[1])
 config = run / "native.toml"
 receipt = json.loads((run / "rl-config-receipt.json").read_text())
 manifest = json.loads((run / "curriculum/pilot-train-manifest.json").read_text())
-anchors_verified = manifest.get("status") == "admitted_with_verified_frozen_sft512_anchors"
+train_rows = manifest.get("rows")
+pilot_train_rows = len(train_rows) if isinstance(train_rows, list) else 0
+anchors_verified = str(manifest.get("status", "")).startswith("admitted_with_verified_frozen_sft512_anchors")
 value = {
     "schema": "structured-flow-rl-preparation-v1",
     "run_name": run.name,
@@ -497,7 +503,7 @@ value = {
     "base_model_revision": receipt.get("base_model_revision"),
     "prime_revision": receipt.get("prime_revision"),
     "config_sha256": hashlib.sha256(config.read_bytes()).hexdigest(),
-    "pilot_train_rows": 32,
+    "pilot_train_rows": pilot_train_rows or 32,
     "matched_heldout_cases": 16,
     "anchor_bank_status": "verified_pilot" if anchors_verified else "pending_runtime_generation",
     "warmup_status": os.environ.get("PAINTER_WARMUP_STATUS", "unknown"),

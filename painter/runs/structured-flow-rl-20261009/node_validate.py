@@ -22,8 +22,12 @@ def main(argv: list[str]) -> int:
     train = json.loads(train_path.read_text())
     heldout = json.loads(eval_path.read_text())
     rows, cases = train.get("rows"), heldout.get("cases")
-    if not isinstance(rows, list) or len(rows) != 32 or len({row.get("id") for row in rows}) != 32:
-        raise SystemExit("pilot train manifest must contain 32 unique rows")
+    receipt = json.loads((run / "rl-config-receipt.json").read_text())
+    expected_train = receipt.get("curriculum", {}).get("pilot_rows")
+    if not isinstance(expected_train, int) or not 24 <= expected_train <= 32:
+        raise SystemExit("config receipt must bind an admitted train count in [24, 32]")
+    if not isinstance(rows, list) or len(rows) != expected_train or len({row.get("id") for row in rows}) != expected_train:
+        raise SystemExit(f"pilot train manifest must contain {expected_train} unique rows")
     if not isinstance(cases, list) or len(cases) != 16 or len({row.get("id") for row in cases}) != 16:
         raise SystemExit("matched evaluation manifest must contain 16 unique cases")
     for row in [*rows, *cases]:
@@ -51,7 +55,6 @@ def main(argv: list[str]) -> int:
     if policy.resolve() == frozen.resolve():
         raise SystemExit("policy initializer and frozen SFT adapter must be distinct")
     config = run / "native.toml"
-    receipt = json.loads((run / "rl-config-receipt.json").read_text())
     value = {
         "schema": "structured-flow-rl-preparation-v1",
         "run_name": run.name,
@@ -66,18 +69,26 @@ def main(argv: list[str]) -> int:
         "optimizer_resume": False,
         "train_manifest_sha256": sha(train_path),
         "config_sha256": sha(config),
-        "pilot_train_rows": 32,
+        "pilot_train_rows": expected_train,
         "matched_heldout_cases": 16,
         "checkpoint_steps": [4, 8],
         "structured_flow_policy_enabled": os.environ.get("PAINTER_STRUCTURED_FLOW_POLICY") == "1",
         "code_supervision_enabled": os.environ.get("PAINTER_CODE_SUPERVISION_ENABLED") == "1",
-        "anchor_bank_status": "pilot_only; remaining_208_train_and_44_heldout_pending_render",
+        "anchor_bank_status": f"pilot_only; admitted_{expected_train}_of_32_train; remaining_208_train_and_44_heldout_pending_render",
         "judge": {"model": os.environ["PAINTER_JUDGE_MODEL"], "effort": os.environ["PAINTER_JUDGE_EFFORT"], "format": os.environ["PAINTER_JUDGE_FORMAT"], "new_reward_bonus": False},
     }
+    admission = run / "curriculum/anchor-admission.json"
+    if admission.is_file() and not admission.is_symlink():
+        value["anchor_admission_receipt"] = {
+            "path": str(admission),
+            "sha256": sha(admission),
+            "admitted_train_rows": json.loads(admission.read_text()).get("admitted_train_count"),
+            "excluded_train_ids": json.loads(admission.read_text()).get("excluded_train_ids", []),
+        }
     (run / "preparation-receipt.json").write_text(json.dumps(value, indent=2, sort_keys=True) + "\n")
     # The reused evidence/finalization helpers use their historical manifest
     # locations.  Keep small byte-identical aliases so those helpers consume
-    # this run's 32/16 rows without importing the old run identity.
+    # this run's admitted train/16 heldout rows without importing the old run identity.
     legacy = run / "anchors-frozen"
     legacy.mkdir(parents=True, exist_ok=True)
     (legacy / "train-manifest.json").write_bytes(train_path.read_bytes())

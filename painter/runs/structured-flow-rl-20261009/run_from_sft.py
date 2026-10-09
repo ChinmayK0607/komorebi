@@ -9,6 +9,7 @@ import json
 import os
 from pathlib import Path
 import sys
+import tomllib
 
 
 RUN = Path(__file__).resolve().parent
@@ -29,6 +30,66 @@ def _sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
+def _refresh_final_config(config_path: Path, manifest_path: Path, admitted_count: int) -> None:
+    """Regenerate the Prime config/receipt after train-only censoring."""
+    receipt_path = config_path.with_name("rl-config-receipt.json")
+    receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+    if receipt.get("curriculum", {}).get("pilot_rows") == admitted_count and receipt.get("manifest_sha256") == _sha256(manifest_path):
+        return
+    if not 24 <= admitted_count <= 32:
+        raise ValueError(f"admitted train count is outside the bounded pilot range: {admitted_count}")
+    raw_config = tomllib.loads(config_path.read_text(encoding="utf-8"))
+    taskset = raw_config["orchestrator"]["train"]["source"][0]["env"]["taskset"]
+    spec = importlib.util.spec_from_file_location("structured_flow_final_config", RUN / "prepare_structured_config.py")
+    if spec is None or spec.loader is None:
+        raise RuntimeError("structured-flow config builder is unavailable")
+    builder = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = builder
+    spec.loader.exec_module(builder)
+    temporary = config_path.with_name(config_path.name + f".final-{os.getpid()}.tmp")
+    builder.prepare(
+        output=temporary,
+        model=Path(str(raw_config["model"]["name"])),
+        run_root=config_path.parent,
+        manifest=manifest_path,
+        prime_root=Path(os.environ["PRIME_ROOT"]) if os.environ.get("PRIME_ROOT") else None,
+        expected_count=admitted_count,
+        max_steps=int(receipt.get("updates", 8)),
+        checkpoint_interval=int(receipt.get("checkpoint_interval", 4)),
+        output_root=str(taskset.get("output_root", "rl-rollouts")),
+        max_turns=int(receipt.get("max_turns", 3)),
+        judge_protocol=str(receipt.get("reward", "text-paint-sft-pairwise-consistent-v1")),
+        adapter_revision=str(receipt["policy_initializer"]["revision"]),
+        adapter_prefix=str(receipt["policy_initializer"]["prefix"]),
+        adapter_sha256=str(receipt["policy_initializer"]["sha256"]),
+        mode=str(receipt.get("mode", "recovered_policy")),
+        learning_rate=float(receipt.get("learning_rate", 1e-6)),
+        gpus_per_node=int(receipt.get("deployment", {}).get("gpus_per_node", 2)),
+        num_train_gpus=int(receipt.get("deployment", {}).get("num_train_gpus", 1)),
+        num_infer_gpus=int(receipt.get("deployment", {}).get("num_infer_gpus", 1)),
+        batch_size=int(receipt.get("batch_size", 16)),
+        group_size=int(receipt.get("group_size", 4)),
+        initial_inflight=int(receipt.get("initial_inflight", 32)),
+        max_inflight=int(receipt.get("max_inflight", 32)),
+        renderer=taskset.get("renderer"),
+        renderer_python=taskset.get("renderer_python"),
+        activation_cpu_offload=bool(receipt.get("activation_cpu_offload", True)),
+        flow_policy_enabled=bool(receipt.get("structured_flow_policy", {}).get("enabled", False)),
+        code_supervision_enabled=bool(receipt.get("code_supervision", {}).get("enabled", False)),
+        allow_pending_anchors=False,
+    )
+    temporary.replace(config_path)
+
+
+def refresh_final_config_entry(config_path: Path, manifest_path: Path) -> None:
+    """Refresh the config after matched-baseline anchor admission, without RL."""
+    document = json.loads(manifest_path.read_text(encoding="utf-8"))
+    rows = document.get("rows")
+    if not isinstance(rows, list):
+        raise ValueError("final train manifest has no rows")
+    _refresh_final_config(config_path.resolve(), manifest_path.resolve(), len(rows))
+
+
 def _ensure_anchors(config_path: Path):
     from anchor_bank import materialize
 
@@ -40,6 +101,8 @@ def _ensure_anchors(config_path: Path):
         output_dir=Path(os.environ.get("PAINTER_ANCHOR_STAGING", run_root / "curriculum/.materialized-pilot")),
         run_root=run_root,
     )
+    final_manifest_path = Path(os.environ.get("PAINTER_RL_MANIFEST", run_root / "curriculum/pilot-train-manifest.json"))
+    _refresh_final_config(config_path, final_manifest_path, int(result["train_rows"]))
     # Once the manifest has become fixed, validate adapter bytes, manifests,
     # and config before the original entrypoint allows Prime to start.
     from node_validate import main as validate_node
@@ -82,4 +145,7 @@ base._prewarm_frozen_opponent = _prewarm_after_anchor_generation
 
 
 if __name__ == "__main__":
-    base.main()
+    if len(sys.argv) == 4 and sys.argv[1] == "--refresh-final-config":
+        refresh_final_config_entry(Path(sys.argv[2]), Path(sys.argv[3]))
+    else:
+        base.main()

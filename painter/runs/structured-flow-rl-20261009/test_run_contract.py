@@ -284,6 +284,8 @@ class StructuredFlowRunTests(unittest.TestCase):
         self.assertLess(prepare.index('restore_anchor_evidence.py'), prepare.index('anchor_bank.py" prepare-lazy'))
         self.assertIn('seed_prime_checkout.py', prepare)
         self.assertLess(prepare.index('seed_prime_checkout.py'), prepare.index('bash "$BOOTSTRAP_RUN/setup_node.sh"'))
+        self.assertIn('run_from_sft.py" --refresh-final-config', prepare)
+        self.assertLess(prepare.index('bash "$RUN/matched_baseline.sh"'), prepare.index('run_from_sft.py" --refresh-final-config'))
         self.assertNotIn('flow_demonstrations.py" render', prepare)
         self.assertIn('supervision_phase.py" --data', prepare)
         self.assertIn('PAINTER_PRIME_ROLE=orchestrator', evaluator)
