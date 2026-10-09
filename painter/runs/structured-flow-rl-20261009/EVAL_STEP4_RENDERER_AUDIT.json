@@ -1,0 +1,38 @@
+{
+  "actual_renderer_sha256": "dc6b9d837ed7be382784a6c84de1b64911506b17a19b499ce054c0c572e75794",
+  "date": "2026-10-09",
+  "interpretation": "Both policies used the identical cancellable centroid-fixed renderer and identical p5.brush/p5 assets. The flat preparation renderer field was wrong; no renderer confound was found. Future metadata must bind the actual selection and per-render receipts.",
+  "preparation_receipt_renderer_sha256": "6181fb904a0c5dcd580f5c3cb01eaf341a14b7a15479e811d99ebb10b70bc841",
+  "quality_results_unchanged": true,
+  "receipts": {
+    "candidate": {
+      "asset_hashes": {
+        "p5.brush.js": "db5b0094cb223529a8c5fc3bbba7bf8f2d5b5f5a5c0a847062194feaf917d16b",
+        "p5.min.js": "87adc350e8ec0e9bced22d4f03c181bdd208dc997d3956ab3ec2e90537643c9a"
+      },
+      "render_attempts": 38,
+      "renderer_hash_counts": {
+        "dc6b9d837ed7be382784a6c84de1b64911506b17a19b499ce054c0c572e75794": 38
+      },
+      "runtime_id_counts": {
+        "watercolour-cancellable-v1": 38
+      }
+    },
+    "starting": {
+      "asset_hashes": {
+        "p5.brush.js": "db5b0094cb223529a8c5fc3bbba7bf8f2d5b5f5a5c0a847062194feaf917d16b",
+        "p5.min.js": "87adc350e8ec0e9bced22d4f03c181bdd208dc997d3956ab3ec2e90537643c9a"
+      },
+      "render_attempts": 35,
+      "renderer_hash_counts": {
+        "dc6b9d837ed7be382784a6c84de1b64911506b17a19b499ce054c0c572e75794": 35
+      },
+      "runtime_id_counts": {
+        "watercolour-cancellable-v1": 35
+      }
+    }
+  },
+  "schema": "structured-flow-renderer-metadata-audit-v1",
+  "status": "matched_actual_rendering_verified",
+  "supersedes_field": "EVAL_STEP4_RESULT.json identities.renderer copied preparation receipt, not actual selected renderer"
+}

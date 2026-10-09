@@ -11,6 +11,29 @@ import tempfile
 # Keep Xet scratch files writable without relocating existing HF credentials.
 os.environ.setdefault('HF_XET_CACHE', str(Path(tempfile.gettempdir()) / 'brush-hf-xet-cache'))
 
+
+def _refresh_hf_token():
+    """Refresh the upload credential from the protected node file.
+
+    A long-lived Prime trainer must not retain the controller's initial
+    ``HF_TOKEN`` forever: the owner may rotate the authorized token between
+    checkpoint uploads.  Read the path at each public API entrypoint and keep
+    the token out of receipts and logs.
+    """
+    raw_path = os.environ.get('HF_TOKEN_PATH', '').strip()
+    if not raw_path:
+        return None
+    token_path = Path(raw_path).expanduser()
+    if token_path.is_symlink() or not token_path.is_file():
+        raise ValueError('HF_TOKEN_PATH must point to a regular node credential file')
+    if token_path.stat().st_mode & 0o077:
+        raise ValueError('HF_TOKEN_PATH must be owner-only')
+    token = token_path.read_text(encoding='utf-8').strip()
+    if not token:
+        raise ValueError('HF_TOKEN_PATH is empty')
+    os.environ['HF_TOKEN'] = token
+    return token
+
 FILES=('adapter_config.json','adapter_model.safetensors','validation.json')
 CARD='''---
 base_model: Qwen/Qwen3.5-9B
@@ -85,6 +108,7 @@ def verify(api,repo,revision,prefix,values):
 
 
 def check_repository(repo, run):
+    _refresh_hf_token()
     from huggingface_hub import HfApi
     if not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_-]*/[A-Za-z0-9][A-Za-z0-9_.-]*', repo):
         raise ValueError('Expected HF_CHECKPOINT_REPO namespace/repository')
@@ -96,6 +120,7 @@ def check_repository(repo, run):
 
 
 def upload_checkpoint(checkpoint,repo,run,create_private=False,create=False):
+    _refresh_hf_token()
     from huggingface_hub import HfApi,CommitOperationAdd
     if not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_-]*/[A-Za-z0-9][A-Za-z0-9_.-]*',repo):raise ValueError('Expected namespace/repository')
     prefix,values=payload(checkpoint,run)

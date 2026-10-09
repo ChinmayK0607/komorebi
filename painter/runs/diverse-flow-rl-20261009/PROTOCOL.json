@@ -1,0 +1,142 @@
+{
+  "base_model": {
+    "id": "Qwen/Qwen3.8-27B",
+    "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0"
+  },
+  "budget": {
+    "api_separate": true,
+    "fresh_run_gpu_cap_usd": 20,
+    "includes": [
+      "setup",
+      "baseline",
+      "warmup",
+      "RL",
+      "matched evaluation",
+      "upload verification",
+      "release"
+    ],
+    "no_automatic_retries_outside_original_rental_epoch": true,
+    "no_recurring_automation": true
+  },
+  "curriculum": {
+    "canonical_proposal_encoding": "Per row: JSON sorted keys, compact separators, ensure_ascii=true, trailing newline; generator row order",
+    "canonical_proposal_sha256": "49262afcb3138fe4e21f2c98cff84a6bf3acb513c23d8762306c7ffb0a390f95",
+    "generator_sha256": "b86c1729a83a73ba1fc7bdf934146178c19abd21a0876c1e12ec404e4e5ffbe5",
+    "heldout_families": 16,
+    "heldout_family_ids": [
+      "connected-backpack",
+      "connected-bicycle",
+      "connected-kettle",
+      "connected-windmill",
+      "pair-basket-bread",
+      "pair-boot-lace",
+      "pair-jar-spoon",
+      "pair-sunhat-towel",
+      "scene-dock-buoy",
+      "scene-garden-bench",
+      "scene-hill-cabin",
+      "scene-pond-reeds",
+      "single-bell",
+      "single-feather",
+      "single-hourglass",
+      "single-pumpkin"
+    ],
+    "heldout_family_leakage_to_teacher_optimizer_targets": false,
+    "heldout_per_stage": 8,
+    "heldout_prompts": 32,
+    "initial_sampling": "balanced mixed across all four levels; no step-based advancement claim",
+    "native_sampler": "StandardSampler cycles source order",
+    "stages": 4,
+    "train_families": 24,
+    "train_per_stage": 24,
+    "train_prompts": 96
+  },
+  "evaluation": {
+    "cases": 32,
+    "enable_thinking": false,
+    "invalid_uncertain_failed_cases": "retain explicitly; no synthetic quality scores or best-intermediate selection",
+    "max_concurrent_episodes": 8,
+    "max_tokens_per_turn": 8192,
+    "max_turns": 3,
+    "p5_brush_sha256": "db5b0094cb223529a8c5fc3bbba7bf8f2d5b5f5a5c0a847062194feaf917d16b",
+    "policies": [
+      "exact starting Flash12",
+      "post-code-supervision adapter",
+      "final saved RL adapter"
+    ],
+    "primary_comparison": "Final RL versus both the post-supervision control and exact starting policy on identical prompts and rendering/inference conditions",
+    "renderer_sha256": "dc6b9d837ed7be382784a6c84de1b64911506b17a19b499ce054c0c572e75794",
+    "seed": 918210,
+    "strict_final_action_and_current_canvas": true,
+    "temperature": 1.0
+  },
+  "hypothesis": "A real gentle code-flow SFT warmup followed by Flash-judged RL on varied subjects improves heldout readability, spatial coherence and aesthetics while retaining valid executable painting programs.",
+  "prime_revision": "26b3131d2716a4f8210b165df584b83b4bc54f61",
+  "proposed_hardware": {
+    "feasibility": "Pinned trainer source supports SM89/FA2; read-only SDK selector verified live4L40S49140MiB at1.52/hour. Actual node model/optimizer execution pending.",
+    "inference_tensor_parallel": 2,
+    "observed_whole_node_hour_usd": 1.52,
+    "physical_gpus": 4,
+    "rl_inference_gpus": 2,
+    "rl_trainer_gpus": 2,
+    "type": "L40S",
+    "warmup_gpus": 3
+  },
+  "result_requirements": [
+    "immutable source/config/data/model/checkpoint hashes",
+    "all32 heldout statuses and paired visual decisions",
+    "render times/errors/timeout counts",
+    "assistant target-mask and actual optimizer gradient evidence",
+    "GPU interval roles/utilization/sample denominators",
+    "GPU rental-clock and separately reported API usage/cost",
+    "next decision against matched controls"
+  ],
+  "reward_opponent": {
+    "prefix": "photo-curriculum-sft-20260922-balanced/step_512",
+    "revision": "adf687e5b321514eda7be6eab050434fdc8e44ff",
+    "sha256": "bea72b066986faa1b92b9dc539c710093181ee916b99323e2b2498f318ac1740"
+  },
+  "rl": {
+    "batch_size": 16,
+    "checkpoints": [
+      4,
+      8,
+      12,
+      16,
+      20
+    ],
+    "judge_effort": "medium",
+    "judge_format": "identity-joint-side-schema-v2-generic-v1",
+    "judge_model": "xiaomi/mimo-v2.6-flash",
+    "judge_protocol": "text-paint-sft-pairwise-consistent-v1",
+    "judge_rubric_sha256": "d21e4644e7a3874a0694b2ad406420e733b7638222eb7717e7f5f91cbdf1613c",
+    "learning_rate": 1e-06,
+    "max_inflight_rollouts": 32,
+    "max_policy_age": 1,
+    "new_code_style_reward": false,
+    "rollouts_per_prompt": 4,
+    "target_optimizer_updates": 20
+  },
+  "run_id": "diverse-flow-rl-20261009",
+  "schema": "diverse-flow-registered-protocol-v1",
+  "starting_policy": {
+    "prefix": "rl-judge-matched-20261004-flash/step_12",
+    "repo": "CK0607/qwen3.8-27b-brush-painting",
+    "revision": "1227a2427a8ae16014d2fdca4d1adb6855d3fa1c",
+    "sha256": "c70c47ec0d6d7172b3bc25c4f54178919cf7c079cd9652fff3bc76db9e1eca79"
+  },
+  "supervision": {
+    "approved_dev_families": 1,
+    "approved_train_families": 5,
+    "historical_candidates": 16,
+    "learning_rate": 1e-06,
+    "no_skip_fallback": true,
+    "required": true,
+    "reuse_rendering_and_labels": true,
+    "source_archive_revision": "ca0a838605dfd8cfb75a54dde2d480a94bcbef66",
+    "source_archive_sha256": "ab2531f9f12032b9c11e75cbeb681bdf08d084a7b1458864db050493292ccb67",
+    "source_path": "runs/structured-flow-rl-20261009/evidence.tar.gz",
+    "targets": "next assistant painting code or finish; earlier code, user text and image context masked out",
+    "updates": 4
+  }
+}
