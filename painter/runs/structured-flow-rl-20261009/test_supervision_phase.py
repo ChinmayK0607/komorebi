@@ -44,11 +44,13 @@ class SupervisionPhaseTests(unittest.TestCase):
                     "valid": row["id"] != invalid_candidate,
                     "source_sha256": _sha(source),
                     "png_sha256": _sha(png),
+                    "receipt": {"valid": row["id"] != invalid_candidate, "renderer_sha256": "a" * 64},
                 })
         value = {
             "schema": "painter.structured-flow-render.v1",
             "run_id": MODULE.RUN_ID,
             "renderer": {"renderer_sha256": "a" * 64, "assets_sha256": "b" * 64},
+            "source_manifest_sha256": manifest["source_manifest_sha256"],
             "complete_hash_verified": invalid_candidate is None,
             "program_count": 32,
             "valid_program_count": 32,
@@ -68,7 +70,7 @@ class SupervisionPhaseTests(unittest.TestCase):
             root = Path(directory)
             MODULE.flow.build(root)
             key = self._make_key(root)
-            accepted = {candidate.id for candidate in (*MODULE.flow.CANDIDATES[:6], *MODULE.flow.CANDIDATES[12:14])}
+            accepted = {candidate.id for candidate in (*MODULE.flow.CANDIDATES[:5], MODULE.flow.CANDIDATES[12])}
             calls: list[dict] = []
 
             async def fake_judge(*, brief: Path, anchor: Path, candidate: Path, key_file: Path, model: str) -> dict:
@@ -110,22 +112,57 @@ class SupervisionPhaseTests(unittest.TestCase):
                     judge_fn=fake_judge,
                 )
             self.assertEqual(receipt["status"], "reviewed_ready_for_warmup")
-            self.assertEqual(receipt["actual"], {"train_families": 6, "dev_families": 2, "finish_rows": 6, "train_rows": 18, "dev_rows": 4})
+            self.assertEqual(receipt["actual"], {"train_families": 5, "dev_families": 1, "finish_rows": 5, "train_rows": 15, "dev_rows": 2})
             self.assertEqual(len(calls), 16)
             self.assertTrue(all(call["model"] == MODULE.FLASH_MODEL for call in calls))
             approvals = json.loads((root / "approval-candidates.json").read_text())
-            self.assertEqual(approvals["approved_count"], 8)
+            self.assertEqual(approvals["approved_count"], 6)
             self.assertEqual(len(approvals["candidates"]), 16)
             self.assertTrue(all("raw_decision" in item for item in approvals["candidates"]))
             train = [json.loads(line) for line in (root / "train.jsonl").read_text().splitlines()]
             dev = [json.loads(line) for line in (root / "dev.jsonl").read_text().splitlines()]
-            self.assertEqual(sum(row["flow_stage"] == "finish" for row in train), 6)
+            self.assertEqual(sum(row["flow_stage"] == "finish" for row in train), 5)
             self.assertTrue(all(row["source_group"] in accepted for row in [*train, *dev]))
             self.assertTrue(all(row["target_receipt"]["approved"] for row in [*train, *dev]))
             self.assertTrue(all(row["messages"][-1]["content"][0]["text"] == "FINISHED" for row in train if row["flow_stage"] == "finish"))
             warmup_receipt = WARMUP.validate_inputs(root / "train.jsonl", root / "dev.jsonl", root / "approval-candidates.json")
-            self.assertEqual(warmup_receipt["counts"], {"train": 18, "dev": 4})
-            self.assertEqual(len(WARMUP.build_schedule(train)), 16)
+            self.assertEqual(warmup_receipt["counts"], {"train": 15, "dev": 2})
+            scheduled = WARMUP.build_schedule(train)
+            self.assertEqual(len(scheduled), 12)
+            self.assertEqual(
+                {row["source_group"] for row in scheduled},
+                {candidate.id for candidate in MODULE.flow.CANDIDATES[:5]},
+            )
+
+    def test_cached_paid_review_refreshes_filtered_15_2_without_judge_or_renderer(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            MODULE.flow.build(root)
+            key = self._make_key(root)
+            accepted = {candidate.id for candidate in (*MODULE.flow.CANDIDATES[:5], MODULE.flow.CANDIDATES[12])}
+
+            async def strong_judge(*, brief: Path, anchor: Path, candidate: Path, key_file: Path, model: str) -> dict:
+                candidate_id = candidate.parent.name
+                return {
+                    "status": "scored", "consensus": "initial_agreement", "score": 2 / 3,
+                    "preference": "moderate" if candidate_id in accepted else "tied",
+                    "winner_id": "candidate-image" if candidate_id in accepted else "tie",
+                    "image_ids": {"anchor": "anchor-image", "candidate": "candidate-image"},
+                    "image_sha256": {"anchor": _sha(anchor), "candidate": _sha(candidate)},
+                    "brief_sha256": _sha(brief),
+                }
+
+            with patch.object(MODULE.sys, "platform", "linux"):
+                MODULE.run_phase(root, Path("/renderer.py"), Path("/renderer-python"), "a" * 64, key, render_fn=self._fake_render, judge_fn=strong_judge)
+            (root / "train.jsonl").unlink()
+            (root / "dev.jsonl").unlink()
+            (root / "supervision-phase.json").unlink()
+            with patch.object(MODULE.sys, "platform", "linux"), patch.object(MODULE, "render_and_verify", side_effect=AssertionError("cached refresh rendered")):
+                refreshed = MODULE.refresh_filtered_exports(root, "a" * 64)
+            self.assertEqual(refreshed["status"], "reviewed_ready_for_warmup")
+            self.assertEqual(refreshed["actual"], {"train_families": 5, "dev_families": 1, "finish_rows": 5, "train_rows": 15, "dev_rows": 2})
+            self.assertEqual(len((root / "train.jsonl").read_text().splitlines()), 15)
+            self.assertEqual(len((root / "dev.jsonl").read_text().splitlines()), 2)
 
     def test_one_invalid_pair_is_censored_while_other_families_are_admitted(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -199,6 +236,11 @@ class SupervisionPhaseTests(unittest.TestCase):
             approval = json.loads((root / "approval-candidates.json").read_text())
             self.assertTrue(all(item["decision"] == "censored" for item in approval["candidates"]))
             self.assertTrue(all(item["raw_decision"]["status"] == "uncertain" for item in approval["candidates"]))
+
+    def test_normal_cli_reports_missing_runtime_inputs(self) -> None:
+        with self.assertRaises(SystemExit) as raised:
+            MODULE.main(["--data", "/tmp/structured-flow-missing", "--renderer-sha256", "a" * 64])
+        self.assertEqual(raised.exception.code, 2)
 
     def test_judge_concurrency_is_bounded_and_linux_only(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

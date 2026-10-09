@@ -53,6 +53,9 @@ def _detached_job_command(*, source_commit: str, rental_start_epoch: float, pric
         "PAINTER_CODE_SUPERVISION_ENABLED": "1",
         "PAINTER_RUN_SUPERVISION": "1",
         "PAINTER_WARMUP_REQUIRED": "1",
+        # The remaining bounded restart reserves 45m for matched evaluation,
+        # archive, release, and completion margin before the 20-step target.
+        "PAINTER_RESERVE_SECONDS": "2700",
         "HF_CHECKPOINT_REPO": "CK0607/qwen3.8-27b-brush-painting",
         "HF_CHECKPOINT_RUN": "structured-flow-rl-20261009-sft-warmup",
     }
@@ -98,6 +101,29 @@ def _detached_job_command(*, source_commit: str, rental_start_epoch: float, pric
             "PAINTER_RESTORE_ANCHOR_EVIDENCE": "1",
             "PAINTER_ANCHOR_EVIDENCE_SHA256": restore_sha,
             "PAINTER_ANCHOR_EVIDENCE_URL": restore_url,
+        })
+    supervision_restore = os.environ.get("PAINTER_RESTORE_SUPERVISION_EVIDENCE", "0")
+    if supervision_restore not in {"0", "1"}:
+        raise ValueError("PAINTER_RESTORE_SUPERVISION_EVIDENCE must be 0 or 1")
+    if supervision_restore == "1":
+        supervision_sha = os.environ.get(
+            "PAINTER_SUPERVISION_EVIDENCE_SHA256",
+            "ab2531f9f12032b9c11e75cbeb681bdf08d084a7b1458864db050493292ccb67",
+        )
+        if len(supervision_sha) != 64 or any(char not in "0123456789abcdef" for char in supervision_sha):
+            raise ValueError("PAINTER_SUPERVISION_EVIDENCE_SHA256 must be lowercase hexadecimal")
+        supervision_url = os.environ.get(
+            "PAINTER_SUPERVISION_EVIDENCE_URL",
+            "https://huggingface.co/datasets/CK0607/komorebi-painter-experiments/resolve/"
+            "ca0a838605dfd8cfb75a54dde2d480a94bcbef66/runs/structured-flow-rl-20261009/evidence.tar.gz",
+        )
+        parsed_url = urllib.parse.urlparse(supervision_url)
+        if parsed_url.scheme != "https" or parsed_url.netloc != "huggingface.co" or parsed_url.username or parsed_url.password or parsed_url.query or parsed_url.fragment:
+            raise ValueError("PAINTER_SUPERVISION_EVIDENCE_URL must be a credential-free pinned HTTPS Hugging Face URL")
+        values.update({
+            "PAINTER_RESTORE_SUPERVISION_EVIDENCE": "1",
+            "PAINTER_SUPERVISION_EVIDENCE_SHA256": supervision_sha,
+            "PAINTER_SUPERVISION_EVIDENCE_URL": supervision_url,
         })
     env = " ".join(
         f"{key}={shlex.quote(value)}"

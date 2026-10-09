@@ -364,20 +364,308 @@ def restore(*, run_root: Path, expected_sha256: str, archive: Path | None = None
             temporary.cleanup()
 
 
+
+# The supervision archive is a separate, explicit restore mode.  It is kept
+# out of the anchor allowlist because it contains authored programs, PNGs, and
+# Flash decisions rather than native opponent traces.  A caller must provide
+# the renderer identity expected by the current node; the archive is never
+# admitted merely because its outer tarball hash matches.
+SUPERVISION_SCHEMA = "structured-flow-supervision-evidence-restore-v1"
+SUPERVISION_REL = Path("code-supervision")
+SUPERVISION_METADATA = {
+    "manifest.json", "source-manifest.json", "prompt-manifest.json",
+    "render-manifest.json", "render-manifest.jsonl", "manifest.jsonl",
+    "approval-candidates.json", "supervision-phase.json", "supervision.json",
+    "sft-approved.jsonl", "train.jsonl", "dev.jsonl",
+}
+SUPERVISION_ALLOWED_SUFFIXES = {".json", ".jsonl", ".ndjson", ".png", ".js", ".txt"}
+SUPERVISION_RENDERER_SHA256 = re.compile(r"^[0-9a-f]{64}$")
+
+
+def _normalized_supervision_member(name: str) -> Path | None:
+    if not isinstance(name, str) or not name or "\x00" in name:
+        raise ValueError("archive member has an invalid name")
+    path = PurePosixPath(name)
+    if path.is_absolute() or any(part in {"", ".", ".."} for part in path.parts):
+        raise ValueError(f"unsafe archive member path: {name!r}")
+    try:
+        index = path.parts.index("code-supervision")
+    except ValueError:
+        return None
+    relative = Path(*path.parts[index + 1:])
+    if not relative.parts:
+        return None
+    if relative.suffix.lower() not in SUPERVISION_ALLOWED_SUFFIXES:
+        raise ValueError(f"archive member is outside the supervision allowlist: {name!r}")
+    parts = relative.parts
+    allowed = (
+        (len(parts) == 1 and relative.name in SUPERVISION_METADATA)
+        or (len(parts) == 2 and parts[0] == "supervision-briefs" and relative.suffix == ".txt")
+        or (len(parts) == 3 and parts[0] == "programs" and relative.suffix == ".js" and parts[2] in {"block_in.js", "improved_final.js"})
+        or (len(parts) == 3 and parts[0] == "renders" and relative.suffix in {".png", ".json"} and parts[2] in {"block_in.png", "improved_final.png", "block_in.json", "improved_final.json"})
+    )
+    if not allowed:
+        raise ValueError(f"archive member is outside the supervision allowlist: {name!r}")
+    return SUPERVISION_REL / relative
+
+
+def _supervision_json(root: Path, name: str) -> dict[str, object]:
+    path = root / name
+    if path.is_symlink() or not path.is_file():
+        raise ValueError(f"supervision evidence is missing: {name}")
+    try:
+        value = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise ValueError(f"invalid supervision evidence JSON: {name}") from exc
+    if not isinstance(value, dict):
+        raise ValueError(f"supervision evidence must be an object: {name}")
+    return value
+
+
+def _require_supervision_hash(value: object, label: str) -> str:
+    if not _valid_sha(value):
+        raise ValueError(f"{label} must be a lowercase SHA-256")
+    return str(value)
+
+
+def _validate_supervision_tree(supervision_root: Path, expected_renderer_sha256: str) -> dict[str, object]:
+    """Validate the complete paid supervision tree before it can be reused."""
+    expected_renderer_sha256 = _require_supervision_hash(expected_renderer_sha256, "renderer SHA-256")
+    manifest = _supervision_json(supervision_root, "manifest.json")
+    if manifest.get("schema") != "painter.structured-flow-candidates.v1" or manifest.get("run_id") != RUN_ID:
+        raise ValueError("supervision manifest is not the structured-flow candidate manifest")
+    rows = manifest.get("rows")
+    if not isinstance(rows, list) or len(rows) != 16 or manifest.get("program_count") != 32:
+        raise ValueError("supervision manifest must contain exactly sixteen candidates and 32 programs")
+    source_manifest = _supervision_json(supervision_root, "source-manifest.json")
+    if source_manifest.get("schema") != "painter.structured-flow-program.v1" or source_manifest.get("run_id") != RUN_ID:
+        raise ValueError("supervision source manifest is not the pinned program manifest")
+    source_manifest_sha = sha256_file(supervision_root / "source-manifest.json")
+    if manifest.get("source_manifest_sha256") != source_manifest_sha:
+        raise ValueError("candidate manifest source-manifest hash mismatch")
+    source_entries = source_manifest.get("sources")
+    if not isinstance(source_entries, list) or len(source_entries) != 32:
+        raise ValueError("supervision source manifest must contain 32 programs")
+    source_by_path: dict[str, dict[str, object]] = {}
+    for entry in source_entries:
+        if not isinstance(entry, dict) or not isinstance(entry.get("path"), str):
+            raise ValueError("supervision source manifest has a malformed program entry")
+        rel = Path(str(entry["path"]))
+        if rel.is_absolute() or rel.parts[:1] != ("programs",) or rel.parts[-1] not in {"block_in.js", "improved_final.js"}:
+            raise ValueError("supervision source manifest contains an unsafe program path")
+        target = supervision_root / rel
+        if target.is_symlink() or not target.is_file():
+            raise ValueError(f"supervision program is missing: {rel}")
+        actual = sha256_file(target)
+        if actual != entry.get("sha256"):
+            raise ValueError(f"supervision program hash mismatch: {rel}")
+        source_by_path[rel.as_posix()] = entry
+    for row in rows:
+        if not isinstance(row, dict):
+            raise ValueError("supervision candidate row is malformed")
+        programs = row.get("programs")
+        if not isinstance(programs, list) or len(programs) != 2 or any(str(path) not in source_by_path for path in programs):
+            raise ValueError(f"candidate {row.get('id')} has unbound programs")
+
+    render_manifest = _supervision_json(supervision_root, "render-manifest.json")
+    if render_manifest.get("schema") != "painter.structured-flow-render.v1" or render_manifest.get("run_id") != RUN_ID:
+        raise ValueError("supervision render manifest is not the pinned render protocol")
+    if render_manifest.get("source_manifest_sha256") != source_manifest_sha:
+        raise ValueError("render manifest source-manifest hash mismatch")
+    renderer = render_manifest.get("renderer")
+    if not isinstance(renderer, dict) or renderer.get("renderer_sha256") != expected_renderer_sha256:
+        raise ValueError("supervision render manifest renderer hash does not match the current renderer")
+    results = render_manifest.get("results")
+    if not isinstance(results, list) or len(results) != 32 or render_manifest.get("program_count") != 32 or render_manifest.get("valid_program_count") != 32 or render_manifest.get("complete_hash_verified") is not True:
+        raise ValueError("supervision render manifest is incomplete")
+    render_by_key: dict[tuple[str, str], dict[str, object]] = {}
+    for result in results:
+        if not isinstance(result, dict):
+            raise ValueError("supervision render result is malformed")
+        candidate_id, version = str(result.get("candidate_id")), str(result.get("version"))
+        if version not in {"block_in", "improved_final"} or (candidate_id, version) in render_by_key:
+            raise ValueError("supervision render result identity is invalid or duplicated")
+        source_rel = Path("programs") / candidate_id / f"{version}.js"
+        png_rel = Path("renders") / candidate_id / f"{version}.png"
+        source = supervision_root / source_rel
+        png = supervision_root / png_rel
+        if result.get("source_sha256") != sha256_file(source) or result.get("png_sha256") != sha256_file(png):
+            raise ValueError(f"supervision render hash mismatch: {candidate_id}/{version}")
+        receipt = result.get("receipt")
+        if not isinstance(receipt, dict) or receipt.get("renderer_sha256") != expected_renderer_sha256 or receipt.get("valid") is not True:
+            raise ValueError(f"supervision renderer receipt is not bound: {candidate_id}/{version}")
+        render_by_key[(candidate_id, version)] = result
+
+    approval = _supervision_json(supervision_root, "approval-candidates.json")
+    if approval.get("schema") != "painter.structured-flow-approval-candidates.v1" or approval.get("run_id") != RUN_ID or approval.get("status") != "reviewed" or approval.get("review_protocol") != "painter.text_pairwise_consistent_side_judge_v2_generic" or approval.get("judge_model") != "xiaomi/mimo-v2.6-flash":
+        raise ValueError("supervision approval manifest protocol is not the pinned generic Flash review")
+    candidates = approval.get("candidates")
+    if not isinstance(candidates, list) or len(candidates) != 16 or approval.get("candidate_count") != 16:
+        raise ValueError("supervision approval manifest must contain all sixteen decisions")
+    seen: set[str] = set()
+    for candidate in candidates:
+        if not isinstance(candidate, dict):
+            raise ValueError("supervision approval candidate is malformed")
+        candidate_id = str(candidate.get("id"))
+        if candidate_id in seen:
+            raise ValueError("supervision approval candidate is duplicated")
+        seen.add(candidate_id)
+        brief = Path(str(candidate.get("brief", "")))
+        if brief.is_absolute() or brief.parts[:1] != ("supervision-briefs",):
+            raise ValueError(f"supervision brief path is unsafe: {candidate_id}")
+        brief_path = supervision_root / brief
+        if not brief_path.is_file() or sha256_file(brief_path) != candidate.get("brief_sha256"):
+            raise ValueError(f"supervision brief hash mismatch: {candidate_id}")
+        for version, field in (("block_in", "initial_png_sha256"), ("improved_final", "final_png_sha256")):
+            record = render_by_key.get((candidate_id, version))
+            if record is None or candidate.get(field) != record.get("png_sha256"):
+                raise ValueError(f"supervision approval/render hash mismatch: {candidate_id}/{version}")
+        if candidate.get("decision") not in {"approved", "censored"}:
+            raise ValueError(f"supervision candidate decision is invalid: {candidate_id}")
+    if seen != {str(row.get("id")) for row in rows}:
+        raise ValueError("supervision approval IDs do not match candidate manifest")
+    return {
+        "schema": SUPERVISION_SCHEMA,
+        "candidate_count": len(rows),
+        "program_count": len(source_entries),
+        "render_count": len(results),
+        "approved_count": sum(item.get("decision") == "approved" for item in candidates),
+        "source_manifest_sha256": source_manifest_sha,
+        "renderer_sha256": expected_renderer_sha256,
+        "approval_manifest_sha256": sha256_file(supervision_root / "approval-candidates.json"),
+    }
+
+
+def restore_supervision(*, run_root: Path, expected_sha256: str, renderer_sha256: str, archive: Path | None = None, url: str | None = None) -> dict[str, object]:
+    """Restore only a hash-bound paid supervision tree from a public archive."""
+    run_root = run_root.expanduser().resolve()
+    if not run_root.is_dir():
+        raise ValueError(f"run root is missing: {run_root}")
+    if not _valid_sha(expected_sha256):
+        raise ValueError("expected archive SHA-256 must be lowercase hexadecimal")
+    _require_supervision_hash(renderer_sha256, "renderer SHA-256")
+    (run_root / ".restore-tmp").mkdir(mode=0o700, exist_ok=True)
+    archive_path, source_kind, temporary = _archive_path(archive=archive, url=url, run_root=run_root, expected=expected_sha256)
+    try:
+        if sha256_file(archive_path) != expected_sha256:
+            raise ValueError("source supervision archive hash mismatch")
+        stage_parent = Path(tempfile.mkdtemp(prefix="supervision-restore-stage-", dir=str(run_root / ".restore-tmp")))
+        try:
+            stage_root = stage_parent / SUPERVISION_REL
+            records: list[dict[str, object]] = []
+            seen: set[Path] = set()
+            total_bytes = 0
+            with tarfile.open(archive_path, "r:*") as archive_file:
+                for index, member in enumerate(archive_file):
+                    if index >= MAX_MEMBERS:
+                        raise ValueError("supervision archive has too many members")
+                    if member.issym() or member.islnk() or not (member.isfile() or member.isdir()):
+                        raise ValueError(f"archive contains an unsupported non-regular member: {member.name!r}")
+                    if member.isdir():
+                        directory = PurePosixPath(member.name)
+                        if directory.is_absolute() or any(part in {"", ".", ".."} for part in directory.parts):
+                            raise ValueError(f"unsafe archive member path: {member.name!r}")
+                        continue
+                    target_relative = _normalized_supervision_member(member.name)
+                    if target_relative is None:
+                        continue
+                    if target_relative in seen:
+                        raise ValueError(f"duplicate supervision member: {member.name!r}")
+                    seen.add(target_relative)
+                    total_bytes += int(member.size)
+                    if total_bytes > MAX_TOTAL_BYTES:
+                        raise ValueError("supervision evidence exceeds the total byte limit")
+                    source = archive_file.extractfile(member)
+                    if source is None:
+                        raise ValueError(f"cannot read archive member: {member.name!r}")
+                    payload = _read_member(source, int(member.size))
+                    stage_path = stage_root / target_relative.relative_to(SUPERVISION_REL)
+                    stage_path.parent.mkdir(parents=True, exist_ok=True)
+                    stage_path.write_bytes(payload)
+                    stage_path.chmod(0o600)
+                    records.append({"archive_member": member.name, "target": str(target_relative), "bytes": len(payload), "sha256": sha256_bytes(payload)})
+            if not records:
+                raise ValueError("source archive contains no permitted code-supervision evidence")
+            validation = _validate_supervision_tree(stage_root, renderer_sha256)
+            target_root = run_root / SUPERVISION_REL
+            for record in records:
+                target = run_root / str(record["target"])
+                if target.is_symlink() or (target.exists() and not target.is_file()):
+                    raise ValueError(f"restore target is not a regular file: {target}")
+                if target.is_file() and sha256_file(target) != record["sha256"]:
+                    raise ValueError(f"refusing to overwrite existing supervision evidence: {target}")
+            reused = installed = 0
+            for record in records:
+                target = run_root / str(record["target"])
+                source = stage_root / target.relative_to(target_root)
+                if target.is_file():
+                    reused += 1
+                    continue
+                target.parent.mkdir(parents=True, exist_ok=True)
+                source.replace(target)
+                target.chmod(0o600)
+                installed += 1
+            receipt = {
+                "schema": SUPERVISION_SCHEMA,
+                "run_id": RUN_ID,
+                "status": "restored_verified_public_supervision_evidence",
+                "source_kind": source_kind,
+                "source_archive_sha256": expected_sha256,
+                "source_url_host": urllib.parse.urlparse(url).netloc if url else None,
+                "supervision_root": str(target_root),
+                "member_count": len(records),
+                "installed_count": installed,
+                "reused_count": reused,
+                "validation": validation,
+                "members": records,
+                "limitations": [
+                    "Paid programs, renders, and raw Flash decisions were restored from a hash-verified public archive; they are not relabeled as newly generated.",
+                    "Model weights, browser assets, native anchor traces, and credentials were excluded by the supervision allowlist.",
+                ],
+            }
+            receipt_path = run_root / "supervision-restore-receipt.json"
+            encoded = json.dumps(receipt, indent=2, sort_keys=True) + "\n"
+            if receipt_path.exists():
+                if receipt_path.is_symlink():
+                    raise ValueError(f"existing supervision restore receipt is symlinked: {receipt_path}")
+                try:
+                    existing = json.loads(receipt_path.read_text(encoding="utf-8"))
+                except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
+                    raise ValueError(f"existing supervision restore receipt is invalid: {receipt_path}") from exc
+                if existing.get("schema") != SUPERVISION_SCHEMA or existing.get("source_archive_sha256") != expected_sha256 or existing.get("members") != records or existing.get("validation") != validation:
+                    raise ValueError(f"existing supervision restore receipt differs: {receipt_path}")
+                return existing
+            receipt_path.write_text(encoded, encoding="utf-8")
+            receipt_path.chmod(0o600)
+            return receipt
+        finally:
+            shutil.rmtree(stage_parent, ignore_errors=True)
+    finally:
+        if temporary is not None:
+            temporary.cleanup()
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--run-root", type=Path, required=True)
     parser.add_argument("--sha256", required=True)
+    parser.add_argument("--mode", choices=("anchor", "supervision"), default="anchor")
+    parser.add_argument("--renderer-sha256")
     source = parser.add_mutually_exclusive_group(required=True)
     source.add_argument("--archive", type=Path)
     source.add_argument("--url")
     args = parser.parse_args()
-    receipt = restore(
-        run_root=args.run_root,
-        expected_sha256=args.sha256,
-        archive=args.archive,
-        url=args.url,
-    )
+    if args.mode == "supervision":
+        if not args.renderer_sha256:
+            parser.error("--renderer-sha256 is required for --mode supervision")
+        receipt = restore_supervision(
+            run_root=args.run_root, expected_sha256=args.sha256,
+            renderer_sha256=args.renderer_sha256, archive=args.archive, url=args.url,
+        )
+    else:
+        receipt = restore(
+            run_root=args.run_root, expected_sha256=args.sha256,
+            archive=args.archive, url=args.url,
+        )
     print(json.dumps(receipt, sort_keys=True))
 
 

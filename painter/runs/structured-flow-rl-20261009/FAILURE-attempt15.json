@@ -1,0 +1,33 @@
+{
+  "schema": "structured-flow-failure-v1",
+  "attempt": 15,
+  "failure": "reviewed_subset_below_arbitrary_warmup_quantity_gate",
+  "source_commit": "401c83caf09757b90cc642d4d4ae248bbbdd8923",
+  "optimizer_updates_observed": 0,
+  "matched_baseline_complete": true,
+  "matched_baseline_cases": 16,
+  "baseline_turn_renders": 31,
+  "teacher_render_attempts": 32,
+  "teacher_valid_renders": 32,
+  "teacher_pairs_approved": 6,
+  "approved_train_families": 5,
+  "approved_dev_families": 1,
+  "approved_finish_rows": 5,
+  "requirements_before_amendment": {
+    "train_families": 6,
+    "dev_families": 2,
+    "finish_rows": 5
+  },
+  "public_archive_repo": "CK0607/komorebi-painter-experiments",
+  "public_archive_path": "runs/structured-flow-rl-20261009/evidence.tar.gz",
+  "public_archive_revision": "ca0a838605dfd8cfb75a54dde2d480a94bcbef66",
+  "public_archive_sha256": "ab2531f9f12032b9c11e75cbeb681bdf08d084a7b1458864db050493292ccb67",
+  "public_archive_bytes": 44866563,
+  "public_anonymous_download_hash_verified": true,
+  "owned_node_absence_confirmed": true,
+  "gpu_clock_estimate_usd": 1.3104,
+  "cumulative_gpu_clock_estimate_usd": 9.566,
+  "gpu_cost_method": "allocation to final release event log timestamp; rental-clock estimate, not invoice; API separate",
+  "next_decision": "four supervised B3 batches (12 unique approved draws) then same20RLupdates; reuse32rendered programs/rawFlashlabels; reject10candidates stays excluded",
+  "recurring_automation": false
+}

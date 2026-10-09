@@ -1,0 +1,23 @@
+{
+  "schema": "structured-flow-gpu-profile-v1",
+  "attempt": 15,
+  "phase": "runtime setup, matched baseline, teacher CPU renders and external judgment; zero optimizer",
+  "gpu_denominator": 2,
+  "sampling_period_seconds": 10,
+  "window_first_utc": "2026/10/09 01:31:39.232",
+  "window_last_utc": "2026/10/09 01:50:29.686",
+  "cards": {
+    "0": {
+      "samples": 114,
+      "mean_utilization_percent": 32.8596,
+      "busy_fraction_ge10_percent": 0.3596
+    },
+    "1": {
+      "samples": 114,
+      "mean_utilization_percent": 0.0,
+      "busy_fraction_ge10_percent": 0.0
+    }
+  },
+  "pipeline_saturated": false,
+  "caveat": "finite sampled preparation window, not full rental utilization; inference0trainer1"
+}

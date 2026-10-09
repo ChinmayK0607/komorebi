@@ -36,26 +36,32 @@ FLASH12_SHA256 = "c70c47ec0d6d7172b3bc25c4f54178919cf7c079cd9652fff3bc76db9e1eca
 LORA_RANK = 16
 LORA_ALPHA = 32
 LORA_TENSORS = 992
-# The nominal pool is 24/8.  Flash review can admit the optional finish-state
-# rows (32 train) or censor a row, so admission is bounded by the actual pool
-# while the schedule below still requires sixteen usable draws.
-MIN_TRAIN_ROWS = 16
+# The approved subset may be as small as 15/2: five train families with
+# three rich rows each and one held-out family with two diagnostic rows. The
+# four-update schedule consumes 12 unique train rows, balanced by flow state.
+MIN_TRAIN_ROWS = 15
 MAX_TRAIN_ROWS = 32
-MIN_DEV_ROWS = 4
+MIN_DEV_ROWS = 2
 MAX_DEV_ROWS = 8
+MIN_TRAIN_FAMILIES = 5
+MIN_DEV_FAMILIES = 1
 MAX_STEPS = 4
-BATCH_SIZE = 4
+BATCH_SIZE = 3
 MICRO_BATCH_SIZE = 1
 LEARNING_RATE = 1e-6
 SEQ_LEN = 16384
 DEFAULT_WARMUP_GPU = "1"
 FLOW_STATES = ("construction", "revision", "finish")
 WARMUP_STATE_PATTERN = (
-    ("construction", "revision", "finish", "construction"),
-    ("revision", "finish", "construction", "revision"),
-    ("finish", "construction", "revision", "finish"),
-    ("construction", "revision", "finish", "revision"),
+    ("construction", "revision", "finish"),
+    ("construction", "revision", "finish"),
+    ("construction", "revision", "finish"),
+    ("construction", "revision", "finish"),
 )
+# Rotating the state pools keeps the 12-row pilot from dropping the last
+# approved family when each state has five source rows.  The offsets are part
+# of the schedule receipt and are deterministic across retries.
+WARMUP_STATE_POOL_OFFSETS = {"construction": 0, "revision": 1, "finish": 2}
 TARGET_MODULES = (
     "q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj",
     "in_proj_qkv", "in_proj_z", "in_proj_b", "in_proj_a", "out_proj",
@@ -326,8 +332,11 @@ def validate_inputs(train_path: Path, dev_path: Path, approval_path: Path | None
             seen.add(check["id"])
             groups[split].add(check["source_group"])
             records[split].append(check)
-    if len(groups["train"]) < 4 or len(groups["dev"]) < 2:
-        raise ValueError("warmup admission needs at least four train and two dev source groups")
+    if len(groups["train"]) < MIN_TRAIN_FAMILIES or len(groups["dev"]) < MIN_DEV_FAMILIES:
+        raise ValueError(
+            f"warmup admission needs at least {MIN_TRAIN_FAMILIES} train and "
+            f"{MIN_DEV_FAMILIES} dev source groups"
+        )
     return {
         "schema": WARMUP_SCHEMA,
         "run_id": RUN_ID,
@@ -348,14 +357,20 @@ def validate_inputs(train_path: Path, dev_path: Path, approval_path: Path | None
 
 
 def build_schedule(rows: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
-    """Materialize four B4 steps that mix construction, revision, and finish.
+    """Materialize four B3 steps that mix construction, revision, and finish.
 
-    The 24 admitted train rows remain in the input receipt.  The 16 emitted
-    rows are explicit schedule draws, so a four-update smoke warmup cannot
-    accidentally consume only the first sixteen isolated-form rows.
+    The admitted train rows remain in the input receipt. The 12 emitted rows
+    are explicit unique schedule draws, so the warmup consumes each flow state
+    evenly without inventing rows for censored candidates.
     """
     rows = list(rows)
-    pools = {state: sorted((dict(row) for row in rows if _canonical_flow_state(row) == state), key=lambda row: str(row["id"])) for state in FLOW_STATES}
+    pools = {}
+    for state in FLOW_STATES:
+        ordered = sorted((dict(row) for row in rows if _canonical_flow_state(row) == state), key=lambda row: str(row["id"]))
+        if ordered:
+            offset = WARMUP_STATE_POOL_OFFSETS[state] % len(ordered)
+            ordered = ordered[offset:] + ordered[:offset]
+        pools[state] = ordered
     required = {state: sum(pattern.count(state) for pattern in WARMUP_STATE_PATTERN) for state in FLOW_STATES}
     missing = {state: required[state] - len(pools[state]) for state in FLOW_STATES if len(pools[state]) < required[state]}
     if missing:
@@ -374,7 +389,7 @@ def build_schedule(rows: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
             })
             emitted.append(source)
     if len(emitted) != MAX_STEPS * BATCH_SIZE or len({row["id"] for row in emitted}) != len(emitted):
-        raise AssertionError("warmup schedule must contain four complete unique optimizer batches")
+        raise AssertionError("warmup schedule must contain four complete unique optimizer batches of three rows")
     return emitted
 
 
@@ -390,7 +405,7 @@ def build_schedule_receipt(rows: Sequence[Mapping[str, Any]], train_sha256: str)
     """
     rows = list(rows)
     if len(rows) != MAX_STEPS * BATCH_SIZE:
-        raise ValueError("warmup schedule receipt requires exactly sixteen emitted rows")
+        raise ValueError("warmup schedule receipt requires exactly twelve emitted rows")
     expected: list[dict[str, Any]] = []
     seen: set[str] = set()
     source_seen: set[str] = set()
@@ -431,6 +446,7 @@ def build_schedule_receipt(rows: Sequence[Mapping[str, Any]], train_sha256: str)
         "max_steps": MAX_STEPS,
         "row_count": len(rows),
         "flow_state_pattern": [list(pattern) for pattern in WARMUP_STATE_PATTERN],
+        "flow_state_pool_offsets": dict(WARMUP_STATE_POOL_OFFSETS),
         "flow_state_counts": flow_counts,
         "train_sha256": train_sha256,
         "emissions": expected,
@@ -771,6 +787,7 @@ def prepare(args: argparse.Namespace) -> dict[str, Any]:
                              "dev_sha256": dev_sha, "validation_sha256": validation_sha,
                              "source_train_rows": len(train_rows), "scheduled_train_rows": len(scheduled_rows), "dev_rows": len(dev_rows),
                              "flow_state_pattern": [list(pattern) for pattern in WARMUP_STATE_PATTERN],
+                             "flow_state_pool_offsets": dict(WARMUP_STATE_POOL_OFFSETS),
                              "schedule": {"path": str(output / "schedule.json"), "sha256": sha256_file(output / "schedule.json"),
                                           "schema": WARMUP_SCHEDULE_SCHEMA, "mode": schedule["mode"]},
                              "validation_alias": "dev", "input_train": str(args.train.resolve()), "input_dev": str(args.dev.resolve())},

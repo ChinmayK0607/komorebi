@@ -85,6 +85,71 @@ class AnchorRestoreTests(unittest.TestCase):
             self.assertEqual(replay, receipt)
             self.assertEqual(receipt_path.read_bytes(), original_receipt)
 
+
+    def test_restores_and_replays_hash_bound_supervision_subset(self):
+        module = load_module()
+        renderer_sha = "d" * 64
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            evidence = root / "evidence" / "public-wrapper" / "code-supervision"
+            programs = evidence / "programs"
+            renders = evidence / "renders"
+            briefs = evidence / "supervision-briefs"
+            rows, sources, results, candidates = [], [], [], []
+            for index in range(16):
+                candidate_id = f"candidate-{index:02d}"
+                split = "train" if index < 12 else "dev"
+                program_paths = []
+                for version in ("block_in", "improved_final"):
+                    rel = Path("programs") / candidate_id / f"{version}.js"
+                    path = evidence / rel
+                    path.parent.mkdir(parents=True, exist_ok=True)
+                    path.write_text(f"// {candidate_id} {version}\n", encoding="utf-8")
+                    digest = hashlib.sha256(path.read_bytes()).hexdigest()
+                    sources.append({"path": rel.as_posix(), "sha256": digest, "bytes": path.stat().st_size, "candidate_id": candidate_id, "version": version, "standalone": True})
+                    program_paths.append(rel.as_posix())
+                brief_rel = Path("supervision-briefs") / f"{candidate_id}.txt"
+                brief = evidence / brief_rel
+                brief.parent.mkdir(parents=True, exist_ok=True)
+                brief.write_text(f"Brief {candidate_id}\n", encoding="utf-8")
+                rows.append({"id": candidate_id, "split": split, "programs": program_paths, "source_group": candidate_id})
+                stage_hashes = {}
+                for version in ("block_in", "improved_final"):
+                    rel = Path("renders") / candidate_id / f"{version}.png"
+                    path = evidence / rel
+                    path.parent.mkdir(parents=True, exist_ok=True)
+                    path.write_bytes(f"PNG {candidate_id} {version}".encode())
+                    png_sha = hashlib.sha256(path.read_bytes()).hexdigest()
+                    source_sha = next(x["sha256"] for x in sources if x["path"] == (Path("programs") / candidate_id / f"{version}.js").as_posix())
+                    results.append({"candidate_id": candidate_id, "version": version, "valid": True, "source_sha256": source_sha, "png_sha256": png_sha, "receipt": {"valid": True, "renderer_sha256": renderer_sha}})
+                    stage_hashes[version] = png_sha
+                candidates.append({"id": candidate_id, "brief": brief_rel.as_posix(), "brief_sha256": hashlib.sha256(brief.read_bytes()).hexdigest(), "initial_png_sha256": stage_hashes["block_in"], "final_png_sha256": stage_hashes["improved_final"], "decision": "approved" if index < 6 else "censored"})
+            source_manifest = {"schema": "painter.structured-flow-program.v1", "run_id": module.RUN_ID, "sources": sources}
+            source_path = evidence / "source-manifest.json"
+            source_path.write_text(json.dumps(source_manifest, sort_keys=True, separators=(",", ":")) + "\n", encoding="utf-8")
+            manifest = {"schema": "painter.structured-flow-candidates.v1", "run_id": module.RUN_ID, "program_count": 32, "source_manifest_sha256": hashlib.sha256(source_path.read_bytes()).hexdigest(), "rows": rows}
+            (evidence / "manifest.json").parent.mkdir(parents=True, exist_ok=True)
+            (evidence / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+            render_manifest = {"schema": "painter.structured-flow-render.v1", "run_id": module.RUN_ID, "program_count": 32, "valid_program_count": 32, "complete_hash_verified": True, "renderer": {"renderer_sha256": renderer_sha}, "source_manifest_sha256": manifest["source_manifest_sha256"], "results": results}
+            (evidence / "render-manifest.json").write_text(json.dumps(render_manifest), encoding="utf-8")
+            approval = {"schema": "painter.structured-flow-approval-candidates.v1", "run_id": module.RUN_ID, "status": "reviewed", "review_protocol": "painter.text_pairwise_consistent_side_judge_v2_generic", "judge_model": "xiaomi/mimo-v2.6-flash", "candidate_count": 16, "approved_count": 6, "candidates": candidates}
+            (evidence / "approval-candidates.json").write_text(json.dumps(approval), encoding="utf-8")
+            archive = root / "evidence.tar.gz"
+            with tarfile.open(archive, "w:gz") as output:
+                output.add(evidence.parent.parent, arcname="public-wrapper")
+            digest = hashlib.sha256(archive.read_bytes()).hexdigest()
+            run = root / "run"
+            run.mkdir()
+            receipt = module.restore_supervision(run_root=run, expected_sha256=digest, renderer_sha256=renderer_sha, archive=archive)
+            self.assertEqual(receipt["validation"]["approved_count"], 6)
+            self.assertEqual(receipt["member_count"], 4 + 32 + 32 + 16)
+            replay = module.restore_supervision(run_root=run, expected_sha256=digest, renderer_sha256=renderer_sha, archive=archive)
+            self.assertEqual(replay, receipt)
+            other = root / "other-run"
+            other.mkdir()
+            with self.assertRaisesRegex(ValueError, "renderer hash"):
+                module.restore_supervision(run_root=other, expected_sha256=digest, renderer_sha256="e" * 64, archive=archive)
+
     def test_rejects_archive_hash_mismatch_before_extraction(self):
         module = load_module()
         with tempfile.TemporaryDirectory() as directory:

@@ -419,6 +419,25 @@ if [[ "$PAINTER_CODE_SUPERVISION_ENABLED" == 1 && "$PAINTER_RUN_SUPERVISION" == 
   FLOW_SOURCE_MANIFEST="$SUPERVISION_ROOT/manifest.json"
   FLOW_PHASE_RECEIPT="$SUPERVISION_ROOT/supervision-phase.json"
   mkdir -p "$SUPERVISION_ROOT"
+  RESTORE_SUPERVISION_EVIDENCE="${PAINTER_RESTORE_SUPERVISION_EVIDENCE:-0}"
+  [[ "$RESTORE_SUPERVISION_EVIDENCE" == 0 || "$RESTORE_SUPERVISION_EVIDENCE" == 1 ]] || {
+    echo 'PAINTER_RESTORE_SUPERVISION_EVIDENCE must be 0 or 1' >&2; exit 1;
+  }
+  if [[ "$RESTORE_SUPERVISION_EVIDENCE" == 1 ]]; then
+    SUPERVISION_RESTORE_SHA256="${PAINTER_SUPERVISION_EVIDENCE_SHA256:-ab2531f9f12032b9c11e75cbeb681bdf08d084a7b1458864db050493292ccb67}"
+    SUPERVISION_RESTORE_URL="${PAINTER_SUPERVISION_EVIDENCE_URL:-https://huggingface.co/datasets/CK0607/komorebi-painter-experiments/resolve/ca0a838605dfd8cfb75a54dde2d480a94bcbef66/runs/structured-flow-rl-20261009/evidence.tar.gz}"
+    SUPERVISION_RESTORE_SCRIPT="$RUN/restore_anchor_evidence.py"
+    [[ -f "$SUPERVISION_RESTORE_SCRIPT" ]] || { echo 'supervision evidence restore helper is missing' >&2; exit 1; }
+    SUPERVISION_RESTORE_ARGS=(--mode supervision --run-root "$RUN" --sha256 "$SUPERVISION_RESTORE_SHA256" --renderer-sha256 "$PAINTER_RENDERER_SHA256")
+    if [[ -n "${PAINTER_SUPERVISION_EVIDENCE_ARCHIVE:-}" ]]; then
+      SUPERVISION_RESTORE_ARGS+=(--archive "$PAINTER_SUPERVISION_EVIDENCE_ARCHIVE")
+    else
+      SUPERVISION_RESTORE_ARGS+=(--url "$SUPERVISION_RESTORE_URL")
+    fi
+    PYTHONPATH="$REPO:$REPO/painter:$RUN${PYTHONPATH:+:$PYTHONPATH}" \
+      "$PY_BOOT" "$SUPERVISION_RESTORE_SCRIPT" "${SUPERVISION_RESTORE_ARGS[@]}" \
+      >"${PAINTER_SUPERVISION_RESTORE_SUMMARY:-$RUN/supervision-restore-summary.json}"
+  fi
   if [[ ! -f "$FLOW_SOURCE_MANIFEST" ]]; then
     # Apply the same outside-the-output-directory rule as the curriculum
     # builder.  This keeps retries and clean-node preparation deterministic
@@ -433,7 +452,16 @@ if [[ "$PAINTER_CODE_SUPERVISION_ENABLED" == 1 && "$PAINTER_RUN_SUPERVISION" == 
       exit 1
     fi
   fi
-  if [[ ! -f "$FLOW_PHASE_RECEIPT" || ! -s "$SUPERVISION_ROOT/train.jsonl" || ! -s "$SUPERVISION_ROOT/dev.jsonl" ]]; then
+  if [[ "$RESTORE_SUPERVISION_EVIDENCE" == 1 && -f "$SUPERVISION_ROOT/render-manifest.json" && -f "$SUPERVISION_ROOT/approval-candidates.json" ]]; then
+    # Reuse only the restored paid render/judge facts.  This validates the
+    # current flow prompt/source/renderer hashes, then regenerates the
+    # bounded 15/2 rich export without rendering or calling Flash, even if an
+    # older archive also carried filtered JSONL from a previous gate.
+    PYTHONPATH="$REPO:$REPO/painter:$RUN${PYTHONPATH:+:$PYTHONPATH}" \
+      "$PY_BOOT" "$RUN/supervision_phase.py" --data "$SUPERVISION_ROOT" \
+      --renderer-sha256 "$PAINTER_RENDERER_SHA256" --reuse-approved \
+      >"$SUPERVISION_ROOT/supervision.json"
+  elif [[ ! -f "$FLOW_PHASE_RECEIPT" || ! -s "$SUPERVISION_ROOT/train.jsonl" || ! -s "$SUPERVISION_ROOT/dev.jsonl" ]]; then
     GATEWAY="$PAINTER_GATEWAY_ENV_FILE"
     [[ -f "$GATEWAY" && ! -L "$GATEWAY" ]] || {
       echo 'code supervision requires the owner-only generic Flash gateway env file' >&2; exit 1;

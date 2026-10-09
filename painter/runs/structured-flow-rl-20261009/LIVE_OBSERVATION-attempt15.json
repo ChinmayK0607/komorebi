@@ -1,7 +1,7 @@
 {
   "schema": "structured-flow-live-observation-v1",
   "attempt": 15,
-  "observed_utc": "2026-10-09T01:34:24Z",
+  "observed_utc": "2026-10-09T01:45:40Z",
   "source_commit": "401c83caf09757b90cc642d4d4ae248bbbdd8923",
   "linux_real_evaluation_tasks_loaded": 16,
   "evaluation_flow_hook_and_taskset_patch": true,
@@ -15,11 +15,15 @@
   ],
   "pre_admission_train_manifest_sha256": "3c9076e65d28005817ce2511798e1451f10a36f6d439b15fe22ca8059489c85c",
   "optimizer_updates_observed": 0,
-  "phase": "matched baseline model-server startup",
+  "phase": "supervised demonstration rendering and Flash review",
   "saturation_claimed": false,
   "gpu_price_usd_per_whole_node_hour": 3.72,
   "remaining_rental_allowance_usd": 11.5,
   "prior_attempt_reserve_usd": 8.5,
   "cumulative_gpu_ceiling_usd": 20,
-  "recurring_automation": false
+  "recurring_automation": false,
+  "matched_baseline_complete": true,
+  "baseline_turn_paintings_saved": 31,
+  "train_admitted_rows": 31,
+  "heldout_rows": 16
 }

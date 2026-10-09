@@ -69,7 +69,7 @@ class WarmupTest(unittest.TestCase):
     def test_config_is_four_step_rank16_single_gpu(self) -> None:
         config = warmup.build_config(Path("/node/model/" + warmup.MODEL_REVISION), Path("/node/data"))
         self.assertEqual(config["max_steps"], 4)
-        self.assertEqual(config["data"]["batch_size"], 4)
+        self.assertEqual(config["data"]["batch_size"], 3)
         self.assertEqual(config["data"]["micro_batch_size"], 1)
         self.assertFalse(config["data"]["shuffle"])
         self.assertEqual(config["val"]["data"]["splits"], ["validation"])
@@ -95,7 +95,7 @@ class WarmupTest(unittest.TestCase):
             self.assertEqual(len(receipt["rows"]["train"]), 24)
             self.assertEqual(len(receipt["rows"]["dev"]), 8)
             scheduled = warmup.build_schedule(json.loads(line) for line in train.read_text().splitlines())
-            self.assertEqual(len(scheduled), 16)
+            self.assertEqual(len(scheduled), 12)
             self.assertEqual(
                 [row["warmup_flow_state"] for row in scheduled],
                 [state for pattern in warmup.WARMUP_STATE_PATTERN for state in pattern],
@@ -118,7 +118,7 @@ class WarmupTest(unittest.TestCase):
             pinned = RUN / "sft_source/mixed_sft/scheduled_data.py"
             result = warmup.validate_warmup_schedule(data, receipt_path, pinned)
             self.assertEqual(result["native_schedule"], None)
-            self.assertEqual(result["rows"], 16)
+            self.assertEqual(result["rows"], 12)
 
     def test_processor_audit_covers_runtime_capacity_mode(self) -> None:
         self.assertEqual(warmup._processor_mask_modes(), (("baseline", None), ("capacity_prefill", "1")))
@@ -230,7 +230,7 @@ class WarmupTest(unittest.TestCase):
             self.assertEqual(exported["rows"], 40)
             receipt = warmup.validate_inputs(root / "train.jsonl", root / "dev.jsonl", approval_path)
             self.assertEqual(receipt["counts"], {"train": 32, "dev": 8})
-            self.assertEqual(len(warmup.build_schedule(json.loads(line) for line in (root / "train.jsonl").read_text().splitlines())), 16)
+            self.assertEqual(len(warmup.build_schedule(json.loads(line) for line in (root / "train.jsonl").read_text().splitlines())), 12)
 
     def test_parent_adapter_requires_exact_bytes_and_profile(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

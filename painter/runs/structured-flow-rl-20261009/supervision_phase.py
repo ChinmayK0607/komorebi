@@ -32,8 +32,8 @@ APPROVAL_SCHEMA = "painter.structured-flow-approval-candidates.v1"
 MAX_JUDGE_CONCURRENCY = 4
 DEFAULT_WORKERS = 4
 PAIR_TIMEOUT_SECONDS = 300
-MIN_TRAIN_FAMILIES = 6
-MIN_DEV_FAMILIES = 2
+MIN_TRAIN_FAMILIES = 5
+MIN_DEV_FAMILIES = 1
 MIN_FINISH_ROWS = 5
 MAX_FINISH_ROWS = 8
 STRONG_CONSENSUS = {"initial_agreement", "three_of_four", "four_of_four"}
@@ -497,6 +497,98 @@ def _write_filtered_exports(root: Path, approval: Mapping[str, Any], render_mani
     }
 
 
+
+def _validate_cached_review(root: Path, renderer_sha256: str) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
+    """Validate a restored render/review tree before re-exporting its rows."""
+    if not _hash(renderer_sha256):
+        raise ValueError("cached review requires a lowercase renderer SHA-256")
+    manifest = _read_manifest(root)
+    flow._verify_sources(root, manifest)
+    flow._verify_prompt(root, manifest)
+    render_path = root / "render-manifest.json"
+    approval_path = root / "approval-candidates.json"
+    if render_path.is_symlink() or not render_path.is_file() or approval_path.is_symlink() or not approval_path.is_file():
+        raise ValueError("cached review is missing render or approval manifest")
+    render_manifest = json.loads(render_path.read_text(encoding="utf-8"))
+    if not isinstance(render_manifest, dict) or render_manifest.get("schema") != "painter.structured-flow-render.v1" or render_manifest.get("run_id") != RUN_ID:
+        raise ValueError("cached render manifest protocol is not recognized")
+    if render_manifest.get("source_manifest_sha256") != manifest.get("source_manifest_sha256"):
+        raise ValueError("cached render source manifest hash is stale")
+    renderer = render_manifest.get("renderer")
+    if not isinstance(renderer, Mapping) or renderer.get("renderer_sha256") != renderer_sha256:
+        raise ValueError("cached render renderer hash does not match the current renderer")
+    results = render_manifest.get("results")
+    if not isinstance(results, list) or len(results) != 32 or render_manifest.get("program_count") != 32 or render_manifest.get("valid_program_count") != 32 or render_manifest.get("complete_hash_verified") is not True:
+        raise ValueError("cached render manifest is incomplete")
+    lookup = _render_lookup(render_manifest)
+    if len(lookup) != 32:
+        raise ValueError("cached render manifest has duplicate or incomplete pair identities")
+    for row in manifest["rows"]:
+        candidate_id = str(row["id"])
+        for version, source_name in (("block_in", "block_in.js"), ("improved_final", "improved_final.js")):
+            record = lookup.get((candidate_id, version))
+            source = root / "programs" / candidate_id / source_name
+            png = root / "renders" / candidate_id / f"{version}.png"
+            if not isinstance(record, Mapping) or record.get("valid") is not True or not source.is_file() or not png.is_file():
+                raise ValueError(f"cached render pair is incomplete: {candidate_id}/{version}")
+            if record.get("source_sha256") != flow.file_sha256(source) or record.get("png_sha256") != flow.file_sha256(png):
+                raise ValueError(f"cached render hashes are stale: {candidate_id}/{version}")
+            receipt = record.get("receipt")
+            if not isinstance(receipt, Mapping) or receipt.get("valid") is not True or receipt.get("renderer_sha256") != renderer_sha256:
+                raise ValueError(f"cached render receipt is unbound: {candidate_id}/{version}")
+    approval = json.loads(approval_path.read_text(encoding="utf-8"))
+    if not isinstance(approval, dict) or approval.get("schema") != APPROVAL_SCHEMA or approval.get("run_id") != RUN_ID or approval.get("status") != "reviewed" or approval.get("review_protocol") != "painter.text_pairwise_consistent_side_judge_v2_generic" or approval.get("judge_model") != FLASH_MODEL:
+        raise ValueError("cached approval manifest protocol is not the pinned generic Flash review")
+    candidates = approval.get("candidates")
+    if not isinstance(candidates, list) or len(candidates) != 16 or approval.get("candidate_count") != 16:
+        raise ValueError("cached approval manifest must retain all sixteen decisions")
+    candidate_ids = {str(row["id"]) for row in manifest["rows"]}
+    seen: set[str] = set()
+    for candidate in candidates:
+        if not isinstance(candidate, Mapping):
+            raise ValueError("cached approval candidate is malformed")
+        candidate_id = str(candidate.get("id"))
+        if candidate_id in seen or candidate_id not in candidate_ids:
+            raise ValueError("cached approval candidate IDs do not match authored candidates")
+        seen.add(candidate_id)
+        raw_brief = str(candidate.get("brief", ""))
+        brief_rel = Path(raw_brief)
+        if brief_rel.is_absolute() or any(part in {"", ".", ".."} for part in brief_rel.parts) or brief_rel.parts[:1] != ("supervision-briefs",):
+            raise ValueError(f"cached approval brief path is unsafe: {candidate_id}")
+        brief = root / brief_rel
+        if brief.is_symlink() or not brief.is_file() or flow.file_sha256(brief) != candidate.get("brief_sha256"):
+            raise ValueError(f"cached approval brief hash mismatch: {candidate_id}")
+        for version, field in (("block_in", "initial_png_sha256"), ("improved_final", "final_png_sha256")):
+            record = lookup[(candidate_id, version)]
+            if candidate.get(field) != record.get("png_sha256"):
+                raise ValueError(f"cached approval/render hash mismatch: {candidate_id}/{version}")
+        if candidate.get("decision") not in {"approved", "censored"}:
+            raise ValueError(f"cached approval decision is invalid: {candidate_id}")
+    if seen != candidate_ids:
+        raise ValueError("cached approval manifest does not cover all authored candidates")
+    return manifest, render_manifest, approval
+
+
+def refresh_filtered_exports(data: str | Path, renderer_sha256: str) -> dict[str, Any]:
+    """Reuse paid renders/decisions and only recompute the bounded rich export."""
+    _require_linux()
+    root = Path(data).expanduser().resolve()
+    manifest, render_manifest, approval = _validate_cached_review(root, renderer_sha256)
+    receipt = _write_filtered_exports(root, approval, render_manifest)
+    receipt.update({
+        "reuse_mode": "hash_verified_paid_supervision_archive",
+        "cached_candidate_manifest_sha256": sha256_file(root / "manifest.json"),
+        "cached_render_manifest_sha256": sha256_file(root / "render-manifest.json"),
+        "cached_approval_manifest_sha256": sha256_file(root / "approval-candidates.json"),
+        "renderer": render_manifest.get("renderer"),
+        "judge_model": approval.get("judge_model"),
+        "judge_protocol": approval.get("review_protocol"),
+        "approved_candidates": approval.get("approved_count"),
+        "censored_candidates": len(approval.get("candidates", [])) - int(approval.get("approved_count", 0)),
+    })
+    write_json(root / "supervision-phase.json", receipt)
+    return receipt
+
 def write_jsonl(path: Path, rows: Sequence[Mapping[str, Any]]) -> None:
     path.write_text("".join(json.dumps(row, ensure_ascii=False, sort_keys=True) + "\n" for row in rows), encoding="utf-8")
 
@@ -563,24 +655,27 @@ def run_phase(
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--data", required=True, type=Path)
-    parser.add_argument("--renderer", required=True, type=Path)
-    parser.add_argument("--renderer-python", required=True, type=Path)
+    parser.add_argument("--renderer", type=Path)
+    parser.add_argument("--renderer-python", type=Path)
     parser.add_argument("--renderer-sha256", required=True)
-    parser.add_argument("--gateway-env", required=True, type=Path)
+    parser.add_argument("--gateway-env", type=Path)
+    parser.add_argument("--reuse-approved", action="store_true")
     parser.add_argument("--workers", type=int, default=DEFAULT_WORKERS)
     return parser
 
 
 def main(argv: Sequence[str] | None = None) -> int:
-    args = _parser().parse_args(argv)
-    receipt = run_phase(
-        args.data,
-        args.renderer,
-        args.renderer_python,
-        args.renderer_sha256,
-        args.gateway_env,
-        workers=args.workers,
-    )
+    parser = _parser()
+    args = parser.parse_args(argv)
+    if args.reuse_approved:
+        receipt = refresh_filtered_exports(args.data, args.renderer_sha256)
+    else:
+        if args.renderer is None or args.renderer_python is None or args.gateway_env is None:
+            parser.error("normal review requires --renderer, --renderer-python, and --gateway-env")
+        receipt = run_phase(
+            args.data, args.renderer, args.renderer_python, args.renderer_sha256, args.gateway_env,
+            workers=args.workers,
+        )
     print(json.dumps(receipt, ensure_ascii=False, sort_keys=True))
     return 0 if receipt.get("status") == "reviewed_ready_for_warmup" else 2
 

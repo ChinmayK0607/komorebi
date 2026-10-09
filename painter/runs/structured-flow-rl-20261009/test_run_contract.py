@@ -520,6 +520,44 @@ class StructuredFlowRunTests(unittest.TestCase):
                     cap_usd=0.50,
                 )
 
+    def test_controller_forwards_opt_in_pinned_supervision_restore(self):
+        operator = load("structured_flow_operation_supervision_restore_contract", RUN / "operate_single.py")
+        environment = {
+            "PAINTER_RESTORE_SUPERVISION_EVIDENCE": "1",
+            "PAINTER_SUPERVISION_EVIDENCE_SHA256": "b" * 64,
+            "PAINTER_SUPERVISION_EVIDENCE_URL": "https://huggingface.co/datasets/CK0607/komorebi-painter-experiments/resolve/revision/runs/structured-flow-rl-20261009/evidence.tar.gz",
+        }
+        with mock.patch.dict(os.environ, environment, clear=False):
+            command = operator._detached_job_command(
+                source_commit="a" * 40,
+                rental_start_epoch=100.0,
+                price_usd_per_hour=3.70,
+                cap_usd=0.50,
+            )
+        self.assertIn("PAINTER_RESTORE_SUPERVISION_EVIDENCE=1", command)
+        self.assertIn("PAINTER_SUPERVISION_EVIDENCE_SHA256=" + "b" * 64, command)
+        self.assertIn("PAINTER_SUPERVISION_EVIDENCE_URL=https://huggingface.co/", command)
+        with mock.patch.dict(os.environ, {"PAINTER_RESTORE_SUPERVISION_EVIDENCE": "1", "PAINTER_SUPERVISION_EVIDENCE_URL": "https://example.com/a"}, clear=False):
+            with self.assertRaises(ValueError):
+                operator._detached_job_command(
+                    source_commit="a" * 40,
+                    rental_start_epoch=100.0,
+                    price_usd_per_hour=3.70,
+                    cap_usd=0.50,
+                )
+
+    def test_remaining_restart_forwards_short_completion_reserve(self):
+        operator = load("structured_flow_operation_reserve_contract", RUN / "operate_single.py")
+        command = operator._detached_job_command(
+            source_commit="a" * 40,
+            rental_start_epoch=100.0,
+            price_usd_per_hour=3.70,
+            cap_usd=0.50,
+        )
+        self.assertIn("PAINTER_RESERVE_SECONDS=2700", command)
+        runtime = (RUN / "runtime_env.sh").read_text(encoding="utf-8")
+        self.assertIn('PAINTER_RESERVE_SECONDS="${PAINTER_RESERVE_SECONDS:-3600}"', runtime)
+
     def test_controller_forwards_opt_in_prime_seed_root(self):
         operator = load("structured_flow_operation_prime_seed_contract", RUN / "operate_single.py")
         with mock.patch.dict(os.environ, {
@@ -603,6 +641,9 @@ class StructuredFlowRunTests(unittest.TestCase):
         self.assertIn('FLOW_BUILD_TMP="$RUN/.flow-supervision-build.json.$$"', prepare)
         self.assertNotIn('>"$SUPERVISION_ROOT/build.json"', prepare)
         self.assertIn('restore_anchor_evidence.py', prepare)
+        self.assertIn('PAINTER_RESTORE_SUPERVISION_EVIDENCE', prepare)
+        self.assertIn('--mode supervision', prepare)
+        self.assertIn('--reuse-approved', prepare)
         self.assertIn('"$RUN/anchor_bank.py" ensure-casebriefs', prepare)
         self.assertLess(prepare.index('ensure-casebriefs'), prepare.index('bash "$RUN/matched_baseline.sh"'))
         self.assertLess(prepare.index('restore_anchor_evidence.py'), prepare.index('anchor_bank.py" prepare-lazy'))

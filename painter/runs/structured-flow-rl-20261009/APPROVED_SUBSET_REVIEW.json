@@ -1,0 +1,41 @@
+{
+  "schema": "structured-flow-parent-review-v1",
+  "source_archive_sha256": "ab2531f9f12032b9c11e75cbeb681bdf08d084a7b1458864db050493292ccb67",
+  "source_archive_revision": "ca0a838605dfd8cfb75a54dde2d480a94bcbef66",
+  "restored_files": 121,
+  "reused_approved_pairs": 6,
+  "censored_pairs_excluded": 10,
+  "source_train_rows": 15,
+  "source_dev_rows": 2,
+  "warmup_steps": 4,
+  "warmup_batch_size": 3,
+  "unique_scheduled_draws": 12,
+  "consumed_train_families": 5,
+  "flow_state_counts": {
+    "construction": 4,
+    "revision": 4,
+    "finish": 4
+  },
+  "model_render_processor_judge_calls": 0,
+  "next_rl_updates": 20,
+  "next_gpu_allowance_usd": 10,
+  "prior_gpu_reserve_usd": 10,
+  "cumulative_gpu_ceiling_usd": 20,
+  "actual_linux_optimizer_pending": true,
+  "parent_validation": {
+    "full_structured_tests_before_environment_forwarding": 96,
+    "actual_archive_replay": true,
+    "unique_consumed_draws": 12,
+    "flow_counts": [
+      4,
+      4,
+      4
+    ],
+    "five_train_families_consumed": true,
+    "ten_censored_pairs_excluded": true,
+    "shell_syntax": true,
+    "diff_review": true,
+    "full_structured_tests_after_environment_forwarding": 98
+  },
+  "completion_reserve_seconds": 2700
+}
