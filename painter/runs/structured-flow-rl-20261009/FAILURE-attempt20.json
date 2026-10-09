@@ -1,0 +1,25 @@
+{
+  "schema": "structured-flow-failure-v1",
+  "initial_source_commit": "6a2edb50cc203dada9c39f5d3fda19532c5219ab",
+  "same_node_renderer_recovery_source": "e54d0d656443ee8d48d90689c8c057d76750972a",
+  "initial_failure": "native renderer subprocess inherited orchestrator role and failed Prime-only startup guard",
+  "recovery_failure": "unused supervised-cache export imported PIL through bootstrap interpreter lacking Pillow",
+  "policy_generation_observed": true,
+  "supervised_optimizer_updates": 0,
+  "rl_optimizer_updates": 0,
+  "same_node_recovery_no_budget_reset": true,
+  "owned_node_released": true,
+  "gpu_clock_conservative_estimate_usd": 1.1611,
+  "prior_estimated_gpu_usd": 12.3179,
+  "cumulative_conservative_estimate_usd": 13.479,
+  "cost_is_invoice": false,
+  "api_cost_separate": true,
+  "next_decision": "explicit renderer subprocess role; skip all unused supervised preparation in RL-only mode; reuse paid31/16baseline and try20actualRLupdates underremainingceiling",
+  "public_failure_archive": {
+    "revision": "fb40aee97da604c425734dd33a36c43bcc8d7bf7",
+    "path": "runs/structured-flow-rl-20261009/evidence.tar.gz",
+    "sha256": "9090042827f847615c5b76e4ac77e8ff3ecb406f7a6c53261d0d44ee466bf247",
+    "bytes": 45181080,
+    "anonymous_hash_verified": true
+  }
+}

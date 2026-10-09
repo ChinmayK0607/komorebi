@@ -701,6 +701,12 @@ class StructuredFlowRunTests(unittest.TestCase):
         self.assertNotIn('>"$RUN/curriculum/build.json"', prepare)
         self.assertIn('FLOW_BUILD_TMP="$RUN/.flow-supervision-build.json.$$"', prepare)
         self.assertNotIn('>"$SUPERVISION_ROOT/build.json"', prepare)
+        # RL-only preparation must not restore, render, judge, or export the
+        # optional teacher cache even when its legacy supervision flags remain
+        # enabled.  The required SFT path still enters this branch by default.
+        supervision_gate = 'if [[ "${PAINTER_RUN_WARMUP:-1}" == 1 && "$PAINTER_CODE_SUPERVISION_ENABLED" == 1'
+        self.assertIn(supervision_gate, prepare)
+        self.assertLess(prepare.index(supervision_gate), prepare.index('FLOW_BUILD_TMP='))
         self.assertIn('restore_anchor_evidence.py', prepare)
         self.assertIn('PAINTER_RESTORE_SUPERVISION_EVIDENCE', prepare)
         self.assertIn('--mode supervision', prepare)

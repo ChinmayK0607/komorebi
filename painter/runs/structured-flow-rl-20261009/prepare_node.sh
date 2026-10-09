@@ -491,7 +491,7 @@ fi
 # decisions, and only then exposes filtered train/dev JSONL to warmup.sh.
 SUPERVISION_STATUS="not_requested"
 export SUPERVISION_STATUS
-if [[ "$PAINTER_CODE_SUPERVISION_ENABLED" == 1 && "$PAINTER_RUN_SUPERVISION" == 1 && \
+if [[ "${PAINTER_RUN_WARMUP:-1}" == 1 && "$PAINTER_CODE_SUPERVISION_ENABLED" == 1 && "$PAINTER_RUN_SUPERVISION" == 1 && \
       ( -z "${PAINTER_WARMUP_TRAIN_JSONL:-}" || -z "${PAINTER_WARMUP_DEV_JSONL:-}" ) ]]; then
   SUPERVISION_ROOT="${PAINTER_SUPERVISION_ROOT:-$RUN/code-supervision}"
   FLOW_SOURCE_MANIFEST="$SUPERVISION_ROOT/manifest.json"
