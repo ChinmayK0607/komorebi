@@ -1,0 +1,61 @@
+{
+  "observed_utc": "2026-10-09T10:51:22.815726+00:00",
+  "inference_ready": true,
+  "aliases": [
+    "flash12-baseline",
+    "flash12-baseline",
+    "sft-step512"
+  ],
+  "native_painting_pngs_all_phases": 9,
+  "utilization_window_kind": "startup_and_frozen_baseline_generation",
+  "gpu_utilization": [
+    {
+      "gpu": 0,
+      "samples": 55,
+      "window_start": "2026/10/09 10:42:17.333",
+      "window_end": "2026/10/09 10:51:17.670",
+      "mean_percent": 0.0,
+      "busy_fraction_threshold_10_percent": 0.0,
+      "phase_role": "idle_reserved_trainer"
+    },
+    {
+      "gpu": 1,
+      "samples": 55,
+      "window_start": "2026/10/09 10:42:17.337",
+      "window_end": "2026/10/09 10:51:17.672",
+      "mean_percent": 0.0,
+      "busy_fraction_threshold_10_percent": 0.0,
+      "phase_role": "idle_reserved_trainer"
+    },
+    {
+      "gpu": 2,
+      "samples": 55,
+      "window_start": "2026/10/09 10:42:17.340",
+      "window_end": "2026/10/09 10:51:17.673",
+      "mean_percent": 20.45,
+      "busy_fraction_threshold_10_percent": 0.2364,
+      "phase_role": "tensor_parallel_inference"
+    },
+    {
+      "gpu": 3,
+      "samples": 55,
+      "window_start": "2026/10/09 10:42:17.344",
+      "window_end": "2026/10/09 10:51:17.675",
+      "mean_percent": 20.85,
+      "busy_fraction_threshold_10_percent": 0.2364,
+      "phase_role": "tensor_parallel_inference"
+    }
+  ],
+  "pipeline_saturated": false,
+  "schema": "diverse-flow-live-baseline-v1",
+  "source_commit": "60919b1c07969664c8e4d35a6ef93b4efe1984fd",
+  "confirmed_sft_optimizer_updates": 0,
+  "confirmed_rl_optimizer_updates": 0,
+  "canvas_count_scope": "all painting.png artifacts under run root; includes renderer probe and frozen-baseline generation, not unique completed evaluation cases",
+  "phase": "frozen_sft_opponent_generation",
+  "reported_vllm_generation_tokens_per_second": 180.2,
+  "throughput_observation_utc": "2026-10-09T10:50:02+00:00",
+  "throughput_scope": "one vLLM logging interval, eight running requests; not full-run throughput",
+  "gpu_cost_scope": "rental-clock estimate; API excluded, not invoice",
+  "cumulative_gpu_cap_usd": 20
+}
