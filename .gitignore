@@ -94,6 +94,7 @@ painter/runs/**
 !painter/runs/*/*manifest*.json
 !painter/runs/*/config*.json
 !painter/runs/*/receipt*.json
+!painter/runs/staged-family-balanced-20261010/PROTOCOL.json
 # The bounded COCO capability run keeps its two reviewed native-eval TOML
 # configs alongside the manifest so a Linux node can stage them verbatim.
 !painter/runs/coco-capability-20260922/base.toml

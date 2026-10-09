@@ -1,0 +1,133 @@
+{
+  "schema": "staged-family-balanced-protocol-v1",
+  "run_id": "staged-family-balanced-20261010",
+  "status": "pending_offline_preparation",
+  "hypothesis": "Replacing asynchronous balanced-mixed exposure with explicit sequential stage advancement and equal per-family quotas will make the weak spatial-pair level measurable and reduce family-exposure variance, while the exact Flash12 policy remains the matched starting baseline.",
+  "matched_baseline": {
+    "run_id": "diverse-flow-rl-20261009",
+    "result_path": "../diverse-flow-rl-20261009/RESULT.json",
+    "starting_policy": "exact Flash12 RL step 12",
+    "starting_valid_final_canvases": 32,
+    "prior_rl_valid_final_canvases": 31,
+    "prior_stage_reward_means": {
+      "1": 0.2491,
+      "2": 0.2953,
+      "3": 0.1905,
+      "4": 0.2622
+    },
+    "prior_family_exposure_range": [
+      10,
+      27
+    ],
+    "matched_panel_cases": 32,
+    "decision": "retain Flash12; test one curriculum change before another scaled run"
+  },
+  "source_ids": {
+    "prior_run_tree_commit": "113d40cdd446d1d406eb294bd50fa34f90cc0197",
+    "prime_revision": "26b3131d2716a4f8210b165df584b83b4bc54f61",
+    "prior_curriculum_generator_sha256": "b86c1729a83a73ba1fc7bdf934146178c19abd21a0876c1e12ec404e4e5ffbe5",
+    "prior_canonical_proposal_sha256": "49262afcb3138fe4e21f2c98cff84a6bf3acb513c23d8762306c7ffb0a390f95"
+  },
+  "base_model": {
+    "id": "Qwen/Qwen3.8-27B",
+    "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0"
+  },
+  "starting_policy": {
+    "repo": "CK0607/qwen3.8-27b-brush-painting",
+    "revision": "1227a2427a8ae16014d2fdca4d1adb6855d3fa1c",
+    "prefix": "rl-judge-matched-20261004-flash/step_12",
+    "sha256": "c70c47ec0d6d7172b3bc25c4f54178919cf7c079cd9652fff3bc76db9e1eca79"
+  },
+  "curriculum": {
+    "manifest": "curriculum-manifest.json",
+    "manifest_sha256": "38ccfb8390730d311134b7fdddf4e4c89cd9605563d29d069e55f6b59818ea7b",
+    "stages": {
+      "1": "single_forms",
+      "2": "connected_objects",
+      "3": "spatial_pairs",
+      "4": "scenes"
+    },
+    "cycles_by_stage": {
+      "1": 4,
+      "2": 4,
+      "3": 8,
+      "4": 4
+    },
+    "sampling_cycles": 20,
+    "sampling_cycle_cap": 40,
+    "refill_cycle_multiplier": 2,
+    "optimizer_updates_target": 20,
+    "stage_advancement": "optimizer_target_receipt_only",
+    "task_groups_per_cycle": 6,
+    "rollouts_per_prompt": 4,
+    "trace_capacity_per_cycle": 24,
+    "minimum_scored_rollouts_per_group": 3,
+    "batch_size": 24,
+    "group_size": 4,
+    "train_rows": 96,
+    "heldout_rows": 32,
+    "heldout_panel_sha256": "94be432eaff2f26443f77c9a5d668c37c92f7e873b6c9461854d6ed2aa09ca46",
+    "sampling": "sequential stage manifests with explicit cycle pass/stop/advance receipts; six task groups per sampling cycle, one prompt per family, four rollouts per prompt, 24 trace capacity; actual scored exposure is measured after admission, optimizer updates are recorded independently, and only the 4/4/8/4 optimizer targets advance stages; standard cyclic mixed sampling is not a curriculum"
+  },
+  "config": {
+    "path": "config.json",
+    "sha256": "1d0e044b964b7887d7267713f4532fa26a752ca04f2440d09cf8b2f55760947f"
+  },
+  "reward_and_renderer": {
+    "judge_model": "xiaomi/mimo-v2.6-flash",
+    "judge_effort": "medium",
+    "judge_rubric": "existing-generic-rubric",
+    "judge_protocol": "text-paint-sft-pairwise-consistent-v1",
+    "judge_format": "identity-joint-side-schema-v2-generic-v1",
+    "judge_rubric_sha256": "d21e4644e7a3874a0694b2ad406420e733b7638222eb7717e7f5f91cbdf1613c",
+    "renderer_sha256": "dc6b9d837ed7be382784a6c84de1b64911506b17a19b499ce054c0c572e75794",
+    "p5_brush_sha256": "db5b0094cb223529a8c5fc3bbba7bf8f2d5b5f5a5c0a847062194feaf917d16b",
+    "frozen_opponent": {
+      "prefix": "photo-curriculum-sft-20260922-balanced/step_512",
+      "revision": "adf687e5b321514eda7be6eab050434fdc8e44ff",
+      "sha256": "bea72b066986faa1b92b9dc539c710093181ee916b99323e2b2498f318ac1740"
+    }
+  },
+  "supervision": {
+    "enabled": false,
+    "updates": 0,
+    "reason": "The completed same-run four-step code/canvas SFT panel was 32/32 valid both before and after; no new warmup is claimed."
+  },
+  "action_admission": {
+    "required_boolean_fields": [
+      "code_valid",
+      "canvas_valid",
+      "current_canvas_valid",
+      "terminal_action_valid"
+    ],
+    "model_owned_invalid": "score_zero_and_train",
+    "judge_uncertain_or_service_failure": "exclude_without_zero",
+    "minimum_scored_rollouts_per_group": 3,
+    "missing_ownership_status_evidence": "fail_closed_stop",
+    "unresolved_reward": "exclude_only_with_explicit_judge_or_service_ownership",
+    "no_prior_canvas_fallback": true
+  },
+  "evaluation": {
+    "same_fixed_heldout_panel_for_start_and_final": true,
+    "cases": 32,
+    "seed": 918210,
+    "temperature": 1.0,
+    "max_turns": 3,
+    "max_tokens_per_turn": 8192,
+    "enable_thinking": false
+  },
+  "pending_choices": {
+    "batch_size": "Prime batch_size=24 counts trainable traces; six per-family groups provide 24 cycle capacity, partial groups can span cycles, and the node-free Prime compatibility check is required before allocation",
+    "prime_tail_purge_hook": "required before any stage transition; the runtime must physically consume and purge the exact recorded stage-tail trace IDs, so this preparation is not launch-ready",
+    "renderer_canary": "measure the repaired renderer tail before any scaled rental",
+      "quality_threshold": "schedule completion is a progression receipt, not a quality gate or claim of visual improvement; judge outcomes remain descriptive until the matched panel is complete"
+  },
+  "results": {
+    "status": "pending_no_gpu",
+    "optimizer_updates": null,
+    "matched_panel": null,
+    "gpu_utilization": null,
+    "cost": null,
+    "next_decision": "await node-free compatibility and renderer-canary review"
+  }
+}
