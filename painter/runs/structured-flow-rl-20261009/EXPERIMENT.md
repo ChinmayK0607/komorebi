@@ -80,3 +80,6 @@ Matched evaluation recovery authorized (2026-10-09): no training. Evaluate publi
 
 
 Evaluation recovery launched on2026-10-09: sourcea9df883edc126fdb50f0f2486a84f99ed640f0ba, public sourcebundle535c17db6c0e28b698d656f284d8a9a6acba2167ff32a545103533920da4d5ad at dataset revision29dce258ccee621340d954bb26c3f65985281ad9.119 structured tests and actual savedbaseline16/16 terminal-image metadata replay pass. Finite singleH200 inference/zero trainer topology; actual rate$3.884 whole-nodehour, fresh allowance$3, prior GPUestimate$16.893 and original$20 ceiling. Runtime preparation only at this record; evaluation is checkpoint4 vs cachedFlash12 onexact16heldout prompts. Normal HF OAuth cache refresh succeeded before renting. No new optimizer updates or learning claims, and no recurring automation.
+
+
+First evaluation-only launch failedbeforemodel loading: shared text-pairwise bootstrap required2visibleGPUs despite explicit evaluation-only physical1mode.0newepisodes/optimizerupdates; finitecontrollerreleasednode. Public failure archive unconfirmed; screenedcontrollerdiagnostics retainedprivately. EVAL_STEP4_FAILURE1.json records exactconservativecostmethod, cumulativeestimate andnext$2.85allowance underoriginal$20 ceiling. Nextfixexercises actualbootstrapphysicalGPUadmission beforepackage/model setup.

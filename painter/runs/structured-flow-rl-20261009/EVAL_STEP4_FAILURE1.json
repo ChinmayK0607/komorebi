@@ -1,0 +1,22 @@
+{
+  "schema": "structured-flow-evaluation-bootstrap-failure-v1",
+  "date": "2026-10-09",
+  "source_commit": "a9df883edc126fdb50f0f2486a84f99ed640f0ba",
+  "failure": "shared setup_node.sh required two visible GPUs before installing runtime or loading models",
+  "evaluation_cases_generated": 0,
+  "new_optimizer_updates": 0,
+  "node_released": true,
+  "public_source_bundle_verified": true,
+  "public_failure_archive_verified": false,
+  "gpu_estimate": {
+    "attempt_usd": 0.1571,
+    "prior_pilot_usd": 16.893,
+    "cumulative_usd": 17.0501,
+    "seconds_to_release_plus60": 145.6367380619049,
+    "whole_node_usd_hour": 3.884,
+    "not_invoice": true,
+    "excludes_api": true
+  },
+  "next_retry_allowance_usd": 2.85,
+  "original_gpu_ceiling_usd": 20
+}

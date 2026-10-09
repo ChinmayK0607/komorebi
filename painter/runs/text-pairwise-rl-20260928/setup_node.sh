@@ -10,10 +10,32 @@ PRIME_ROOT="${PRIME_ROOT:-$NODE_ROOT/prime}"
 # arm; the default remains the historical node-root cache.
 MODEL_DIR="${MODEL_DIR:-$NODE_ROOT/model-cache/qwen/1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0}"
 PRIME_COMMIT="26b3131d2716a4f8210b165df584b83b4bc54f61"
+PROBE_ONLY=0
+if [[ "${1:-}" == --gpu-probe-only ]]; then
+  PROBE_ONLY=1
+  shift
+fi
+[[ $# == 0 ]] || { echo 'usage: setup_node.sh [--gpu-probe-only]' >&2; exit 2; }
 [[ "$(uname -s)" == Linux ]] || { echo 'Linux node required' >&2; exit 1; }
-[[ "$(nvidia-smi --query-gpu=index --format=csv,noheader | wc -l)" -ge 2 ]] || {
-  echo 'two visible GPUs required' >&2; exit 1;
-}
+GPU_COUNT="$(nvidia-smi --query-gpu=index --format=csv,noheader | wc -l | tr -d ' ')"
+[[ "$GPU_COUNT" =~ ^[0-9]+$ ]] || { echo 'unable to count visible GPUs' >&2; exit 1; }
+if [[ "${PAINTER_EVALUATION_ONLY:-0}" == 1 ]]; then
+  [[ "$GPU_COUNT" -ge 1 ]] || {
+    echo 'one visible GPU required for evaluation-only mode' >&2; exit 1;
+  }
+else
+  [[ "$GPU_COUNT" -ge 2 ]] || {
+    echo 'two visible GPUs required' >&2; exit 1;
+  }
+fi
+if (( PROBE_ONLY )); then
+  if [[ "${PAINTER_EVALUATION_ONLY:-0}" == 1 ]]; then
+    printf '%s\n' "SETUP_NODE_GPU_PROBE_OK: mode=evaluation_only visible_gpus=$GPU_COUNT required_min=1"
+  else
+    printf '%s\n' "SETUP_NODE_GPU_PROBE_OK: mode=training visible_gpus=$GPU_COUNT required_min=2"
+  fi
+  exit 0
+fi
 [[ -f "$REPO/painter/foundation-lock.json" ]] || { echo 'painter source missing' >&2; exit 1; }
 mkdir -p "$RUN/logs" "$NODE_ROOT/private" "$MODEL_DIR"
 chmod 700 "$NODE_ROOT/private"

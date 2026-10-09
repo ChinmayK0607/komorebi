@@ -26,6 +26,54 @@ def load(name: str):
 
 
 class EvaluationRecoveryTest(unittest.TestCase):
+    def test_bootstrap_gpu_probe_uses_actual_setup_script_without_installing(self) -> None:
+        """Exercise the real shared bootstrap boundary before package/model work."""
+        script = HERE.parent / "text-pairwise-rl-20260928" / "setup_node.sh"
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            fake_bin = root / "bin"
+            fake_bin.mkdir()
+            (fake_bin / "uname").write_text("#!/bin/sh\nprintf '%s\\n' Linux\n")
+            (fake_bin / "nvidia-smi").write_text(
+                "#!/bin/sh\n"
+                "i=0\n"
+                "while [ \"$i\" -lt \"${MOCK_GPU_COUNT:-0}\" ]; do printf '%s\\n' \"$i\"; i=$((i + 1)); done\n"
+            )
+            (fake_bin / "python3").write_text("#!/bin/sh\nprintf '%s\\n' invoked > \"$MOCK_INSTALL_MARKER\"\nexit 99\n")
+            for helper in fake_bin.iterdir():
+                helper.chmod(0o755)
+            marker = root / "install-marker"
+
+            def probe(gpu_count: int, evaluation_only: bool) -> subprocess.CompletedProcess[str]:
+                environment = {
+                    **os.environ,
+                    "PATH": f"{fake_bin}:{os.environ.get('PATH', '')}",
+                    "MOCK_GPU_COUNT": str(gpu_count),
+                    "MOCK_INSTALL_MARKER": str(marker),
+                }
+                if evaluation_only:
+                    environment["PAINTER_EVALUATION_ONLY"] = "1"
+                else:
+                    environment.pop("PAINTER_EVALUATION_ONLY", None)
+                return subprocess.run(
+                    ["bash", str(script), "--gpu-probe-only"],
+                    cwd=HERE,
+                    env=environment,
+                    text=True,
+                    capture_output=True,
+                )
+
+            evaluation = probe(1, True)
+            self.assertEqual(evaluation.returncode, 0, evaluation.stderr)
+            self.assertIn("mode=evaluation_only visible_gpus=1", evaluation.stdout)
+            training_one = probe(1, False)
+            self.assertNotEqual(training_one.returncode, 0)
+            self.assertIn("two visible GPUs required", training_one.stderr)
+            training_two = probe(2, False)
+            self.assertEqual(training_two.returncode, 0, training_two.stderr)
+            self.assertIn("mode=training visible_gpus=2", training_two.stdout)
+            self.assertFalse(marker.exists(), "probe must stop before Python/package/model setup")
+
     def test_controller_evaluation_mode_routes_detached_job_to_recovery(self) -> None:
         path = HERE / "operate_single.py"
         spec = importlib.util.spec_from_file_location("evaluation_operation_contract", path)
