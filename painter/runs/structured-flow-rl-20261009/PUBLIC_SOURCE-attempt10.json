@@ -1,0 +1,12 @@
+{
+  "schema": "structured-flow-public-source-v1",
+  "repo_id": "CK0607/komorebi-painter-experiments",
+  "repo_type": "dataset",
+  "revision": "a4ae30fb63154e13cbb5f92b009d4264a7d17d79",
+  "path": "sources/structured-flow-rl-20261009/94aa0e733c5b4c909b5ba2d8694650bd3a0dd726.bundle",
+  "sha256": "8c316405d44fd2afdd7102d65c17e37b34e5b71eed1fa4aed6b9df8e24d77b0f",
+  "bytes": 3677830,
+  "source_commit": "94aa0e733c5b4c909b5ba2d8694650bd3a0dd726",
+  "public": true,
+  "anonymous_hash_verified": true
+}

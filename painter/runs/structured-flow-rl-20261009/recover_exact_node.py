@@ -10,6 +10,8 @@ rental window.  Every failure path releases exactly that pod.
 from __future__ import annotations
 
 import argparse
+from contextlib import contextmanager, nullcontext
+import hashlib
 import importlib.util
 import os
 from pathlib import Path
@@ -20,6 +22,7 @@ import sys
 import time
 from types import SimpleNamespace
 from typing import Any, Callable, Sequence
+import urllib.parse
 
 
 RUN = Path(__file__).resolve().parent
@@ -48,6 +51,63 @@ def _absolute_remote_path(value: str | Path, label: str) -> Path:
     if not path.is_absolute() or ".." in path.parts:
         raise ValueError(f"{label} must be absolute and cannot contain '..'")
     return path
+
+
+def _sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as stream:
+        for block in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(block)
+    return digest.hexdigest()
+
+
+def _validate_public_source(url: str, expected_sha256: str) -> tuple[str, str]:
+    """Allow only a credential-free immutable Hugging Face resolve URL."""
+    if len(expected_sha256) != 64 or not re.fullmatch(r"[0-9a-f]{64}", expected_sha256):
+        raise ValueError("source-sha256 must be lowercase hexadecimal SHA-256")
+    parsed = urllib.parse.urlparse(url)
+    if (
+        parsed.scheme != "https"
+        or parsed.netloc != "huggingface.co"
+        or parsed.username
+        or parsed.password
+        or parsed.query
+        or parsed.fragment
+    ):
+        raise ValueError("public-source-url must be a credential-free HTTPS Hugging Face URL")
+    components = parsed.path.split("/")
+    try:
+        revision_index = components.index("resolve") + 1
+        revision = components[revision_index]
+    except (ValueError, IndexError):
+        raise ValueError("public-source-url must use an immutable Hugging Face resolve revision") from None
+    if not base.COMMIT_RE.fullmatch(revision):
+        raise ValueError("public-source-url revision must be an immutable Git-style hash")
+    return url, expected_sha256
+
+
+@contextmanager
+def _verified_source_sftp_bypass(*, source_bundle: Path, remote_source: Path, expected_sha256: str):
+    """Skip exactly one verified source upload; preserve credential uploads."""
+    source_bundle = base._regular_file(source_bundle, "source-bundle")
+    if _sha256_file(source_bundle) != expected_sha256:
+        raise ValueError("local source bundle hash does not match source-sha256")
+    original = base._sftp_put
+
+    def put(sftp: Any, local: Path, remote: str, *, timeout: float) -> None:
+        if str(remote) == str(remote_source):
+            if Path(local).expanduser().resolve() != source_bundle:
+                raise ValueError("source SFTP bypass received an unexpected local file")
+            if _sha256_file(source_bundle) != expected_sha256:
+                raise ValueError("local source bundle changed before handoff")
+            return
+        original(sftp, local, remote, timeout=timeout)
+
+    base._sftp_put = put
+    try:
+        yield
+    finally:
+        base._sftp_put = original
 
 
 def prime_seed_command(seed_root: Path, commit: str = PRIME_COMMIT) -> str:
@@ -83,6 +143,8 @@ def _remote_prepare(
     window: Any,
     seed_root: Path,
     remote_scratch_root: Path,
+    public_source_url: str | None = None,
+    public_source_sha256: str | None = None,
     now: Callable[[], float] = time.time,
 ) -> None:
     """Create scratch and verify the pinned Prime checkout on the node."""
@@ -107,6 +169,29 @@ def _remote_prepare(
             now=now,
             window=window,
         )
+        if public_source_url is not None or public_source_sha256 is not None:
+            if public_source_url is None or public_source_sha256 is None:
+                raise ValueError("public-source-url and source-sha256 must be supplied together")
+            _validate_public_source(public_source_url, public_source_sha256)
+            remote_source = scratch / "source.bundle"
+            partial = scratch / ".source.bundle.download.partial"
+            download = (
+                "set -Eeuo pipefail; "
+                f"rm -f {shlex.quote(str(partial))}; "
+                f"curl --fail --silent --show-error --location --max-time 300 "
+                f"--proto '=https' --tlsv1.2 -o {shlex.quote(str(partial))} "
+                f"{shlex.quote(public_source_url)}; "
+                f"test \"$(sha256sum {shlex.quote(str(partial))} | awk '{{print $1}}')\" = {shlex.quote(public_source_sha256)}; "
+                f"mv -f {shlex.quote(str(partial))} {shlex.quote(str(remote_source))}; "
+                f"chmod 600 {shlex.quote(str(remote_source))}"
+            )
+            base._remote_exec(
+                ssh,
+                download,
+                timeout=min(float(base.TRANSFER_TIMEOUT_SECONDS), base._remaining(window, now)),
+                now=now,
+                window=window,
+            )
 
 
 class _ReleaseTrackingAPI:
@@ -157,6 +242,8 @@ def recover(
     output_root: Path,
     prime_seed_root: Path = DEFAULT_PRIME_SEED_ROOT,
     remote_scratch_root: Path = DEFAULT_REMOTE_SCRATCH_ROOT,
+    public_source_url: str | None = None,
+    source_sha256: str | None = None,
     previous_controller_pid: int | None = None,
     now: Callable[[], float] = time.time,
 ) -> int:
@@ -167,6 +254,12 @@ def recover(
     source_bundle = base._regular_file(source_bundle, "source-bundle")
     hf_token_file = base._regular_file(hf_token_file, "HF token file", owner_only=True)
     gateway_env_file = base._regular_file(gateway_env_file, "Gateway environment file", owner_only=True)
+    if (public_source_url is None) != (source_sha256 is None):
+        raise ValueError("public-source-url and source-sha256 must be supplied together")
+    if public_source_url is not None and source_sha256 is not None:
+        _validate_public_source(public_source_url, source_sha256)
+        if _sha256_file(source_bundle) != source_sha256:
+            raise ValueError("local source bundle hash does not match source-sha256")
     prime_seed_root = _absolute_remote_path(prime_seed_root, "Prime seed root")
     remote_scratch_root = _absolute_remote_path(remote_scratch_root, "remote scratch root")
     window = base.make_window(
@@ -195,6 +288,8 @@ def recover(
             window=window,
             seed_root=prime_seed_root,
             remote_scratch_root=remote_scratch_root,
+            public_source_url=public_source_url,
+            public_source_sha256=source_sha256,
             now=now,
         )
         # The wrapper now owns the exact-pod release path.  Only after this
@@ -204,16 +299,26 @@ def recover(
         os.environ["PAINTER_PRIME_SEED_ENABLED"] = "1"
         os.environ["PAINTER_PRIME_SEED_ROOT"] = str(prime_seed_root)
         base.REMOTE_BUNDLE = remote_scratch_root / "source.bundle"
-        return base.operate(
-            window=window,
-            source_bundle=source_bundle,
-            source_commit=source_commit,
-            hf_token_file=hf_token_file,
-            gateway_env_file=gateway_env_file,
-            output_root=output_root,
-            api=tracked,
-            now=now,
+        bypass = (
+            _verified_source_sftp_bypass(
+                source_bundle=source_bundle,
+                remote_source=base.REMOTE_BUNDLE,
+                expected_sha256=source_sha256,
+            )
+            if public_source_url is not None and source_sha256 is not None
+            else nullcontext()
         )
+        with bypass:
+            return base.operate(
+                window=window,
+                source_bundle=source_bundle,
+                source_commit=source_commit,
+                hf_token_file=hf_token_file,
+                gateway_env_file=gateway_env_file,
+                output_root=output_root,
+                api=tracked,
+                now=now,
+            )
     finally:
         base.REMOTE_BUNDLE = previous_bundle
         for key, value in environment_keys.items():
@@ -249,6 +354,8 @@ def parser() -> argparse.ArgumentParser:
     value.add_argument("--output-root", type=Path, required=True)
     value.add_argument("--prime-seed-root", type=Path, default=DEFAULT_PRIME_SEED_ROOT)
     value.add_argument("--remote-scratch-root", type=Path, default=DEFAULT_REMOTE_SCRATCH_ROOT)
+    value.add_argument("--public-source-url")
+    value.add_argument("--source-sha256")
     value.add_argument("--previous-controller-pid", type=int)
     return value
 
@@ -269,6 +376,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         output_root=args.output_root,
         prime_seed_root=args.prime_seed_root,
         remote_scratch_root=args.remote_scratch_root,
+        public_source_url=args.public_source_url,
+        source_sha256=args.source_sha256,
         previous_controller_pid=args.previous_controller_pid,
     )
 

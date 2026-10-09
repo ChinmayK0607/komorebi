@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import importlib.util
 from pathlib import Path
+import hashlib
 from types import SimpleNamespace
 import tempfile
 import unittest
@@ -42,6 +43,48 @@ class RecoveryTests(unittest.TestCase):
         self.assertIn(module.PRIME_COMMIT, command)
         self.assertIn("fsck --full", command)
         self.assertIn("test ! -L", command)
+
+    def test_public_source_url_is_immutable_credential_free_hf_revision(self):
+        module = load()
+        valid = f"https://huggingface.co/datasets/example/resolve/{'a' * 40}/source.bundle"
+        self.assertEqual(module._validate_public_source(valid, "b" * 64), (valid, "b" * 64))
+        for invalid in (
+            valid + "?token=secret",
+            valid.replace("huggingface.co", "example.com"),
+            valid.replace("/resolve/" + "a" * 40, "/resolve/main"),
+        ):
+            with self.assertRaises(ValueError):
+                module._validate_public_source(invalid, "b" * 64)
+
+    def test_source_bypass_skips_only_verified_source_and_keeps_credentials_on_sftp(self):
+        module = load()
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / "source.bundle"
+            source.write_bytes(b"verified-source")
+            expected = hashlib.sha256(source.read_bytes()).hexdigest()
+            calls = []
+
+            def original(_sftp, _local, remote, *, timeout):
+                calls.append((remote, timeout))
+
+            with mock.patch.object(module.base, "_sftp_put", side_effect=original):
+                with module._verified_source_sftp_bypass(
+                    source_bundle=source,
+                    remote_source=Path("/tmp/structured-flow-large/source.bundle"),
+                    expected_sha256=expected,
+                ):
+                    module.base._sftp_put(object(), source, "/tmp/structured-flow-large/source.bundle", timeout=5.0)
+                    module.base._sftp_put(object(), source, "/root/painter/private/hf-token", timeout=5.0)
+            self.assertEqual(calls, [("/root/painter/private/hf-token", 5.0)])
+
+            with self.assertRaisesRegex(ValueError, "hash"):
+                with module._verified_source_sftp_bypass(
+                    source_bundle=source,
+                    remote_source=Path("/tmp/structured-flow-large/source.bundle"),
+                    expected_sha256="c" * 64,
+                ):
+                    pass
 
     def test_stage_failure_releases_exact_supplied_pod(self):
         module = load()
