@@ -5,7 +5,9 @@ import importlib.util
 import io
 import json
 from pathlib import Path
+import stat
 import subprocess
+import sys
 import tarfile
 import tempfile
 import unittest
@@ -224,6 +226,95 @@ class BootstrapUnitTests(unittest.TestCase):
                 node_root=node,
             )
             self.assertNotIn("--allowed-old-renderer-root", missing_old_command)
+
+    def test_renderer_layout_smoke_requires_deep_project_anchor(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            render_root = root / "node/renderer"
+            deep = render_root / "painter/runtime/watercolour-cancellable-centroid-v1/renderer.py"
+            deep.parent.mkdir(parents=True)
+            source = "from pathlib import Path\nHERE = Path(__file__).resolve().parent\nPROJECT = HERE.parents[3]\n"
+            deep.write_text(source, encoding="utf-8")
+            BOOTSTRAP._renderer_layout_contract(
+                renderer=deep,
+                expected_project=render_root.parent,
+            )
+            BOOTSTRAP._renderer_layout_smoke(
+                bootstrap_python=Path(sys.executable),
+                renderer=deep,
+                expected_project=render_root.parent,
+            )
+
+            shallow = render_root / "cancellable-runtime/renderer.py"
+            shallow.parent.mkdir(parents=True)
+            shallow.write_text(source, encoding="utf-8")
+            with self.assertRaises(BOOTSTRAP.BootstrapError):
+                BOOTSTRAP._renderer_layout_contract(
+                    renderer=shallow,
+                    expected_project=render_root.parent,
+                )
+            with self.assertRaises(BOOTSTRAP.BootstrapError):
+                BOOTSTRAP._renderer_layout_smoke(
+                    bootstrap_python=Path(sys.executable),
+                    renderer=shallow,
+                    expected_project=render_root.parent,
+                )
+
+    def test_renderer_overlay_cli_smoke_uses_deep_project_layout(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            render_root = root / "node/renderer"
+            bundle = render_root / "painter/runtime/watercolour-cancellable-centroid-v1"
+            completed = subprocess.run(
+                [
+                    sys.executable,
+                    str(BOOTSTRAP.REPO_ROOT / "painter/patch_brush_centroid.py"),
+                    "--renderer-overlay",
+                    "--output-root",
+                    str(bundle),
+                ],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            self.assertEqual(completed.returncode, 0, completed.stderr)
+            renderer = bundle / "cancellable_watercolour_renderer.py"
+            self.assertTrue(renderer.is_file())
+            self.assertEqual(renderer.parent.resolve().parents[3], render_root.parent.resolve())
+            BOOTSTRAP._renderer_layout_contract(
+                renderer=renderer,
+                expected_project=render_root.parent,
+            )
+            BOOTSTRAP._renderer_layout_smoke(
+                bootstrap_python=Path(sys.executable),
+                renderer=renderer,
+                expected_project=render_root.parent,
+            )
+
+    def test_expose_renderer_runtime_opens_deep_bundle_traversal(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            node_root = root / "node"
+            render_root = node_root / "renderer"
+            browser_root = render_root / "browsers"
+            bundle = render_root / "painter/runtime/watercolour-cancellable-centroid-v1"
+            renderer_python = render_root / "renderer-env/bin/python"
+            asset = bundle / "assets/p5.brush.js"
+            vendor_asset = render_root / "vendor/integrations/watercolour/assets/p5.brush.js"
+            renderer_python.parent.mkdir(parents=True)
+            browser_root.mkdir(parents=True)
+            asset.parent.mkdir(parents=True)
+            vendor_asset.parent.mkdir(parents=True)
+            renderer_python.write_text("#!/bin/sh\n", encoding="utf-8")
+            asset.write_text("brush\n", encoding="utf-8")
+            (bundle / "cancellable_watercolour_renderer.py").write_text("renderer\n", encoding="utf-8")
+            (bundle / "frozen_watercolour_renderer.py").write_text("renderer\n", encoding="utf-8")
+            vendor_asset.write_text("brush\n", encoding="utf-8")
+            for path in (node_root, render_root, render_root / "painter", render_root / "painter/runtime", bundle):
+                path.chmod(0o700)
+            BOOTSTRAP.expose_renderer_runtime(node_root, render_root, browser_root, renderer_python, bundle)
+            for path in (render_root / "painter", render_root / "painter/runtime", bundle):
+                self.assertEqual(stat.S_IMODE(path.stat().st_mode), 0o755)
 
     def test_prepare_receipt_renderer_root_accepts_legacy_key_but_rejects_ambiguity(self) -> None:
         expected = "/node/renderer"

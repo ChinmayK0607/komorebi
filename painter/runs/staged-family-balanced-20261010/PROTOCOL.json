@@ -71,7 +71,7 @@
   },
   "config": {
     "path": "config.json",
-    "sha256": "f09b73f3137af65fda3dfa3d0130d77026dda81ffa1452b68068148d16148ebc"
+    "sha256": "91d2433a8cb815355c16e68fb3fb1d4111cd3706043ca3408e310642fab4d2d9"
   },
   "receipt": {
     "path": "receipt.json",
@@ -179,7 +179,7 @@
     "files": {
       "bootstrap": {
         "path": "bootstrap.py",
-        "sha256": "7f0c7b0d024a4e93b8286b150610444210a1aaf36978aa39e6d09d7f3c61b0d7"
+        "sha256": "64bc27d7705c33812d39ec1c1236d489c71d07a1ec8dd5e847104daedc143917"
       },
       "bootstrap_shell": {
         "path": "bootstrap.sh",

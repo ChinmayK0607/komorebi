@@ -149,8 +149,8 @@ class PreparedLaunchTests(unittest.TestCase):
             runtime_bin.mkdir(parents=True)
             browser_root = renderer_root / "browsers"
             browser_root.mkdir()
-            renderer = renderer_root / "cancellable-runtime" / "renderer.py"
-            p5_brush = renderer_root / "cancellable-runtime" / "assets" / "p5.brush.js"
+            renderer = renderer_root / "painter/runtime/watercolour-cancellable-centroid-v1" / "renderer.py"
+            p5_brush = renderer_root / "painter/runtime/watercolour-cancellable-centroid-v1" / "assets" / "p5.brush.js"
             renderer.parent.mkdir(parents=True)
             p5_brush.parent.mkdir()
             renderer.write_bytes(b"renderer")

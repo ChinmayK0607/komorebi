@@ -544,6 +544,38 @@ def _renderer_helper_command(*, bootstrap_python: Path, helper: Path, render_roo
     return command
 
 
+def _renderer_layout_contract(*, renderer: Path, expected_project: Path) -> None:
+    """Verify the frozen renderer's ``HERE.parents[3]`` layout statically."""
+
+    try:
+        project = renderer.parent.resolve(strict=True).parents[3]
+        expected = expected_project.resolve(strict=True)
+    except (OSError, IndexError) as exc:
+        raise BootstrapError("renderer bundle is too shallow for its project layout") from exc
+    if project != expected:
+        raise BootstrapError(f"renderer bundle has the wrong project layout: {project}")
+
+
+def _renderer_layout_smoke(*, bootstrap_python: Path, renderer: Path,
+                           expected_project: Path) -> None:
+    """Import the generated renderer and verify its deep project anchor."""
+
+    code = (
+        "import importlib.util, pathlib, sys\n"
+        "renderer = pathlib.Path(sys.argv[1]).resolve()\n"
+        "expected = pathlib.Path(sys.argv[2]).resolve()\n"
+        "spec = importlib.util.spec_from_file_location('staged_renderer_layout_smoke', renderer)\n"
+        "if spec is None or spec.loader is None: raise SystemExit('renderer import spec is unavailable')\n"
+        "module = importlib.util.module_from_spec(spec)\n"
+        "sys.modules[spec.name] = module\n"
+        "spec.loader.exec_module(module)\n"
+        "project = getattr(module, 'PROJECT', None) or getattr(getattr(module, '_BASE', None), 'PROJECT', None)\n"
+        "if project is None or pathlib.Path(project).resolve() != expected: raise SystemExit(f'wrong renderer project: {project}')\n"
+    )
+    run_checked([str(bootstrap_python), "-c", code, str(renderer), str(expected_project)], timeout=60)
+    run_checked([str(bootstrap_python), str(renderer), "--help"], timeout=60)
+
+
 def ensure_renderer(*, node_root: Path, renderer_root: Path, bootstrap_python: Path, uv: Path, prime_root: Path) -> tuple[Path, Path, Path, dict[str, Any]]:
     """Build the reviewed centroid overlay and run its sandboxed runtime helper."""
 
@@ -551,7 +583,7 @@ def ensure_renderer(*, node_root: Path, renderer_root: Path, bootstrap_python: P
     env_root = render_root / "renderer-env"
     renderer_python = env_root / "bin/python"
     browser_root = ensure_dir(render_root / "browsers", "renderer browsers")
-    bundle = render_root / "cancellable-runtime"
+    bundle = render_root / "painter/runtime/watercolour-cancellable-centroid-v1"
     pin_receipt_path = render_root / "renderer-pin-receipt.json"
     helper_receipt_path = render_root / "renderer-runtime-receipt.json"
     patcher = REPO_ROOT / "painter/patch_brush_centroid.py"
@@ -577,18 +609,26 @@ def ensure_renderer(*, node_root: Path, renderer_root: Path, bootstrap_python: P
             raise BootstrapError("prepared renderer or p5.brush asset changed after verification")
         if sha256_file(renderer_python) != pin.get("renderer_python_sha256"):
             raise BootstrapError("renderer interpreter changed after preparation")
+        _renderer_layout_contract(renderer=renderer, expected_project=render_root.parent)
+        _renderer_layout_smoke(
+            bootstrap_python=renderer_python,
+            renderer=renderer,
+            expected_project=render_root.parent,
+        )
         if runtime.get("sandbox_smoke") != "passed" or runtime.get("node_check") != "passed":
             raise BootstrapError("reviewed renderer helper did not record sandbox and Node checks")
         ensure_browser_user()
         expose_renderer_runtime(node_root, render_root, browser_root, renderer_python, bundle)
         return renderer, renderer_python, browser_root, {"pin": pin, "runtime_helper": runtime}
-    if pin_receipt_path.exists() or helper_receipt_path.exists() or bundle.exists() or env_root.exists():
+    legacy_bundle = render_root / "cancellable-runtime"
+    if pin_receipt_path.exists() or helper_receipt_path.exists() or bundle.exists() or legacy_bundle.exists() or env_root.exists():
         raise BootstrapError("partial renderer runtime is present; refusing to overwrite it")
     run_checked([str(bootstrap_python), str(patcher), "--renderer-overlay", "--output-root", str(bundle)], timeout=600)
     renderer = ensure_regular(bundle / "cancellable_watercolour_renderer.py", "generated cancellable renderer")
     asset = ensure_regular(bundle / "assets/p5.brush.js", "generated p5.brush asset")
     if sha256_file(renderer) != RENDERER_SHA256 or sha256_file(asset) != P5_BRUSH_SHA256:
         raise BootstrapError("generated renderer overlay does not match the pinned hashes")
+    _renderer_layout_contract(renderer=renderer, expected_project=render_root.parent)
     # The reviewed helper's path contract is deliberately explicit.  Copy the
     # generated assets into this run-owned root instead of linking to a clone
     # or to an old run's renderer tree.
@@ -600,6 +640,11 @@ def ensure_renderer(*, node_root: Path, renderer_root: Path, bootstrap_python: P
         shutil.copy2(source, vendor_assets / source.name)
     run_checked([str(uv), "venv", "--allow-existing", "--python", "python3", str(env_root)], timeout=600)
     run_checked([str(uv), "pip", "install", "--python", str(renderer_python), f"playwright=={PLAYWRIGHT_VERSION}", f"pillow=={PILLOW_VERSION}"], timeout=1800)
+    _renderer_layout_smoke(
+        bootstrap_python=renderer_python,
+        renderer=renderer,
+        expected_project=render_root.parent,
+    )
     env = dict(os.environ)
     env["PLAYWRIGHT_BROWSERS_PATH"] = str(browser_root)
     run_checked([str(renderer_python), "-m", "playwright", "install", "--with-deps", "chromium"], env=env, timeout=1800)
@@ -656,7 +701,7 @@ def expose_renderer_runtime(node_root: Path, render_root: Path, browser_root: Pa
     os.chmod(node_root, 0o711)
     os.chmod(render_root, 0o755)
     os.chmod(browser_root, 0o755)
-    for directory in (bundle, bundle / "assets", render_root / "vendor", render_root / "vendor/integrations", render_root / "vendor/integrations/watercolour", render_root / "vendor/integrations/watercolour/assets", render_root / "renderer-env"):
+    for directory in (render_root / "painter", render_root / "painter/runtime", bundle, bundle / "assets", render_root / "vendor", render_root / "vendor/integrations", render_root / "vendor/integrations/watercolour", render_root / "vendor/integrations/watercolour/assets", render_root / "renderer-env"):
         if directory.is_dir():
             os.chmod(directory, 0o755)
     for path in (bundle / "cancellable_watercolour_renderer.py", bundle / "frozen_watercolour_renderer.py", *(bundle / "assets").glob("*"), *(render_root / "vendor/integrations/watercolour/assets").glob("*")):
