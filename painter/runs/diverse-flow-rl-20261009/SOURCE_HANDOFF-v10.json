@@ -1,0 +1,28 @@
+{
+  "schema": "diverse-flow-public-source-handoff-v10",
+  "status": "public_anonymously_hash_verified",
+  "bundle": {
+    "bytes": 3970573,
+    "git_commit": "77082fa0b936cf88496e1df27b42a4690c0623ac",
+    "sha256": "4047dd0bb10d7548f67ff9dea8a29c18108cdbb2882b115af8ea0959c458a036"
+  },
+  "public_source": {
+    "repository": "CK0607/komorebi-painter-experiments",
+    "repository_type": "dataset",
+    "revision": "a356abffe59028176ab5db71794055977a7f51a0",
+    "path": "execution-source/diverse-flow-rl-20261009/77082fa0b936cf88496e1df27b42a4690c0623ac/source.bundle"
+  },
+  "anonymous_verification": {
+    "bytes_match": true,
+    "sha256": "4047dd0bb10d7548f67ff9dea8a29c18108cdbb2882b115af8ea0959c458a036",
+    "git_bundle_verify": "passed"
+  },
+  "review": {
+    "diverse_flow_tests_passed": 54,
+    "judge_transport_tests_passed": 9,
+    "python_compile": "passed",
+    "diff_check": "passed",
+    "legacy_receipt_regression": "32/32 input receipt regenerates amended 16/16 config",
+    "retry_contract": "provider and parse failures retry twice; unresolved evidence remains censored"
+  }
+}
