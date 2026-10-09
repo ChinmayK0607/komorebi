@@ -1,0 +1,32 @@
+{
+  "schema": "structured-flow-source-handoff-v1",
+  "source_commit": "746cbbbdfc7bb47e1fc4e1768cf911678d65ab42",
+  "bundle_sha256": "12ff2c2ed2696f980fe2643420a0a714c8cd1c7851ea22c40d8be48cde587312",
+  "public_revision": "74523e2f3187c16453cd9923fa01976d91dfcdff",
+  "public_source_url": "https://huggingface.co/datasets/CK0607/komorebi-painter-experiments/resolve/74523e2f3187c16453cd9923fa01976d91dfcdff/sources/structured-flow-rl-20261009/746cbbbdfc7bb47e1fc4e1768cf911678d65ab42.bundle",
+  "anonymously_hash_verified": true,
+  "rl_only_explicit": true,
+  "supervised_warmup_pending": true,
+  "canonical_flow_teaching_pending": true,
+  "rl_updates": 20,
+  "checkpoint_steps": [
+    4,
+    8,
+    12,
+    16,
+    20
+  ],
+  "train_briefs": 31,
+  "heldout_briefs": 16,
+  "saved_prompt_conditions": "exact cached disabled supplemental flow marker",
+  "remaining_gpu_allowance_usd": 7.75,
+  "prior_start_reserve_usd": 12.25,
+  "total_gpu_ceiling_usd": 20,
+  "recurring_automation": false,
+  "optimizer_updates_observed": 0,
+  "actual_whole_node_gpu_price_usd_hour": 3.72,
+  "real_ssh_and_public_https_probes_passed": true,
+  "finite_controller_started": true,
+  "linux_harness_boundary_checks_before_model_loading": true,
+  "linux_harness_boundary_checks_passed": true
+}
