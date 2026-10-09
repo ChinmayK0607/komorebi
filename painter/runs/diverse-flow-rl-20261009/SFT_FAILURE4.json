@@ -1,0 +1,59 @@
+{
+  "campaign_gpu_accounting": {
+    "cumulative_estimate_usd": 4.401026322174072,
+    "estimate_basis": "rental clock through release request plus five seconds; not an invoice; API spend excluded",
+    "remaining_under_20_usd": 15.598973677825928,
+    "this_attempt_estimate_usd": 0.24239083593686422
+  },
+  "checkpoint": {
+    "adapter_bytes": 233590600,
+    "adapter_sha256": "3764357ff249d85354b649628b7462e5dd30b55f05f6992f7559ac8b5aabe4cf",
+    "hf_commit": "fa84b440316f7cf7e89ebcc20e34b5c366a8013b",
+    "path": "diverse-flow-rl-20261009-sft-warmup/step_4",
+    "public_hash_verified": true,
+    "repository": "CK0607/qwen3.8-27b-brush-painting"
+  },
+  "failure": {
+    "exception": "ValueError: warmup training receipt does not confirm the bounded GPU run",
+    "location": "warmup.py write_final_receipt",
+    "rl_optimizer_updates": 0,
+    "sft_optimizer_updates": 4,
+    "stage": "after native SFT checkpoint upload; before post-warmup visual evaluation and RL"
+  },
+  "node": {
+    "gpu_count": 4,
+    "gpu_type": "L40S",
+    "price_usd_per_whole_node_hour": 1.52,
+    "provider_inventory_after_release": 0,
+    "released": true
+  },
+  "preserved_evidence": {
+    "archive_bytes": 147153715,
+    "archive_sha256": "41f527d104e1e5fe52ef83369e3fd089ba153ce2e3112ae25d4da25f682881ef",
+    "hf_revision": "2de12b59875fbdd5cc0f206f79eed12c8ee9f43b",
+    "path": "runs/diverse-flow-rl-20261009/evidence.tar.gz",
+    "public_hash_verified": true,
+    "repository": "CK0607/komorebi-painter-experiments"
+  },
+  "receipt_root_cause": "The native trainer wrote gpu_ordinals=[0,1,2] and world_size=3, while the final receipt validator still required a legacy singular gpu_ordinal in {0,1}.",
+  "schema": "diverse-flow-sft-failure-v4",
+  "status": "sft_completed_rl_not_started_node_released",
+  "training": {
+    "all_updates_finite": true,
+    "changed_tensors_per_update": 2976,
+    "losses": [0.5364797711372375, 0.5238745212554932, 0.5290418267250061, 0.554379940032959],
+    "nan_count_per_update": [0, 0, 0, 0],
+    "steady_state_mfu_percent": [38.29562508121967, 38.290309800391285, 38.124770644588025],
+    "steady_state_step_seconds": [21.57345573604107, 21.57926973886788, 21.857510002329946],
+    "steady_state_tokens_per_second": [2278.0045852427243, 2277.6884072439784, 2267.8413566955865]
+  },
+  "validation_failure": {
+    "configured_global_batch_size": 3,
+    "dev_rows": 2,
+    "mask_preflight_assistant_tokens": [812, 1222],
+    "native_aggregate_nll": "NaN",
+    "native_result": "no valid validation tokens",
+    "suspected_root_cause": "the two-row validation split is smaller than the three-rank global batch and yields no native evaluation batch",
+    "validity_preflight_gap": "mask inspection passed individual rows but did not execute the native distributed validation dataloader"
+  }
+}
