@@ -145,6 +145,28 @@ class BootstrapUnitTests(unittest.TestCase):
             with self.assertRaises(BOOTSTRAP.BootstrapError):
                 BOOTSTRAP.ensure_runtime_executable(link, "fixture venv Python", venv)
 
+    def test_hf_snapshot_blob_symlink_is_allowed_but_cache_escape_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            cache = root / "models--fixture--adapter"
+            snapshot = cache / "snapshots" / "pinned"
+            blobs = cache / "blobs"
+            snapshot.mkdir(parents=True)
+            blobs.mkdir()
+            blob = blobs / ("a" * 64)
+            blob.write_bytes(b"adapter bytes")
+            weights = snapshot / "adapter_model.safetensors"
+            weights.symlink_to(Path("../../blobs") / blob.name)
+            self.assertEqual(BOOTSTRAP.ensure_hf_snapshot_file(weights, "fixture adapter"), weights.absolute())
+            self.assertEqual(BOOTSTRAP.sha256_file(weights), hashlib.sha256(b"adapter bytes").hexdigest())
+
+            outside = root / "outside.safetensors"
+            outside.write_bytes(b"outside")
+            weights.unlink()
+            weights.symlink_to(outside)
+            with self.assertRaises(BOOTSTRAP.BootstrapError):
+                BOOTSTRAP.ensure_hf_snapshot_file(weights, "fixture adapter")
+
     def test_shell_and_source_are_foreground_and_pinned(self) -> None:
         shell = (RUN / "bootstrap.sh").read_text()
         source = (RUN / "bootstrap.py").read_text()

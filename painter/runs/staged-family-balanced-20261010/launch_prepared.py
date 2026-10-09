@@ -101,8 +101,14 @@ def _same(left: Path, right: Path, description: str) -> None:
 
 
 def _weights(path: Path, expected: str, description: str) -> None:
-    weights = _path(str(path / "adapter_model.safetensors"), f"{description} weights")
-    _path(str(path / "adapter_config.json"), f"{description} config")
+    try:
+        weights = BOOTSTRAP.ensure_hf_snapshot_file(path / "adapter_model.safetensors", f"{description} weights")
+    except BOOTSTRAP.BootstrapError as exc:
+        raise PreparedLaunchError(str(exc)) from exc
+    try:
+        BOOTSTRAP.ensure_hf_snapshot_file(path / "adapter_config.json", f"{description} config")
+    except BOOTSTRAP.BootstrapError as exc:
+        raise PreparedLaunchError(str(exc)) from exc
     if sha256_file(weights) != expected:
         raise PreparedLaunchError(f"{description} bytes changed after preparation")
 

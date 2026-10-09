@@ -160,6 +160,43 @@ def ensure_runtime_executable(path: Path, description: str, runtime_root: Path) 
     return path
 
 
+def ensure_hf_snapshot_file(path: Path, description: str) -> Path:
+    """Allow only Hugging Face snapshot links into their own cache blobs."""
+
+    path = path.expanduser().absolute()
+    if not path.exists() and not path.is_symlink():
+        raise BootstrapError(f"{description} is missing: {path}")
+    if path.is_symlink():
+        cache_root: Path | None = None
+        current = path.parent
+        while current != current.parent:
+            if current.name == "snapshots":
+                # Keep the lexical root for the snapshot path (macOS /var and
+                # Linux bind mounts can have a parent alias), then resolve the
+                # root separately for target containment.
+                cache_root = current.parent.absolute()
+                break
+            current = current.parent
+        if cache_root is None or not (cache_root / "blobs").is_dir():
+            raise BootstrapError(f"{description} is not below a trusted Hugging Face snapshot cache: {path}")
+        try:
+            path.relative_to(cache_root)
+        except ValueError as exc:
+            raise BootstrapError(f"{description} escapes its Hugging Face cache root: {path}") from exc
+        resolved_cache_root = cache_root.resolve(strict=True)
+        resolved = path.resolve(strict=True)
+        try:
+            resolved.relative_to(resolved_cache_root)
+        except ValueError as exc:
+            raise BootstrapError(f"{description} symlink escapes its Hugging Face cache root: {resolved}") from exc
+        if not resolved.is_file():
+            raise BootstrapError(f"{description} symlink does not resolve to a regular file: {path}")
+        return path
+    if not path.is_file():
+        raise BootstrapError(f"{description} is not a regular file: {path}")
+    return path
+
+
 def validate_topology(*, gpus_per_node: int, num_train_gpus: int, num_infer_gpus: int, visible_gpus: int) -> None:
     if (num_train_gpus, num_infer_gpus) not in {(1, 1), (2, 2)}:
         raise ValueError("staged topology must be exactly 1+1 or 2+2 GPUs")
@@ -320,8 +357,8 @@ def _verify_adapter_receipt(receipt_path: Path, expected_revision: str, expected
     if receipt.get("repo") != POLICY_REPO or receipt.get("revision") != expected_revision or receipt.get("prefix") != expected_prefix or receipt.get("adapter_sha256") != expected_sha or receipt.get("verified") is not True:
         raise BootstrapError(f"adapter receipt is not the pinned public artifact: {receipt_path}")
     adapter = ensure_dir(Path(str(receipt.get("adapter_path", ""))), "downloaded adapter")
-    weights = ensure_regular(adapter / "adapter_model.safetensors", "adapter weights")
-    ensure_regular(adapter / "adapter_config.json", "adapter config")
+    weights = ensure_hf_snapshot_file(adapter / "adapter_model.safetensors", "adapter weights")
+    ensure_hf_snapshot_file(adapter / "adapter_config.json", "adapter config")
     if sha256_file(weights) != expected_sha:
         raise BootstrapError(f"adapter weights changed after download: {adapter}")
     return adapter

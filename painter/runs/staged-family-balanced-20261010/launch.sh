@@ -53,10 +53,38 @@ from pathlib import Path
 policy, policy_expected, frozen, frozen_expected, receipt_path = map(Path, sys.argv[1:])
 def digest(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
-if digest(policy / "adapter_model.safetensors") != sys.argv[2]:
+def hf_file(path, description):
+    if not path.exists() and not path.is_symlink():
+        raise SystemExit(f"{description} is missing: {path}")
+    if not path.is_symlink():
+        if not path.is_file():
+            raise SystemExit(f"{description} is not a regular file: {path}")
+        return path
+    cache_root = None
+    current = path.parent
+    while current != current.parent:
+        if current.name == "snapshots":
+            cache_root = current.parent.absolute()
+            break
+        current = current.parent
+    if cache_root is None or not (cache_root / "blobs").is_dir():
+        raise SystemExit(f"{description} is not below a trusted Hugging Face snapshot cache: {path}")
+    try:
+        path.relative_to(cache_root)
+        resolved_cache_root = cache_root.resolve(strict=True)
+        resolved = path.resolve(strict=True)
+        resolved.relative_to(resolved_cache_root)
+    except (OSError, RuntimeError, ValueError) as exc:
+        raise SystemExit(f"{description} symlink escapes its Hugging Face cache root: {path}") from exc
+    if not resolved.is_file():
+        raise SystemExit(f"{description} symlink does not resolve to a regular file: {path}")
+    return path
+if digest(hf_file(policy / "adapter_model.safetensors", "Flash12 policy adapter weights")) != sys.argv[2]:
     raise SystemExit("Flash12 policy adapter SHA-256 mismatch")
-if digest(frozen / "adapter_model.safetensors") != sys.argv[4]:
+if digest(hf_file(frozen / "adapter_model.safetensors", "frozen SFT adapter weights")) != sys.argv[4]:
     raise SystemExit("frozen SFT512 adapter SHA-256 mismatch")
+hf_file(policy / "adapter_config.json", "Flash12 policy adapter config")
+hf_file(frozen / "adapter_config.json", "frozen SFT adapter config")
 receipt = json.loads(receipt_path.read_text())
 if receipt.get("run_id") != "staged-family-balanced-20261010" or receipt.get("status") != "prepared_no_process_started":
     raise SystemExit("node preparation receipt is not the staged finite preparation")

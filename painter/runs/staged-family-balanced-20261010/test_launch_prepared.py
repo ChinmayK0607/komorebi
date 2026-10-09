@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import hashlib
 import json
 from pathlib import Path
 import tempfile
@@ -113,6 +114,29 @@ class PreparedLaunchTests(unittest.TestCase):
             link.symlink_to(outside)
             with self.assertRaises(HANDOFF.PreparedLaunchError):
                 HANDOFF._runtime_executable(str(link), "receipt Python", venv)
+
+    def test_adapter_weight_hash_accepts_hf_blob_link_but_rejects_escape(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            cache = root / "models--fixture--adapter"
+            snapshot = cache / "snapshots" / "pinned"
+            blobs = cache / "blobs"
+            snapshot.mkdir(parents=True)
+            blobs.mkdir()
+            blob = blobs / ("c" * 64)
+            blob.write_bytes(b"adapter")
+            adapter = snapshot
+            (adapter / "adapter_config.json").write_text("{}\n", encoding="utf-8")
+            weights = adapter / "adapter_model.safetensors"
+            weights.symlink_to(Path("../../blobs") / blob.name)
+            expected = hashlib.sha256(b"adapter").hexdigest()
+            HANDOFF._weights(adapter, expected, "fixture adapter")
+            outside = root / "outside"
+            outside.write_bytes(b"escape")
+            weights.unlink()
+            weights.symlink_to(outside)
+            with self.assertRaises(HANDOFF.PreparedLaunchError):
+                HANDOFF._weights(adapter, hashlib.sha256(b"escape").hexdigest(), "fixture adapter")
 
     def test_topology_shape_is_checked_before_launch(self) -> None:
         ready = {"topology": {"gpus_per_node": 2, "num_train_gpus": 1, "num_infer_gpus": 1}}

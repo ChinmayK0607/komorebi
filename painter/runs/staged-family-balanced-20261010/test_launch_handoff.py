@@ -129,6 +129,26 @@ class LaunchHandoffTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 PREPARE_NODE._runtime_executable(link, "Prime Python", venv)
 
+    def test_prepare_adapter_accepts_hf_blob_link_but_rejects_escape(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            cache = root / "models--fixture--adapter"
+            snapshot = cache / "snapshots" / "pinned"
+            blobs = cache / "blobs"
+            snapshot.mkdir(parents=True)
+            blobs.mkdir()
+            blob = blobs / ("b" * 64)
+            blob.write_bytes(b"adapter")
+            weights = snapshot / "adapter_model.safetensors"
+            weights.symlink_to(Path("../../blobs") / blob.name)
+            self.assertEqual(PREPARE_NODE._hf_snapshot_file(weights, "adapter weights"), weights.absolute())
+            outside = root / "outside"
+            outside.write_bytes(b"escape")
+            weights.unlink()
+            weights.symlink_to(outside)
+            with self.assertRaises(ValueError):
+                PREPARE_NODE._hf_snapshot_file(weights, "adapter weights")
+
     def test_staged_wrapper_uses_photo_runner_and_forwards_activation(self) -> None:
         self.assertIn('SOURCE = RUN.parent / "photo-curriculum-rl-20260922" / "run_from_sft.py"', WRAPPER_SOURCE)
         self.assertIn("base._orchestrator_env = _staged_orchestrator_env", WRAPPER_SOURCE)

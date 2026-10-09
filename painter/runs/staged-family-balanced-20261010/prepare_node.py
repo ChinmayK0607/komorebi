@@ -76,6 +76,40 @@ def _file(path: Path, description: str, *, executable: bool = False) -> Path:
     return path.resolve(strict=True)
 
 
+def _hf_snapshot_file(path: Path, description: str) -> Path:
+    """Accept a normal HF snapshot link only when it stays in its cache."""
+
+    path = path.expanduser().absolute()
+    if not path.exists() and not path.is_symlink():
+        raise ValueError(f"{description} is missing: {path}")
+    if not path.is_symlink():
+        if not path.is_file():
+            raise ValueError(f"{description} is not a regular file: {path}")
+        return path
+    cache_root: Path | None = None
+    current = path.parent
+    while current != current.parent:
+        if current.name == "snapshots":
+            cache_root = current.parent.absolute()
+            break
+        current = current.parent
+    if cache_root is None or not (cache_root / "blobs").is_dir():
+        raise ValueError(f"{description} is not below a trusted Hugging Face snapshot cache: {path}")
+    try:
+        path.relative_to(cache_root)
+    except ValueError as exc:
+        raise ValueError(f"{description} escapes its Hugging Face cache root: {path}") from exc
+    resolved_cache_root = cache_root.resolve(strict=True)
+    resolved = path.resolve(strict=True)
+    try:
+        resolved.relative_to(resolved_cache_root)
+    except ValueError as exc:
+        raise ValueError(f"{description} symlink escapes its Hugging Face cache root: {resolved}") from exc
+    if not resolved.is_file():
+        raise ValueError(f"{description} symlink does not resolve to a regular file: {path}")
+    return path
+
+
 def _runtime_executable(path: Path, description: str, runtime_root: Path) -> Path:
     """Accept only a normal venv interpreter link and preserve that link."""
 
@@ -170,8 +204,8 @@ def _validate_protocol(source_root: Path) -> dict[str, Any]:
 
 def _validate_adapter(path: Path, expected_sha256: str, description: str) -> dict[str, Any]:
     path = _directory(path, description)
-    weights = _file(path / "adapter_model.safetensors", f"{description} weights")
-    config_path = _file(path / "adapter_config.json", f"{description} config")
+    weights = _hf_snapshot_file(path / "adapter_model.safetensors", f"{description} weights")
+    config_path = _hf_snapshot_file(path / "adapter_config.json", f"{description} config")
     actual = sha256_file(weights)
     if actual != expected_sha256:
         raise ValueError(f"{description} SHA-256 is {actual}, expected {expected_sha256}")
