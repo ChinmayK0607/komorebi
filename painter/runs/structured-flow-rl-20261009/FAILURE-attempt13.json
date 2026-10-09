@@ -1,0 +1,15 @@
+{
+  "schema": "structured-flow-failure-v1",
+  "attempt": 13,
+  "failure": "provider_reported_ready_but_first_actual_SSH_connection_refused",
+  "optimizer_updates_observed": 0,
+  "remote_pipeline_started": false,
+  "source_commit": "401c83caf09757b90cc642d4d4ae248bbbdd8923",
+  "owned_node_absence_confirmed": true,
+  "rental_clock_estimate_usd": 0.0103,
+  "cumulative_gpu_clock_estimate_usd": 8.2343,
+  "cost_method": "allocation to controller error log after release cleanup; estimated, not invoice; API excluded",
+  "remote_archive": "not applicable; no source or credential handoff",
+  "next_action": "operator invokes existing bounded real SSH probe before recovery handoff",
+  "recurring_automation": false
+}
