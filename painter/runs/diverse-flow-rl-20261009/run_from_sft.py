@@ -13,6 +13,9 @@ import tomllib
 
 
 RUN = Path(__file__).resolve().parent
+if str(RUN) not in sys.path:
+    sys.path.insert(0, str(RUN))
+import hardware_profile
 SOURCE = RUN.parent / "photo-curriculum-rl-20260922" / "run_from_sft.py"
 spec = importlib.util.spec_from_file_location("diverse_flow_base_run_from_sft", SOURCE)
 if spec is None or spec.loader is None:
@@ -34,6 +37,10 @@ def _refresh_final_config(config_path: Path, manifest_path: Path, admitted_count
     """Regenerate the Prime config/receipt after train-only censoring."""
     receipt_path = config_path.with_name("rl-config-receipt.json")
     receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+    profile_name = hardware_profile.selected_name(receipt.get("hardware_profile"))
+    if profile_name != hardware_profile.selected_name():
+        raise ValueError("prepared RL receipt hardware profile does not match PAINTER_HARDWARE_PROFILE")
+    hardware_profile.require_resume(profile_name)
     if (
         receipt.get("curriculum", {}).get("active_rows") == admitted_count
         and receipt.get("manifest_sha256") == _sha256(manifest_path)
@@ -70,6 +77,7 @@ def _refresh_final_config(config_path: Path, manifest_path: Path, admitted_count
         adapter_sha256=str(receipt["policy_initializer"]["sha256"]),
         mode=str(receipt.get("mode", "recovered_policy")),
         learning_rate=float(receipt.get("learning_rate", 1e-6)),
+        hardware_profile_name=profile_name,
         gpus_per_node=int(receipt.get("deployment", {}).get("gpus_per_node", 4)),
         num_train_gpus=int(receipt.get("deployment", {}).get("num_train_gpus", 2)),
         num_infer_gpus=int(receipt.get("deployment", {}).get("num_infer_gpus", 2)),

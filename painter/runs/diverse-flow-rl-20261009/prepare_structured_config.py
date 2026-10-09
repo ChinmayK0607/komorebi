@@ -13,6 +13,9 @@ from typing import Any
 
 
 RUN = Path(__file__).resolve().parent
+if str(RUN) not in sys.path:
+    sys.path.insert(0, str(RUN))
+import hardware_profile
 SOURCE = RUN.parent / "photo-curriculum-rl-20260922" / "prepare_rl_config.py"
 spec = importlib.util.spec_from_file_location("structured_photo_config", SOURCE)
 if spec is None or spec.loader is None:
@@ -62,9 +65,10 @@ def prepare(
     adapter_sha256: str = POLICY["sha256"],
     mode: str = "recovered_policy",
     learning_rate: float = 1e-6,
-    gpus_per_node: int = 4,
-    num_train_gpus: int = 2,
-    num_infer_gpus: int = 2,
+    gpus_per_node: int | None = None,
+    num_train_gpus: int | None = None,
+    num_infer_gpus: int | None = None,
+    hardware_profile_name: str | None = None,
     batch_size: int = 16,
     group_size: int = 4,
     initial_inflight: int = 32,
@@ -76,6 +80,14 @@ def prepare(
     code_supervision_enabled: bool = False,
     allow_pending_anchors: bool = False,
 ) -> dict[str, Any]:
+    profile_name = hardware_profile.selected_name(hardware_profile_name)
+    if hardware_profile_name is not None and profile_name != hardware_profile.selected_name():
+        raise ValueError("--hardware-profile must match PAINTER_HARDWARE_PROFILE")
+    profile = hardware_profile.get(profile_name)
+    hardware_profile.require_resume(profile_name)
+    gpus_per_node = profile["gpus_per_node"] if gpus_per_node is None else gpus_per_node
+    num_train_gpus = profile["num_train_gpus"] if num_train_gpus is None else num_train_gpus
+    num_infer_gpus = profile["num_infer_gpus"] if num_infer_gpus is None else num_infer_gpus
     if run_name != "diverse-flow-rl-20261009":
         raise ValueError("run_name is fixed for this experiment")
     if expected_count < 1 or max_steps not in (8, 20) or checkpoint_interval != 4:
@@ -125,13 +137,10 @@ def prepare(
         adapter_prefix=adapter_prefix, adapter_sha256=adapter_sha256,
         activation_cpu_offload=activation_cpu_offload,
     )
-    # Four L40S nodes reserve two ranks for Prime training and two devices for
-    # one tensor-parallel vLLM inference worker.  Keep this explicit so a
-    # stale TP=1/data-parallel config cannot silently place a 27B model on one
-    # 48 GB card.
-    if (gpus_per_node, num_train_gpus, num_infer_gpus) != (4, 2, 2):
-        raise ValueError("Diverse-flow training requires the reviewed 4-GPU/2-trainer/2-inference topology")
-    config["inference"]["vllm"]["tensor_parallel_size"] = 2
+    expected_topology = (profile["gpus_per_node"], profile["num_train_gpus"], profile["num_infer_gpus"])
+    if (gpus_per_node, num_train_gpus, num_infer_gpus) != expected_topology:
+        raise ValueError(f"{profile_name} requires exact topology {expected_topology}")
+    config["inference"]["vllm"]["tensor_parallel_size"] = profile["inference_tensor_parallel"]
     config["inference"]["vllm"]["data_parallel_size"] = 1
     source = config["orchestrator"]["train"]["source"][0]
     source["name"] = "diverse-flow-fixed-sft512"
@@ -149,6 +158,7 @@ def prepare(
     receipt = {
         "schema": "diverse-flow-rl-config-receipt-v1",
         "run_name": run_name,
+        "hardware_profile": profile_name,
         "base_model_revision": photo.BASE_MODEL_REVISION,
         "policy_initializer": {**POLICY, "revision": adapter_revision, "prefix": adapter_prefix, "sha256": adapter_sha256},
         "frozen_sft": FROZEN_SFT,
@@ -169,8 +179,8 @@ def prepare(
         "max_turns": max_turns,
         "activation_cpu_offload": activation_cpu_offload,
         "deployment": config["deployment"],
-        "inference_parallelism": {"tensor_parallel_size": 2, "data_parallel_size": 1},
-        "gpu_roles": {"trainer": [0, 1], "inference": [2, 3]},
+        "inference_parallelism": {"tensor_parallel_size": profile["inference_tensor_parallel"], "data_parallel_size": 1},
+        "gpu_roles": {"trainer": [int(item) for item in profile["train_gpu_ids"]], "inference": [int(item) for item in profile["infer_gpu_ids"]]},
         "manifest": relative,
         "manifest_sha256": _sha256(manifest),
         "reward": judge_protocol,
@@ -203,10 +213,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--adapter-prefix", default=POLICY["prefix"])
     parser.add_argument("--adapter-sha256", default=POLICY["sha256"])
     parser.add_argument("--mode", choices=("fresh", "recovered_policy"), default="recovered_policy")
+    parser.add_argument("--hardware-profile", dest="hardware_profile_name", choices=tuple(sorted(hardware_profile.PROFILES)))
     parser.add_argument("--learning-rate", type=float, default=1e-6)
-    parser.add_argument("--gpus-per-node", type=int, default=4)
-    parser.add_argument("--num-train-gpus", type=int, default=2)
-    parser.add_argument("--num-infer-gpus", type=int, default=2)
+    parser.add_argument("--gpus-per-node", type=int)
+    parser.add_argument("--num-train-gpus", type=int)
+    parser.add_argument("--num-infer-gpus", type=int)
     parser.add_argument("--batch-size", type=int, default=16)
     parser.add_argument("--group-size", type=int, default=4)
     parser.add_argument("--initial-inflight", type=int, default=32)

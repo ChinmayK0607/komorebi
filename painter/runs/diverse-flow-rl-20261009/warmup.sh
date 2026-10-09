@@ -12,6 +12,10 @@ source "$RUN/runtime_env.sh"
 export PAINTER_PRIME_ROLE=warmup
 validate_structured_bindings
 [[ "$(uname -s)" == Linux ]] || { echo 'warmup training requires the Linux GPU node' >&2; exit 1; }
+if [[ "$PAINTER_HARDWARE_PROFILE" == h100_2 && "${PAINTER_RESUME_SAME_RUN_ARCHIVE:-0}" != 1 ]]; then
+  echo 'h100_2 requires the strict same-run four-update SFT resume; fresh three-rank warmup is disabled' >&2
+  exit 1
+fi
 
 : "${PAINTER_WARMUP_TRAIN_JSONL:?set PAINTER_WARMUP_TRAIN_JSONL to the approved train JSONL (nominally 24 or 32 rows)}"
 : "${PAINTER_WARMUP_DEV_JSONL:?set PAINTER_WARMUP_DEV_JSONL to the approved dev JSONL (nominally 8 rows)}"

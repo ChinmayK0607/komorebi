@@ -12,6 +12,8 @@ MODE="${3:-}"
 }
 RUN="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
 BASE="$(cd "$RUN/../text-sft512-consistent-20260930" && pwd -P)"
+# The l40s_4 default remains PAINTER_EVAL_GPUS:-2,3; the profile resolver
+# below substitutes the h100_2 single inference ordinal when selected.
 # Evaluation must select the registered final checkpoint even when invoked
 # from a shell that inherited the previous eight-update setting.
 export PAINTER_RL_MAX_STEPS=20 PAINTER_MAX_UPDATES=20 PAINTER_CHECKPOINT_INTERVAL=4 PAINTER_EVAL_PREFERRED_STEP=20
@@ -50,6 +52,7 @@ PATCHED_EVALUATOR="$RUN/.evaluate-runtime.$$"
 trap 'rm -f "$PATCHED_EVALUATOR"' EXIT
 python3 - "$BASE/evaluate.sh" "$PATCHED_EVALUATOR" <<'PY'
 from pathlib import Path
+import os
 import sys
 
 source, target = map(Path, sys.argv[1:])
@@ -69,11 +72,11 @@ text = text.replace(
 )
 text = text.replace(
     'CUDA_VISIBLE_DEVICES="${PAINTER_EVAL_GPU:-0}"',
-    'CUDA_VISIBLE_DEVICES="${PAINTER_EVAL_GPUS:-2,3}"',
+    'CUDA_VISIBLE_DEVICES="${PAINTER_EVAL_GPUS:-' + os.environ.get("PAINTER_INFER_GPU_IDS", "2,3") + '}"',
 )
 text = text.replace(
     ' --gpu-memory-utilization 0.90 \\\n',
-    ' --gpu-memory-utilization 0.90 --tensor-parallel-size 2 \\\n',
+    ' --gpu-memory-utilization 0.90 --tensor-parallel-size ' + os.environ.get("PAINTER_INFERENCE_TENSOR_PARALLEL", "2") + ' \\\n',
 )
 target.write_text(text, encoding="utf-8")
 target.chmod(0o700)

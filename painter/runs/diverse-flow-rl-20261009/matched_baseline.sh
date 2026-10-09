@@ -278,16 +278,17 @@ cleanup() {
 }
 trap cleanup EXIT INT TERM
 
-BASELINE_GPUS="${PAINTER_BASELINE_GPUS:-2,3}"
-[[ "$BASELINE_GPUS" =~ ^[0-9]+,[0-9]+$ && "${BASELINE_GPUS%,*}" != "${BASELINE_GPUS#*,}" ]] || {
-  echo 'PAINTER_BASELINE_GPUS must name two distinct inference GPU ordinals' >&2; exit 1;
+BASELINE_GPUS="${PAINTER_BASELINE_GPUS:-$PAINTER_INFER_GPU_IDS}"
+[[ "$BASELINE_GPUS" == "$PAINTER_INFER_GPU_IDS" ]] || {
+  echo 'PAINTER_BASELINE_GPUS must match the selected hardware profile inference ordinals' >&2; exit 1;
 }
+# l40s_4 resolves to the historical --tensor-parallel-size 2; h100_2 to 1.
 setsid env CUDA_VISIBLE_DEVICES="$BASELINE_GPUS" TOKENIZERS_PARALLELISM=false VLLM_USE_FLASHINFER_SAMPLER=0 OMP_NUM_THREADS=6 \
   VLLM_CACHE_ROOT="$OUT/cache/vllm" TORCHINDUCTOR_CACHE_DIR="$OUT/cache/torchinductor" TRITON_CACHE_DIR="$OUT/cache/triton" \
   "$VLLM" serve "$MODEL" --served-model-name "$POLICY_ALIAS" --host 127.0.0.1 --port "$PORT" \
   --dtype bfloat16 --max-model-len 32768 --max-num-seqs 8 --max-num-batched-tokens 8192 \
   --gpu-memory-utilization 0.90 --limit-mm-per-prompt '{"image":14,"video":0}' \
-  --tensor-parallel-size 2 \
+  --tensor-parallel-size "$PAINTER_INFERENCE_TENSOR_PARALLEL" \
   --gdn-prefill-backend triton --kernel-config '{"enable_jit_warmup":false}' \
   --mm-processor-kwargs '{"min_pixels":3136,"max_pixels":1048576}' \
   --enable-lora --max-lora-rank 16 --max-loras 2 --max-cpu-loras 2 \

@@ -14,7 +14,7 @@ source "$RUN/runtime_env.sh"
 # This is a physical one-GPU evaluator.  The archived training receipt keeps
 # its historical 2-GPU topology, while this opt-in branch validates the live
 # node as zero-trainer/one-inference and never advertises training readiness.
-export PAINTER_EVALUATION_ONLY=1 PAINTER_GPUS_PER_NODE=1 PAINTER_NUM_TRAIN_GPUS=0 PAINTER_NUM_INFER_GPUS=1
+export PAINTER_EVALUATION_ONLY=1 PAINTER_GPUS_PER_NODE=1 PAINTER_NUM_TRAIN_GPUS=0 PAINTER_NUM_INFER_GPUS=1 PAINTER_TRAIN_GPU_IDS= PAINTER_INFER_GPU_IDS=0 PAINTER_INFERENCE_TENSOR_PARALLEL=1
 validate_structured_bindings
 
 if [[ "$MODE" == --preflight ]]; then

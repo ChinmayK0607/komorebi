@@ -21,6 +21,9 @@ import urllib.parse
 
 
 RUN = Path(__file__).resolve().parent
+if str(RUN) not in sys.path:
+    sys.path.insert(0, str(RUN))
+import hardware_profile
 SOURCE = RUN.parent / "throughput-recovery-20261003" / "operate_single.py"
 spec = importlib.util.spec_from_file_location("diverse_flow_operation_base", SOURCE)
 if spec is None or spec.loader is None:
@@ -42,14 +45,12 @@ EVALUATION_ONLY = os.environ.get("PAINTER_EVALUATION_ONLY", "0")
 if EVALUATION_ONLY not in {"0", "1"}:
     raise ValueError("PAINTER_EVALUATION_ONLY must be 0 or 1")
 EVALUATION_ONLY = EVALUATION_ONLY == "1"
-base.GPU_COUNT = 1 if EVALUATION_ONLY else 4
-base.TRAIN_GPU_COUNT = 0 if EVALUATION_ONLY else 2
-base.INFER_GPU_COUNT = 1 if EVALUATION_ONLY else 2
-# The shared controller was written for two 80-GB H100s.  This run's
-# four-L40S offer is intentionally admitted at the provider's measured
-# 48-GiB-class capacity; leaving the inherited 80,000-MiB guard would reject
-# the selected node before source bootstrap.
-base.MIN_GPU_MEMORY_MIB = 49_140
+HARDWARE_PROFILE = hardware_profile.selected_name()
+PROFILE = hardware_profile.get(HARDWARE_PROFILE)
+base.GPU_COUNT = 1 if EVALUATION_ONLY else PROFILE["gpu_count"]
+base.TRAIN_GPU_COUNT = 0 if EVALUATION_ONLY else PROFILE["num_train_gpus"]
+base.INFER_GPU_COUNT = 1 if EVALUATION_ONLY else PROFILE["num_infer_gpus"]
+base.MIN_GPU_MEMORY_MIB = PROFILE["min_gpu_memory_mib"]
 
 HF_REFRESH_INTERVAL_SECONDS = 1_800.0
 HF_REFRESH_TIMEOUT_SECONDS = 20.0
@@ -259,6 +260,9 @@ base.operate = operate
 
 
 def _detached_job_command(*, source_commit: str, rental_start_epoch: float, price_usd_per_hour: float, cap_usd: float) -> str:
+    if not EVALUATION_ONLY:
+        hardware_profile.require_resume(HARDWARE_PROFILE)
+    topology = hardware_profile.get(HARDWARE_PROFILE)
     values = {
         "PAINTER_SOURCE_COMMIT": source_commit,
         "PAINTER_NODE_ROOT": str(base.REMOTE_ROOT),
@@ -266,11 +270,13 @@ def _detached_job_command(*, source_commit: str, rental_start_epoch: float, pric
         "PAINTER_GATEWAY_ENV_FILE": str(base.REMOTE_GATEWAY),
         "PAINTER_RUN_ROOT": str(base.REMOTE_RUN),
         "PAINTER_RUN_NAME": base.RUN_NAME,
-        "PAINTER_GPUS_PER_NODE": "1" if EVALUATION_ONLY else "4",
-        "PAINTER_NUM_TRAIN_GPUS": "0" if EVALUATION_ONLY else "2",
-        "PAINTER_NUM_INFER_GPUS": "1" if EVALUATION_ONLY else "2",
-        "PAINTER_TRAIN_GPU_IDS": "0,1" if not EVALUATION_ONLY else "",
-        "PAINTER_INFER_GPU_IDS": "2,3" if not EVALUATION_ONLY else "0",
+        "PAINTER_HARDWARE_PROFILE": HARDWARE_PROFILE,
+        "PAINTER_GPUS_PER_NODE": "1" if EVALUATION_ONLY else str(topology["gpus_per_node"]),
+        "PAINTER_NUM_TRAIN_GPUS": "0" if EVALUATION_ONLY else str(topology["num_train_gpus"]),
+        "PAINTER_NUM_INFER_GPUS": "1" if EVALUATION_ONLY else str(topology["num_infer_gpus"]),
+        "PAINTER_TRAIN_GPU_IDS": "" if EVALUATION_ONLY else ",".join(topology["train_gpu_ids"]),
+        "PAINTER_INFER_GPU_IDS": "0" if EVALUATION_ONLY else ",".join(topology["infer_gpu_ids"]),
+        "PAINTER_INFERENCE_TENSOR_PARALLEL": "1" if EVALUATION_ONLY else str(topology["inference_tensor_parallel"]),
         "PAINTER_STRUCTURED_FLOW_POLICY": "1",
         "PAINTER_CODE_SUPERVISION_ENABLED": "1",
         "PAINTER_RUN_SUPERVISION": "1",
@@ -587,10 +593,12 @@ def _validate_config_summary(summary):
     expected = (("updates", 20), ("checkpoint_steps", [4, 8, 12, 16, 20]), ("checkpoint_interval", 4), ("batch_size", 16), ("group_size", 4), ("initial_inflight", 32), ("max_inflight", 32))
     if any(config.get(key) != value for key, value in expected):
         raise base.OperationError("remote config shape does not match Diverse-flow pilot")
-    if (config.get("deployment") or {}) != {"type": "single_node", "gpus_per_node": 4, "num_train_gpus": 2, "num_infer_gpus": 2}:
-        raise base.OperationError("remote config topology is not four GPUs with two trainer and two inference GPUs")
-    if config.get("inference_parallelism") != {"tensor_parallel_size": 2, "data_parallel_size": 1}:
-        raise base.OperationError("remote inference topology is not one TP=2 worker over two GPUs")
+    profile = hardware_profile.get(HARDWARE_PROFILE)
+    expected_deployment = {"type": "single_node", "gpus_per_node": profile["gpus_per_node"], "num_train_gpus": profile["num_train_gpus"], "num_infer_gpus": profile["num_infer_gpus"]}
+    if (config.get("deployment") or {}) != expected_deployment:
+        raise base.OperationError(f"remote config topology does not match hardware profile {HARDWARE_PROFILE}")
+    if config.get("inference_parallelism") != {"tensor_parallel_size": profile["inference_tensor_parallel"], "data_parallel_size": 1}:
+        raise base.OperationError(f"remote inference topology does not match hardware profile {HARDWARE_PROFILE}")
 
 
 base._validate_config_summary = _validate_config_summary
@@ -622,7 +630,7 @@ def main(argv=None) -> int:
     if args.plan_only:
         import json
         topology = {"gpus_per_node": base.GPU_COUNT, "num_train_gpus": base.TRAIN_GPU_COUNT, "num_infer_gpus": base.INFER_GPU_COUNT}
-        print(json.dumps({"schema": "Diverse-flow-single-operation-plan-v1", "run_name": base.RUN_NAME, "experiment_name": base.EXPERIMENT_NAME, "gpu_cap_usd": window.cap_usd, "mode": "evaluation_only" if EVALUATION_ONLY else "training", "topology": topology, "max_updates": 0 if EVALUATION_ONLY else 20, "checkpoint_steps": [4] if EVALUATION_ONLY else [4, 8, 12, 16, 20], "judge": {"model": "xiaomi/mimo-v2.6-flash", "effort": "medium"}, "source_bundle_bytes": source_bundle.stat().st_size, "credentials_validated": True}, sort_keys=True))
+        print(json.dumps({"schema": "Diverse-flow-single-operation-plan-v1", "run_name": base.RUN_NAME, "experiment_name": base.EXPERIMENT_NAME, "hardware_profile": HARDWARE_PROFILE, "gpu_cap_usd": window.cap_usd, "mode": "evaluation_only" if EVALUATION_ONLY else "training", "topology": topology, "max_updates": 0 if EVALUATION_ONLY else 20, "checkpoint_steps": [4] if EVALUATION_ONLY else [4, 8, 12, 16, 20], "judge": {"model": "xiaomi/mimo-v2.6-flash", "effort": "medium"}, "source_bundle_bytes": source_bundle.stat().st_size, "credentials_validated": True}, sort_keys=True))
         return 0
     return base.operate(window=window, source_bundle=source_bundle, source_commit=args.source_commit, hf_token_file=token, gateway_env_file=gateway, output_root=args.output_root)
 

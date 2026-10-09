@@ -517,7 +517,7 @@ CONFIG_ARGS=(
   --output "$PROPOSED" --model "$MODEL_DIR" --run-root "$RUN" --manifest "$TRAIN_MANIFEST" --prime-root "$PRIME_ROOT"
   --expected-count 96 --max-steps 20 --checkpoint-interval 4 --run-name "$PAINTER_RUN_NAME" --output-root rl-rollouts --max-turns 3
   --judge-protocol "$PAINTER_JUDGE_PROTOCOL" --adapter-revision "$PAINTER_POLICY_REVISION" --adapter-prefix "$PAINTER_POLICY_PREFIX" --adapter-sha256 "$PAINTER_POLICY_SHA256"
-  --mode recovered_policy --learning-rate 1e-6 --gpus-per-node 4 --num-train-gpus 2 --num-infer-gpus 2 --batch-size 16 --group-size 4
+  --mode recovered_policy --learning-rate 1e-6 --hardware-profile "$PAINTER_HARDWARE_PROFILE" --gpus-per-node "$PAINTER_GPUS_PER_NODE" --num-train-gpus "$PAINTER_NUM_TRAIN_GPUS" --num-infer-gpus "$PAINTER_NUM_INFER_GPUS" --batch-size 16 --group-size 4
   --initial-inflight 32 --max-inflight 32 --renderer "$RENDERER" --renderer-python "$RENDERER_PYTHON"
 )
 [[ "$PAINTER_ACTIVATION_CPU_OFFLOAD" == 1 ]] || CONFIG_ARGS+=(--no-activation-cpu-offload)

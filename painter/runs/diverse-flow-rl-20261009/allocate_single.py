@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Allocate one four-L40S offer for the finite Diverse-flow pilot."""
+"""Allocate one reviewed hardware-profile offer for the finite pilot."""
 from __future__ import annotations
 
 import argparse
@@ -14,6 +14,9 @@ from types import SimpleNamespace
 
 
 RUN = Path(__file__).resolve().parent
+if str(RUN) not in sys.path:
+    sys.path.insert(0, str(RUN))
+import hardware_profile
 
 
 def _load(name: str, path: Path):
@@ -29,13 +32,15 @@ def _load(name: str, path: Path):
 alloc = _load("diverse_flow_allocator_base", RUN.parent / "throughput-recovery-20261003" / "allocate_single.py")
 operation = _load("diverse_flow_operation", RUN / "operate_single.py")
 
-GPU_COUNT = 4
-GPU_TYPE = "L40S"
-MIN_GPU_MEMORY_MIB = 49_140
-# Lium prices are whole-node prices.  Keep the boundary strict: the first
-# preferred offer is $1.52/hr and an offer at exactly $1.60/hr is over the
-# finite-node budget requested for this run.
-MAX_OFFER_USD_HOUR = 1.60
+HARDWARE_PROFILE = hardware_profile.selected_name()
+_PROFILE = hardware_profile.get(HARDWARE_PROFILE)
+GPU_COUNT = _PROFILE["gpu_count"]
+GPU_TYPE = _PROFILE["gpu_type"]
+MIN_GPU_MEMORY_MIB = _PROFILE["min_gpu_memory_mib"]
+# Lium prices are whole-node prices.  Keep each profile's boundary strict:
+# the preferred L40S offer is $1.52/hr, while the available H100 offer is
+# $3.70/hr and must remain below its reviewed $4.00/hr ceiling.
+MAX_OFFER_USD_HOUR = _PROFILE["max_offer_usd_hour_exclusive"]
 MAX_CAP_USD = 20.0
 RUN_NAME = "diverse-flow-rl-20261009"
 
@@ -200,7 +205,7 @@ def _offer_gpu_count(offer) -> int:
     return 0
 
 
-def _offer_type(offer) -> str:
+def _offer_type(offer, gpu_type: str = GPU_TYPE) -> str:
     fallback = ""
     for value in _nested_values(offer, ("gpu_type", "gpu_name", "gpu_model", "accelerator", "name")):
         values = value if isinstance(value, (list, tuple)) else (value,)
@@ -208,7 +213,7 @@ def _offer_type(offer) -> str:
             text = str(item or "").strip().upper()
             if not text:
                 continue
-            if GPU_TYPE in text:
+            if gpu_type in text:
                 return text
             fallback = fallback or text
     if fallback:
@@ -216,26 +221,29 @@ def _offer_type(offer) -> str:
     return ""
 
 
-def _select_l40s_offer(offers, *, max_price_usd_hour: float):
-    """Select a real four-L40S offer meeting capacity and price constraints."""
+def _select_profile_offer(offers, *, profile_name: str, max_price_usd_hour: float):
+    """Select an exact-card-count/type offer meeting the profile floor."""
+    profile = hardware_profile.get(profile_name)
+    max_offer = profile["max_offer_usd_hour_exclusive"]
     maximum = alloc._positive("max-price-usd-hour", max_price_usd_hour)
-    if maximum >= MAX_OFFER_USD_HOUR:
-        raise ValueError(f"max-price-usd-hour must be strictly below {MAX_OFFER_USD_HOUR:.2f}")
+    if maximum >= max_offer:
+        raise ValueError(f"max-price-usd-hour must be strictly below {max_offer:.2f}")
     candidates = []
     for offer in offers:
-        if _offer_gpu_count(offer) != GPU_COUNT or GPU_TYPE not in _offer_type(offer):
+        if _offer_gpu_count(offer) != profile["gpu_count"] or profile["gpu_type"] not in _offer_type(offer, profile["gpu_type"]):
             continue
         try:
             memory = _offer_gpu_memory_mib(offer)
             price = alloc._offer_price(offer)
         except (TypeError, ValueError):
             continue
-        if memory < MIN_GPU_MEMORY_MIB or price >= MAX_OFFER_USD_HOUR or price > maximum:
+        if memory < profile["min_gpu_memory_mib"] or price >= max_offer or price > maximum:
             continue
         candidates.append((-memory, price, alloc._offer_id(offer), offer))
     if not candidates:
         raise RuntimeError(
-            "no four-L40S offer with at least 49140 MiB per GPU is below the hourly price limit"
+            f"no {profile_name} offer with exactly {profile['gpu_count']} {profile['gpu_type']} card(s) "
+            f"and at least {profile['min_gpu_memory_mib']} MiB per GPU is below the hourly price limit"
         )
     # Capacity first avoids accidentally choosing the cheaper 46-GiB offer
     # when a full 48-GiB-class node is available; price then breaks ties.
@@ -243,12 +251,27 @@ def _select_l40s_offer(offers, *, max_price_usd_hour: float):
     return candidates[0][3]
 
 
+def _select_l40s_offer(offers, *, max_price_usd_hour: float):
+    """Compatibility spelling for the default four-L40S selector."""
+    return _select_profile_offer(offers, profile_name="l40s_4", max_price_usd_hour=max_price_usd_hour)
+
+
+def _select_h100_offer(offers, *, max_price_usd_hour: float):
+    """Select exactly two H100 cards with the reviewed 80-GB floor."""
+    return _select_profile_offer(offers, profile_name="h100_2", max_price_usd_hour=max_price_usd_hour)
+
+
 # Public run-local spelling for offline callers and selector audits.  It is
 # deliberately not imported from the shared two-H100 allocator.
-select_offer = _select_l40s_offer
+select_offer = _select_l40s_offer if HARDWARE_PROFILE == "l40s_4" else _select_h100_offer
 
 
-def allocate_and_operate(*, api, max_price_usd_hour: float, cap_usd: float, source_bundle: Path, source_commit: str, prime_bundle: Path, prime_commit: str, prime_sha256: str, hf_token_file: Path, gateway_env_file: Path, output_root: Path, now=time.time) -> int:
+def allocate_and_operate(*, api, max_price_usd_hour: float, cap_usd: float, source_bundle: Path, source_commit: str, prime_bundle: Path, prime_commit: str, prime_sha256: str, hf_token_file: Path, gateway_env_file: Path, output_root: Path, now=time.time, profile_name: str | None = None) -> int:
+    selected_profile = hardware_profile.selected_name(profile_name)
+    if selected_profile != HARDWARE_PROFILE:
+        raise ValueError("hardware profile must be selected before loading the allocator")
+    profile = hardware_profile.get(selected_profile)
+    hardware_profile.require_resume(selected_profile)
     source_bundle = alloc._regular(source_bundle, "source-bundle")
     prime_bundle = alloc._regular(prime_bundle, "prime-bundle")
     token = alloc._regular(hf_token_file, "HF token file", owner_only=True)
@@ -265,10 +288,11 @@ def allocate_and_operate(*, api, max_price_usd_hour: float, cap_usd: float, sour
         raise ValueError("output-root must not be a symlink")
     output_root.mkdir(parents=True, exist_ok=True)
     output_root.chmod(0o700)
-    if maximum >= MAX_OFFER_USD_HOUR:
-        raise ValueError(f"max-price-usd-hour must be strictly below {MAX_OFFER_USD_HOUR:.2f}")
-    offers = operation.base._bounded_call(lambda: api.ls(gpu_type=GPU_TYPE, gpu_count=GPU_COUNT), alloc.OFFER_TIMEOUT_SECONDS)
-    offer = select_offer(offers, max_price_usd_hour=maximum)
+    max_offer = profile["max_offer_usd_hour_exclusive"]
+    if maximum >= max_offer:
+        raise ValueError(f"max-price-usd-hour must be strictly below {max_offer:.2f}")
+    offers = operation.base._bounded_call(lambda: api.ls(gpu_type=profile["gpu_type"], gpu_count=profile["gpu_count"]), alloc.OFFER_TIMEOUT_SECONDS)
+    offer = _select_profile_offer(offers, profile_name=selected_profile, max_price_usd_hour=maximum)
     price = alloc._offer_price(offer)
     offer_memory = _offer_gpu_memory_mib(offer)
     started = float(now())
@@ -282,7 +306,7 @@ def allocate_and_operate(*, api, max_price_usd_hour: float, cap_usd: float, sour
     release_target = SimpleNamespace(id=pod_id)
     tracked = alloc._ReleaseTrackingAPI(api)
     receipt_path = output_root / "allocation-receipt.json"
-    receipt = {"schema": "Diverse-flow-single-allocation-v1", "status": "allocated", "rental_start_epoch": started, "price_usd_per_hour": price, "cap_usd": cap, "source_commit": source_commit, "source_bundle_sha256": source_sha, "prime_commit": prime_commit, "prime_bundle_sha256": prime_sha, "offer_requirements": {"gpu_type": GPU_TYPE, "gpu_count": GPU_COUNT, "min_gpu_memory_mib": MIN_GPU_MEMORY_MIB, "max_price_usd_per_hour_exclusive": MAX_OFFER_USD_HOUR, "selected_gpu_memory_mib": offer_memory}, "topology": {"gpus_per_node": 4, "num_train_gpus": 2, "num_infer_gpus": 2, "inference_tensor_parallel": 2}}
+    receipt = {"schema": "Diverse-flow-single-allocation-v1", "status": "allocated", "hardware_profile": selected_profile, "rental_start_epoch": started, "price_usd_per_hour": price, "cap_usd": cap, "source_commit": source_commit, "source_bundle_sha256": source_sha, "prime_commit": prime_commit, "prime_bundle_sha256": prime_sha, "offer_requirements": {"gpu_type": profile["gpu_type"], "gpu_count": profile["gpu_count"], "min_gpu_memory_mib": profile["min_gpu_memory_mib"], "max_price_usd_per_hour_exclusive": profile["max_offer_usd_hour_exclusive"], "selected_gpu_memory_mib": offer_memory}, "topology": {"gpus_per_node": profile["gpus_per_node"], "num_train_gpus": profile["num_train_gpus"], "num_infer_gpus": profile["num_infer_gpus"], "inference_tensor_parallel": profile["inference_tensor_parallel"]}}
     try:
         alloc._write_receipt(receipt_path, receipt)
         ready = alloc.wait_ready_bounded(api=api, operation=operation.base, allocation=allocation)
@@ -333,24 +357,29 @@ def parser():
     value.add_argument("--gateway-env-file", type=Path, default=operation.base.default_gateway_env_file())
     value.add_argument("--output-root", type=Path, required=True)
     value.add_argument("--plan-only", action="store_true")
+    value.add_argument("--hardware-profile", choices=tuple(sorted(hardware_profile.PROFILES)))
     return value
 
 
 def main(argv=None) -> int:
     args = parser().parse_args(argv)
+    selected_profile = hardware_profile.selected_name(args.hardware_profile)
+    if selected_profile != HARDWARE_PROFILE:
+        raise ValueError("--hardware-profile must match PAINTER_HARDWARE_PROFILE selected at process start")
+    profile = hardware_profile.get(selected_profile)
     if args.plan_only:
         source = alloc._regular(args.source_bundle, "source-bundle")
         prime = alloc._regular(args.prime_bundle, "prime-bundle")
-        if args.max_price_usd_hour >= MAX_OFFER_USD_HOUR:
-            raise ValueError(f"max-price-usd-hour must be strictly below {MAX_OFFER_USD_HOUR:.2f}")
-        print(json.dumps({"schema": "Diverse-flow-single-allocation-plan-v1", "run_name": RUN_NAME, "gpu_type": GPU_TYPE, "gpu_count": GPU_COUNT, "min_gpu_memory_mib": MIN_GPU_MEMORY_MIB, "max_offer_usd_hour_exclusive": MAX_OFFER_USD_HOUR, "cap_usd": args.cap_usd, "max_price_usd_hour": args.max_price_usd_hour, "source_bundle_bytes": source.stat().st_size, "prime_bundle_bytes": prime.stat().st_size, "credentials_validated": False, "provider_actions": "disabled in plan-only"}, sort_keys=True))
+        if args.max_price_usd_hour >= profile["max_offer_usd_hour_exclusive"]:
+            raise ValueError(f"max-price-usd-hour must be strictly below {profile['max_offer_usd_hour_exclusive']:.2f}")
+        print(json.dumps({"schema": "Diverse-flow-single-allocation-plan-v1", "run_name": RUN_NAME, "hardware_profile": selected_profile, "gpu_type": profile["gpu_type"], "gpu_count": profile["gpu_count"], "min_gpu_memory_mib": profile["min_gpu_memory_mib"], "max_offer_usd_hour_exclusive": profile["max_offer_usd_hour_exclusive"], "cap_usd": args.cap_usd, "max_price_usd_hour": args.max_price_usd_hour, "source_bundle_bytes": source.stat().st_size, "prime_bundle_bytes": prime.stat().st_size, "credentials_validated": False, "provider_actions": "disabled in plan-only"}, sort_keys=True))
         return 0
     args.source_bundle = alloc._regular(args.source_bundle, "source-bundle")
     args.prime_bundle = alloc._regular(args.prime_bundle, "prime-bundle")
     token = alloc._regular(args.hf_token_file, "HF token file", owner_only=True)
     gateway = alloc._regular(args.gateway_env_file, "Gateway environment file", owner_only=True)
     api = alloc._load_lium()
-    return allocate_and_operate(api=api, max_price_usd_hour=args.max_price_usd_hour, cap_usd=args.cap_usd, source_bundle=args.source_bundle, source_commit=args.source_commit, prime_bundle=args.prime_bundle, prime_commit=args.prime_commit, prime_sha256=args.prime_sha256, hf_token_file=token, gateway_env_file=gateway, output_root=args.output_root)
+    return allocate_and_operate(api=api, max_price_usd_hour=args.max_price_usd_hour, cap_usd=args.cap_usd, source_bundle=args.source_bundle, source_commit=args.source_commit, prime_bundle=args.prime_bundle, prime_commit=args.prime_commit, prime_sha256=args.prime_sha256, hf_token_file=token, gateway_env_file=gateway, output_root=args.output_root, profile_name=selected_profile)
 
 
 if __name__ == "__main__":

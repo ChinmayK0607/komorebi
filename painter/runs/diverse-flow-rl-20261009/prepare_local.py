@@ -13,6 +13,9 @@ from typing import Any
 
 
 RUN = Path(__file__).resolve().parent
+if str(RUN) not in sys.path:
+    sys.path.insert(0, str(RUN))
+import hardware_profile
 CURRICULUM = RUN / "prepare_curriculum.py"
 spec = importlib.util.spec_from_file_location("diverse_flow_curriculum_for_plan", CURRICULUM)
 if spec is None or spec.loader is None:
@@ -44,7 +47,12 @@ def _sha(path: Path) -> str:
     return digest.hexdigest()
 
 
-def build_plan(output: Path, *, proposal_root: Path | None = None) -> dict[str, Any]:
+def build_plan(output: Path, *, proposal_root: Path | None = None, hardware_profile_name: str | None = None) -> dict[str, Any]:
+    profile_name = hardware_profile.selected_name(hardware_profile_name)
+    if hardware_profile_name is not None and profile_name != hardware_profile.selected_name():
+        raise ValueError("--hardware-profile must match PAINTER_HARDWARE_PROFILE")
+    profile = hardware_profile.get(profile_name)
+    hardware_profile.require_resume(profile_name)
     output = output.expanduser().resolve()
     if output.exists() and any(output.iterdir()):
         raise FileExistsError(f"refusing to overwrite nonempty plan root: {output}")
@@ -56,11 +64,12 @@ def build_plan(output: Path, *, proposal_root: Path | None = None) -> dict[str, 
     stages = {str(stage): {"train": sum(row["split"] == "train" and row["stage"] == stage for row in rows), "heldout": sum(row["split"] == "heldout" and row["stage"] == stage for row in rows)} for stage in range(1, 5)}
     plan = {
         "schema": "diverse-flow-local-launch-plan-v1",
+        "hardware_profile": profile_name,
         "run_id": module.RUN_ID,
         "source": {"prepare_curriculum": str(CURRICULUM), "prepare_curriculum_sha256": _sha(CURRICULUM)},
         "pins": PINS,
         "curriculum": {"counts": counts, "per_stage": stages, "replay_fraction": 0.25, "sampling_mode": "balanced_mixed_manifest", "stage_progression_claim": False, "active_manifest": {"train": 96, "heldout": 32, "updates": 20, "checkpoint_steps": [4, 8, 12, 16, 20]}},
-        "training": {"batch_size": 16, "group_size": 4, "initial_inflight": 32, "max_inflight": 32, "learning_rate": 1e-6, "trainer_gpus": 2, "inference_gpus": 2, "gpus_per_node": 4, "inference_tensor_parallel": 2, "max_policy_age": 1, "max_turns": 3, "warmup_updates": 4, "warmup_learning_rate": 1e-6, "warmup_gpus": [0, 1, 2], "warmup_world_size": 3, "warmup_optimizer": "fresh", "new_reward_bonus": False},
+        "training": {"batch_size": 16, "group_size": 4, "initial_inflight": 32, "max_inflight": 32, "learning_rate": 1e-6, "trainer_gpus": profile["num_train_gpus"], "inference_gpus": profile["num_infer_gpus"], "gpus_per_node": profile["gpus_per_node"], "inference_tensor_parallel": profile["inference_tensor_parallel"], "max_policy_age": 1, "max_turns": 3, "warmup_updates": 4, "warmup_learning_rate": 1e-6, "warmup_gpus": [int(item) for item in profile["warmup_gpu_ids"]], "warmup_world_size": profile["warmup_world_size"], "warmup_optimizer": "resume_public_step4" if profile["sft_resume_required"] else "fresh", "sft_resume_required": profile["sft_resume_required"], "new_reward_bonus": False},
         "budget": {"gpu_cap_usd": 20.0, "includes": ["setup", "training", "matched_pre_eval", "matched_post_eval", "archive_upload", "release"]},
         "flow_policy": {"env": "PAINTER_STRUCTURED_FLOW_POLICY", "default": "1", "hint_format": "casebrief [SYSTEM] and [USER] sections", "style_or_code_reward": False},
         "code_supervision": {"env": "PAINTER_CODE_SUPERVISION_ENABLED", "default": "1", "format": "strict-jsonl-nextassistanttokenonly", "separate_from_rl_reward": True},
@@ -94,6 +103,11 @@ def validate_plan(path: Path) -> dict[str, Any]:
         raise ValueError("GPU cap changed")
     if value.get("training", {}).get("max_turns") != 3:
         raise ValueError("pilot turn cap changed")
+    profile_name = hardware_profile.selected_name(value.get("hardware_profile"))
+    if profile_name != hardware_profile.selected_name():
+        raise ValueError("launch plan hardware profile does not match PAINTER_HARDWARE_PROFILE")
+    profile = hardware_profile.get(profile_name)
+    hardware_profile.require_resume(profile_name)
     training = value.get("training", {})
     if {
         "trainer_gpus": training.get("trainer_gpus"),
@@ -101,8 +115,10 @@ def validate_plan(path: Path) -> dict[str, Any]:
         "gpus_per_node": training.get("gpus_per_node"),
         "inference_tensor_parallel": training.get("inference_tensor_parallel"),
         "warmup_world_size": training.get("warmup_world_size"),
-    } != {"trainer_gpus": 2, "inference_gpus": 2, "gpus_per_node": 4, "inference_tensor_parallel": 2, "warmup_world_size": 3}:
-        raise ValueError("four-GPU RL and three-rank warmup topology changed")
+    } != {"trainer_gpus": profile["num_train_gpus"], "inference_gpus": profile["num_infer_gpus"], "gpus_per_node": profile["gpus_per_node"], "inference_tensor_parallel": profile["inference_tensor_parallel"], "warmup_world_size": profile["warmup_world_size"]}:
+        raise ValueError(f"{profile_name} RL/warmup topology changed")
+    if training.get("sft_resume_required") != profile["sft_resume_required"]:
+        raise ValueError("SFT resume requirement changed")
     return value
 
 
@@ -111,10 +127,11 @@ def main(argv: list[str] | None = None) -> int:
     commands = parser.add_subparsers(dest="command", required=True)
     build = commands.add_parser("plan")
     build.add_argument("--output", type=Path, required=True)
+    build.add_argument("--hardware-profile", choices=tuple(sorted(hardware_profile.PROFILES)))
     check = commands.add_parser("validate")
     check.add_argument("--plan", type=Path, required=True)
     args = parser.parse_args(argv)
-    value = build_plan(args.output) if args.command == "plan" else validate_plan(args.plan)
+    value = build_plan(args.output, hardware_profile_name=args.hardware_profile) if args.command == "plan" else validate_plan(args.plan)
     print(json.dumps({"schema": value["schema"], "run_id": value["run_id"]}, sort_keys=True))
     return 0
 

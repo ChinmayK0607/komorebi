@@ -10,8 +10,9 @@ PRIME_ROOT="$(cd "${PRIME_ROOT:?set PRIME_ROOT to the pinned Prime checkout}" &&
 PRIME_COMMIT="26b3131d2716a4f8210b165df584b83b4bc54f61"
 BASE_MODEL_REVISION="1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0"
 HF_REPO="CK0607/qwen3.8-27b-brush-painting"
-RUN_NAME="${PAINTER_RL_RUN_NAME:-photo-curriculum-rl-20260922}"
+RUN_NAME="${PAINTER_RL_RUN_NAME:-diverse-flow-rl-20261009}"
 RL_MODE="${PAINTER_RL_MODE:-fresh}"
+HARDWARE_PROFILE="${PAINTER_HARDWARE_PROFILE:-l40s_4}"
 FROZEN_SFT_ALIAS="sft-step512"
 FROZEN_SFT_CHECKPOINT_SHA256="bea72b066986faa1b92b9dc539c710093181ee916b99323e2b2498f318ac1740"
 MODEL_DIR="${MODEL_DIR:?set MODEL_DIR to the staged base snapshot}"
@@ -20,12 +21,25 @@ BRUSH_ROOT="${BRUSH_ROOT:-$ROOT/source/brush-rl}"
 INITIAL_ADAPTER="${WATERCOLOUR_INIT_ADAPTER:?set WATERCOLOUR_INIT_ADAPTER to the declared policy adapter directory}"
 FROZEN_ADAPTER="${PAINTER_FROZEN_SFT_ADAPTER:-}"
 MANIFEST="${PAINTER_RL_MANIFEST:-$ROOT/source-manifest.json}"
-MAX_STEPS="${PAINTER_RL_MAX_STEPS:-32}"
-GPUS_PER_NODE="${PAINTER_GPUS_PER_NODE:-4}"
-NUM_TRAIN_GPUS="${PAINTER_NUM_TRAIN_GPUS:-2}"
-NUM_INFER_GPUS="${PAINTER_NUM_INFER_GPUS:-2}"
-TRAIN_GPU_IDS="${PAINTER_TRAIN_GPU_IDS:-0,1}"
-INFER_GPU_IDS="${PAINTER_INFER_GPU_IDS:-2,3}"
+MAX_STEPS="${PAINTER_RL_MAX_STEPS:-20}"
+case "$HARDWARE_PROFILE" in
+  l40s_4)
+    PROFILE_GPUS_PER_NODE=4; PROFILE_NUM_TRAIN_GPUS=2; PROFILE_NUM_INFER_GPUS=2
+    PROFILE_TRAIN_GPU_IDS=0,1; PROFILE_INFER_GPU_IDS=2,3; PROFILE_TP=2
+    ;;
+  h100_2)
+    PROFILE_GPUS_PER_NODE=2; PROFILE_NUM_TRAIN_GPUS=1; PROFILE_NUM_INFER_GPUS=1
+    PROFILE_TRAIN_GPU_IDS=0; PROFILE_INFER_GPU_IDS=1; PROFILE_TP=1
+    [[ "${PAINTER_RESUME_SAME_RUN_ARCHIVE:-0}" == 1 ]] || { echo 'h100_2 requires the strict same-run SFT resume' >&2; exit 1; }
+    ;;
+  *) echo 'PAINTER_HARDWARE_PROFILE must be l40s_4 or h100_2' >&2; exit 1 ;;
+esac
+GPUS_PER_NODE="${PAINTER_GPUS_PER_NODE:-$PROFILE_GPUS_PER_NODE}"
+NUM_TRAIN_GPUS="${PAINTER_NUM_TRAIN_GPUS:-$PROFILE_NUM_TRAIN_GPUS}"
+NUM_INFER_GPUS="${PAINTER_NUM_INFER_GPUS:-$PROFILE_NUM_INFER_GPUS}"
+TRAIN_GPU_IDS="${PAINTER_TRAIN_GPU_IDS:-$PROFILE_TRAIN_GPU_IDS}"
+INFER_GPU_IDS="${PAINTER_INFER_GPU_IDS:-$PROFILE_INFER_GPU_IDS}"
+TP_SIZE="${PAINTER_INFERENCE_TENSOR_PARALLEL:-$PROFILE_TP}"
 CONFIG="${PAINTER_RL_CONFIG:-$ROOT/native-rl.toml}"
 PYTHON="$PRIME_ROOT/.venv/bin/python"
 UV_BIN="${UV_BIN:-uv}"
@@ -50,9 +64,8 @@ else
 fi
 
 [[ -x "$PYTHON" ]] || { echo "missing pinned Prime Python: $PYTHON" >&2; exit 1; }
-[[ "$TRAIN_GPU_IDS" == 0,1 && "$INFER_GPU_IDS" == 2,3 ]] || {
-  echo 'Diverse-flow requires trainer GPUs 0,1 and inference GPUs 2,3 on the four-GPU node' >&2; exit 1;
-}
+[[ "$GPUS_PER_NODE" == "$PROFILE_GPUS_PER_NODE" && "$NUM_TRAIN_GPUS" == "$PROFILE_NUM_TRAIN_GPUS" && "$NUM_INFER_GPUS" == "$PROFILE_NUM_INFER_GPUS" ]] || { echo "topology does not match hardware profile $HARDWARE_PROFILE" >&2; exit 1; }
+[[ "$TRAIN_GPU_IDS" == "$PROFILE_TRAIN_GPU_IDS" && "$INFER_GPU_IDS" == "$PROFILE_INFER_GPU_IDS" && "$TP_SIZE" == "$PROFILE_TP" ]] || { echo "GPU IDs or inference TP does not match hardware profile $HARDWARE_PROFILE" >&2; exit 1; }
 [[ "$(git -C "$PRIME_ROOT" rev-parse HEAD)" == "$PRIME_COMMIT" ]] || {
   echo "PRIME_ROOT is not pinned to $PRIME_COMMIT" >&2
   exit 1
@@ -100,6 +113,7 @@ fi
 }
 
 export BRUSH_ROOT BRUSH_MODEL_PROFILE=qwen38_27b PRIME_ROOT MODEL_DIR
+export PAINTER_HARDWARE_PROFILE="$HARDWARE_PROFILE" PAINTER_INFERENCE_TENSOR_PARALLEL="$TP_SIZE"
 export PAINTER_RL_MODE PAINTER_RL_ADAPTER_REVISION="$ADAPTER_REVISION"
 export PAINTER_RL_ADAPTER_PREFIX="$ADAPTER_PREFIX" PAINTER_RL_ADAPTER_SHA256="$ADAPTER_SHA256"
 export PAINTER_RL_LIVE_POLICY_ALIAS="$LIVE_POLICY_ALIAS"
@@ -207,14 +221,15 @@ PY
 fi
 
 if [[ ! -f "$CONFIG" ]]; then
-  "$PYTHON" "$ROOT/prepare_rl_config.py" \
+  "$PYTHON" "$ROOT/prepare_structured_config.py" \
     --output "$CONFIG" --model "$MODEL_DIR" --run-root "$ROOT" \
     --manifest "$(python3 -c 'import os,sys;print(os.path.relpath(sys.argv[1],sys.argv[2]))' "$MANIFEST" "$ROOT")" \
     --max-steps "$MAX_STEPS" --gpus-per-node "$GPUS_PER_NODE" \
     --num-train-gpus "$NUM_TRAIN_GPUS" --num-infer-gpus "$NUM_INFER_GPUS" \
-    --checkpoint-interval 8 --run-name "$RUN_NAME" --mode "$RL_MODE" \
+    --hardware-profile "$HARDWARE_PROFILE" \
+    --checkpoint-interval 4 --run-name "$RUN_NAME" --mode "$RL_MODE" \
     --adapter-revision "$ADAPTER_REVISION" --adapter-prefix "$ADAPTER_PREFIX" \
-    --adapter-sha256 "$ADAPTER_SHA256" --prime-root "$PRIME_ROOT" --validate-prime
+    --adapter-sha256 "$ADAPTER_SHA256" --prime-root "$PRIME_ROOT"
 fi
 if [[ "${PAINTER_RL_FIXED_OPPONENT:-0}" != 1 ]]; then
   [[ -f "$PAINTER_FROZEN_OPPONENT_CONFIG" ]] || {
@@ -243,13 +258,15 @@ actual = {key: deployment.get(key) for key in expected}
 if actual != expected:
     raise SystemExit(f"config deployment roles do not match launcher: {actual} != {expected}")
 vllm = config.get("inference", {}).get("vllm", {})
-if vllm.get("tensor_parallel_size") != 2 or vllm.get("data_parallel_size") != 1:
-    raise SystemExit("config inference parallelism must be one TP=2 worker over the two inference GPUs")
+expected_tp = int(__import__("os").environ["PAINTER_INFERENCE_TENSOR_PARALLEL"])
+if vllm.get("tensor_parallel_size") != expected_tp or vllm.get("data_parallel_size") != 1:
+    raise SystemExit(f"config inference parallelism must be one TP={expected_tp} worker")
 receipt = Path(receipt_path)
 if not receipt.is_file():
     raise SystemExit(f"missing config receipt: {receipt}")
 metadata = json.loads(receipt.read_text())
 checks = {
+    "hardware_profile": __import__("os").environ["PAINTER_HARDWARE_PROFILE"],
     "mode": mode,
     "adapter_revision": revision,
     "adapter_prefix": prefix,
@@ -258,10 +275,8 @@ checks = {
 for key, value in checks.items():
     if metadata.get(key) != value:
         raise SystemExit(f"config receipt {key} does not match launcher")
-if metadata.get("frozen_anchor", {}).get("immutable") is not True:
-    raise SystemExit("frozen SFT anchor is not marked immutable")
-anchor = metadata.get("frozen_anchor", {})
-if anchor.get("alias") != "sft-step512" or anchor.get("checkpoint_sha256") != "bea72b066986faa1b92b9dc539c710093181ee916b99323e2b2498f318ac1740":
+anchor = metadata.get("frozen_sft", {})
+if anchor.get("alias") != "sft-step512" or anchor.get("sha256") != "bea72b066986faa1b92b9dc539c710093181ee916b99323e2b2498f318ac1740":
     raise SystemExit("frozen SFT anchor identity is not the pinned step-512 checkpoint")
 print(json.dumps({"status": "config_roles_verified", **actual}, sort_keys=True))
 PY

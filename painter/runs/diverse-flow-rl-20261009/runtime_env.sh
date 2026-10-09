@@ -55,11 +55,29 @@ export PAINTER_JUDGE_PROTOCOL="${PAINTER_JUDGE_PROTOCOL:-text-paint-sft-pairwise
 export PAINTER_JUDGE_FORMAT="${PAINTER_JUDGE_FORMAT:-identity-joint-side-schema-v2-generic-v1}"
 export PAINTER_JUDGE_RUBRIC="${PAINTER_JUDGE_RUBRIC:-existing-generic-rubric}"
 
-export PAINTER_GPUS_PER_NODE="${PAINTER_GPUS_PER_NODE:-4}"
-export PAINTER_NUM_TRAIN_GPUS="${PAINTER_NUM_TRAIN_GPUS:-2}"
-export PAINTER_NUM_INFER_GPUS="${PAINTER_NUM_INFER_GPUS:-2}"
-export PAINTER_TRAIN_GPU_IDS="${PAINTER_TRAIN_GPU_IDS:-0,1}"
-export PAINTER_INFER_GPU_IDS="${PAINTER_INFER_GPU_IDS:-2,3}"
+export PAINTER_HARDWARE_PROFILE="${PAINTER_HARDWARE_PROFILE:-l40s_4}"
+case "$PAINTER_HARDWARE_PROFILE" in
+  l40s_4)
+    export PAINTER_GPUS_PER_NODE="${PAINTER_GPUS_PER_NODE:-4}"
+    export PAINTER_NUM_TRAIN_GPUS="${PAINTER_NUM_TRAIN_GPUS:-2}"
+    export PAINTER_NUM_INFER_GPUS="${PAINTER_NUM_INFER_GPUS:-2}"
+    export PAINTER_TRAIN_GPU_IDS="${PAINTER_TRAIN_GPU_IDS:-0,1}"
+    export PAINTER_INFER_GPU_IDS="${PAINTER_INFER_GPU_IDS:-2,3}"
+    export PAINTER_INFERENCE_TENSOR_PARALLEL="${PAINTER_INFERENCE_TENSOR_PARALLEL:-2}"
+    ;;
+  h100_2)
+    export PAINTER_GPUS_PER_NODE="${PAINTER_GPUS_PER_NODE:-2}"
+    export PAINTER_NUM_TRAIN_GPUS="${PAINTER_NUM_TRAIN_GPUS:-1}"
+    export PAINTER_NUM_INFER_GPUS="${PAINTER_NUM_INFER_GPUS:-1}"
+    export PAINTER_TRAIN_GPU_IDS="${PAINTER_TRAIN_GPU_IDS:-0}"
+    export PAINTER_INFER_GPU_IDS="${PAINTER_INFER_GPU_IDS:-1}"
+    export PAINTER_INFERENCE_TENSOR_PARALLEL="${PAINTER_INFERENCE_TENSOR_PARALLEL:-1}"
+    ;;
+  *)
+    echo 'PAINTER_HARDWARE_PROFILE must be l40s_4 or h100_2' >&2
+    return 1 2>/dev/null || exit 1
+    ;;
+esac
 export PAINTER_GROUP_SIZE="${PAINTER_GROUP_SIZE:-4}"
 export PAINTER_INITIAL_INFLIGHT="${PAINTER_INITIAL_INFLIGHT:-32}"
 export PAINTER_MAX_INFLIGHT="${PAINTER_MAX_INFLIGHT:-32}"
@@ -154,8 +172,21 @@ validate_structured_bindings() {
   [[ "$PAINTER_JUDGE_FORMAT" == identity-joint-side-schema-v2-generic-v1 ]] || return 1
   if [[ "${PAINTER_EVALUATION_ONLY:-0}" == 1 ]]; then
     [[ "$PAINTER_GPUS_PER_NODE" == 1 && "$PAINTER_NUM_TRAIN_GPUS" == 0 && "$PAINTER_NUM_INFER_GPUS" == 1 ]] || return 1
+    [[ "$PAINTER_TRAIN_GPU_IDS" == "" && "$PAINTER_INFER_GPU_IDS" == 0 ]] || return 1
+    [[ "$PAINTER_INFERENCE_TENSOR_PARALLEL" == 1 ]] || return 1
   else
-    [[ "$PAINTER_GPUS_PER_NODE" == 4 && "$PAINTER_NUM_TRAIN_GPUS" == 2 && "$PAINTER_NUM_INFER_GPUS" == 2 ]] || return 1
+    case "$PAINTER_HARDWARE_PROFILE" in
+      l40s_4)
+        [[ "$PAINTER_GPUS_PER_NODE" == 4 && "$PAINTER_NUM_TRAIN_GPUS" == 2 && "$PAINTER_NUM_INFER_GPUS" == 2 ]] || return 1
+        [[ "$PAINTER_TRAIN_GPU_IDS" == 0,1 && "$PAINTER_INFER_GPU_IDS" == 2,3 && "$PAINTER_INFERENCE_TENSOR_PARALLEL" == 2 ]] || return 1
+        ;;
+      h100_2)
+        [[ "$PAINTER_GPUS_PER_NODE" == 2 && "$PAINTER_NUM_TRAIN_GPUS" == 1 && "$PAINTER_NUM_INFER_GPUS" == 1 ]] || return 1
+        [[ "$PAINTER_TRAIN_GPU_IDS" == 0 && "$PAINTER_INFER_GPU_IDS" == 1 && "$PAINTER_INFERENCE_TENSOR_PARALLEL" == 1 ]] || return 1
+        [[ "${PAINTER_RESUME_SAME_RUN_ARCHIVE:-0}" == 1 ]] || { echo 'h100_2 requires same-run SFT resume' >&2; return 1; }
+        ;;
+      *) return 1 ;;
+    esac
   fi
   [[ "$PAINTER_GROUP_SIZE" == 4 && "$PAINTER_INITIAL_INFLIGHT" == 32 && "$PAINTER_MAX_INFLIGHT" == 32 ]] || return 1
   [[ "$PAINTER_RL_MAX_STEPS" == 20 && "$PAINTER_MAX_UPDATES" == 20 && "$PAINTER_CHECKPOINT_INTERVAL" == 4 ]] || return 1

@@ -90,6 +90,26 @@ class FourL40SSelectorTests(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             self.module._select_l40s_offer([host_ram_trap], max_price_usd_hour=1.59)
 
+    def test_h100_profile_requires_exactly_two_80gb_class_cards(self):
+        offers = [
+            {"id": "one", "gpu_type": "H100", "gpu_count": 1,
+             "gpu_memory_mib": 80000, "price_per_hour": 1.20},
+            {"id": "three", "gpu_type": "H100", "gpu_count": 3,
+             "gpu_memory_mib": 80000, "price_per_hour": 1.20},
+            {"id": "small", "gpu_type": "H100", "gpu_count": 2,
+             "gpu_memory_mib": 79000, "price_per_hour": 1.20},
+            {"id": "good", "gpu_type": "NVIDIA H100", "gpu_count": 2,
+             "gpu_memory_mib": 80000, "price_per_hour": 3.70},
+        ]
+        chosen = self.module._select_h100_offer(offers, max_price_usd_hour=3.80)
+        self.assertEqual(chosen["id"], "good")
+        with self.assertRaises(RuntimeError):
+            self.module._select_h100_offer(offers[:3], max_price_usd_hour=3.80)
+        at_boundary = {"id": "boundary", "gpu_type": "H100", "gpu_count": 2,
+                       "gpu_memory_mib": 80000, "price_per_hour": 4.00}
+        with self.assertRaises(ValueError):
+            self.module._select_h100_offer([at_boundary], max_price_usd_hour=4.00)
+
     def test_controller_topology_and_remote_memory_guard_are_l40s_compatible(self):
         self.assertEqual(self.module.GPU_COUNT, 4)
         self.assertEqual(self.module.GPU_TYPE, "L40S")
