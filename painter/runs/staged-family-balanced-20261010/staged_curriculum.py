@@ -503,6 +503,9 @@ def admit_action(
         raise ActionAdmissionError("rollout receipt must be a mapping")
     if record.get("row_id") != expected_row_id:
         raise ActionAdmissionError("rollout row does not match its scheduled slot")
+    trace_id = record.get("trace_id")
+    if not isinstance(trace_id, str) or not trace_id.strip():
+        raise ActionAdmissionError("rollout trace_id is missing or malformed")
     if record.get("family") != expected_family or type(record.get("stage")) is not int or record.get("stage") != expected_stage:
         raise ActionAdmissionError("rollout family or stage does not match its scheduled slot")
     ownership = record.get("ownership")
@@ -526,6 +529,7 @@ def admit_action(
             raise ActionAdmissionError("scored rollout needs one finite numeric reward")
         return {
             "row_id": expected_row_id,
+            "trace_id": trace_id,
             "family": expected_family,
             "stage": expected_stage,
             "ownership": ownership,
@@ -551,6 +555,7 @@ def admit_action(
             raise ActionAdmissionError("model-invalid rollout needs an evidence reason")
         return {
             "row_id": expected_row_id,
+            "trace_id": trace_id,
             "family": expected_family,
             "stage": expected_stage,
             "ownership": ownership,
@@ -574,6 +579,7 @@ def admit_action(
         raise ActionAdmissionError(f"{status} needs an evidence reason")
     return {
         "row_id": expected_row_id,
+        "trace_id": trace_id,
         "family": expected_family,
         "stage": expected_stage,
         "ownership": ownership,
@@ -610,11 +616,16 @@ def admit_group(
         raise ActionAdmissionError("task group must contain exactly four rollouts")
     admitted: list[dict[str, Any]] = []
     excluded: list[dict[str, Any]] = []
+    seen_trace_ids: set[str] = set()
     for rollout_index, rollout in enumerate(rollouts):
         if not isinstance(rollout, Mapping):
             raise ActionAdmissionError("task group contains a malformed rollout")
         if rollout.get("group_id") != expected_group_id or type(rollout.get("rollout_index")) is not int or rollout.get("rollout_index") != rollout_index:
             raise ActionAdmissionError("rollout identity does not match its task group")
+        trace_id = rollout.get("trace_id")
+        if not isinstance(trace_id, str) or not trace_id.strip() or trace_id in seen_trace_ids:
+            raise ActionAdmissionError("task group contains a missing or duplicate trace_id")
+        seen_trace_ids.add(trace_id)
         result = admit_action(
             rollout,
             expected_row_id=expected_row_id,
@@ -665,11 +676,17 @@ class StageController:
     optimizer_updates_observed: int = 0
     stage_optimizer_updates_observed: int = 0
     completed_cycle_ids: list[str] = field(default_factory=list)
-    trace_inventory_by_cycle: dict[str, int] = field(default_factory=dict)
+    trace_ids_by_cycle: dict[str, list[str]] = field(default_factory=dict)
     halted: bool = False
 
     def _available_trace_total(self) -> int:
-        return sum(self.trace_inventory_by_cycle.values())
+        return sum(len(trace_ids) for trace_ids in self.trace_ids_by_cycle.values())
+
+    @property
+    def trace_inventory_by_cycle(self) -> dict[str, int]:
+        """Count view retained for receipt compatibility; IDs are authoritative."""
+
+        return {cycle_id: len(trace_ids) for cycle_id, trace_ids in self.trace_ids_by_cycle.items()}
 
     def _stage(self) -> Mapping[str, Any]:
         if self.active_stage > 4:
@@ -767,42 +784,58 @@ class StageController:
             "mean_reward": mean_reward,
         }
         self.completed_cycle_ids.append(receipt["cycle_id"])
-        self.trace_inventory_by_cycle[receipt["cycle_id"]] = len(admitted_rollouts)
+        cycle_trace_ids = [rollout["trace_id"] for rollout in admitted_rollouts]
+        if len(set(cycle_trace_ids)) != len(cycle_trace_ids):
+            return self._stop(stage, "duplicate_trace_id", {"cycle": receipt["cycle_id"]})
+        prior_trace_ids = {trace_id for trace_ids in self.trace_ids_by_cycle.values() for trace_id in trace_ids}
+        if prior_trace_ids.intersection(cycle_trace_ids):
+            return self._stop(stage, "duplicate_trace_id_across_cycles", {"cycle": receipt["cycle_id"]})
+        self.trace_ids_by_cycle[receipt["cycle_id"]] = cycle_trace_ids
         receipt["trace_inventory_by_cycle"] = dict(self.trace_inventory_by_cycle)
+        receipt["trace_ids_by_cycle"] = {cycle_id: list(trace_ids) for cycle_id, trace_ids in self.trace_ids_by_cycle.items()}
         receipt["available_scored_traces"] = self._available_trace_total()
         if self.next_cycle == stage["max_sampling_cycles"]:
             receipt["cycle_cap_reached"] = True
         self.next_cycle += 1
         return receipt
 
-    def record_optimizer_update(self, *, trace_counts_by_cycle: Mapping[str, int]) -> dict[str, Any]:
+    def record_optimizer_update(self, *, trace_ids_by_cycle: Mapping[str, Sequence[str]]) -> dict[str, Any]:
         """Consume exactly one Prime batch, attributed to active-stage cycles."""
 
         if self.halted:
             raise CurriculumError("controller is halted; a new run is required")
-        if not isinstance(trace_counts_by_cycle, Mapping) or not trace_counts_by_cycle:
-            raise CurriculumError("optimizer update needs a non-empty trace_counts_by_cycle mapping")
+        if not isinstance(trace_ids_by_cycle, Mapping) or not trace_ids_by_cycle:
+            raise CurriculumError("optimizer update needs a non-empty trace_ids_by_cycle mapping")
         if self.stage_optimizer_updates_observed >= self._stage()["optimizer_updates_target"]:
             raise CurriculumError("stage optimizer target reached; drain the stage tail before advancing")
-        if any(type(count) is not int or count <= 0 for count in trace_counts_by_cycle.values()):
-            raise CurriculumError("optimizer trace counts must be positive integers")
         active_prefix = f"s{self.active_stage}-c"
-        if any(not isinstance(cycle_id, str) for cycle_id in trace_counts_by_cycle) or any(
+        if any(not isinstance(cycle_id, str) for cycle_id in trace_ids_by_cycle) or any(
             not cycle_id.startswith(active_prefix)
-            or cycle_id not in self.trace_inventory_by_cycle
+            or cycle_id not in self.trace_ids_by_cycle
             or re.fullmatch(rf"s{self.active_stage}-c[0-9]{{2}}", cycle_id) is None
-            for cycle_id in trace_counts_by_cycle
+            for cycle_id in trace_ids_by_cycle
         ):
             raise CurriculumError("optimizer update must bind only active-stage completed cycles")
-        total = sum(trace_counts_by_cycle.values())
-        if total != BATCH_SIZE:
-            raise CurriculumError("an optimizer update must attribute exactly 24 scored trainable traces")
-        if any(trace_counts_by_cycle[cycle_id] > self.trace_inventory_by_cycle[cycle_id] for cycle_id in trace_counts_by_cycle):
-            raise CurriculumError("optimizer update attributes more traces than a cycle inventory contains")
+        if any(not isinstance(trace_ids, Sequence) or isinstance(trace_ids, (str, bytes)) or not trace_ids for trace_ids in trace_ids_by_cycle.values()):
+            raise CurriculumError("optimizer trace IDs must be non-empty sequences")
+        all_trace_ids = [trace_id for trace_ids in trace_ids_by_cycle.values() for trace_id in trace_ids]
+        if any(not isinstance(trace_id, str) or not trace_id.strip() for trace_id in all_trace_ids):
+            raise CurriculumError("optimizer trace IDs must be non-empty strings")
+        if len(set(all_trace_ids)) != len(all_trace_ids) or len(all_trace_ids) != BATCH_SIZE:
+            raise CurriculumError("an optimizer update must attribute exactly 24 unique scored trace IDs")
+        if any(
+            not set(trace_ids).issubset(set(self.trace_ids_by_cycle[cycle_id]))
+            for cycle_id, trace_ids in trace_ids_by_cycle.items()
+        ):
+            raise CurriculumError("optimizer update attributes a trace ID outside controller inventory")
         stage = self._stage()
         inventory_before = dict(self.trace_inventory_by_cycle)
-        for cycle_id, count in trace_counts_by_cycle.items():
-            self.trace_inventory_by_cycle[cycle_id] -= count
+        trace_ids_before = {cycle_id: list(trace_ids) for cycle_id, trace_ids in self.trace_ids_by_cycle.items()}
+        for cycle_id, trace_ids in trace_ids_by_cycle.items():
+            consumed = set(trace_ids)
+            self.trace_ids_by_cycle[cycle_id] = [trace_id for trace_id in self.trace_ids_by_cycle[cycle_id] if trace_id not in consumed]
+            if not self.trace_ids_by_cycle[cycle_id]:
+                del self.trace_ids_by_cycle[cycle_id]
         self.stage_optimizer_updates_observed += 1
         self.optimizer_updates_observed += 1
         receipt: dict[str, Any] = {
@@ -814,11 +847,14 @@ class StageController:
             "optimizer_update": self.optimizer_updates_observed,
             "stage_optimizer_update": self.stage_optimizer_updates_observed,
             "stage_optimizer_updates_target": stage["optimizer_updates_target"],
-            "scored_traces": total,
-            "trace_counts_by_cycle": dict(trace_counts_by_cycle),
+            "scored_traces": len(all_trace_ids),
+            "trace_ids_by_cycle": {cycle_id: list(trace_ids) for cycle_id, trace_ids in trace_ids_by_cycle.items()},
+            "consumed_trace_ids": list(all_trace_ids),
             "trace_inventory_before": inventory_before,
+            "trace_ids_before": trace_ids_before,
             "trace_inventory_after": dict(self.trace_inventory_by_cycle),
-            "sampling_cycles": list(trace_counts_by_cycle),
+            "trace_ids_after": {cycle_id: list(trace_ids) for cycle_id, trace_ids in self.trace_ids_by_cycle.items()},
+            "sampling_cycles": list(trace_ids_by_cycle),
             "progression_kind": "optimizer_count_independent_of_sampling_cycle",
         }
         if self.stage_optimizer_updates_observed == stage["optimizer_updates_target"]:
@@ -838,7 +874,13 @@ class StageController:
             receipt["decision"] = "continue_stage"
         return receipt
 
-    def record_stage_tail_drop(self, *, trace_counts_by_cycle: Mapping[str, int], reason: str) -> dict[str, Any]:
+    def record_stage_tail_drop(
+        self,
+        *,
+        trace_ids_by_cycle: Mapping[str, Sequence[str]],
+        reason: str,
+        purge_receipt: Mapping[str, Any],
+    ) -> dict[str, Any]:
         """Consume the exact active-stage tail before schedule progression."""
 
         if self.halted:
@@ -848,28 +890,54 @@ class StageController:
             raise CurriculumError("stage tail may be dropped only after the optimizer target")
         if not isinstance(reason, str) or not reason.strip():
             raise CurriculumError("stage tail drop needs an explicit reason")
-        if not isinstance(trace_counts_by_cycle, Mapping) or not trace_counts_by_cycle:
-            raise CurriculumError("stage tail drop needs a non-empty trace_counts_by_cycle mapping")
-        if any(not isinstance(cycle_id, str) for cycle_id in trace_counts_by_cycle) or any(type(count) is not int or count <= 0 for count in trace_counts_by_cycle.values()):
-            raise CurriculumError("stage tail counts must be positive integers")
-        if set(trace_counts_by_cycle) != {cycle_id for cycle_id, count in self.trace_inventory_by_cycle.items() if count}:
+        if not isinstance(purge_receipt, Mapping):
+            raise CurriculumError("stage tail drop needs a physical Prime purge receipt")
+        if purge_receipt.get("status") != "purged_pending_controller_commit":
+            raise CurriculumError("stage tail purge receipt is missing or not pending controller commit")
+        if purge_receipt.get("prime_revision") != PRIME_REVISION:
+            raise CurriculumError("stage tail purge receipt is for an unsupported Prime revision")
+        if purge_receipt.get("physical_removal_verified") is not True:
+            raise CurriculumError("stage tail purge receipt does not verify physical removal")
+        if purge_receipt.get("controller_stage") != self.active_stage:
+            raise CurriculumError("stage tail purge receipt is stale or from another stage")
+        if purge_receipt.get("controller_inventory_before") != self.trace_inventory_by_cycle:
+            raise CurriculumError("stage tail purge receipt does not match current controller inventory")
+        if purge_receipt.get("controller_trace_ids_before") != self.trace_ids_by_cycle:
+            raise CurriculumError("stage tail purge receipt IDs do not match current controller inventory")
+        if not isinstance(trace_ids_by_cycle, Mapping) or not trace_ids_by_cycle:
+            raise CurriculumError("stage tail drop needs a non-empty trace_ids_by_cycle mapping")
+        if any(not isinstance(cycle_id, str) for cycle_id in trace_ids_by_cycle) or any(
+            not isinstance(trace_ids, Sequence) or isinstance(trace_ids, (str, bytes)) or not trace_ids
+            for trace_ids in trace_ids_by_cycle.values()
+        ):
+            raise CurriculumError("stage tail trace IDs must be non-empty sequences")
+        if set(trace_ids_by_cycle) != set(self.trace_ids_by_cycle):
             raise CurriculumError("stage tail drop must cover exactly the remaining cycle inventory")
-        if any(trace_counts_by_cycle[cycle_id] != count for cycle_id, count in self.trace_inventory_by_cycle.items() if count):
-            raise CurriculumError("stage tail drop counts must equal the remaining cycle inventory")
-        dropped = sum(trace_counts_by_cycle.values())
+        if any(set(trace_ids_by_cycle[cycle_id]) != set(trace_ids) for cycle_id, trace_ids in self.trace_ids_by_cycle.items()):
+            raise CurriculumError("stage tail drop IDs must equal the remaining cycle inventory")
+        all_trace_ids = [trace_id for trace_ids in trace_ids_by_cycle.values() for trace_id in trace_ids]
+        if len(set(all_trace_ids)) != len(all_trace_ids):
+            raise CurriculumError("stage tail drop trace IDs must be unique")
+        dropped = len(all_trace_ids)
+        if purge_receipt.get("trace_ids_by_cycle") != {cycle_id: list(trace_ids) for cycle_id, trace_ids in trace_ids_by_cycle.items()}:
+            raise CurriculumError("stage tail purge receipt IDs do not match the controller commit")
+        if purge_receipt.get("removed_trace_count") != dropped:
+            raise CurriculumError("stage tail purge receipt removed the wrong number of traces")
         inventory_before = dict(self.trace_inventory_by_cycle)
-        self.trace_inventory_by_cycle.clear()
+        self.trace_ids_by_cycle.clear()
         receipt: dict[str, Any] = {
             "schema": "staged-family-balanced-tail-drop-receipt-v1",
             "run_id": RUN_ID,
             "stage": self.active_stage,
             "stage_name": stage["name"],
             "status": "stage_tail_dropped",
-            "trace_counts_by_cycle": dict(trace_counts_by_cycle),
+            "trace_ids_by_cycle": {cycle_id: list(trace_ids) for cycle_id, trace_ids in trace_ids_by_cycle.items()},
+            "dropped_trace_ids": list(all_trace_ids),
             "trace_inventory_before": inventory_before,
             "trace_inventory_after": {},
             "dropped_traces": dropped,
             "reason": reason,
+            "purge_receipt_id": purge_receipt.get("receipt_id"),
             "progression_kind": "optimizer_target_then_explicit_tail_drain",
         }
         if self.active_stage == 4:
@@ -887,7 +955,7 @@ class StageController:
         self.next_cycle = 1
         self.stage_optimizer_updates_observed = 0
         self.completed_cycle_ids.clear()
-        self.trace_inventory_by_cycle.clear()
+        self.trace_ids_by_cycle.clear()
 
     def _censor_cycle(self, stage: Mapping[str, Any], groups: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
         """Return a retry receipt without advancing schedule or training."""
@@ -983,11 +1051,22 @@ def write_preparation(output: Path, *, prime_root: Path | None = None) -> dict[s
             "config_sha256": sha256_file(output / "config.json"),
         },
         "prime_compatibility": validate_prime_compatibility(prime_root),
+        "tail_purge_hook": {
+            "schema": "staged-family-balanced-prime-tail-purge-v1",
+            "status": "node_free_validated_pending_prime_runtime_integration",
+            "validated": True,
+            "validation_scope": "fake TrainSink batch and token regression tests in test_staged_curriculum.py",
+            "full_prime_compatibility": False,
+            "required_before_stage_advance": True,
+            "physically_purges_train_sink": True,
+            "no_gpu_or_external_calls": True,
+        },
         "no_gpu_or_external_calls": True,
         "limitations": [
             "Source rows and heldout panel are inherited by hash from the completed diverse-flow proposal.",
             "Batch size 24 is the optimizer trace capacity; each sampling cycle schedules six exact per-family groups with four rollout capacity, while uncertainty can reduce a group to three scored traces and make an optimizer batch span cycles.",
             "Stages advance only on their optimizer target receipts; each stage has a finite two-times sampling-cycle refill cap and cannot mix leftover traces into the next stage.",
+            "The node-free Prime tail-purge adapter is implemented and tested against fake TrainSink surfaces, but physical runtime binding to Prime remains pending; no launch-ready claim is made.",
             "Anchors, renderer canary, model execution, rewards and visual judgments remain pending.",
         ],
     }

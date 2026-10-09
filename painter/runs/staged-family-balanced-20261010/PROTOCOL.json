@@ -73,6 +73,18 @@
     "path": "config.json",
     "sha256": "1d0e044b964b7887d7267713f4532fa26a752ca04f2440d09cf8b2f55760947f"
   },
+  "receipt": {
+    "path": "receipt.json",
+    "sha256": "b43d18517455a937fcde7c5c3c0937689ae0ba3bf9b3d1c26e3acc8350a27e87"
+  },
+  "tail_purge_hook": {
+    "path": "prime_tail_purge.py",
+    "sha256": "0535199e4d6076a939122d8ad0c4c7a67e8d00dedd26acec35a71083094f5bfb",
+    "status": "node_free_validated_pending_prime_runtime_integration",
+    "validated": true,
+    "full_prime_compatibility": false,
+    "required_before_stage_advance": true
+  },
   "reward_and_renderer": {
     "judge_model": "xiaomi/mimo-v2.6-flash",
     "judge_effort": "medium",

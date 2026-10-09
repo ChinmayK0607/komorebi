@@ -16,6 +16,11 @@ assert SPEC is not None and SPEC.loader is not None
 curriculum = importlib.util.module_from_spec(SPEC)
 sys.modules["staged_curriculum"] = curriculum
 SPEC.loader.exec_module(curriculum)
+PURGE_SPEC = importlib.util.spec_from_file_location("prime_tail_purge", ROOT / "prime_tail_purge.py")
+assert PURGE_SPEC is not None and PURGE_SPEC.loader is not None
+prime_tail_purge = importlib.util.module_from_spec(PURGE_SPEC)
+sys.modules["prime_tail_purge"] = prime_tail_purge
+PURGE_SPEC.loader.exec_module(prime_tail_purge)
 
 
 def valid_group(slot: dict[str, object], reward: float = 0.25) -> dict[str, object]:
@@ -24,6 +29,7 @@ def valid_group(slot: dict[str, object], reward: float = 0.25) -> dict[str, obje
         rollouts.append({
             "group_id": slot["group_id"],
             "rollout_index": rollout_index,
+            "trace_id": f"{slot['group_id']}-t{rollout_index:02d}",
             "row_id": slot["prompt_row_id"],
             "family": slot["family"],
             "stage": slot["stage"],
@@ -49,6 +55,57 @@ def valid_group(slot: dict[str, object], reward: float = 0.25) -> dict[str, obje
 def cycle_slots(plan: dict[str, object], stage: int, cycle: int) -> list[dict[str, object]]:
     info = plan["stages"][stage - 1]
     return [slot for slot in info["schedule"] if slot["cycle"] == cycle]
+
+
+class FakeSample:
+    def __init__(self, token_count: int) -> None:
+        self.token_ids = list(range(token_count))
+
+
+class FakeTrace:
+    def __init__(self, trace_id: str, token_count: int) -> None:
+        self.id = trace_id
+        self.num_total_tokens = token_count
+
+
+class FakeEpisode:
+    def __init__(self, trace: FakeTrace) -> None:
+        self.traces = [trace]
+
+
+class FakePendingEpisodes:
+    def __init__(self, trace_ids: list[str]) -> None:
+        self.sampled_trace_ids = set(trace_ids)
+
+
+class FakeTrainSink:
+    def __init__(self, trace_ids: list[str], *, token_mode: bool = False) -> None:
+        self.batch_size = None if token_mode else 24
+        self.token_batch_size = 1000 if token_mode else None
+        self.pending_batch = {}
+        self.episode_by_trace = {}
+        for index, trace_id in enumerate(trace_ids):
+            trace = FakeTrace(trace_id, index + 3)
+            self.pending_batch[trace_id] = [FakeSample(index + 3)]
+            self.episode_by_trace[trace_id] = FakeEpisode(trace)
+        # Prime resets pending_episodes after a shipped batch; buffered tail
+        # IDs therefore need not appear in this collection.
+        self.pending_episodes = FakePendingEpisodes([])
+        self.pending_tokens = sum(index + 3 for index in range(len(trace_ids))) if token_mode else 0
+
+
+def prepared_tail() -> tuple[curriculum.StageController, FakeTrainSink, dict[str, list[str]]]:
+    plan = curriculum.build_curriculum()
+    controller = curriculum.StageController(plan)
+    cycle_receipts = []
+    for cycle in range(1, 6):
+        cycle_receipts.append(controller.observe_cycle([valid_group(slot) for slot in cycle_slots(plan, 1, cycle)]))
+    for cycle_receipt in cycle_receipts[:4]:
+        controller.record_optimizer_update(trace_ids_by_cycle={cycle_receipt["cycle_id"]: list(controller.trace_ids_by_cycle[cycle_receipt["cycle_id"]])})
+    trace_ids = list(controller.trace_ids_by_cycle["s1-c05"])
+    cycle_id = "s1-c05"
+    ids_by_cycle = {cycle_id: trace_ids}
+    return controller, FakeTrainSink(trace_ids), ids_by_cycle
 
 
 class PreparationTests(unittest.TestCase):
@@ -161,7 +218,7 @@ class ControllerTests(unittest.TestCase):
             cycle_receipt = self._observe_cycle(controller, stage, cycle)
             self.assertEqual(cycle_receipt["status"], "cycle_complete")
             self.assertEqual(cycle_receipt["decision"], "pass")
-            receipts.append(controller.record_optimizer_update(trace_counts_by_cycle={cycle_receipt["cycle_id"]: 24}))
+            receipts.append(controller.record_optimizer_update(trace_ids_by_cycle={cycle_receipt["cycle_id"]: list(controller.trace_ids_by_cycle[cycle_receipt["cycle_id"]])}))
         return receipts
 
     def test_stage_advances_only_on_optimizer_target(self) -> None:
@@ -171,7 +228,7 @@ class ControllerTests(unittest.TestCase):
         self.assertEqual(cycle_receipt["decision"], "pass")
         self.assertEqual(controller.active_stage, 1)
         self.assertEqual(controller.stage_optimizer_updates_observed, 0)
-        update_receipt = controller.record_optimizer_update(trace_counts_by_cycle={cycle_receipt["cycle_id"]: 24})
+        update_receipt = controller.record_optimizer_update(trace_ids_by_cycle={cycle_receipt["cycle_id"]: list(controller.trace_ids_by_cycle[cycle_receipt["cycle_id"]])})
         self.assertEqual(update_receipt["decision"], "continue_stage")
         self.assertEqual(controller.active_stage, 1)
         self.assertEqual(controller.stage_optimizer_updates_observed, 1)
@@ -276,53 +333,152 @@ class ControllerTests(unittest.TestCase):
         receipt = controller.observe_cycle(records)
         self.assertEqual(receipt["reason"], "action_admission_failed")
 
+    def test_duplicate_native_trace_ids_fail_closed(self) -> None:
+        controller = curriculum.StageController(self.plan)
+        records = [valid_group(slot) for slot in cycle_slots(self.plan, 1, 1)]
+        records[0]["rollouts"][1]["trace_id"] = records[0]["rollouts"][0]["trace_id"]
+        receipt = controller.observe_cycle(records)
+        self.assertEqual(receipt["status"], "stop")
+        self.assertEqual(receipt["reason"], "action_admission_failed")
+
     def test_optimizer_update_binds_active_stage_cycles_and_exact_batch(self) -> None:
         controller = curriculum.StageController(self.plan)
         first = self._observe_cycle(controller, 1, 1)
         second = self._observe_cycle(controller, 1, 2)
-        receipt = controller.record_optimizer_update(trace_counts_by_cycle={first["cycle_id"]: 12, second["cycle_id"]: 12})
+        first_ids = list(controller.trace_ids_by_cycle[first["cycle_id"]])
+        second_ids = list(controller.trace_ids_by_cycle[second["cycle_id"]])
+        receipt = controller.record_optimizer_update(trace_ids_by_cycle={first["cycle_id"]: first_ids[:12], second["cycle_id"]: second_ids[:12]})
         self.assertEqual(receipt["optimizer_update"], 1)
         self.assertEqual(receipt["sampling_cycles"], ["s1-c01", "s1-c02"])
-        self.assertEqual(receipt["trace_counts_by_cycle"], {"s1-c01": 12, "s1-c02": 12})
+        self.assertEqual(receipt["trace_ids_by_cycle"], {"s1-c01": first_ids[:12], "s1-c02": second_ids[:12]})
         self.assertEqual(controller.optimizer_updates_observed, 1)
         with self.assertRaises(curriculum.CurriculumError):
-            controller.record_optimizer_update(trace_counts_by_cycle={"s1-c01": 23})
+            controller.record_optimizer_update(trace_ids_by_cycle={"s1-c01": first_ids[:11] + second_ids[:12]})
 
     def test_optimizer_update_cannot_bind_prior_stage_after_advance(self) -> None:
         controller = curriculum.StageController(self.plan)
         for _ in range(4):
             cycle_receipt = self._observe_cycle(controller, 1, controller.next_cycle)
-            update = controller.record_optimizer_update(trace_counts_by_cycle={cycle_receipt["cycle_id"]: 24})
+            update = controller.record_optimizer_update(trace_ids_by_cycle={cycle_receipt["cycle_id"]: list(controller.trace_ids_by_cycle[cycle_receipt["cycle_id"]])})
         self.assertEqual(update["decision"], "advance")
         with self.assertRaises(curriculum.CurriculumError):
-            controller.record_optimizer_update(trace_counts_by_cycle={"s1-c01": 24})
+            controller.record_optimizer_update(trace_ids_by_cycle={"s1-c01": ["old-trace"] * 24})
 
     def test_optimizer_update_rejects_false_cycle_attribution(self) -> None:
         controller = curriculum.StageController(self.plan)
         first = self._observe_cycle(controller, 1, 1)
+        first_ids = list(controller.trace_ids_by_cycle[first["cycle_id"]])
         with self.assertRaises(curriculum.CurriculumError):
-            controller.record_optimizer_update(trace_counts_by_cycle={first["cycle_id"]: 12, "s1-c02": 12})
+            controller.record_optimizer_update(trace_ids_by_cycle={first["cycle_id"]: first_ids[:12], "s1-c02": first_ids[12:]})
         with self.assertRaises(curriculum.CurriculumError):
-            controller.record_optimizer_update(trace_counts_by_cycle={first["cycle_id"]: 25})
+            controller.record_optimizer_update(trace_ids_by_cycle={first["cycle_id"]: first_ids + ["forged-trace"]})
 
     def test_stage_target_requires_explicit_tail_drain_before_advance(self) -> None:
-        controller = curriculum.StageController(self.plan)
-        cycle_receipts = [self._observe_cycle(controller, 1, cycle) for cycle in range(1, 6)]
-        for cycle_receipt in cycle_receipts[:4]:
-            update = controller.record_optimizer_update(trace_counts_by_cycle={cycle_receipt["cycle_id"]: 24})
-        self.assertEqual(update["decision"], "drain_stage_tail")
-        self.assertEqual(controller.active_stage, 1)
-        self.assertEqual(update["remaining_stage_tail_traces"], 24)
+        controller, sink, ids_by_cycle = prepared_tail()
+        # The helper leaves the controller at the target with an unconsumed c05 tail.
+        self.assertEqual(controller.stage_optimizer_updates_observed, 4)
+        self.assertEqual(len(controller.trace_ids_by_cycle["s1-c05"]), 24)
         with self.assertRaises(curriculum.CurriculumError):
-            controller.record_optimizer_update(trace_counts_by_cycle={cycle_receipts[4]["cycle_id"]: 24})
-        tail = controller.record_stage_tail_drop(
-            trace_counts_by_cycle={cycle_receipts[4]["cycle_id"]: 24},
+            controller.record_optimizer_update(trace_ids_by_cycle={"s1-c05": list(controller.trace_ids_by_cycle["s1-c05"])})
+        with self.assertRaises(curriculum.CurriculumError):
+            controller.record_stage_tail_drop(
+                trace_ids_by_cycle={"s1-c05": list(controller.trace_ids_by_cycle["s1-c05"])},
+                reason="missing physical purge receipt",
+                purge_receipt={},
+            )
+        purge = prime_tail_purge.purge_pending_stage_tail(
+            sink,
+            controller,
+            ids_by_cycle,
+            prime_revision=curriculum.PRIME_REVISION,
+            receipt_id="tail-test-1",
+        )
+        tail = prime_tail_purge.commit_purged_stage_tail(
+            controller,
+            purge,
             reason="runtime Prime tail purge required before stage transition",
         )
         self.assertEqual(tail["decision"], "advance")
         self.assertEqual(tail["trace_inventory_after"], {})
         self.assertEqual(controller.active_stage, 2)
         self.assertEqual(controller.trace_inventory_by_cycle, {})
+
+    def test_exact_batch_mode_purge_and_replay_are_auditable(self) -> None:
+        controller, sink, ids_by_cycle = prepared_tail()
+        before_ids = set(sink.pending_batch)
+        purge = prime_tail_purge.purge_pending_stage_tail(
+            sink,
+            controller,
+            ids_by_cycle,
+            prime_revision=curriculum.PRIME_REVISION,
+            receipt_id="tail-test-batch",
+        )
+        self.assertEqual(purge["removed_trace_count"], 24)
+        self.assertEqual(purge["pending_trace_count_after"], 0)
+        self.assertEqual(set(sink.pending_batch), before_ids - set(sum(ids_by_cycle.values(), [])))
+        self.assertEqual(sink.pending_tokens, 0)
+        self.assertEqual(sink.pending_episodes.sampled_trace_ids, set())
+        with self.assertRaises(prime_tail_purge.PrimeTailPurgeError):
+            prime_tail_purge.purge_pending_stage_tail(
+                sink,
+                controller,
+                ids_by_cycle,
+                prime_revision=curriculum.PRIME_REVISION,
+                receipt_id="tail-test-replay",
+            )
+        committed = prime_tail_purge.commit_purged_stage_tail(
+            controller,
+            purge,
+            reason="test replay commit",
+        )
+        self.assertEqual(committed["decision"], "advance")
+        with self.assertRaises(curriculum.CurriculumError):
+            prime_tail_purge.commit_purged_stage_tail(
+                controller,
+                purge,
+                reason="replayed controller commit",
+            )
+
+    def test_token_mode_decrements_payload_tokens(self) -> None:
+        controller, _sink, ids_by_cycle = prepared_tail()
+        trace_ids = ids_by_cycle["s1-c05"]
+        sink = FakeTrainSink(trace_ids, token_mode=True)
+        before_tokens = sink.pending_tokens
+        purge = prime_tail_purge.purge_pending_stage_tail(
+            sink,
+            controller,
+            ids_by_cycle,
+            prime_revision=curriculum.PRIME_REVISION,
+            receipt_id="tail-test-tokens",
+        )
+        self.assertTrue(purge["token_mode"])
+        self.assertEqual(purge["removed_token_count"], before_tokens)
+        self.assertEqual(sink.pending_tokens, 0)
+
+    def test_wrong_ids_counts_stage_and_revision_leave_sink_unchanged(self) -> None:
+        cases = ("unknown", "count", "cross_cycle", "revision")
+        for case in cases:
+            controller, sink, ids_by_cycle = prepared_tail()
+            before = (set(sink.pending_batch), set(sink.episode_by_trace), set(sink.pending_episodes.sampled_trace_ids), sink.pending_tokens)
+            ids = {cycle_id: list(trace_ids) for cycle_id, trace_ids in ids_by_cycle.items()}
+            revision = curriculum.PRIME_REVISION
+            if case == "unknown":
+                ids["s1-c05"][0] = "unknown-trace"
+            elif case == "count":
+                ids["s1-c05"] = ids["s1-c05"][:-1]
+            elif case == "cross_cycle":
+                ids["s1-c06"] = ids.pop("s1-c05")
+            else:
+                revision = "unsupported-prime"
+            with self.assertRaises(prime_tail_purge.PrimeTailPurgeError):
+                prime_tail_purge.purge_pending_stage_tail(
+                    sink,
+                    controller,
+                    ids,
+                    prime_revision=revision,
+                    receipt_id=f"tail-test-{case}",
+                )
+            self.assertEqual((set(sink.pending_batch), set(sink.episode_by_trace), set(sink.pending_episodes.sampled_trace_ids), sink.pending_tokens), before, case)
 
     def test_refill_cycle_cap_stops_without_stage_progression(self) -> None:
         controller = curriculum.StageController(self.plan)
