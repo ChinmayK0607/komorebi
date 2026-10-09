@@ -21,5 +21,12 @@
     "sha256": "9090042827f847615c5b76e4ac77e8ff3ecb406f7a6c53261d0d44ee466bf247",
     "bytes": 45181080,
     "anonymous_hash_verified": true
+  },
+  "initial_qwen_generation_failure_archive": {
+    "revision": "b9771d5d11ff7a705446cc68973232c08e7d0834",
+    "path": "runs/structured-flow-rl-20261009/evidence.tar.gz",
+    "sha256": "4885f27e157d02ae3b0d930361160f412ed1496219c2680c2348eaa31c303ee1",
+    "bytes": 47888353,
+    "anonymous_hash_verified": true
   }
 }
