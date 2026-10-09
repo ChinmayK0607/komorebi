@@ -1,0 +1,16 @@
+{
+  "schema": "structured-flow-failure-v1",
+  "attempt": 14,
+  "failure": "remote_GitHub_DNS_resolution_failed_during_pinned_Prime_seed_fetch",
+  "real_SSH_probe_passed": true,
+  "optimizer_updates_observed": 0,
+  "remote_pipeline_started": false,
+  "source_commit": "401c83caf09757b90cc642d4d4ae248bbbdd8923",
+  "owned_node_absence_confirmed": true,
+  "rental_clock_estimate_usd": 0.0213,
+  "cumulative_gpu_clock_estimate_usd": 8.2556,
+  "cost_method": "allocation to controller error log after exact-node release cleanup; estimated, not invoice; API excluded",
+  "remote_archive": "not applicable; pipeline and credential handoff not started",
+  "next_action": "check actual outbound GitHub/HF connectivity on another offer before handoff",
+  "recurring_automation": false
+}
