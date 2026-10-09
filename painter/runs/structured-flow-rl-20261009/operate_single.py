@@ -69,7 +69,9 @@ def _detached_job_command(*, source_commit: str, rental_start_epoch: float, pric
     if prime_seed not in {"0", "1"}:
         raise ValueError("PAINTER_PRIME_SEED_ENABLED must be 0 or 1")
     if prime_seed == "1":
-        seed_root = os.environ.get("PAINTER_PRIME_SEED_ROOT", "/root/painter/prime")
+        seed_root = os.environ.get("PAINTER_PRIME_SEED_ROOT") or (
+            str(Path(local_scratch) / "prime") if local_scratch else "/root/painter/prime"
+        )
         if not seed_root.startswith("/"):
             raise ValueError("PAINTER_PRIME_SEED_ROOT must be absolute")
         values["PAINTER_PRIME_SEED_ENABLED"] = "1"

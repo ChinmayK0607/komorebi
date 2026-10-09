@@ -14,6 +14,7 @@ import sys
 import tempfile
 import types
 import unittest
+from types import SimpleNamespace
 from unittest import mock
 
 
@@ -220,6 +221,35 @@ class StructuredFlowRunTests(unittest.TestCase):
                     cap_usd=0.50,
                 )
 
+    def test_prime_stage_uses_remote_scratch_for_large_bundle_and_checkout(self):
+        allocator = load("structured_flow_allocator_scratch_stage_contract", RUN / "allocate_single.py")
+
+        class FakeBase:
+            REMOTE_ROOT = Path("/root/painter")
+
+        staged_roots = []
+
+        def fake_stage(**kwargs):
+            staged_roots.append(kwargs["operation"].REMOTE_ROOT)
+
+        operation_module = SimpleNamespace(base=FakeBase)
+        with tempfile.TemporaryDirectory() as directory:
+            prime = Path(directory) / "prime.bundle"
+            prime.write_bytes(b"bundle")
+            with mock.patch.dict(os.environ, {"PAINTER_LOCAL_SCRATCH_ROOT": "/tmp/structured-flow-large"}, clear=False), \
+                 mock.patch.object(allocator.alloc, "stage_prime_bundle", side_effect=fake_stage):
+                result = allocator._stage_prime_bundle(
+                    api=object(),
+                    operation_module=operation_module,
+                    window=SimpleNamespace(pod_id="pod"),
+                    prime_bundle=prime,
+                    prime_commit="a" * 40,
+                    prime_sha256="b" * 64,
+                )
+        self.assertEqual(result, Path("/tmp/structured-flow-large"))
+        self.assertEqual(staged_roots, [Path("/tmp/structured-flow-large")])
+        self.assertEqual(FakeBase.REMOTE_ROOT, Path("/root/painter"))
+
     def test_controller_forwards_opt_in_pinned_anchor_restore(self):
         operator = load("structured_flow_operation_restore_contract", RUN / "operate_single.py")
         environment = {
@@ -271,6 +301,54 @@ class StructuredFlowRunTests(unittest.TestCase):
                     price_usd_per_hour=3.70,
                     cap_usd=0.50,
                 )
+
+    def test_scratch_prime_seed_handoff_matches_runtime_and_reuses_staged_checkout(self):
+        operator = load("structured_flow_operation_scratch_prime_handoff_contract", RUN / "operate_single.py")
+        environment = os.environ.copy()
+        environment.pop("PAINTER_PRIME_SEED_ROOT", None)
+        environment.update({
+            "PAINTER_LOCAL_SCRATCH_ROOT": "/tmp/structured-flow-large",
+            "PAINTER_PRIME_SEED_ENABLED": "1",
+        })
+        with mock.patch.dict(os.environ, environment, clear=True):
+            command = operator._detached_job_command(
+                source_commit="a" * 40,
+                rental_start_epoch=100.0,
+                price_usd_per_hour=3.70,
+                cap_usd=0.50,
+            )
+        self.assertIn("PAINTER_PRIME_SEED_ROOT=/tmp/structured-flow-large/prime", command)
+
+        with tempfile.TemporaryDirectory() as directory:
+            scratch = Path(directory) / "scratch"
+            staged_prime = scratch / "prime"
+            (staged_prime / ".git").mkdir(parents=True)
+            result = subprocess.run(
+                ["bash", "-c", 'source "$1/runtime_env.sh"; printf "%s\\n%s" "$PRIME_ROOT" "$PAINTER_PRIME_SEED_ROOT"', "runtime", str(RUN)],
+                env={
+                    **os.environ,
+                    "PAINTER_RUN_ROOT": str(RUN),
+                    "PAINTER_RUN_NAME": "structured-flow-rl-20261009",
+                    "PAINTER_LOCAL_SCRATCH_ROOT": str(scratch),
+                    "PAINTER_PRIME_SEED_ROOT": str(staged_prime),
+                    "PAINTER_PRIME_SEED_ENABLED": "1",
+                },
+                capture_output=True,
+                text=True,
+                check=True,
+            )
+            self.assertEqual(result.stdout.splitlines(), [str(staged_prime), str(staged_prime)])
+            reuse = subprocess.run(
+                ["bash", "-c", 'if [[ ! -d "$1/.git" && "${PAINTER_PRIME_SEED_ENABLED:-0}" == 1 ]]; then printf seed; else printf reuse; fi', "reuse", str(staged_prime)],
+                env={"PAINTER_PRIME_SEED_ENABLED": "1"},
+                capture_output=True,
+                text=True,
+                check=True,
+            )
+            self.assertEqual(reuse.stdout, "reuse")
+
+        setup = (RUN.parent / "text-pairwise-rl-20260928/setup_node.sh").read_text()
+        self.assertIn('if [[ ! -d "$PRIME_ROOT/.git" && "${PAINTER_PRIME_SEED_ENABLED:-0}" == 1 ]]; then', setup)
 
     def test_node_builds_missing_proposals_and_evaluator_preserves_flow_hook(self):
         prepare = (RUN / "prepare_node.sh").read_text()

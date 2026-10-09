@@ -6,6 +6,7 @@ import argparse
 import importlib.util
 import json
 import math
+import os
 from pathlib import Path
 import sys
 import time
@@ -32,6 +33,44 @@ GPU_COUNT = 2
 GPU_TYPE = "H100"
 MAX_CAP_USD = 20.0
 RUN_NAME = "structured-flow-rl-20261009"
+
+
+def _remote_staging_root() -> Path:
+    """Return the node-local staging root selected for this launch.
+
+    The controller and node share the same absolute scratch convention.  The
+    opt-in value is already forwarded by ``operate_single``; using it here
+    keeps the large Prime/source bundles off the encrypted node-root mount
+    before the node-side checkout begins.  The unset path preserves the
+    generic controller's historical ``/root/painter`` behavior.
+    """
+    raw = os.environ.get("PAINTER_LOCAL_SCRATCH_ROOT", "").strip()
+    if not raw:
+        return Path(operation.base.REMOTE_ROOT)
+    if not raw.startswith("/"):
+        raise ValueError("PAINTER_LOCAL_SCRATCH_ROOT must be absolute")
+    return Path(raw)
+
+
+def _stage_prime_bundle(*, api, operation_module, window, prime_bundle: Path, prime_commit: str, prime_sha256: str, now=time.time) -> Path:
+    """Run the reviewed staging sequence against the selected filesystem."""
+    operation_base = operation_module.base
+    staging_root = _remote_staging_root()
+    previous_root = operation_base.REMOTE_ROOT
+    operation_base.REMOTE_ROOT = staging_root
+    try:
+        alloc.stage_prime_bundle(
+            api=api,
+            operation=operation_base,
+            window=window,
+            prime_bundle=prime_bundle,
+            prime_commit=prime_commit,
+            prime_sha256=prime_sha256,
+            now=now,
+        )
+    finally:
+        operation_base.REMOTE_ROOT = previous_root
+    return staging_root
 
 
 def allocate_and_operate(*, api, max_price_usd_hour: float, cap_usd: float, source_bundle: Path, source_commit: str, prime_bundle: Path, prime_commit: str, prime_sha256: str, hf_token_file: Path, gateway_env_file: Path, output_root: Path, now=time.time) -> int:
@@ -72,10 +111,23 @@ def allocate_and_operate(*, api, max_price_usd_hour: float, cap_usd: float, sour
         if not alloc._ready_pod(ready):
             raise RuntimeError("allocated pod did not become SSH-ready")
         window = operation.base.make_window(pod_id=pod_id, rental_start_epoch=started, price_usd_per_hour=price, cap_usd=cap)
-        alloc.stage_prime_bundle(api=api, operation=operation.base, window=window, prime_bundle=prime_bundle, prime_commit=prime_commit, prime_sha256=prime_sha, now=now)
+        staging_root = _stage_prime_bundle(
+            api=api,
+            operation_module=operation,
+            window=window,
+            prime_bundle=prime_bundle,
+            prime_commit=prime_commit,
+            prime_sha256=prime_sha,
+            now=now,
+        )
         receipt["status"] = "prime_staged"
         alloc._write_receipt(receipt_path, receipt)
-        return operation.base.operate(window=window, source_bundle=source_bundle, source_commit=source_commit, hf_token_file=token, gateway_env_file=gateway, output_root=output_root, api=tracked)
+        previous_bundle = operation.base.REMOTE_BUNDLE
+        operation.base.REMOTE_BUNDLE = staging_root / "source.bundle"
+        try:
+            return operation.base.operate(window=window, source_bundle=source_bundle, source_commit=source_commit, hf_token_file=token, gateway_env_file=gateway, output_root=output_root, api=tracked)
+        finally:
+            operation.base.REMOTE_BUNDLE = previous_bundle
     finally:
         if not tracked.released:
             try:
