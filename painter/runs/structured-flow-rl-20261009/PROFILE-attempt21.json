@@ -1,0 +1,46 @@
+{
+  "schema": "structured-flow-sampled-profile-v1",
+  "source_commit": "9fb4f7a16c0016e55a4ff13ae5d67f4109b4b285",
+  "sample_interval_seconds": 10,
+  "profile_csv_sha256": "00a19786a7d2c3a3950f49aa8f7f7c8d2f9d92ed84768a8e7c96d5fd00342fc2",
+  "roles": {
+    "0": "inference",
+    "1": "trainer"
+  },
+  "finite_sample_window": {
+    "window_start_utc": "2026/10/09 04:28:27.275",
+    "window_end_utc": "2026/10/09 04:48:17.603",
+    "gpu_count": 2,
+    "per_gpu": {
+      "0": {
+        "samples": 120,
+        "mean_utilization_percent": 60.708333333333336,
+        "busy_ge10_fraction": 0.6416666666666667
+      },
+      "1": {
+        "samples": 120,
+        "mean_utilization_percent": 6.325,
+        "busy_ge10_fraction": 0.10833333333333334
+      }
+    }
+  },
+  "first_training_interval": {
+    "window_start_utc": "2026/10/09 04:45:07.563",
+    "window_end_utc": "2026/10/09 04:48:17.603",
+    "gpu_count": 2,
+    "per_gpu": {
+      "0": {
+        "samples": 20,
+        "mean_utilization_percent": 98.9,
+        "busy_ge10_fraction": 1.0
+      },
+      "1": {
+        "samples": 20,
+        "mean_utilization_percent": 36.4,
+        "busy_ge10_fraction": 0.55
+      }
+    }
+  },
+  "pipeline_saturated": false,
+  "limitation": "Finite startup and first-batch window; not full-run utilization. Inference busy while trainer spent substantial time waiting or compiling. No optimizer update proof at collection."
+}

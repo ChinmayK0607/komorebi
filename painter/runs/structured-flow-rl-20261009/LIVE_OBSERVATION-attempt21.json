@@ -1,0 +1,36 @@
+{
+  "schema": "structured-flow-live-proof-v1",
+  "source_commit": "9fb4f7a16c0016e55a4ff13ae5d67f4109b4b285",
+  "actual_linux_runtime_probe": {
+    "api": "Runtime.run_uv_script",
+    "child_role": "harness",
+    "parent_role": "orchestrator",
+    "runtime": "verifiers.v1.runtimes.subprocess.SubprocessRuntime",
+    "schema": "structured-flow-prime-runtime-harness-probe-v1"
+  },
+  "probe_sha256": "6b0bfdbafd60e13c094270a30d9b70198b97c713b836a261efa5e1aede8c017a",
+  "warmup_pending": true,
+  "optimizer_updates_observed": 2,
+  "learning_improvement_claim": false,
+  "actual_linux_renderer_orchestrator_role_probe": {
+    "schema": "structured-flow-renderer-parent-role-probe-v1",
+    "parent_role": "orchestrator",
+    "render_valid": true,
+    "elapsed_seconds": 6.7556589110026835,
+    "program_sha256": "ac9325a85c762d5ac9e7e552a26a01e8e34baa025fd71704c0b63ee931f27d2d",
+    "model_calls": 0,
+    "judge_calls": 0
+  },
+  "renderer_probe_sha256": "b9d954ca7b2c311543bf12fca493b1770656a507253a52d8eb2180f558c5aa22",
+  "last_optimizer_step": 2,
+  "admitted_batches": 2,
+  "trainer_step_receipt": {
+    "completed_optimizer_steps": 2,
+    "last_optimizer_step": 2,
+    "admitted_batches": 2,
+    "trainer_completed_step_lines": [
+      "[trainer0]:04:49:55 SUCCESS Step 1 | 13m 48s | Loss -0.0017 | Entropy 0.5510 | Mismatch KL 0.0003 | Grad. Norm 0.0266 | LR 1.00e-06 | Throughput 457 tokens/s | MFU 9.9% | Peak Mem. 73.3 GiB",
+      "[trainer0]:04:51:37 SUCCESS Step 2 |  1m 41s | Loss 0.0034 | Entropy 0.5611 | Mismatch KL 0.0003 | Grad. Norm 0.0228 | LR 1.00e-06 | Throughput 1799 tokens/s | MFU 38.9% | Peak Mem. 73.2 GiB"
+    ]
+  }
+}\n

@@ -28,7 +28,7 @@
   "real_ssh_and_public_https_probes_passed": true,
   "finite_controller_started": true,
   "linux_harness_boundary_checks_before_model_loading": true,
-  "linux_harness_boundary_checks_passed": false,
+  "linux_harness_boundary_checks_passed": true,
   "linux_real_runtime_probe_required_before_gpu_serving": true,
-  "linux_real_runtime_probe_passed": false
+  "linux_real_runtime_probe_passed": true
 }
