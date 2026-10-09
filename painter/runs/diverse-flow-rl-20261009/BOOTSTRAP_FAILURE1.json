@@ -1,0 +1,27 @@
+{
+  "schema": "diverse-flow-bootstrap-failure-v1",
+  "status": "node_absence_confirmed",
+  "source_commit": "233116101be9a00b8d28e7c71051e321b46ab5c5",
+  "failure": "Run-owned launcher was incorrectly required to equal generic bootstrap launcher",
+  "phase": "Linux runtime preparation after public adapter downloads; before policy generation/SFT/RL",
+  "optimizer_updates": 0,
+  "archive_public_hash_verified": true,
+  "rental_start_epoch": 1791540555.0841348,
+  "absence_observed_epoch": 1791541621.431715,
+  "whole_node_usd_hour": 1.52,
+  "conservative_gpu_usd_including60s_release_margin": 0.4755689783043332,
+  "cost_basis": "rental-clock upper estimate at absence confirmation, not invoice; includes pause/setup",
+  "next_allowance_usd": 19.0,
+  "cumulative_run_cap_usd": 20,
+  "prior_reserve_usd": 1.0,
+  "next_action": "Correct own-script identity binding, retain sharded initialization fix and same96/32 controls, then retry within remaining allowance",
+  "public_evidence": {
+    "repo": "CK0607/komorebi-painter-experiments",
+    "revision": "70ff84679177c55ccfe825327589cd801fb47bd1",
+    "path": "runs/diverse-flow-rl-20261009/evidence.tar.gz",
+    "sha256": "237d27a45e2162915e9e8e920c970ef177215aaaeb82cbcf2b2c2b2f86b5ed0b",
+    "bytes": 854059,
+    "anonymous_hash_verified": true,
+    "terminal_pipeline_exit_code": 1
+  }
+}

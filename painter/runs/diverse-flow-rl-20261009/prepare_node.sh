@@ -272,18 +272,19 @@ download_adapter "$PAINTER_POLICY_REVISION" "$PAINTER_POLICY_PREFIX" "$PAINTER_P
 download_adapter "$PAINTER_FROZEN_SFT_REVISION" "$PAINTER_FROZEN_SFT_PREFIX" "$PAINTER_FROZEN_SFT_SHA256" \
   "${PAINTER_FROZEN_SFT_DOWNLOAD_RECEIPT:-$RUN/frozen-sft-adapter-receipt.json}" "$PAINTER_FROZEN_SFT_ADAPTER_PATH_FILE"
 
-for item in launch_rl.sh run_from_sft.py train_from_sft.py; do
-  [[ -f "$BOOTSTRAP_RUN/$item" ]] || { echo "bootstrap output missing: $item" >&2; exit 1; }
-  # run_from_sft.py is an owned thin wrapper that performs runtime anchor
-  # generation after the frozen alias is loaded; the other two files remain
-  # byte-identical to the reviewed bootstrap.
-  [[ "$item" == run_from_sft.py && -f "$RUN/run_from_sft.py" ]] && continue
-  if [[ -e "$RUN/$item" && ! -L "$RUN/$item" ]]; then
-    cmp -s "$RUN/$item" "$BOOTSTRAP_RUN/$item" || { echo "prepared input differs: $item" >&2; exit 1; }
-  else
-    cp "$BOOTSTRAP_RUN/$item" "$RUN/$item"
-  fi
-done
+# These entrypoints are intentionally owned by this run: launch_rl.sh wires
+# the four-GPU roles and train_from_sft.py selects the run-local DTensor hooks.
+# Bind them to the checked-out source blob instead of comparing them with the
+# generic legacy bootstrap's incompatible launchers.
+RUN_OWNED_VERIFY="$RUN/verify_run_owned_inputs.py"
+[[ -f "$RUN_OWNED_VERIFY" ]] || { echo 'run-owned source verifier is missing' >&2; exit 1; }
+RUN_RELATIVE_ROOT="${RUN#"$REPO"/}"
+[[ "$RUN_RELATIVE_ROOT" != "$RUN" && -n "$RUN_RELATIVE_ROOT" ]] || {
+  echo 'run root is outside the checked-out source repository' >&2; exit 1;
+}
+"$PY_BOOT" "$RUN_OWNED_VERIFY" --repo "$REPO" --run-root "$RUN" \
+  --relative-root "$RUN_RELATIVE_ROOT" \
+  --file launch_rl.sh --file run_from_sft.py --file train_from_sft.py
 for item in sitecustomize.py safe_archive.py node_validate.py verify_adapter.py matched_baseline.sh; do
   [[ -e "$RUN/$item" ]] || { echo "tracked structured helper missing: $item" >&2; exit 1; }
 done

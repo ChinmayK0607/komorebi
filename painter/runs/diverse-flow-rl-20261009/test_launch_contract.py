@@ -3,13 +3,15 @@
 from __future__ import annotations
 
 import importlib.util
+import hashlib
 import json
 import os
 from pathlib import Path
 import subprocess
+import sys
 import tempfile
 import unittest
-from types import SimpleNamespace
+from types import ModuleType, SimpleNamespace
 from unittest.mock import patch
 
 
@@ -156,6 +158,59 @@ class DiverseFlowLaunchContractTests(unittest.TestCase):
             self.assertIn("group-validation.rank", group_validation.read_text())
         warmup_shell = (RUN / "warmup.sh").read_text()
         self.assertIn("structured-flow-rl-20261009/sft_source/mixed_sft", warmup_shell)
+
+    def test_group_validation_transform_binds_run_globals_into_prime_namespace(self):
+        group = load(
+            "diverse_flow_group_validation_contract",
+            RUN / "prime_runtime/integrations/speedpainting/mixed_sft/group_validation.py",
+        )
+        source = (
+            "def run_validation(step: int) -> None:\n"
+            "    gc_handler = GarbageCollection(config.gc.interval) if config.gc else None\n"
+            "def train():\n"
+            "    run_validation(0)\n"
+            "    # Write final checkpoint\n"
+            "    pass\n"
+        )
+        group.SOURCE_SHA = hashlib.sha256(source.encode()).hexdigest()
+        with tempfile.TemporaryDirectory() as directory:
+            source_path = Path(directory) / "prime_train.py"
+            source_path.write_text(source)
+            fake_module = ModuleType("fake_prime_train")
+            fake_module.__file__ = str(source_path)
+            with patch.object(group.importlib, "import_module", return_value=fake_module):
+                group.install(Path(directory) / "effective")
+            self.assertEqual(fake_module.__dict__["OVERRIDE_SCHEMA"], group.OVERRIDE_SCHEMA)
+            self.assertIn("os", fake_module.__dict__)
+            self.assertTrue(callable(fake_module.__dict__["train"]))
+
+    def test_run_owned_source_guard_accepts_own_blob_and_rejects_tamper(self):
+        helper = RUN / "verify_run_owned_inputs.py"
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            repo = root / "repo"
+            run = repo / "painter/runs/diverse-flow-rl-20261009"
+            fake_bin = root / "bin"
+            repo.mkdir(parents=True)
+            run.mkdir(parents=True)
+            fake_bin.mkdir()
+            reviewed = root / "reviewed-launch.sh"
+            reviewed.write_text("#!/bin/sh\necho reviewed\n")
+            (run / "launch_rl.sh").write_bytes(reviewed.read_bytes())
+            fake_git = fake_bin / "git"
+            fake_git.write_text("#!/bin/sh\ncat \"$REVIEWED_BLOB\"\n")
+            fake_git.chmod(0o700)
+            env = dict(os.environ, PATH=f"{fake_bin}:{os.environ.get('PATH', '')}", REVIEWED_BLOB=str(reviewed))
+            command = [
+                sys.executable, str(helper), "--repo", str(repo), "--run-root", str(run),
+                "--relative-root", "painter/runs/diverse-flow-rl-20261009", "--file", "launch_rl.sh",
+            ]
+            accepted = subprocess.run(command, env=env, capture_output=True, text=True)
+            self.assertEqual(accepted.returncode, 0, accepted.stderr)
+            (run / "launch_rl.sh").write_text("tampered\n")
+            rejected = subprocess.run(command, env=env, capture_output=True, text=True)
+            self.assertNotEqual(rejected.returncode, 0)
+            self.assertIn("differs", rejected.stderr)
 
     def test_owner_hf_refresh_copies_authorized_token_and_uses_atomic_remote_rename(self):
         operation = load("diverse_flow_operation_token_refresh_contract", RUN / "operate_single.py")

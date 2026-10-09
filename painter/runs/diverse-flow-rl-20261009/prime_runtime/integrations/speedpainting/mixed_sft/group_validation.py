@@ -9,6 +9,7 @@ import importlib
 import inspect
 import os
 from pathlib import Path
+import textwrap
 SOURCE_SHA='08c0ab3284000ee9b3fd0853a7007aedac21b221e66c675c621927c063b46ad0'
 OVERRIDE_SCHEMA='Diverse-flow-multirank-group-validation-v1'
 
@@ -37,7 +38,9 @@ def transform(source):
     source=source.replace('def run_validation(step: int) -> None:', 'def run_validation(step: int, phase: str = "before_optimizer") -> None:')
     anchor='    gc_handler = GarbageCollection(config.gc.interval) if config.gc else None\n'
     if source.count(anchor)!=1:raise ValueError('Validation insertion anchor mismatch')
-    source=source.replace(anchor,EXTRA+anchor)
+    indent = anchor[:len(anchor) - len(anchor.lstrip())]
+    extra = textwrap.indent(textwrap.dedent(EXTRA), indent)
+    source=source.replace(anchor,extra+anchor)
     anchor='    # Write final checkpoint\n'
     if source.count(anchor)!=1:raise ValueError('Final validation anchor mismatch')
     source=source.replace(anchor,'    if config.val is not None:\n        run_validation(progress.step, phase="after_optimizer")\n\n'+anchor)
@@ -52,5 +55,10 @@ def install(output, load_sft_dataset=None):
     effective=transform(source)
     output=Path(output);output.mkdir(parents=True,exist_ok=True)
     path=output/'effective_prime_train.py';path.write_text(effective)
+    # ``effective`` contains a function extracted into Prime's trainer
+    # namespace, so imports/constants from this override module are not
+    # automatically visible there.
+    module.__dict__['OVERRIDE_SCHEMA'] = OVERRIDE_SCHEMA
+    module.__dict__['os'] = os
     exec(compile(effective,str(path),'exec'),module.__dict__)
     return module.train
