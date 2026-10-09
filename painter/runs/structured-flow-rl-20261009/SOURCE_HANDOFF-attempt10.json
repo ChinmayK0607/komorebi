@@ -1,0 +1,22 @@
+{
+  "attempt": 10,
+  "cumulative_gpu_ceiling_usd": 20,
+  "expected_admitted_train_count": 31,
+  "gpu_allowance_usd": 14.75,
+  "heldout_count": 16,
+  "judge": "xiaomi/mimo-v2.6-flash",
+  "new_anchor_generations_expected": 0,
+  "optimizer_updates_observed": 0,
+  "prime_seed_enabled": true,
+  "prior_start_reserve_usd": 5.25,
+  "recurring_automation": false,
+  "registered_train_count": 32,
+  "restore_archive_sha256": "1e72323dfd9bdcf97f857708b02e2b22deebee125c30dbff7488702cfb3896a8",
+  "restore_public_revision": "9a7fc6352b8d0fcf89fca178be9359175da29071",
+  "rl_updates": 8,
+  "schema": "structured-flow-source-handoff-v1",
+  "sft_updates": 4,
+  "source_bundle_bytes": 3677830,
+  "source_bundle_sha256": "8c316405d44fd2afdd7102d65c17e37b34e5b71eed1fa4aed6b9df8e24d77b0f",
+  "source_commit": "94aa0e733c5b4c909b5ba2d8694650bd3a0dd726"
+}
