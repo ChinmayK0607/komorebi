@@ -71,7 +71,7 @@
   },
   "config": {
     "path": "config.json",
-    "sha256": "43c0959b5d70f1c201a5d65cc2cf1a606bf8674e11d00d28a0bec1679748c5da"
+    "sha256": "f09b73f3137af65fda3dfa3d0130d77026dda81ffa1452b68068148d16148ebc"
   },
   "receipt": {
     "path": "receipt.json",
@@ -179,7 +179,7 @@
     "files": {
       "bootstrap": {
         "path": "bootstrap.py",
-        "sha256": "b653605cf833102824085b22f1046734adbf61b956703bf80fe139fe9affd434"
+        "sha256": "7f0c7b0d024a4e93b8286b150610444210a1aaf36978aa39e6d09d7f3c61b0d7"
       },
       "bootstrap_shell": {
         "path": "bootstrap.sh",
@@ -199,7 +199,7 @@
       },
       "canary": {
         "path": "canary.py",
-        "sha256": "7a8ef495e2ae863121eb7f26cec4c88412a6ab099914714184d5af2f9dbd6243"
+        "sha256": "ea19d265c068825ac1f727b2ec162ae9001f10ca34423ec40853add9ed12b6a8"
       },
       "launch": {
         "path": "launch.sh",

@@ -271,10 +271,44 @@ class LaunchHandoffTests(unittest.TestCase):
                     browser_root=root / "browsers", probe_root=probe,
                 )
             self.assertTrue(unprivileged)
-            self.assertEqual(command[:6], ["runuser", "-u", "painter", "--", "env", "-i"])
+            self.assertEqual(command[:6], ["/usr/sbin/runuser", "-u", "painter", "--", "env", "-i"])
             self.assertIn("PAINTER_RENDER_BACKEND=swiftshader", command)
             self.assertEqual(environment["CUDA_VISIBLE_DEVICES"], "")
             self.assertEqual(chown.call_count, 2)
+
+    def test_renderer_canary_preserves_prior_attempt_before_retry(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            renderer = root / "renderer.py"
+            renderer.write_text("# fake renderer boundary\n", encoding="utf-8")
+            renderer_python = root / "renderer-python"
+            renderer_python.write_text(
+                "#!/usr/bin/env python3\n"
+                "import hashlib, json, sys\n"
+                "from pathlib import Path\n"
+                "renderer, source = map(Path, sys.argv[1:3])\n"
+                "output = Path(sys.argv[sys.argv.index('--output') + 1])\n"
+                "output.write_bytes(b'\\x89PNG\\r\\n\\x1a\\nfixture')\n"
+                "png = hashlib.sha256(output.read_bytes()).hexdigest()\n"
+                "metadata = {'valid': True, 'renderer_sha256': hashlib.sha256(renderer.read_bytes()).hexdigest(), 'source_sha256': hashlib.sha256(source.read_bytes()).hexdigest(), 'png_sha256': png}\n"
+                "output.with_suffix('.json').write_text(json.dumps(metadata), encoding='utf-8')\n",
+                encoding="utf-8",
+            )
+            renderer_python.chmod(0o755)
+            prior = root / "node/renderer-canary"
+            prior.mkdir(parents=True)
+            (prior / "failed-attempt.txt").write_text("preserve\n", encoding="utf-8")
+            expected = hashlib.sha256(renderer.read_bytes()).hexdigest()
+            with patch.object(CANARY, "RENDERER_SHA256", expected):
+                receipt = CANARY._renderer_probe(
+                    renderer=renderer,
+                    renderer_python=renderer_python,
+                    node_root=root / "node",
+                )
+            preserved = Path(receipt["previous_evidence"])
+            self.assertTrue(preserved.is_dir())
+            self.assertEqual((preserved / "failed-attempt.txt").read_text(), "preserve\n")
+            self.assertTrue((root / "node/renderer-canary/probe.png").is_file())
 
     def test_launcher_is_foreground_bounded_and_wires_both_adapters(self) -> None:
         self.assertIn('RUN_WRAPPER="${PAINTER_PRIME_RUN_WRAPPER:-$RUN_SOURCE_ROOT/run_from_sft.py}"', LAUNCH_SOURCE)

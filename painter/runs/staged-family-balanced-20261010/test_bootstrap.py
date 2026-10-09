@@ -183,6 +183,63 @@ class BootstrapUnitTests(unittest.TestCase):
             with self.assertRaises(BOOTSTRAP.BootstrapError):
                 BOOTSTRAP.validate_ready(receipt, topology=value["topology"], renderer_root=root / "other-renderer")
 
+    def test_renderer_helper_allowlists_existing_prior_run_root_only_when_relocated(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            node = root / "node"
+            prior = node / "renderer"
+            current = root / "workspace" / "renderer"
+            prior.mkdir(parents=True)
+            current.mkdir(parents=True)
+            command = BOOTSTRAP._renderer_helper_command(
+                bootstrap_python=root / "bootstrap/bin/python",
+                helper=root / "helper.py",
+                render_root=current,
+                renderer_python=current / "renderer-env/bin/python",
+                browser_root=current / "browsers",
+                prime_root=root / "prime",
+                node_root=node,
+            )
+            marker = command.index("--allowed-old-renderer-root")
+            self.assertEqual(Path(command[marker + 1]), prior)
+
+            same_root_command = BOOTSTRAP._renderer_helper_command(
+                bootstrap_python=root / "bootstrap/bin/python",
+                helper=root / "helper.py",
+                render_root=prior,
+                renderer_python=prior / "renderer-env/bin/python",
+                browser_root=prior / "browsers",
+                prime_root=root / "prime",
+                node_root=node,
+            )
+            self.assertNotIn("--allowed-old-renderer-root", same_root_command)
+            prior.rename(node / "old-renderer")
+            missing_old_command = BOOTSTRAP._renderer_helper_command(
+                bootstrap_python=root / "bootstrap/bin/python",
+                helper=root / "helper.py",
+                render_root=current,
+                renderer_python=current / "renderer-env/bin/python",
+                browser_root=current / "browsers",
+                prime_root=root / "prime",
+                node_root=node,
+            )
+            self.assertNotIn("--allowed-old-renderer-root", missing_old_command)
+
+    def test_prepare_receipt_renderer_root_accepts_legacy_key_but_rejects_ambiguity(self) -> None:
+        expected = "/node/renderer"
+        self.assertEqual(BOOTSTRAP._renderer_receipt_root({"root": expected}), expected)
+        self.assertEqual(BOOTSTRAP._renderer_receipt_root({"renderer_root": expected}), expected)
+        self.assertEqual(
+            BOOTSTRAP._renderer_receipt_root({"root": expected, "renderer_root": expected}),
+            expected,
+        )
+        with self.assertRaises(BOOTSTRAP.BootstrapError):
+            BOOTSTRAP._renderer_receipt_root({})
+        with self.assertRaises(BOOTSTRAP.BootstrapError):
+            BOOTSTRAP._renderer_receipt_root({"root": expected, "renderer_root": "/other"})
+        with self.assertRaises(BOOTSTRAP.BootstrapError):
+            BOOTSTRAP._renderer_receipt_root({"root": None})
+
     def test_hf_snapshot_blob_symlink_is_allowed_but_cache_escape_is_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

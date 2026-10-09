@@ -718,6 +718,92 @@ class SingleArmTests(unittest.TestCase):
             self.assertEqual(receipt["node_check"], "passed")
             self.assertEqual(receipt["sandbox_smoke"], "not-run")
 
+    def test_renderer_node_rebind_is_atomic_and_allowlisted(self):
+        renderer_runtime_spec = importlib.util.spec_from_file_location(
+            "single_renderer_runtime_rebind", RUN / "prepare_renderer_runtime.py"
+        )
+        assert renderer_runtime_spec and renderer_runtime_spec.loader
+        renderer_runtime = importlib.util.module_from_spec(renderer_runtime_spec)
+        renderer_runtime_spec.loader.exec_module(renderer_runtime)
+
+        def make_node(root: Path, body: str = "#!/bin/sh\n") -> Path:
+            node = root / "renderer-env/lib/python3.12/site-packages/playwright/driver/node"
+            node.parent.mkdir(parents=True)
+            node.write_text(body)
+            node.chmod(0o755)
+            return node
+
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            current_root = root / "current-renderer"
+            old_root = root / "old-renderer"
+            untrusted_root = root / "untrusted-renderer"
+            current = make_node(current_root, "#!/bin/sh\nexit 0\n")
+            old = make_node(old_root, "#!/bin/sh\nexit 0\n")
+            untrusted = make_node(untrusted_root, "#!/bin/sh\nexit 0\n")
+            prime = root / "prime/.venv"
+            link = prime / "bin/node"
+            link.parent.mkdir(parents=True)
+
+            link.write_text("#!/bin/sh\nexit 0\n")
+            link.chmod(0o755)
+            with self.assertRaisesRegex(RuntimeError, "not a symlink"):
+                renderer_runtime._bind_node(
+                    prime, current, current_renderer_root=current_root,
+                    allowed_old_renderer_roots=(old_root,),
+                )
+            link.unlink()
+
+            link.symlink_to(untrusted)
+            with self.assertRaisesRegex(RuntimeError, "outside an allowed old renderer runtime"):
+                renderer_runtime._bind_node(
+                    prime, current, current_renderer_root=current_root,
+                    allowed_old_renderer_roots=(old_root,),
+                )
+            self.assertEqual(link.resolve(), untrusted.resolve())
+
+            link.unlink()
+            link.symlink_to(old)
+            with patch.object(renderer_runtime.os, "replace", wraps=os.replace) as replace:
+                rebound = renderer_runtime._bind_node(
+                    prime, current, current_renderer_root=current_root,
+                    allowed_old_renderer_roots=(old_root,),
+                )
+            self.assertTrue(replace.called)
+            self.assertEqual(rebound.resolve(), current.resolve())
+            self.assertEqual(rebound.name, "node")
+            self.assertEqual(rebound.parent.name, "bin")
+            self.assertEqual(link.resolve(), current.resolve())
+            self.assertTrue(old.is_file())
+
+            link.unlink()
+            link.symlink_to(old)
+            with self.assertRaisesRegex(RuntimeError, "outside an allowed old renderer runtime"):
+                renderer_runtime._bind_node(
+                    prime, current, current_renderer_root=current_root,
+                    allowed_old_renderer_roots=(),
+                )
+
+    def test_renderer_node_source_must_be_regular_pinned_driver_node(self):
+        renderer_runtime_spec = importlib.util.spec_from_file_location(
+            "single_renderer_runtime_source_guard", RUN / "prepare_renderer_runtime.py"
+        )
+        assert renderer_runtime_spec and renderer_runtime_spec.loader
+        renderer_runtime = importlib.util.module_from_spec(renderer_runtime_spec)
+        renderer_runtime_spec.loader.exec_module(renderer_runtime)
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            renderer = root / "renderer"
+            renderer.mkdir()
+            external = root / "external-node"
+            external.write_text("#!/bin/sh\n")
+            external.chmod(0o755)
+            candidate = renderer / "renderer-env/lib/python3.12/site-packages/playwright/driver/node"
+            candidate.parent.mkdir(parents=True)
+            candidate.symlink_to(external)
+            with self.assertRaisesRegex(RuntimeError, "missing"):
+                renderer_runtime._node(renderer)
+
     def test_renderer_sandbox_matches_full_helper_to_headless_fixture(self):
         renderer_runtime_spec = importlib.util.spec_from_file_location(
             "single_renderer_runtime_headless", RUN / "prepare_renderer_runtime.py"

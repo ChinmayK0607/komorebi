@@ -74,7 +74,8 @@ def _renderer_invocation(
     runtime_tmp.mkdir(exist_ok=False)
     runtime_home.chmod(0o700)
     runtime_tmp.chmod(0o700)
-    unprivileged = os.geteuid() == 0 and shutil.which("runuser") is not None
+    runuser = shutil.which("runuser")
+    unprivileged = os.geteuid() == 0 and runuser is not None
     if unprivileged:
         painter_uid = subprocess.run(["id", "-u", "painter"], capture_output=True, text=True, check=False)
         painter_gid = subprocess.run(["id", "-g", "painter"], capture_output=True, text=True, check=False)
@@ -92,7 +93,7 @@ def _renderer_invocation(
         environment["PAINTER_BROWSER_ROOT"] = str(browser_root)
         environment["PLAYWRIGHT_BROWSERS_PATH"] = str(browser_root)
     if unprivileged:
-        command = ["runuser", "-u", "painter", "--", "env", "-i"]
+        command = [str(runuser), "-u", "painter", "--", "env", "-i"]
         command.extend(f"{key}={value}" for key, value in environment.items())
         command.extend(base_command)
     else:
@@ -115,8 +116,17 @@ def _renderer_probe(
     if actual_renderer_sha != RENDERER_SHA256:
         raise ValueError(f"renderer SHA-256 is {actual_renderer_sha}, expected {RENDERER_SHA256}")
     probe_root = node_root / "renderer-canary"
+    previous_evidence: Path | None = None
+    if probe_root.is_symlink():
+        raise FileExistsError(f"renderer canary path cannot be a symlink: {probe_root}")
     if probe_root.exists():
-        raise FileExistsError(f"existing renderer canary evidence must be preserved: {probe_root}")
+        # Keep every failed attempt for diagnosis while giving the bounded
+        # retry a fresh, deterministic path. The unique suffix avoids
+        # replacing prior evidence if a retry happens in the same nanosecond.
+        previous_evidence = node_root / f"renderer-canary.previous-{time.time_ns()}-{os.getpid()}"
+        if previous_evidence.exists() or previous_evidence.is_symlink():
+            raise FileExistsError(f"renderer canary evidence destination already exists: {previous_evidence}")
+        probe_root.rename(previous_evidence)
     probe_root.mkdir(parents=True)
     if os.geteuid() == 0 and shutil.which("runuser") is not None:
         # The probe contains no credentials.  Its browser child must be able
@@ -198,6 +208,7 @@ def _renderer_probe(
         "timed_out": timed_out,
         "unprivileged_renderer_boundary": unprivileged,
         "renderer_command": command[:8] + ["..."] if len(command) > 8 else command,
+        "previous_evidence": str(previous_evidence) if previous_evidence is not None else None,
         "cuda_visibility": "CUDA_VISIBLE_DEVICES empty; no model/GPU allocation attempted",
     }
     _atomic_json(receipt_path, receipt)

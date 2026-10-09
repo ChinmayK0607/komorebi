@@ -522,6 +522,28 @@ def ensure_source_assets(*, node_root: Path, bootstrap_python: Path, source_root
     return extraction / "curriculum", receipt
 
 
+def _renderer_helper_command(*, bootstrap_python: Path, helper: Path, render_root: Path,
+                             renderer_python: Path, browser_root: Path, prime_root: Path,
+                             node_root: Path) -> list[str]:
+    """Build the renderer helper command with a narrow stale-root allowlist."""
+
+    command = [
+        str(bootstrap_python), str(helper), "--run-root", str(render_root),
+        "--renderer-root", str(render_root), "--renderer-python", str(renderer_python),
+        "--browsers", str(browser_root), "--prime-venv", str(prime_root / ".venv"),
+    ]
+    old_renderer_root = node_root.expanduser().absolute() / "renderer"
+    if old_renderer_root.exists():
+        try:
+            old_resolved = old_renderer_root.resolve(strict=True)
+            current_resolved = render_root.expanduser().resolve(strict=True)
+        except OSError as exc:
+            raise BootstrapError("cannot verify the prior run-owned renderer root") from exc
+        if old_resolved != current_resolved:
+            command.extend(["--allowed-old-renderer-root", str(old_renderer_root)])
+    return command
+
+
 def ensure_renderer(*, node_root: Path, renderer_root: Path, bootstrap_python: Path, uv: Path, prime_root: Path) -> tuple[Path, Path, Path, dict[str, Any]]:
     """Build the reviewed centroid overlay and run its sandboxed runtime helper."""
 
@@ -583,7 +605,11 @@ def ensure_renderer(*, node_root: Path, renderer_root: Path, bootstrap_python: P
     run_checked([str(renderer_python), "-m", "playwright", "install", "--with-deps", "chromium"], env=env, timeout=1800)
     ensure_browser_user()
     expose_renderer_runtime(node_root, render_root, browser_root, renderer_python, bundle)
-    run_checked([str(bootstrap_python), str(helper), "--run-root", str(render_root), "--renderer-root", str(render_root), "--renderer-python", str(renderer_python), "--browsers", str(browser_root), "--prime-venv", str(prime_root / ".venv")], timeout=600)
+    run_checked(_renderer_helper_command(
+        bootstrap_python=bootstrap_python, helper=helper, render_root=render_root,
+        renderer_python=renderer_python, browser_root=browser_root,
+        prime_root=prime_root, node_root=node_root,
+    ), timeout=600)
     runtime = read_json(helper_receipt_path)
     if runtime.get("sandbox_smoke") != "passed" or runtime.get("node_check") != "passed":
         raise BootstrapError("reviewed renderer helper did not pass sandbox and Node checks")
@@ -695,7 +721,7 @@ def ensure_canary(*, prepared: Path, renderer_root: Path, source_root: Path, mat
         return value
     env = dict(os.environ)
     renderer = read_json(prepared / "prepare-receipt.json").get("renderer", {})
-    if renderer.get("renderer_root") != str(renderer_root):
+    if _renderer_receipt_root(renderer) != str(renderer_root):
         raise BootstrapError("prepared renderer receipt does not match the requested renderer root")
     browser_root = renderer_root / "browsers"
     env["PAINTER_BROWSER_ROOT"] = str(browser_root)
@@ -704,6 +730,25 @@ def ensure_canary(*, prepared: Path, renderer_root: Path, source_root: Path, mat
     if value.get("status") != "passed_import_hook_and_renderer":
         raise BootstrapError("canary did not produce the required import and renderer status")
     return value
+
+
+def _renderer_receipt_root(renderer: object) -> str:
+    """Read the renderer root from either reviewed receipt spelling.
+
+    ``prepare_node.py`` historically emitted ``root`` while the bootstrap
+    handoff used ``renderer_root``. Accept one exact spelling (or both with
+    identical values) and reject ambiguity so a stale receipt cannot redirect
+    the canary to a different renderer tree.
+    """
+
+    if not isinstance(renderer, dict):
+        raise BootstrapError("prepared renderer receipt is not an object")
+    values = [renderer[key] for key in ("renderer_root", "root") if key in renderer]
+    if not values or any(not isinstance(value, str) or not value for value in values):
+        raise BootstrapError("prepared renderer receipt has no valid renderer root")
+    if len(set(values)) != 1:
+        raise BootstrapError("prepared renderer receipt has conflicting renderer roots")
+    return values[0]
 
 
 def validate_ready(path: Path, *, topology: dict[str, int], renderer_root: Path) -> dict[str, Any]:
