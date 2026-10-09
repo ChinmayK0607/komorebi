@@ -1,0 +1,24 @@
+{
+  "source_commit": "a9df883edc126fdb50f0f2486a84f99ed640f0ba",
+  "source_bundle_sha256": "535c17db6c0e28b698d656f284d8a9a6acba2167ff32a545103533920da4d5ad",
+  "repo": "CK0607/komorebi-painter-experiments",
+  "revision": "29dce258ccee621340d954bb26c3f65985281ad9",
+  "path": "sources/structured-flow-rl-20261009/a9df883edc126fdb50f0f2486a84f99ed640f0ba.bundle",
+  "public_source_url": "https://huggingface.co/datasets/CK0607/komorebi-painter-experiments/resolve/29dce258ccee621340d954bb26c3f65985281ad9/sources/structured-flow-rl-20261009/a9df883edc126fdb50f0f2486a84f99ed640f0ba.bundle",
+  "anonymous_hash_verified": true,
+  "bytes": 3908398,
+  "schema": "structured-flow-evaluation-handoff-v1",
+  "physical_topology": {
+    "gpus": 1,
+    "trainer_gpus": 0,
+    "inference_gpus": 1
+  },
+  "actual_whole_node_gpu_price_usd_hour": 3.884,
+  "real_ssh_public_https_free_memory_probes_passed": true,
+  "finite_controller_started": true,
+  "fresh_gpu_allowance_usd": 3,
+  "prior_pilot_gpu_estimate_usd": 16.893,
+  "original_gpu_ceiling_usd": 20,
+  "heldout_cases": 16,
+  "new_optimizer_updates": 0
+}
