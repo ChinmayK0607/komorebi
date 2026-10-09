@@ -775,32 +775,15 @@ class StructuredFlowRunTests(unittest.TestCase):
                 runpy.run_path(str(RUN / "sitecustomize.py"), run_name="structured_flow_rl_sitecustomize")
         self.assertEqual(calls, ["group"])
 
-    def test_prime_runtime_harness_subprocess_survives_inherited_orchestrator_role(self):
-        """A verifier PEP 723 child must not import Prime's orchestrator guard.
+    def test_runtime_process_env_marks_actual_uv_harness_child(self):
+        """The pinned runtime boundary marks uv probes and task programs.
 
-        Prime launches the null harness from ``/tmp/vf-scripts`` while passing
-        the orchestrator's environment through to the sandbox process.  This
-        regression executes that boundary with Prime intentionally unavailable;
-        it proves the run-local exemption is limited to the runtime script
-        path, rather than making a missing Prime import generally ignorable.
+        The test uses a tiny Runtime stand-in only to exercise the run-local
+        patch, then launches a real dependency-free PEP 723 script through uv
+        with the resulting environment.  Prime remains intentionally absent.
         """
 
         repo = RUN.parents[2]
-        env = os.environ.copy()
-        env.update(
-            {
-                "PAINTER_PRIME_ROLE": "orchestrator",
-                "PAINTER_WHOLE_GROUP_ADMISSION": "1",
-                "PAINTER_WHOLE_GROUP_SIZE": "8",
-                "PAINTER_JUDGE_PROTOCOL": "text-paint-sft-pairwise-consistent-v1",
-                "PAINTER_STRUCTURED_FLOW_POLICY": "1",
-                "PYTHONPATH": os.pathsep.join((str(RUN), str(repo), str(repo / "painter"))),
-            }
-        )
-        env.pop("PAINTER_ANCHOR_REQUIRE_NO_LOOP", None)
-        # Bind the regression to a checked-in provenance record rather than
-        # an untracked verifier checkout.  When that checkout is available,
-        # verify its immutable source hash against the record as well.
         provenance = json.loads(
             (RUN / "prime-runtime-manifest.json").read_text(encoding="utf-8")
         )
@@ -821,31 +804,87 @@ class StructuredFlowRunTests(unittest.TestCase):
             runtime_text = runtime_source.read_text(encoding="utf-8")
             self.assertIn('path = f"{self.scripts_dir}/{digest}.py"', runtime_text)
             self.assertIn("interpreter, path", runtime_text)
-        harness_root = Path(provenance["runtime_script_root"])
-        harness_root.mkdir(parents=True, exist_ok=True)
-        handle = tempfile.NamedTemporaryFile(
-            mode="w",
-            suffix=".py",
-            prefix="structured-flow-contract-",
-            dir=harness_root,
-            delete=False,
-        )
-        script = Path(handle.name)
-        try:
-            handle.write("print('harness-started', __import__('os').environ['PAINTER_PRIME_ROLE'])\n")
-            handle.close()
-            result = subprocess.run(
-                [sys.executable, str(script)],
-                env=env,
+
+        runtime_module = types.ModuleType("verifiers.v1.runtimes.base")
+
+        class Runtime:
+            def process_env(self, env):
+                return dict(env)
+
+        runtime_module.Runtime = Runtime
+        verifiers = types.ModuleType("verifiers")
+        verifiers_v1 = types.ModuleType("verifiers.v1")
+        verifiers_runtimes = types.ModuleType("verifiers.v1.runtimes")
+        verifiers.v1 = verifiers_v1
+        verifiers_v1.runtimes = verifiers_runtimes
+        verifiers_runtimes.base = runtime_module
+        group = types.ModuleType("painter.consistent_group_admission")
+        group.install_from_environment = lambda: {"installed": True, "already_installed": False}
+        flow = types.ModuleType("flow_prompt_hook")
+        flow.install = lambda: {"installed": True}
+        with mock.patch.dict(
+            sys.modules,
+            {
+                "verifiers": verifiers,
+                "verifiers.v1": verifiers_v1,
+                "verifiers.v1.runtimes": verifiers_runtimes,
+                "verifiers.v1.runtimes.base": runtime_module,
+                "painter.consistent_group_admission": group,
+                "flow_prompt_hook": flow,
+            },
+            clear=False,
+        ), mock.patch.dict(
+            os.environ,
+            {"PAINTER_PRIME_ROLE": "orchestrator"},
+            clear=False,
+        ):
+            os.environ.pop("PAINTER_STRUCTURED_FLOW_POLICY", None)
+            os.environ.pop("PAINTER_ANCHOR_REQUIRE_NO_LOOP", None)
+            import runpy
+
+            runpy.run_path(str(RUN / "sitecustomize.py"), run_name="structured_flow_runtime_env_contract")
+            launch_env = dict(os.environ)
+            launch_env["PYTHONPATH"] = os.pathsep.join((str(RUN), str(repo), str(repo / "painter")))
+            launch_env = Runtime().process_env(launch_env)
+        self.assertEqual(launch_env["PAINTER_PRIME_ROLE"], "harness")
+
+        uv = shutil.which("uv")
+        if not uv:
+            self.skipTest("uv is unavailable for the dependency-free PEP 723 subprocess probe")
+        with tempfile.TemporaryDirectory() as directory:
+            script = Path(directory) / "harness_probe.py"
+            cache = Path(directory) / "uv-cache"
+            script.write_text(
+                '# /// script\n# requires-python = ">=3.11"\n# ///\n'
+                "import os\nprint('uv-harness-started', os.environ['PAINTER_PRIME_ROLE'])\n",
+                encoding="utf-8",
+            )
+            uv_env = dict(launch_env)
+            uv_env["UV_CACHE_DIR"] = str(cache)
+            sync = subprocess.run(
+                [uv, "sync", "--offline", "--script", str(script), "-q", "--no-config"],
+                env=uv_env,
                 capture_output=True,
                 text=True,
-                timeout=10,
+                timeout=30,
             )
-        finally:
-            script.unlink(missing_ok=True)
+            self.assertEqual(sync.returncode, 0, sync.stderr)
+            interpreter = subprocess.check_output(
+                [uv, "python", "find", "--offline", "--script", str(script), "--no-config"],
+                env=uv_env,
+                text=True,
+                timeout=30,
+            ).strip().splitlines()[-1]
+            result = subprocess.run(
+                [interpreter, str(script)],
+                env=uv_env,
+                capture_output=True,
+                text=True,
+                timeout=30,
+            )
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertIn("harness-started orchestrator", result.stdout)
-        self.assertNotIn("prime_rl", result.stderr)
+        self.assertIn("uv-harness-started harness", result.stdout)
+        self.assertNotIn("consistent group admission activation failed", result.stderr)
 
     def test_orchestrator_subprocess_still_fails_closed_without_prime(self):
         """The same inherited environment still rejects a real entrypoint."""
@@ -876,6 +915,31 @@ class StructuredFlowRunTests(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("consistent group admission activation failed", result.stderr)
         self.assertIn("prime_rl", result.stderr)
+
+    def test_runtime_isolation_missing_verifiers_fails_closed_with_system_exit(self):
+        """An orchestrator never proceeds when the runtime patch cannot load."""
+
+        import runpy
+
+        group = types.ModuleType("painter.consistent_group_admission")
+        group.install_from_environment = lambda: {"installed": True, "already_installed": False}
+        with mock.patch.dict(
+            sys.modules,
+            {
+                "painter.consistent_group_admission": group,
+                "verifiers": None,
+            },
+            clear=False,
+        ), mock.patch.dict(
+            os.environ,
+            {"PAINTER_PRIME_ROLE": "orchestrator"},
+            clear=False,
+        ):
+            os.environ.pop("PAINTER_STRUCTURED_FLOW_POLICY", None)
+            os.environ.pop("PAINTER_ANCHOR_REQUIRE_NO_LOOP", None)
+            with self.assertRaises(SystemExit) as raised:
+                runpy.run_path(str(RUN / "sitecustomize.py"), run_name="structured_flow_missing_runtime")
+        self.assertIn("runtime environment isolation requires", str(raised.exception))
 
     def test_clean_tracked_source_builds_receipts_outside_strict_output_dirs(self):
         """Exercise the actual builders with the same shell redirection shape.
@@ -1379,6 +1443,12 @@ mv "$flow_tmp" "$run_root/flow-supervision-build.json"
             self.assertFalse(wrong_marker.exists())
             prepare = (RUN / "prepare_node.sh").read_text()
             self.assertIn('"$PY_PRIME" "$RUN/prepare_structured_config.py"', prepare)
+            self.assertIn("Runtime.run_uv_script", prepare)
+            self.assertIn('"schema": "structured-flow-prime-runtime-harness-probe-v1"', prepare)
+            self.assertLess(prepare.index("PRIME_RUNTIME_PROBE_RECEIPT"), prepare.index("download_adapter()"))
+            self.assertNotIn('HOME="$PRIME_RUNTIME_PROBE_HOME"', prepare)
+            self.assertIn("uuid.uuid4().hex", prepare)
+            self.assertIn('PAINTER_STRUCTURED_FLOW_POLICY=0', prepare)
 
     def test_render_probe_preserves_byte_timeout_diagnostics(self):
         helper = load("structured_flow_renderer_timeout_contract", RUN / "prepare_renderer_runtime.py")

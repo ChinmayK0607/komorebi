@@ -1,0 +1,27 @@
+{
+  "schema": "structured-flow-gpu-profile-v1",
+  "attempt": 19,
+  "gpu_denominator": 2,
+  "interval_seconds": 10,
+  "run_phase": "bootstrap_compilation_and_failed_uv_harness_startup",
+  "saturated_pipeline": false,
+  "rl_optimizer_updates": 0,
+  "devices": {
+    "0": {
+      "role": "inference",
+      "window_start": "2026/10/09 03:37:44.240",
+      "window_end": "2026/10/09 03:46:14.412",
+      "samples": 52,
+      "mean_utilization_percent": 3.692,
+      "busy_fraction_ge_10_percent": 0.0769
+    },
+    "1": {
+      "role": "trainer",
+      "window_start": "2026/10/09 03:37:44.247",
+      "window_end": "2026/10/09 03:46:14.413",
+      "samples": 52,
+      "mean_utilization_percent": 0.423,
+      "busy_fraction_ge_10_percent": 0.0385
+    }
+  }
+}

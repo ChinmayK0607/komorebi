@@ -1,0 +1,21 @@
+{
+  "schema": "structured-flow-actual-runtime-boundary-review-v2",
+  "prime_revision": "26b3131d2716a4f8210b165df584b83b4bc54f61",
+  "verifiers_gitlink": "828488fffe31aa3332b9d1bd4bd9ee320e375cf1",
+  "runtime_file_sha256": "4914d434071d5b4c492168df4b945c8a3157a9d2b25e61afa76b6f579f1ebb9f",
+  "actual_subprocess_runtime_sha256": "20ef367c8d7015b793b55ed3d401d217c8935324fdc8624521498228ac3a0a74",
+  "isolation_boundary": "Runtime.process_env before all worker subprocesses",
+  "argv_classifier_removed": true,
+  "orchestrator_role_unchanged": true,
+  "real_group_guard_fail_closed": true,
+  "actual_uv_sync_find_script_regression_passed": true,
+  "structured_tests_passed": 112,
+  "linux_real_SubprocessRuntime_probe_required_before_gpu_serving": true,
+  "probe_manifest_dependent_flow_policy_disabled_only_for_metadata_probe": true,
+  "model_renderer_judge_calls_in_local_review": 0,
+  "fresh_gpu_allowance_usd": 7,
+  "prior_start_reserve_usd": 13,
+  "cumulative_gpu_ceiling_usd": 20,
+  "rl_target": 20,
+  "sft_warmup_pending": true
+}

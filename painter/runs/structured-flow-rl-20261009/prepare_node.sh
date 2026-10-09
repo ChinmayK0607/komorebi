@@ -179,6 +179,84 @@ if [[ -d "$PRIME_ROOT/.venv/bin" && ":${PATH:-}:" != *":$PRIME_ROOT/.venv/bin:"*
   export PATH="$PRIME_ROOT/.venv/bin:${PATH:-/usr/local/bin:/usr/bin:/bin}"
 fi
 [[ -x "$PY_PRIME" ]] || { echo "pinned Prime Python is missing: $PY_PRIME" >&2; exit 1; }
+
+# Exercise the pinned verifier runtime boundary before GPU model serving or
+# direct selected-adapter download.  Runtime.run_uv_script performs the same
+# uv sync, interpreter discovery, and final PEP 723 launch used by task
+# rollouts.  The run-local sitecustomize must rewrite only the child
+# environment to ``harness`` while this probe process remains the RL
+# ``orchestrator`` role.  The verifier uses its existing home cache; this
+# probe does not repurpose HOME.
+PRIME_RUNTIME_PROBE_RECEIPT="${PAINTER_PRIME_RUNTIME_PROBE_RECEIPT:-$RUN/prime-runtime-harness-probe.json}"
+PRIME_RUNTIME_PROBE_TMP="$RUN/.prime-runtime-harness-probe.json.$$"
+if ! PAINTER_PRIME_ROLE=orchestrator \
+  PAINTER_WHOLE_GROUP_ADMISSION=1 PAINTER_WHOLE_GROUP_SIZE="$PAINTER_GROUP_SIZE" \
+  PAINTER_JUDGE_PROTOCOL="$PAINTER_JUDGE_PROTOCOL" PAINTER_STRUCTURED_FLOW_POLICY=0 \
+  PYTHONPATH="$REPO:$REPO/painter:$RUN${PYTHONPATH:+:$PYTHONPATH}" \
+  "$PY_PRIME" - >"$PRIME_RUNTIME_PROBE_TMP" <<'PY'
+import asyncio
+import json
+import os
+import uuid
+
+from verifiers.v1.runtimes.subprocess import SubprocessConfig, SubprocessRuntime
+
+
+SCRIPT = '''# /// script
+# requires-python = ">=3.11"
+# ///
+import os
+print("structured-flow-prime-runtime-child", os.environ.get("PAINTER_PRIME_ROLE", ""))
+'''
+
+
+async def main() -> None:
+    if os.environ.get("PAINTER_PRIME_ROLE") != "orchestrator":
+        raise SystemExit("probe parent role is not orchestrator")
+    # Construct the pinned runtime config instead of emulating Runtime.run.
+    config = SubprocessConfig()
+    if getattr(config, "type", None) != "subprocess":
+        raise SystemExit("unexpected pinned SubprocessConfig type")
+    runtime = SubprocessRuntime(
+        config,
+        name=f"structured-flow-prime-runtime-probe-{os.getpid()}-{uuid.uuid4().hex[:8]}",
+    )
+    await runtime.start()
+    try:
+        result = await runtime.run_uv_script(
+            SCRIPT,
+            env={"PAINTER_PRIME_ROLE": "orchestrator"},
+        )
+    finally:
+        await runtime.stop()
+    if result.exit_code != 0:
+        raise SystemExit(
+            "runtime child failed: "
+            + (result.stderr.strip() or result.stdout.strip() or str(result.exit_code))
+        )
+    child_lines = [line.strip() for line in result.stdout.splitlines() if line.strip()]
+    if child_lines != ["structured-flow-prime-runtime-child harness"]:
+        raise SystemExit(f"runtime child role mismatch: {child_lines!r}")
+    if os.environ.get("PAINTER_PRIME_ROLE") != "orchestrator":
+        raise SystemExit("probe parent role changed")
+    print(json.dumps({
+        "schema": "structured-flow-prime-runtime-harness-probe-v1",
+        "parent_role": "orchestrator",
+        "child_role": "harness",
+        "runtime": "verifiers.v1.runtimes.subprocess.SubprocessRuntime",
+        "api": "Runtime.run_uv_script",
+    }, sort_keys=True))
+
+
+asyncio.run(main())
+PY
+then
+  rm -f "$PRIME_RUNTIME_PROBE_TMP"
+  echo 'pinned verifier runtime harness probe failed' >&2
+  exit 1
+fi
+mkdir -p "$(dirname "$PRIME_RUNTIME_PROBE_RECEIPT")"
+mv "$PRIME_RUNTIME_PROBE_TMP" "$PRIME_RUNTIME_PROBE_RECEIPT"
 DOWNLOAD="${PAINTER_POLICY_DOWNLOAD_SCRIPT:-$REPO/painter/runs/text-pairwise-rl-20260928/download_public_adapter.py}"
 [[ -f "$DOWNLOAD" ]] || { echo 'pinned public adapter downloader is missing' >&2; exit 1; }
 

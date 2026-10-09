@@ -1,0 +1,26 @@
+{
+  "schema": "structured-flow-failure-v1",
+  "source_commit": "746cbbbdfc7bb47e1fc4e1768cf911678d65ab42",
+  "failure_phase": "actual_uv_harness_startup",
+  "root_cause": "argv_path_exemption_used_base_runtime_script_directory_but_actual_SubprocessRuntime_overrides_it",
+  "root_cause_details": "The direct script test used /tmp/vf-scripts from abstract Runtime. The actual pinned SubprocessRuntime overrides scripts_dir to its per-user CACHE_DIR/runtimes/scripts, so its child retained the orchestrator role. The explicit process_env fix also covers uv preparation and interpreter discovery.",
+  "linux_direct_subprocess_checks_passed": true,
+  "actual_uv_harness_check_before_model_loading": false,
+  "supervised_optimizer_updates": 0,
+  "rl_optimizer_updates": 0,
+  "qwen_policy_generation_observed": false,
+  "public_evidence": {
+    "revision": "fd9ff7980af54073bfdb0a97da77a687c2e39a8e",
+    "sha256": "4f37eebb0d60b20157001df4211f63a98ab9f20df6103f978ef37084ec2d800e",
+    "bytes": 47071888,
+    "anonymous_download": true,
+    "remote_lfs_sha256_verified": true
+  },
+  "node_absent_confirmed": true,
+  "gpu_clock_conservative_estimate_usd": 0.7425,
+  "prior_estimated_gpu_usd": 11.5754,
+  "cumulative_conservative_estimate_usd": 12.3179,
+  "cost_is_invoice": false,
+  "api_cost_separate": true,
+  "next_decision": "isolate runtime child role before uv sync/interpreter discovery/final script; prove actual complete uv launch path before GPU model loading"
+}

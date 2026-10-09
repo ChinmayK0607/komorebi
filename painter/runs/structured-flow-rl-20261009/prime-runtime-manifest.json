@@ -4,7 +4,8 @@
   "source_revision": "828488fffe31aa3332b9d1bd4bd9ee320e375cf1",
   "runtime_file": "verifiers/v1/runtimes/base.py",
   "runtime_file_sha256": "4914d434071d5b4c492168df4b945c8a3157a9d2b25e61afa76b6f579f1ebb9f",
-  "runtime_script_root": "/tmp/vf-scripts",
+  "base_runtime_script_root": "/tmp/vf-scripts",
+  "subprocess_runtime_script_root": "CACHE_DIR/runtimes/scripts",
   "prepare_uv_script": {
     "path_template": "{scripts_dir}/{sha256(script)}.py",
     "argv_tail": ["interpreter", "path"]
