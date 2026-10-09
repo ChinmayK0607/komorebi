@@ -183,7 +183,11 @@ def validate_ready(*, ready_path: Path, node_root: Path, visible_gpus: int) -> d
     source = _path(ready.get("source_root"), "staged source root", directory=True)
     _same(source, RUN_ROOT, "staged source root")
     brush_root = _path(ready.get("brush_root"), "brush root", directory=True)
-    _same(brush_root, repo / "painter", "brush root")
+    try:
+        expected_brush_root = BOOTSTRAP.ensure_brush_root(repo)
+    except BOOTSTRAP.BootstrapError as exc:
+        raise PreparedLaunchError(str(exc)) from exc
+    _same(brush_root, expected_brush_root, "brush root")
     if ready.get("training_started") is not False or ready.get("model_generation") is not False or ready.get("judge_calls") is not False or ready.get("background_processes_left_running") is not False:
         raise PreparedLaunchError("bootstrap receipt claims work already started")
     topology = _validate_topology(ready, visible_gpus=visible_gpus)
@@ -237,6 +241,9 @@ def validate_ready(*, ready_path: Path, node_root: Path, visible_gpus: int) -> d
     renderer_probe = canary.get("renderer_probe")
     if not isinstance(renderer_probe, dict) or renderer_probe.get("status") != "verified" or renderer_probe.get("valid") is not True or renderer_probe.get("renderer_sha256") != RENDERER_SHA256:
         raise PreparedLaunchError("verified renderer canary is required")
+    trainer_validation = canary.get("trainer_dependency_validation")
+    if not isinstance(trainer_validation, dict) or trainer_validation.get("status") != "passed" or trainer_validation.get("model_profile") != "qwen38_27b":
+        raise PreparedLaunchError("reviewed Prime trainer dependency smoke is required")
     prepared_renderer = prepare.get("renderer")
     if not isinstance(prepared_renderer, dict) or prepared_renderer.get("root") != str(renderer_root) or prepared_renderer.get("path") != str(renderer) or prepared_renderer.get("python") != str(renderer_python) or prepared_renderer.get("sha256") != RENDERER_SHA256:
         raise PreparedLaunchError("prepared renderer receipt does not match the bootstrap pin")

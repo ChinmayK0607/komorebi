@@ -26,13 +26,24 @@ def load(name: str, filename: str):
     return module
 
 
+def load_path(name: str, path: Path):
+    spec = importlib.util.spec_from_file_location(name, path)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[name] = module
+    spec.loader.exec_module(module)
+    return module
+
+
 CONFIG = load("staged_launch_prepare_config", "prepare_config.py")
 PREPARE_NODE = load("staged_launch_prepare_node", "prepare_node.py")
 WRAPPER = load("staged_launch_wrapper", "run_from_sft.py")
+TRAIN_WRAPPER = load_path("reviewed_photo_train_wrapper", RUN.parent / "photo-curriculum-rl-20260922/train_from_sft.py")
 CANARY = load("staged_launch_canary", "canary.py")
 CANARY_SOURCE = (RUN / "canary.py").read_text(encoding="utf-8")
 LAUNCH_SOURCE = (RUN / "launch.sh").read_text(encoding="utf-8")
 WRAPPER_SOURCE = (RUN / "run_from_sft.py").read_text(encoding="utf-8")
+TRAIN_WRAPPER_SOURCE = (RUN.parent / "photo-curriculum-rl-20260922/train_from_sft.py").read_text(encoding="utf-8")
 
 
 class LaunchHandoffTests(unittest.TestCase):
@@ -204,6 +215,7 @@ class LaunchHandoffTests(unittest.TestCase):
     def test_staged_wrapper_uses_photo_runner_and_forwards_activation(self) -> None:
         self.assertIn('SOURCE = RUN.parent / "photo-curriculum-rl-20260922" / "run_from_sft.py"', WRAPPER_SOURCE)
         self.assertIn("ensure_hf_snapshot_file", WRAPPER_SOURCE)
+        self.assertIn("def _trainer_dependency_paths", TRAIN_WRAPPER_SOURCE)
         self.assertIn("base._orchestrator_env = _staged_orchestrator_env", WRAPPER_SOURCE)
         self.assertIn("base.main()", WRAPPER_SOURCE)
         self.assertIn("ORIGINAL_ORCHESTRATOR_ENV = base._orchestrator_env", WRAPPER_SOURCE)
@@ -260,6 +272,23 @@ class LaunchHandoffTests(unittest.TestCase):
             ), patch.dict(os.environ, environment, clear=False):
                 with self.assertRaises(ValueError):
                     WRAPPER._adapter_environment()
+
+    def test_trainer_dependency_paths_require_exact_helper_tree(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            brush = root / "brush"
+            helpers = brush / "integrations/prime/watercolour_sft"
+            helpers.mkdir(parents=True)
+            for name in ("init_adapter.py", "export_adapter.py", "model_profiles.py"):
+                (helpers / name).write_text("# fixture\n", encoding="utf-8")
+            with patch.dict(os.environ, {"BRUSH_ROOT": str(brush)}, clear=False):
+                resolved = TRAIN_WRAPPER._trainer_dependency_paths()
+            self.assertEqual(resolved[1], brush.resolve())
+            self.assertEqual(resolved[2], helpers.resolve())
+            (helpers / "model_profiles.py").unlink()
+            with patch.dict(os.environ, {"BRUSH_ROOT": str(brush)}, clear=False):
+                with self.assertRaises(FileNotFoundError):
+                    TRAIN_WRAPPER._trainer_dependency_paths()
 
     def test_staged_wrapper_builds_child_environment_without_recursion(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -319,6 +348,48 @@ class LaunchHandoffTests(unittest.TestCase):
         self.assertIn('"prime_config_validation":', CANARY_SOURCE)
         self.assertIn('env["PATH"] = os.pathsep.join((str(prime_bin), "/usr/local/bin", "/usr/bin", "/bin"))', CANARY_SOURCE)
         self.assertIn("_hf_snapshot_file", CANARY_SOURCE)
+        self.assertIn("_trainer_dependency_smoke", CANARY_SOURCE)
+        self.assertIn('importlib.import_module("prime_rl.trainer.rl.train")', CANARY_SOURCE)
+
+    def test_trainer_dependency_smoke_executes_wrapper_and_prime_imports(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            brush = root / "brush"
+            helpers = brush / "integrations/prime/watercolour_sft"
+            helpers.mkdir(parents=True)
+            (helpers / "model_profiles.py").write_text(
+                "def profile(): return {'name': 'qwen38_27b'}\n", encoding="utf-8"
+            )
+            (helpers / "init_adapter.py").write_text("", encoding="utf-8")
+            (helpers / "export_adapter.py").write_text("", encoding="utf-8")
+            wrapper = root / "train_from_sft.py"
+            wrapper.write_text(TRAIN_WRAPPER_SOURCE, encoding="utf-8")
+            prime_train = root / "prime_rl/trainer/rl"
+            prime_train.mkdir(parents=True)
+            (root / "prime_rl/__init__.py").write_text("", encoding="utf-8")
+            (root / "prime_rl/trainer/__init__.py").write_text("", encoding="utf-8")
+            (prime_train / "__init__.py").write_text("", encoding="utf-8")
+            (prime_train / "train.py").write_text("", encoding="utf-8")
+            env = dict(os.environ)
+            env.update({
+                "BRUSH_ROOT": str(brush),
+                "BRUSH_MODEL_PROFILE": "qwen38_27b",
+                "PYTHONPATH": str(root),
+            })
+            result = CANARY._trainer_dependency_smoke(
+                prime_python=Path(sys.executable),
+                trainer_wrapper=wrapper,
+                env=env,
+            )
+            self.assertEqual(result["status"], "passed")
+            self.assertEqual(result["model_profile"], "qwen38_27b")
+            (helpers / "model_profiles.py").unlink()
+            with self.assertRaises(RuntimeError):
+                CANARY._trainer_dependency_smoke(
+                    prime_python=Path(sys.executable),
+                    trainer_wrapper=wrapper,
+                    env=env,
+                )
 
     def test_canary_validates_trusted_snapshot_adapter_files_before_probe(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -355,6 +426,7 @@ class LaunchHandoffTests(unittest.TestCase):
                     prepare_receipt=receipt,
                     source_root=root / "source",
                     node_root=root / "node",
+                    repo_root=root,
                 )
             self.assertEqual(environment["WATERCOLOUR_INIT_ADAPTER"], str(policy.resolve()))
             self.assertEqual(environment["PAINTER_FROZEN_SFT_ADAPTER"], str(frozen.resolve()))
@@ -371,6 +443,7 @@ class LaunchHandoffTests(unittest.TestCase):
                         prepare_receipt=receipt,
                         source_root=root / "source",
                         node_root=root / "node",
+                        repo_root=root,
                     )
 
     def test_renderer_canary_uses_fake_interpreter_without_chromium(self) -> None:
@@ -507,6 +580,10 @@ class LaunchHandoffTests(unittest.TestCase):
         self.assertIn('PRIME_BIN="$PRIME_ROOT/.venv/bin"', LAUNCH_SOURCE)
         self.assertIn('export PATH="$PRIME_BIN${PATH:+:$PATH}"', LAUNCH_SOURCE)
         self.assertIn('for executable in inference trainer orchestrator; do', LAUNCH_SOURCE)
+        self.assertIn('EXPECTED_BRUSH_ROOT="$REPO_ROOT/painter/rl_helpers"', LAUNCH_SOURCE)
+        self.assertIn('export BRUSH_MODEL_PROFILE=qwen38_27b', LAUNCH_SOURCE)
+        self.assertIn('integrations/prime/watercolour_sft/model_profiles.py', LAUNCH_SOURCE)
+        self.assertIn('integrations/prime/watercolour_sft/model_profiles.py', LAUNCH_SOURCE)
 
     def test_launcher_prime_path_precedes_sanitized_ambient_path(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

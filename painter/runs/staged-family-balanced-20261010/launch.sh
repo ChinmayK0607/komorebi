@@ -25,7 +25,8 @@ TRAIN_WRAPPER_ROOT="$(cd "$(dirname "$TRAIN_WRAPPER")" && pwd -P)"
 MODEL_DIR="${MODEL_DIR:?set MODEL_DIR to the local base snapshot}"
 POLICY_ADAPTER="${WATERCOLOUR_INIT_ADAPTER:?set WATERCOLOUR_INIT_ADAPTER to the verified Flash12 adapter}"
 FROZEN_ADAPTER="${PAINTER_FROZEN_SFT_ADAPTER:?set PAINTER_FROZEN_SFT_ADAPTER to the verified SFT512 adapter}"
-BRUSH_ROOT="${BRUSH_ROOT:?set BRUSH_ROOT to the reviewed brush helper tree}"
+EXPECTED_BRUSH_ROOT="$REPO_ROOT/painter/rl_helpers"
+BRUSH_ROOT="${BRUSH_ROOT:-$EXPECTED_BRUSH_ROOT}"
 RENDERER_ROOT="${PAINTER_RENDERER_ROOT:?set PAINTER_RENDERER_ROOT to the verified renderer root}"
 GATEWAY_ENV_FILE="${PAINTER_GATEWAY_ENV_FILE:?set PAINTER_GATEWAY_ENV_FILE to the owner-only judge credential file}"
 RENDERER_PATH="${PAINTER_RENDERER_PATH:?set PAINTER_RENDERER_PATH to the verified renderer}"
@@ -35,6 +36,15 @@ TIMEOUT_SECONDS="${PAINTER_RUN_TIMEOUT_SECONDS:-172800}"
 [[ "$(uname -s)" == Linux ]] || { echo 'staged Prime launch requires Linux' >&2; exit 1; }
 [[ $# == 1 ]] || { echo 'usage: launch.sh NODE_ROOT' >&2; exit 2; }
 [[ "$PYTHON" == "$PRIME_BIN/python" && -x "$PYTHON" ]] || { echo "missing pinned Prime Python: $PYTHON" >&2; exit 1; }
+[[ -d "$BRUSH_ROOT" && ! -L "$BRUSH_ROOT" && "$(cd "$BRUSH_ROOT" && pwd -P)" == "$EXPECTED_BRUSH_ROOT" ]] || { echo "BRUSH_ROOT must be the reviewed helper tree: $EXPECTED_BRUSH_ROOT" >&2; exit 1; }
+for required in \
+    "$BRUSH_ROOT/integrations/prime/watercolour_sft/init_adapter.py" \
+    "$BRUSH_ROOT/integrations/prime/watercolour_sft/export_adapter.py" \
+    "$BRUSH_ROOT/integrations/prime/watercolour_sft/model_profiles.py" \
+    "$BRUSH_ROOT/scripts/upload_checkpoints.py"; do
+    [[ -f "$required" && ! -L "$required" ]] || { echo "reviewed trainer helper is missing or symlinked: $required" >&2; exit 1; }
+done
+export BRUSH_MODEL_PROFILE=qwen38_27b
 for executable in inference trainer orchestrator; do
     [[ -f "$PRIME_BIN/$executable" && ! -L "$PRIME_BIN/$executable" && -x "$PRIME_BIN/$executable" ]] || {
         echo "missing pinned Prime console script: $PRIME_BIN/$executable" >&2
@@ -135,6 +145,9 @@ if canary.get("orchestrator_setup_called") is not False:
 renderer_probe = canary.get("renderer_probe")
 if not isinstance(renderer_probe, dict) or renderer_probe.get("status") != "verified" or renderer_probe.get("valid") is not True:
     raise SystemExit("verified renderer canary is required before launch")
+trainer_validation = canary.get("trainer_dependency_validation")
+if not isinstance(trainer_validation, dict) or trainer_validation.get("status") != "passed" or trainer_validation.get("model_profile") != "qwen38_27b":
+    raise SystemExit("reviewed Prime trainer dependency smoke is required before launch")
 PY
 
 LAUNCH_RECEIPT="$NODE_ROOT/launch.started"

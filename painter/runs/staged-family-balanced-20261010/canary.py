@@ -258,7 +258,7 @@ print(json.dumps({
 """
 
 
-def _runtime_environment(*, prepare_receipt: dict[str, Any], source_root: Path, node_root: Path) -> dict[str, str]:
+def _runtime_environment(*, prepare_receipt: dict[str, Any], source_root: Path, node_root: Path, repo_root: Path) -> dict[str, str]:
     """Build the non-secret environment that the launcher must forward."""
 
     policy = prepare_receipt.get("policy_initializer")
@@ -287,6 +287,8 @@ def _runtime_environment(*, prepare_receipt: dict[str, Any], source_root: Path, 
         "PAINTER_STAGED_CURRICULUM_ADMISSION": "1",
         "PAINTER_STAGED_CURRICULUM_ROOT": str(source_root.resolve()),
         "PAINTER_STAGED_CURRICULUM_STATE": str((node_root / "runtime-state.json").resolve()),
+        "BRUSH_ROOT": str((repo_root / "painter/rl_helpers").resolve()),
+        "BRUSH_MODEL_PROFILE": "qwen38_27b",
     }
 
 
@@ -307,7 +309,66 @@ def _prime_console_scripts(*, prime_root: Path, prime_python: Path) -> tuple[Pat
     return prime_bin, scripts
 
 
-def run_probe(*, prime_python: Path, prime_root: Path, config_path: Path, source_root: Path, repo_root: Path, state_path: Path, runtime_env: dict[str, str]) -> dict[str, Any]:
+def _trainer_dependency_smoke(*, prime_python: Path, trainer_wrapper: Path, env: dict[str, str]) -> dict[str, Any]:
+    """Exercise the reviewed trainer wrapper imports before model startup."""
+
+    code = r'''
+import importlib
+import importlib.util
+import json
+import os
+import sys
+from pathlib import Path
+
+wrapper = Path(sys.argv[1])
+spec = importlib.util.spec_from_file_location("staged_trainer_dependency_smoke", wrapper)
+if spec is None or spec.loader is None:
+    raise RuntimeError("trainer wrapper cannot be loaded")
+module = importlib.util.module_from_spec(spec)
+sys.modules[spec.name] = module
+spec.loader.exec_module(module)
+root, brush_root, helpers = module._trainer_dependency_paths()
+if str(brush_root) != str(Path(os.environ["BRUSH_ROOT"]).resolve(strict=True)):
+    raise RuntimeError("trainer wrapper resolved a different BRUSH_ROOT")
+sys.path[:0] = [str(helpers), str(root)]
+model_profile = importlib.import_module("model_profiles").profile()
+importlib.import_module("init_adapter")
+importlib.import_module("export_adapter")
+importlib.import_module("prime_rl.trainer.rl.train")
+if model_profile.get("name") != "qwen38_27b":
+    raise RuntimeError("trainer wrapper selected the wrong model profile")
+print(json.dumps({
+    "status": "passed",
+    "brush_root": str(brush_root),
+    "helpers": str(helpers),
+    "trainer_module": "prime_rl.trainer.rl.train",
+    "model_profile": model_profile.get("name"),
+}, sort_keys=True))
+'''
+    try:
+        completed = subprocess.run(
+            [str(prime_python), "-c", code, str(trainer_wrapper)],
+            env=env,
+            capture_output=True,
+            text=True,
+            timeout=180,
+            check=False,
+        )
+    except (OSError, subprocess.SubprocessError) as exc:
+        raise RuntimeError(f"trainer dependency smoke could not run: {type(exc).__name__}") from exc
+    if completed.returncode != 0:
+        raise RuntimeError(f"trainer dependency smoke failed with exit code {completed.returncode}")
+    lines = [line for line in completed.stdout.splitlines() if line.strip()]
+    try:
+        result = json.loads(lines[-1])
+    except (IndexError, json.JSONDecodeError) as exc:
+        raise RuntimeError("trainer dependency smoke did not emit JSON") from exc
+    if not isinstance(result, dict) or result.get("status") != "passed" or result.get("model_profile") != "qwen38_27b":
+        raise RuntimeError("trainer dependency smoke returned an unverified receipt")
+    return result
+
+
+def run_probe(*, prime_python: Path, prime_root: Path, config_path: Path, source_root: Path, repo_root: Path, state_path: Path, runtime_env: dict[str, str], trainer_wrapper: Path) -> dict[str, Any]:
     prime_python = PREP._runtime_executable(prime_python, "pinned Prime Python", prime_python.parent.parent)
     prime_bin, scripts = _prime_console_scripts(prime_root=prime_root, prime_python=prime_python)
     env = {
@@ -340,6 +401,11 @@ def run_probe(*, prime_python: Path, prime_root: Path, config_path: Path, source
     # PATH values.  The exact pinned venv bin is always first and the fallback
     # directories are deliberately finite.
     env["PATH"] = os.pathsep.join((str(prime_bin), "/usr/local/bin", "/usr/bin", "/bin"))
+    trainer_validation = _trainer_dependency_smoke(
+        prime_python=prime_python,
+        trainer_wrapper=trainer_wrapper,
+        env=env,
+    )
     for name, path in scripts.items():
         if shutil.which(name, path=env["PATH"]) != str(path):
             raise RuntimeError(f"pinned Prime PATH does not resolve {name} to {path}")
@@ -370,6 +436,7 @@ def run_probe(*, prime_python: Path, prime_root: Path, config_path: Path, source
     result["prime_bin"] = str(prime_bin)
     result["prime_console_scripts"] = {name: str(path) for name, path in scripts.items()}
     result["path_prefix"] = str(prime_bin)
+    result["trainer_dependency_validation"] = trainer_validation
     return result
 
 
@@ -388,6 +455,7 @@ def canary(*, source_root: Path, node_root: Path, materialized_root: Path, rende
         prepare_receipt=prepare_receipt,
         source_root=source_root,
         node_root=node_root,
+        repo_root=repo_root,
     )
     config_path = PREP._file(node_root / "native.toml", "prepared Prime config")
     config_receipt_path = PREP._file(node_root / "config-receipt.json", "Prime config receipt")
@@ -397,6 +465,11 @@ def canary(*, source_root: Path, node_root: Path, materialized_root: Path, rende
         raise ValueError("prepared config changed after node preparation")
     prime_root = PREP._directory(Path(str(prepare_receipt.get("prime_root", ""))), "prepared Prime root")
     prime_python = PREP._runtime_executable(prime_root / ".venv/bin/python", "prepared Prime Python", prime_root / ".venv")
+    PREP._directory(repo_root / "painter/rl_helpers", "reviewed brush helper root")
+    trainer_wrapper = PREP._file(
+        repo_root / "painter/runs/photo-curriculum-rl-20260922/train_from_sft.py",
+        "reviewed Prime trainer wrapper",
+    )
     revision = PREP._git_revision(prime_root)
     state_path = node_root / "runtime-state.json"
     probe = run_probe(
@@ -407,6 +480,7 @@ def canary(*, source_root: Path, node_root: Path, materialized_root: Path, rende
         repo_root=repo_root,
         state_path=state_path,
         runtime_env=runtime_env,
+        trainer_wrapper=trainer_wrapper,
     )
     prepared_renderer = prepare_receipt.get("renderer")
     if not isinstance(prepared_renderer, dict):
@@ -447,11 +521,12 @@ def canary(*, source_root: Path, node_root: Path, materialized_root: Path, rende
             "status": probe.get("rl_config_validation"),
             "model": "prime_rl.configs.rl.RLConfig",
         },
+        "trainer_dependency_validation": probe.get("trainer_dependency_validation"),
         "renderer_probe": renderer_probe,
         "cuda_visibility": "CUDA_VISIBLE_DEVICES empty; no CUDA/runtime allocation attempted",
         "runtime_environment": {
             key: value for key, value in runtime_env.items()
-            if key in {"WATERCOLOUR_INIT_ADAPTER", "PAINTER_FROZEN_SFT_ADAPTER", "PAINTER_FROZEN_SFT_ALIAS"}
+            if key in {"WATERCOLOUR_INIT_ADAPTER", "PAINTER_FROZEN_SFT_ADAPTER", "PAINTER_FROZEN_SFT_ALIAS", "BRUSH_ROOT", "BRUSH_MODEL_PROFILE"}
         },
         "scope": [
             "pinned Prime Python imported prime_rl.orchestrator.orchestrator",

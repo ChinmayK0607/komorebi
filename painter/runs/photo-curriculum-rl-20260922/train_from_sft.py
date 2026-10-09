@@ -8,19 +8,31 @@ from pathlib import Path
 from types import SimpleNamespace
 
 
+def _trainer_dependency_paths() -> tuple[Path, Path, Path]:
+    """Resolve the exact helper paths used by the Prime trainer child."""
+
+    root = Path(__file__).resolve().parent
+    brush_root = Path(os.environ.get("BRUSH_ROOT", root / "source" / "brush-rl")).expanduser()
+    if brush_root.is_symlink() or not brush_root.is_dir():
+        raise FileNotFoundError(f"reviewed brush helper root is missing or symlinked: {brush_root}")
+    brush_root = brush_root.resolve(strict=True)
+    helpers = brush_root / "integrations" / "prime" / "watercolour_sft"
+    for name in ("init_adapter.py", "export_adapter.py", "model_profiles.py"):
+        path = helpers / name
+        if path.is_symlink() or not path.is_file():
+            raise FileNotFoundError(f"reviewed Prime adapter helper is missing or symlinked: {path}")
+    return root, brush_root, helpers
+
+
 def main() -> None:
+    root, brush_root, helpers = _trainer_dependency_paths()
+    sys.path[:0] = [str(helpers), str(root)]
+
     from prime_rl.configs.trainer import TrainerConfig
     from prime_rl.utils.config import cli
     from prime_rl.utils.process import set_proc_title
 
     config = cli(TrainerConfig)
-    root = Path(__file__).resolve().parent
-    brush_root = Path(os.environ.get("BRUSH_ROOT", root / "source" / "brush-rl")).resolve(strict=True)
-    helpers = brush_root / "integrations" / "prime" / "watercolour_sft"
-    mixed = brush_root / "integrations" / "speedpainting" / "mixed_sft"
-    if not (helpers / "init_adapter.py").is_file() or not (helpers / "export_adapter.py").is_file():
-        raise FileNotFoundError(f"reviewed Prime adapter helpers are missing under {brush_root}")
-    sys.path[:0] = [str(helpers), str(mixed), str(root)]
 
     from model_profiles import profile, verify_snapshot
 

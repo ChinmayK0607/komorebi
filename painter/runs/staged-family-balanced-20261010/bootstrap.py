@@ -53,10 +53,30 @@ HF_XET_VERSION = "1.6.0"
 PLAYWRIGHT_VERSION = "1.58.0"
 PILLOW_VERSION = "12.3.0"
 RENDERER_TIMEOUT = 90
+BRUSH_ROOT_RELATIVE = Path("painter/rl_helpers")
 
 
 class BootstrapError(RuntimeError):
     """A fail-closed preparation error."""
+
+
+def ensure_brush_root(repo_root: Path) -> Path:
+    """Require the exact run-owned helper tree used by the trainer child."""
+
+    root = repo_root.expanduser().absolute() / BRUSH_ROOT_RELATIVE
+    if root.is_symlink() or not root.is_dir():
+        raise BootstrapError(f"reviewed brush helper root is missing or symlinked: {root}")
+    root = root.resolve(strict=True)
+    for relative in (
+        "integrations/prime/watercolour_sft/init_adapter.py",
+        "integrations/prime/watercolour_sft/export_adapter.py",
+        "integrations/prime/watercolour_sft/model_profiles.py",
+        "scripts/upload_checkpoints.py",
+    ):
+        path = root / relative
+        if path.is_symlink() or not path.is_file():
+            raise BootstrapError(f"reviewed trainer helper is missing or symlinked: {path}")
+    return root
 
 
 def sha256_file(path: Path) -> str:
@@ -809,6 +829,7 @@ def validate_ready(path: Path, *, topology: dict[str, int], renderer_root: Path)
 
 def bootstrap(args: argparse.Namespace) -> dict[str, Any]:
     visible = visible_gpu_count()
+    brush_root = ensure_brush_root(REPO_ROOT)
     validate_topology(gpus_per_node=args.gpus_per_node, num_train_gpus=args.num_train_gpus, num_infer_gpus=args.num_infer_gpus, visible_gpus=visible)
     node_root = ensure_dir(args.node_root, "node root")
     renderer_root = ensure_renderer_root(node_root, args.renderer_root)
@@ -835,7 +856,7 @@ def bootstrap(args: argparse.Namespace) -> dict[str, Any]:
     ready = {
         "schema": "staged-family-balanced-bootstrap-ready-v1", "status": "ready_no_launch", "run_id": RUN_ID,
         "node_root": str(node_root), "renderer_root": str(renderer_root), "repo_root": str(REPO_ROOT), "source_root": str(args.source_root),
-        "brush_root": str(REPO_ROOT / "painter"),
+        "brush_root": str(brush_root),
         "topology": topology, "visible_gpu_count": visible, "training_started": False, "model_generation": False, "judge_calls": False, "background_processes_left_running": False, "credentials_embedded": False,
         "prime": {"root": str(prime_root), "revision": PRIME_COMMIT, "python": str(prime_python)},
         "model": {"repo": MODEL_REPO, "revision": MODEL_REVISION, "path": str(model), "config_sha256": sha256_file(model / "config.json")},

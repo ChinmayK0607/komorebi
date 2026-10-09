@@ -147,6 +147,14 @@ class BootstrapUnitTests(unittest.TestCase):
             with self.assertRaises(BOOTSTRAP.BootstrapError):
                 BOOTSTRAP.ensure_runtime_executable(link, "fixture venv Python", venv)
 
+    def test_brush_root_binds_exact_trainer_helpers(self) -> None:
+        root = BOOTSTRAP.ensure_brush_root(BOOTSTRAP.REPO_ROOT)
+        self.assertEqual(root, (BOOTSTRAP.REPO_ROOT / "painter/rl_helpers").resolve())
+        self.assertTrue((root / "integrations/prime/watercolour_sft/model_profiles.py").is_file())
+        with tempfile.TemporaryDirectory() as directory:
+            with self.assertRaises(BOOTSTRAP.BootstrapError):
+                BOOTSTRAP.ensure_brush_root(Path(directory))
+
     def test_explicit_renderer_root_is_used_and_old_default_is_preserved(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
