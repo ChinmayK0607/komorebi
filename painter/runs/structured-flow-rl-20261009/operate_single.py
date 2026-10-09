@@ -52,13 +52,35 @@ def _detached_job_command(*, source_commit: str, rental_start_epoch: float, pric
         "PAINTER_STRUCTURED_FLOW_POLICY": "1",
         "PAINTER_CODE_SUPERVISION_ENABLED": "1",
         "PAINTER_RUN_SUPERVISION": "1",
-        "PAINTER_WARMUP_REQUIRED": "1",
         # The remaining bounded restart reserves 45m for matched evaluation,
         # archive, release, and completion margin before the 20-step target.
         "PAINTER_RESERVE_SECONDS": "2700",
         "HF_CHECKPOINT_REPO": "CK0607/qwen3.8-27b-brush-painting",
         "HF_CHECKPOINT_RUN": "structured-flow-rl-20261009-sft-warmup",
     }
+    # Warmup remains required by default.  The only supported bypass is an
+    # explicit paired opt-in: both flags must be zero so prepare_node records
+    # a pending supervision receipt instead of silently skipping SFT.
+    run_warmup = os.environ.get("PAINTER_RUN_WARMUP", "1")
+    warmup_required = os.environ.get("PAINTER_WARMUP_REQUIRED", "1")
+    if run_warmup not in {"0", "1"} or warmup_required not in {"0", "1"}:
+        raise ValueError("PAINTER_RUN_WARMUP and PAINTER_WARMUP_REQUIRED must be 0 or 1")
+    if run_warmup != warmup_required:
+        raise ValueError(
+            "PAINTER_RUN_WARMUP and PAINTER_WARMUP_REQUIRED must be paired; "
+            "use both 0 for the explicit RL-only fallback"
+        )
+    values.update({
+        "PAINTER_RUN_WARMUP": run_warmup,
+        "PAINTER_WARMUP_REQUIRED": warmup_required,
+    })
+    reuse_baseline = os.environ.get("PAINTER_REUSE_MATCHED_BASELINE_EVIDENCE", "0")
+    if reuse_baseline not in {"0", "1"}:
+        raise ValueError("PAINTER_REUSE_MATCHED_BASELINE_EVIDENCE must be 0 or 1")
+    # matched_baseline.sh owns the pinned attempt16 URL/SHA defaults.  Forward
+    # only the strict opt-in bit; arbitrary archive coordinates stay local to
+    # that reviewed helper and are never accepted from the detached command.
+    values["PAINTER_REUSE_MATCHED_BASELINE_EVIDENCE"] = reuse_baseline
     # Keep this opt-in: the controller's environment can select a node-local
     # filesystem for the large model and Prime checkout, while credentials
     # remain under REMOTE_ROOT/private.  An unset value preserves the reviewed

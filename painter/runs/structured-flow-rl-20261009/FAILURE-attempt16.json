@@ -1,0 +1,26 @@
+{
+  "schema": "structured-flow-failure-v1",
+  "source_commit": "ef33d76a084bae058c4c159877beb2aa383d698c",
+  "failure_phase": "supervised_torchrun_startup",
+  "root_cause": "unknown_child_traceback_not_archived",
+  "supervised_optimizer_updates": 0,
+  "rl_optimizer_updates": 0,
+  "baseline_cases_complete": 16,
+  "baseline_turn_paintings": 35,
+  "strict_exact_target_mask_matches": 14,
+  "strict_no_truncation": true,
+  "public_evidence": {
+    "revision": "f72ee86cc24cb5fa3618c649aa1fe32ea22753ae",
+    "sha256": "ff4efa37835b1a7e3c5e90a628d685f1e94f39cf3d13760e47abab834c1a90c3",
+    "anonymous_download": true,
+    "bytes": 48974145,
+    "remote_lfs_sha256_verified": true
+  },
+  "node_absent_confirmed": true,
+  "gpu_clock_conservative_estimate_usd": 0.9293,
+  "prior_estimated_gpu_usd": 9.566,
+  "cumulative_conservative_estimate_usd": 10.4953,
+  "cost_is_invoice": false,
+  "api_cost_separate": true,
+  "next_decision": "preserve complete trainer errors, diagnose startup, retain twenty-update target within remaining ceiling"
+}

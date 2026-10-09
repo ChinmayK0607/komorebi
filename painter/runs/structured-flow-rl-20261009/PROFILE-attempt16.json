@@ -1,0 +1,22 @@
+{
+  "schema": "structured-flow-profile-v1",
+  "window_start": "2026/10/09 02:16:05.267",
+  "window_end": "2026/10/09 02:28:05.499",
+  "sampling_period_seconds": 10,
+  "gpu_denominator": 2,
+  "phase": "preparation_baseline_and_failed_supervised_start",
+  "gpus": {
+    "0": {
+      "samples": 73,
+      "mean_gpu_percent": 44.24657534246575,
+      "busy_fraction_at_least_10pct": 0.4657534246575342
+    },
+    "1": {
+      "samples": 73,
+      "mean_gpu_percent": 0.0,
+      "busy_fraction_at_least_10pct": 0.0
+    }
+  },
+  "learning_pipeline_saturated": false,
+  "optimizer_updates": 0
+}

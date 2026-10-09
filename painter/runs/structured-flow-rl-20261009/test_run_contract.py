@@ -546,6 +546,67 @@ class StructuredFlowRunTests(unittest.TestCase):
                     cap_usd=0.50,
                 )
 
+    def test_controller_forwards_explicit_paired_rl_only_fallback(self):
+        operator = load("structured_flow_operation_rl_only_contract", RUN / "operate_single.py")
+        with mock.patch.dict(
+            os.environ,
+            {"PAINTER_RUN_WARMUP": "0", "PAINTER_WARMUP_REQUIRED": "0"},
+            clear=False,
+        ):
+            command = operator._detached_job_command(
+                source_commit="a" * 40,
+                rental_start_epoch=100.0,
+                price_usd_per_hour=3.70,
+                cap_usd=0.50,
+            )
+        self.assertIn("PAINTER_RUN_WARMUP=0", command)
+        self.assertIn("PAINTER_WARMUP_REQUIRED=0", command)
+
+        with mock.patch.dict(os.environ, {"PAINTER_RUN_WARMUP": "0"}, clear=False):
+            with self.assertRaisesRegex(ValueError, "paired"):
+                operator._detached_job_command(
+                    source_commit="a" * 40,
+                    rental_start_epoch=100.0,
+                    price_usd_per_hour=3.70,
+                    cap_usd=0.50,
+                )
+
+    def test_controller_forwards_opt_in_matched_baseline_reuse_bit(self):
+        operator = load("structured_flow_operation_baseline_reuse_contract", RUN / "operate_single.py")
+        command = operator._detached_job_command(
+            source_commit="a" * 40,
+            rental_start_epoch=100.0,
+            price_usd_per_hour=3.70,
+            cap_usd=0.50,
+        )
+        self.assertIn("PAINTER_REUSE_MATCHED_BASELINE_EVIDENCE=0", command)
+        with mock.patch.dict(
+            os.environ,
+            {"PAINTER_REUSE_MATCHED_BASELINE_EVIDENCE": "1"},
+            clear=False,
+        ):
+            command = operator._detached_job_command(
+                source_commit="a" * 40,
+                rental_start_epoch=100.0,
+                price_usd_per_hour=3.70,
+                cap_usd=0.50,
+            )
+        self.assertIn("PAINTER_REUSE_MATCHED_BASELINE_EVIDENCE=1", command)
+        self.assertNotIn("PAINTER_MATCHED_BASELINE_EVIDENCE_URL", command)
+        self.assertNotIn("PAINTER_MATCHED_BASELINE_EVIDENCE_SHA256", command)
+        with mock.patch.dict(
+            os.environ,
+            {"PAINTER_REUSE_MATCHED_BASELINE_EVIDENCE": "maybe"},
+            clear=False,
+        ):
+            with self.assertRaisesRegex(ValueError, "must be 0 or 1"):
+                operator._detached_job_command(
+                    source_commit="a" * 40,
+                    rental_start_epoch=100.0,
+                    price_usd_per_hour=3.70,
+                    cap_usd=0.50,
+                )
+
     def test_remaining_restart_forwards_short_completion_reserve(self):
         operator = load("structured_flow_operation_reserve_contract", RUN / "operate_single.py")
         command = operator._detached_job_command(

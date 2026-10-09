@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import importlib.util
 import json
 from pathlib import Path, PurePosixPath
 import re
@@ -20,6 +21,7 @@ import tarfile
 import tempfile
 import urllib.parse
 import urllib.request
+from typing import Mapping
 
 
 SCHEMA = "structured-flow-anchor-evidence-restore-v1"
@@ -381,6 +383,32 @@ SUPERVISION_METADATA = {
 SUPERVISION_ALLOWED_SUFFIXES = {".json", ".jsonl", ".ndjson", ".png", ".js", ".txt"}
 SUPERVISION_RENDERER_SHA256 = re.compile(r"^[0-9a-f]{64}$")
 
+# Matched Flash12 evaluation is a separate restore mode.  It never shares the
+# anchor allowlist: baseline rollout evidence includes invalid/censored turns
+# that must remain auditable, while native anchor restoration is a different
+# admission boundary.
+BASELINE_SCHEMA = "structured-flow-matched-baseline-evidence-restore-v1"
+BASELINE_REL = Path("matched-baseline/pre-step12")
+BASELINE_METADATA = {
+    "baseline-receipt.json", "eval.toml", "structured-flow-hook-receipt.json",
+    "baseline-reuse-receipt.json", "config.json",
+}
+BASELINE_ALLOWED_SUFFIXES = {".json", ".jsonl", ".ndjson", ".log", ".png", ".js", ".txt", ".toml"}
+BASELINE_POLICY_REVISION = "1227a2427a8ae16014d2fdca4d1adb6855d3fa1c"
+BASELINE_POLICY_PREFIX = "rl-judge-matched-20261004-flash/step_12"
+BASELINE_POLICY_SHA256 = "c70c47ec0d6d7172b3bc25c4f54178919cf7c079cd9652fff3bc76db9e1eca79"
+BASELINE_SEED = 918210
+BASELINE_MAX_TURNS = 3
+BASELINE_CASES = 16
+BASELINE_MAX_TOKENS = 8192
+
+
+def _write_json(path: Path, value: object) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_name(path.name + ".tmp")
+    temporary.write_text(json.dumps(value, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    temporary.replace(path)
+
 
 def _normalized_supervision_member(name: str) -> Path | None:
     if not isinstance(name, str) or not name or "\x00" in name:
@@ -407,6 +435,34 @@ def _normalized_supervision_member(name: str) -> Path | None:
     if not allowed:
         raise ValueError(f"archive member is outside the supervision allowlist: {name!r}")
     return SUPERVISION_REL / relative
+
+
+def _normalized_baseline_member(name: str) -> Path | None:
+    """Map only the cached matched-baseline tree into the run root."""
+    if not isinstance(name, str) or not name or "\x00" in name:
+        raise ValueError("archive member has an invalid name")
+    path = PurePosixPath(name)
+    if path.is_absolute() or any(part in {"", ".", ".."} for part in path.parts):
+        raise ValueError(f"unsafe archive member path: {name!r}")
+    try:
+        index = next(i for i in range(len(path.parts) - 1) if path.parts[i:i + 2] == ("matched-baseline", "pre-step12"))
+    except StopIteration:
+        return None
+    relative = Path(*path.parts[index + 2:])
+    if not relative.parts:
+        return None
+    if relative.suffix.lower() not in BASELINE_ALLOWED_SUFFIXES:
+        raise ValueError(f"archive member is outside the matched-baseline allowlist: {name!r}")
+    parts = relative.parts
+    allowed = (
+        (len(parts) == 1 and relative.name in BASELINE_METADATA)
+        or (len(parts) >= 2 and parts[0] in {"evaluation-rollouts", "logs"})
+    )
+    if not allowed:
+        raise ValueError(f"archive member is outside the matched-baseline allowlist: {name!r}")
+    if any(part.lower() in {"model", "weights", "checkpoint", "private", "credentials", "cache"} for part in parts):
+        raise ValueError(f"archive member names a forbidden subtree: {name!r}")
+    return BASELINE_REL / relative
 
 
 def _supervision_json(root: Path, name: str) -> dict[str, object]:
@@ -536,6 +592,587 @@ def _validate_supervision_tree(supervision_root: Path, expected_renderer_sha256:
     }
 
 
+def _baseline_json(root: Path, name: str) -> dict[str, object]:
+    path = root / name
+    if path.is_symlink() or not path.is_file():
+        raise ValueError(f"matched-baseline evidence is missing: {name}")
+    try:
+        value = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise ValueError(f"invalid matched-baseline JSON: {name}") from exc
+    if not isinstance(value, dict):
+        raise ValueError(f"matched-baseline JSON must be an object: {name}")
+    return value
+
+
+def _toml_int(text: str, key: str) -> int | None:
+    match = re.search(rf"(?m)^\s*{re.escape(key)}\s*=\s*(\d+)\s*$", text)
+    return int(match.group(1)) if match else None
+
+
+def _toml_string(text: str, key: str) -> str | None:
+    match = re.search(rf"(?m)^\s*{re.escape(key)}\s*=\s*[\"']([^\"']+)[\"']\s*$", text)
+    return match.group(1) if match else None
+
+
+def _flow_prompt_hashes(flow_source: Path) -> dict[str, str]:
+    """Load current source constants without starting native evaluation."""
+    spec = importlib.util.spec_from_file_location("structured_flow_baseline_prompt", flow_source)
+    if spec is None or spec.loader is None:
+        raise ImportError(f"cannot import flow source: {flow_source}")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    system = getattr(module, "NATIVE_SYSTEM", None)
+    hint = getattr(module, "FLOW_HINT", None)
+    flow_system = getattr(module, "flow_system", None)
+    if not isinstance(system, str) or not isinstance(hint, str) or not callable(flow_system):
+        raise ValueError("current flow source does not expose native system and hint")
+    return {
+        "flow_source_sha256": sha256_file(flow_source),
+        "native_system_sha256": sha256_bytes(system.encode("utf-8")),
+        "flow_hint_sha256": sha256_bytes(hint.encode("utf-8")),
+        "flow_system_sha256": sha256_bytes(str(flow_system()).encode("utf-8")),
+    }
+
+
+def _validate_current_flow_manifest(manifest_path: Path, prompt_hashes: Mapping[str, str]) -> dict[str, object]:
+    if manifest_path.is_symlink() or not manifest_path.is_file():
+        raise ValueError(f"current evaluation manifest is missing: {manifest_path}")
+    value = json.loads(manifest_path.read_text(encoding="utf-8"))
+    rows = value.get("cases") or value.get("rows") if isinstance(value, dict) else value
+    if not isinstance(rows, list) or len(rows) != BASELINE_CASES:
+        raise ValueError("current evaluation manifest must contain exactly sixteen cases")
+    hint = None
+    casebrief_mode = None
+    disabled_hint = "Structured-flow hint is disabled for this run."
+    casebriefs = 0
+    for row in rows:
+        if not isinstance(row, dict):
+            raise ValueError("current evaluation manifest has a malformed case")
+        # Bind the paid baseline to the same frozen prompt and opponent PNG
+        # identities that the current native taskset will load.  This catches
+        # a regenerated manifest even when its casebrief text is unchanged.
+        for path_key, hash_key in (("reference", "reference_sha256"), ("opponent", "opponent_sha256")):
+            reference_value = row.get(path_key)
+            digest_value = row.get(hash_key)
+            if not isinstance(reference_value, str) or not reference_value or not _valid_sha(digest_value):
+                raise ValueError(f"current evaluation manifest {path_key} identity is missing: {row.get('id')}")
+            evidence_path = Path(reference_value).expanduser()
+            if not evidence_path.is_absolute():
+                evidence_path = manifest_path.parent / evidence_path
+            evidence_path = evidence_path.absolute()
+            if evidence_path.is_symlink() or not evidence_path.is_file() or sha256_file(evidence_path) != digest_value:
+                raise ValueError(f"current evaluation manifest {path_key} hash mismatch: {row.get('id')}")
+        casebrief = row.get("casebrief")
+        if not isinstance(casebrief, str) or not casebrief:
+            raise ValueError("current evaluation manifest casebrief is missing")
+        path = Path(casebrief).expanduser()
+        if not path.is_absolute():
+            path = manifest_path.parent / path
+        path = path.absolute()
+        if path.is_symlink() or not path.is_file() or sha256_file(path) != row.get("casebrief_sha256"):
+            raise ValueError(f"current evaluation casebrief hash mismatch: {row.get('id')}")
+        text = path.read_text(encoding="utf-8")
+        if not text.startswith("[SYSTEM]\n") or "\n\n[USER]\n" not in text:
+            raise ValueError(f"current evaluation casebrief markers are malformed: {row.get('id')}")
+        system, user = text[len("[SYSTEM]\n"):].split("\n\n[USER]\n", 1)
+        system = system.strip()
+        if not system or not user.strip():
+            raise ValueError(f"current evaluation casebrief is empty: {row.get('id')}")
+        hint = hint or system
+        if system != hint:
+            raise ValueError("current evaluation casebrief system texts differ across cases")
+        this_mode = "flow_hint" if sha256_bytes(system.encode("utf-8")) == prompt_hashes["flow_hint_sha256"] else None
+        if system == disabled_hint:
+            this_mode = "disabled_casebrief"
+        elif sha256_bytes(system.encode("utf-8")) != prompt_hashes["flow_hint_sha256"]:
+            raise ValueError("current evaluation casebrief system differs from the canonical flow hint")
+        if casebrief_mode is None:
+            casebrief_mode = this_mode
+        elif casebrief_mode != this_mode:
+            raise ValueError("current evaluation casebrief modes differ across cases")
+        expected_hint_sha = sha256_bytes((system + "\n").encode("utf-8"))
+        if row.get("system_hint_sha256") not in {None, expected_hint_sha}:
+            raise ValueError(f"current evaluation flow-hint hash mismatch: {row.get('id')}")
+        casebriefs += 1
+    if hint is None or casebrief_mode is None:
+        raise ValueError("current evaluation casebrief has no recognized system mode")
+    return {"manifest_sha256": sha256_file(manifest_path), "case_count": len(rows), "casebrief_count": casebriefs, "casebrief_mode": casebrief_mode, **prompt_hashes}
+
+
+def _curriculum_member(name: str) -> tuple[tuple[str, ...], str] | None:
+    """Return a safe curriculum-relative member and its limited evidence kind."""
+    path = PurePosixPath(name)
+    if path.is_absolute() or any(part in {"", ".", ".."} for part in path.parts):
+        raise ValueError(f"unsafe cached pilot archive member: {name!r}")
+    if path.parts[-1] == "flow_demonstrations.py" and RUN_ID in path.parts:
+        return path.parts, "flow_source"
+    try:
+        curriculum_index = path.parts.index("curriculum")
+    except ValueError:
+        return None
+    relative = path.parts[curriculum_index + 1:]
+    if not relative:
+        return None
+    basename = relative[-1]
+    if basename in {"pilot-train-manifest.json", "pilot-heldout-manifest.json", "matched16-manifest.json"}:
+        if len(relative) != 2 or not relative[0].startswith(".materialized-pilot"):
+            return None
+        return relative, "manifest"
+    if len(relative) >= 3 and relative[0].startswith(".materialized-pilot") and relative[1] == "casebriefs" and PurePosixPath(basename).suffix == ".txt":
+        return relative, "casebrief"
+    return None
+
+
+def _manifest_rows(value: Mapping[str, object], *, name: str, expected_count: int) -> list[dict[str, object]]:
+    if value.get("schema") != "painter.native-painting-rl-structured-flow-v1" or value.get("run_id") != RUN_ID:
+        raise ValueError(f"cached {name} manifest is not the pinned native structured-flow manifest")
+    rows = value.get("rows")
+    if not isinstance(rows, list) or len(rows) != expected_count:
+        raise ValueError(f"cached {name} manifest must contain {expected_count} rows")
+    if name == "train" and value.get("split") != "train":
+        raise ValueError("cached train manifest split mismatch")
+    if name != "train" and value.get("split") != "heldout":
+        raise ValueError(f"cached {name} manifest split mismatch")
+    if name == "train" and value.get("native_rl_compatible") is not True:
+        raise ValueError("cached train manifest is not native RL compatible")
+    result: list[dict[str, object]] = []
+    for row in rows:
+        if not isinstance(row, dict) or not isinstance(row.get("id"), str):
+            raise ValueError(f"cached {name} manifest contains a malformed row")
+        result.append(row)
+    return result
+
+
+def _proposal_file(proposal: Path, row: Mapping[str, object]) -> Path:
+    reference = row.get("reference")
+    if not isinstance(reference, str) or not reference:
+        raise ValueError(f"proposal reference is missing for {row.get('id')}")
+    path = Path(reference).expanduser()
+    if not path.is_absolute():
+        path = proposal.parent / path
+    path = path.absolute()
+    if path.is_symlink() or not path.is_file() or not _valid_sha(row.get("reference_sha256")) or sha256_file(path) != row.get("reference_sha256"):
+        raise ValueError(f"proposal reference hash mismatch for {row.get('id')}")
+    return path
+
+
+def _validate_cached_pilot_row(
+    row: Mapping[str, object],
+    proposal_row: Mapping[str, object],
+    *,
+    proposal_path: Path,
+    anchor_root: Path,
+    run_root: Path,
+) -> list[tuple[Path, str, str]]:
+    if str(row.get("id")) != str(proposal_row.get("id")):
+        raise ValueError("cached pilot row ID differs from the current proposal")
+    if row.get("admission_status") != "ready_for_native_painting_rl" or row.get("anchor_status") != "verified_file":
+        raise ValueError(f"cached pilot row is not an admitted frozen-anchor row: {row.get('id')}")
+    for key in ("source_group", "reference_sha256", "stage", "base_family_id", "split"):
+        if row.get(key) != proposal_row.get(key):
+            raise ValueError(f"cached pilot row {row.get('id')} differs from the current proposal: {key}")
+    _proposal_file(proposal_path, proposal_row)
+    opponent_sha = row.get("opponent_sha256")
+    if not _valid_sha(opponent_sha):
+        raise ValueError(f"cached pilot row has no opponent hash: {row.get('id')}")
+    anchor = anchor_root / f"{row['id']}.png"
+    if anchor.is_symlink() or not anchor.is_file() or sha256_file(anchor) != opponent_sha:
+        raise ValueError(f"cached pilot opponent differs from the restored current anchor: {row.get('id')}")
+    frozen = row.get("frozen_sft512_checkpoint_sha256")
+    if frozen != "bea72b066986faa1b92b9dc539c710093181ee916b99323e2b2498f318ac1740":
+        raise ValueError(f"cached pilot checkpoint identity differs: {row.get('id')}")
+    casebrief_value = row.get("casebrief")
+    casebrief_sha = row.get("casebrief_sha256")
+    if not isinstance(casebrief_value, str) or not casebrief_value.startswith("/") or not _valid_sha(casebrief_sha):
+        raise ValueError(f"cached pilot casebrief identity is missing: {row.get('id')}")
+    casebrief_path = Path(casebrief_value).expanduser().absolute()
+    try:
+        casebrief_path.relative_to(run_root)
+    except ValueError as exc:
+        raise ValueError(f"cached pilot casebrief escapes the current run root: {casebrief_path}") from exc
+    expected_reference = _proposal_file(proposal_path, proposal_row).read_text(encoding="utf-8").strip()
+    return [(casebrief_path, str(casebrief_sha), expected_reference)]
+
+
+def restore_cached_pilot_manifests(
+    *,
+    run_root: Path,
+    expected_sha256: str,
+    train_proposal: Path,
+    heldout_proposal: Path,
+    anchor_root: Path,
+    train_manifest: Path,
+    heldout_manifest: Path,
+    flow_source: Path,
+    archive: Path | None = None,
+    url: str | None = None,
+) -> dict[str, object]:
+    """Restore the exact admitted 31/16 manifests and referenced casebriefs.
+
+    The archived casebriefs intentionally retain their disabled marker, and
+    the current hook appends that archived hint at task load.  Canonical flow
+    guidance remains pending for this matched baseline.  This function never
+    rematerializes rows or rewrites manifest bytes.
+    """
+    run_root = run_root.expanduser().absolute()
+    train_proposal = train_proposal.expanduser().absolute()
+    heldout_proposal = heldout_proposal.expanduser().absolute()
+    anchor_root = anchor_root.expanduser().absolute()
+    train_manifest = train_manifest.expanduser().absolute()
+    heldout_manifest = heldout_manifest.expanduser().absolute()
+    flow_source = flow_source.expanduser().absolute()
+    if not _valid_sha(expected_sha256):
+        raise ValueError("expected cached pilot archive SHA-256 must be lowercase hexadecimal")
+    (run_root / ".restore-tmp").mkdir(mode=0o700, exist_ok=True)
+    archive_path, source_kind, temporary = _archive_path(archive=archive, url=url, run_root=run_root, expected=expected_sha256)
+    try:
+        if sha256_file(archive_path) != expected_sha256:
+            raise ValueError("cached pilot archive hash mismatch")
+        members: dict[tuple[str, ...], tuple[str, bytes]] = {}
+        flow_members: list[tuple[str, bytes]] = []
+        with tarfile.open(archive_path, "r:*") as archive_file:
+            for member in archive_file:
+                if not member.isfile() or member.issym() or member.islnk():
+                    continue
+                selected = _curriculum_member(member.name)
+                if selected is None:
+                    continue
+                relative, kind = selected
+                if member.size > MAX_MEMBER_BYTES:
+                    raise ValueError(f"cached pilot member exceeds the per-file limit: {member.name}")
+                stream = archive_file.extractfile(member)
+                if stream is None:
+                    raise ValueError(f"cannot read cached pilot member: {member.name}")
+                payload = _read_member(stream, int(member.size))
+                if kind == "flow_source":
+                    flow_members.append((member.name, payload))
+                else:
+                    members[relative] = (member.name, payload)
+        manifest_names = ("pilot-train-manifest.json", "pilot-heldout-manifest.json", "matched16-manifest.json")
+        candidates: dict[tuple[str, ...], dict[str, object]] = {}
+        for relative, (member_name, payload) in members.items():
+            if relative[-1] not in manifest_names:
+                continue
+            try:
+                value = json.loads(payload.decode("utf-8"))
+            except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+                raise ValueError(f"cached pilot manifest is invalid: {member_name}") from exc
+            if not isinstance(value, dict):
+                raise ValueError(f"cached pilot manifest is not an object: {member_name}")
+            candidates[relative[:-1]] = {**candidates.get(relative[:-1], {}), relative[-1]: value, "_bytes_" + relative[-1]: payload, "_member_" + relative[-1]: member_name}
+        chosen = [stage for stage, value in candidates.items() if all(name in value for name in manifest_names)]
+        if len(chosen) != 1:
+            raise ValueError(f"cached pilot archive must contain exactly one complete admitted manifest set; found {len(chosen)}")
+        stage = chosen[0]
+        candidate = candidates[stage]
+        train_value = candidate["pilot-train-manifest.json"]
+        heldout_value = candidate["pilot-heldout-manifest.json"]
+        matched_value = candidate["matched16-manifest.json"]
+        if not isinstance(train_value, dict) or not isinstance(heldout_value, dict) or not isinstance(matched_value, dict):
+            raise ValueError("cached pilot manifest set is malformed")
+        train_rows = _manifest_rows(train_value, name="train", expected_count=31)
+        heldout_rows = _manifest_rows(heldout_value, name="heldout", expected_count=16)
+        matched_rows = _manifest_rows(matched_value, name="matched16", expected_count=16)
+        if sha256_bytes(candidate["_bytes_pilot-heldout-manifest.json"]) != sha256_bytes(candidate["_bytes_matched16-manifest.json"]):
+            raise ValueError("cached matched16 manifest differs from the archived heldout manifest")
+        train_doc = json.loads(train_proposal.read_text(encoding="utf-8"))
+        heldout_doc = json.loads(heldout_proposal.read_text(encoding="utf-8"))
+        train_by_id = {str(row.get("id")): row for row in train_doc.get("rows", []) if isinstance(row, dict)}
+        heldout_by_id = {str(row.get("id")): row for row in heldout_doc.get("rows", []) if isinstance(row, dict)}
+        if len(train_by_id) != 240 or len(heldout_by_id) != 60:
+            raise ValueError("current structured-flow proposals are not the pinned 240/60 pool")
+        needed_casebriefs: dict[Path, tuple[str, str]] = {}
+        for rows, proposals, proposal_path in ((train_rows, train_by_id, train_proposal), (heldout_rows, heldout_by_id, heldout_proposal)):
+            for row in rows:
+                proposal_row = proposals.get(str(row["id"]))
+                if proposal_row is None:
+                    raise ValueError(f"cached pilot row is absent from the current proposal: {row['id']}")
+                for casebrief_path, digest, expected_user in _validate_cached_pilot_row(row, proposal_row, proposal_path=proposal_path, anchor_root=anchor_root, run_root=run_root):
+                    prior = needed_casebriefs.get(casebrief_path)
+                    if prior is not None and prior != (digest, expected_user):
+                        raise ValueError(f"cached casebrief identity is inconsistent: {casebrief_path}")
+                    needed_casebriefs[casebrief_path] = (digest, expected_user)
+        for row in matched_rows:
+            if str(row["id"]) not in {str(item["id"]) for item in heldout_rows}:
+                raise ValueError("cached matched16 IDs differ from the archived heldout IDs")
+        selected_casebriefs: dict[Path, bytes] = {}
+        for target, (digest, expected_user) in needed_casebriefs.items():
+            parts = PurePosixPath(target).parts
+            curriculum_index = parts.index("curriculum")
+            suffix = parts[curriculum_index + 1:]
+            matches = [(name, payload) for relative, (name, payload) in members.items() if relative == suffix]
+            if len(matches) != 1 or sha256_bytes(matches[0][1]) != digest:
+                raise ValueError(f"cached casebrief is missing or hash-mismatched: {target}")
+            selected_casebriefs[target] = matches[0][1]
+            text = matches[0][1].decode("utf-8")
+            if not text.startswith("[SYSTEM]\nStructured-flow hint is disabled for this run.\n\n[USER]\n"):
+                raise ValueError(f"cached casebrief does not preserve the disabled flow marker: {target}")
+            if text.split("\n\n[USER]\n", 1)[1].strip() != expected_user:
+                raise ValueError(f"cached casebrief user brief differs from the current proposal: {target}")
+        current_flow_sha = sha256_file(flow_source)
+        matching_flow = [payload for name, payload in flow_members if name.endswith("/flow_demonstrations.py") or name == "flow_demonstrations.py"]
+        if len(matching_flow) != 1 or sha256_bytes(matching_flow[0]) != current_flow_sha:
+            raise ValueError("cached archive flow_demonstrations.py does not match the current canonical source")
+        staging_prefix = run_root / "curriculum" / Path(*stage)
+        install_items = [
+            (train_manifest, candidate["_bytes_pilot-train-manifest.json"]),
+            (heldout_manifest, candidate["_bytes_matched16-manifest.json"]),
+            (staging_prefix / "pilot-train-manifest.json", candidate["_bytes_pilot-train-manifest.json"]),
+            (staging_prefix / "pilot-heldout-manifest.json", candidate["_bytes_pilot-heldout-manifest.json"]),
+            (staging_prefix / "matched16-manifest.json", candidate["_bytes_matched16-manifest.json"]),
+            *selected_casebriefs.items(),
+        ]
+        manifest_targets = {Path(train_manifest), Path(heldout_manifest), staging_prefix / "pilot-train-manifest.json", staging_prefix / "pilot-heldout-manifest.json", staging_prefix / "matched16-manifest.json"}
+        for target, payload in install_items:
+            target = Path(target)
+            if target.is_symlink() or (target.exists() and (not target.is_file() or (target not in manifest_targets and target.read_bytes() != payload))):
+                raise ValueError(f"refusing to overwrite changed cached pilot evidence: {target}")
+        for target, payload in install_items:
+            target.parent.mkdir(parents=True, exist_ok=True)
+            if not target.exists() or target in manifest_targets:
+                target.write_bytes(payload)
+                target.chmod(0o600)
+        reuse = {
+            "schema": "structured-flow-cached-anchor-reuse-v1",
+            "status": "reused_archived_admitted_pilot",
+            "source_archive_sha256": expected_sha256,
+            "source_kind": source_kind,
+            "generator_calls": 0,
+            "train_rows": 31,
+            "heldout_cases": 16,
+            "casebrief_count": len(selected_casebriefs),
+            "casebrief_mode": "disabled_casebrief_with_flow_hook",
+            "flow_source_sha256": current_flow_sha,
+            "train_manifest_sha256": sha256_file(train_manifest),
+            "heldout_manifest_sha256": sha256_file(heldout_manifest),
+            "manifest_members": [candidate["_member_pilot-train-manifest.json"], candidate["_member_pilot-heldout-manifest.json"], candidate["_member_matched16-manifest.json"]],
+            "limitations": ["Exact archived admitted manifests and referenced casebriefs were reused; no rematerialization, model, renderer, or judge call was made."],
+        }
+        _write_json(run_root / "cached-anchor-reuse.json", reuse)
+        return reuse
+    finally:
+        if temporary is not None:
+            temporary.cleanup()
+
+
+def _validate_baseline_rollouts(root: Path, expected_renderer_sha256: str) -> dict[str, object]:
+    rollout_root = root / "evaluation-rollouts"
+    if not rollout_root.is_dir() or rollout_root.is_symlink():
+        raise ValueError("matched-baseline evaluation-rollouts evidence is missing")
+    receipts = sorted(path for path in rollout_root.rglob("painting.json") if path.is_file() and not path.is_symlink())
+    if not receipts:
+        raise ValueError("matched-baseline contains no painting receipts")
+    valid = invalid = missing_png = hash_mismatch = 0
+    renderer_bound = 0
+    for receipt_path in receipts:
+        value = json.loads(receipt_path.read_text(encoding="utf-8"))
+        if not isinstance(value, dict):
+            raise ValueError(f"matched-baseline painting receipt is malformed: {receipt_path}")
+        if value.get("valid") is not True:
+            invalid += 1
+            continue
+        valid += 1
+        observed_renderer = value.get("renderer_sha256")
+        if observed_renderer is not None:
+            if observed_renderer != expected_renderer_sha256:
+                raise ValueError(f"matched-baseline renderer hash mismatch: {receipt_path}")
+            renderer_bound += 1
+        png = receipt_path.with_name("painting.png")
+        if png.is_symlink() or not png.is_file():
+            missing_png += 1
+            continue
+        if value.get("png_sha256") != sha256_file(png):
+            hash_mismatch += 1
+    if missing_png or hash_mismatch:
+        raise ValueError(f"matched-baseline valid PNG evidence is not hash verified: missing={missing_png}, mismatch={hash_mismatch}")
+    if renderer_bound != valid:
+        raise ValueError("matched-baseline valid receipts are not all bound to the current renderer hash")
+    return {
+        "receipt_count": len(receipts), "valid_receipts": valid, "invalid_receipts": invalid,
+        "missing_png": missing_png, "hash_mismatch": hash_mismatch,
+        "renderer_bound_receipts": renderer_bound,
+    }
+
+
+def _validate_baseline_tree(
+    baseline_root: Path,
+    *,
+    expected_policy_sha256: str,
+    expected_policy_revision: str,
+    expected_policy_prefix: str,
+    expected_seed: int,
+    expected_renderer_sha256: str,
+    eval_manifest: Path,
+    flow_source: Path,
+    renderer_path: Path,
+) -> dict[str, object]:
+    policy_sha = _require_supervision_hash(expected_policy_sha256, "policy SHA-256")
+    renderer_sha = _require_supervision_hash(expected_renderer_sha256, "renderer SHA-256")
+    if renderer_path.is_symlink() or not renderer_path.is_file() or sha256_file(renderer_path) != renderer_sha:
+        raise ValueError("current matched-baseline renderer hash does not match the pinned renderer")
+    receipt = _baseline_json(baseline_root, "baseline-receipt.json")
+    if receipt.get("schema") != "structured-flow-matched-flash12-baseline-v1" or receipt.get("status") != "complete":
+        raise ValueError("matched-baseline receipt is not complete")
+    policy = receipt.get("policy")
+    if not isinstance(policy, dict) or policy.get("adapter_sha256") != policy_sha or policy.get("revision") != expected_policy_revision or policy.get("prefix") != expected_policy_prefix or policy.get("label") != "flash12-pre-warmup":
+        raise ValueError("matched-baseline policy identity differs from the current Flash12 pin")
+    if receipt.get("manifest_cases") != BASELINE_CASES or receipt.get("max_turns") != BASELINE_MAX_TURNS or receipt.get("seed") != expected_seed:
+        raise ValueError("matched-baseline receipt count, turns, or seed differs from the current contract")
+    if receipt.get("judge_deferred") is not True or receipt.get("quality_scoring") != "offline_only":
+        raise ValueError("matched-baseline receipt does not preserve deferred offline quality scoring")
+    eval_path = baseline_root / "eval.toml"
+    if eval_path.is_symlink() or not eval_path.is_file():
+        raise ValueError("matched-baseline eval.toml is missing")
+    eval_text = eval_path.read_text(encoding="utf-8")
+    if _toml_string(eval_text, "model") != "flash12-baseline" or _toml_int(eval_text, "num_tasks") != BASELINE_CASES or _toml_int(eval_text, "num_rollouts") != 1 or _toml_int(eval_text, "max_tokens") != BASELINE_MAX_TOKENS or _toml_int(eval_text, "seed") != expected_seed or _toml_int(eval_text, "max_turns") != BASELINE_MAX_TURNS:
+        raise ValueError("matched-baseline eval.toml is not the pinned 16-case/3-turn/8192-token native policy")
+    if "policy_label = \"flash12-pre-warmup\"" not in eval_text or "id = \"native_painting\"" not in eval_text or "push = false" not in eval_text:
+        raise ValueError("matched-baseline eval.toml is not the native policy evaluation")
+    if not re.search(r"(?m)^\s*renderer\s*=\s*\"[^\"]+\"", eval_text) or not re.search(r"(?m)^\s*renderer_python\s*=\s*\"[^\"]+\"", eval_text):
+        raise ValueError("matched-baseline eval.toml has no explicit renderer binding")
+    prompt_hashes = _flow_prompt_hashes(flow_source)
+    current_manifest = _validate_current_flow_manifest(eval_manifest, prompt_hashes)
+    if receipt.get("manifest_sha256") != current_manifest["manifest_sha256"]:
+        raise ValueError("matched-baseline receipt is bound to a different evaluation manifest")
+    hook = _baseline_json(baseline_root, "structured-flow-hook-receipt.json")
+    if hook.get("schema") != "structured-flow-prompt-hook-v1" or hook.get("installed") is not True or hook.get("enabled") is not True or hook.get("evaluation_taskset_patched") is not True or hook.get("eval_manifest_sha256") != current_manifest["manifest_sha256"] or hook.get("eval_rows") != BASELINE_CASES:
+        raise ValueError("matched-baseline flow hook receipt is not bound to the current evaluation manifest")
+    rollouts = _validate_baseline_rollouts(baseline_root, renderer_sha)
+    return {
+        "schema": BASELINE_SCHEMA, "status": "validated_cached_baseline",
+        "policy": {"adapter_sha256": policy_sha, "revision": expected_policy_revision, "prefix": expected_policy_prefix},
+        "eval": {"manifest_sha256": current_manifest["manifest_sha256"], "seed": expected_seed, "max_turns": BASELINE_MAX_TURNS, "max_tokens": BASELINE_MAX_TOKENS},
+        "prompt": current_manifest, "renderer_sha256": renderer_sha, "rollouts": rollouts,
+        "invalid_or_censored_retained": rollouts["invalid_receipts"] > 0,
+    }
+
+
+def restore_baseline(
+    *,
+    run_root: Path,
+    expected_sha256: str,
+    expected_policy_sha256: str = BASELINE_POLICY_SHA256,
+    expected_policy_revision: str = BASELINE_POLICY_REVISION,
+    expected_policy_prefix: str = BASELINE_POLICY_PREFIX,
+    expected_seed: int = BASELINE_SEED,
+    renderer_sha256: str,
+    renderer_path: Path,
+    eval_manifest: Path,
+    flow_source: Path,
+    archive: Path | None = None,
+    url: str | None = None,
+) -> dict[str, object]:
+    """Restore and validate a cached matched baseline without evaluation."""
+    run_root = run_root.expanduser().resolve()
+    if not run_root.is_dir():
+        raise ValueError(f"run root is missing: {run_root}")
+    if not _valid_sha(expected_sha256):
+        raise ValueError("expected archive SHA-256 must be lowercase hexadecimal")
+    (run_root / ".restore-tmp").mkdir(mode=0o700, exist_ok=True)
+    archive_path, source_kind, temporary = _archive_path(archive=archive, url=url, run_root=run_root, expected=expected_sha256)
+    try:
+        if sha256_file(archive_path) != expected_sha256:
+            raise ValueError("source baseline archive hash mismatch")
+        stage_parent = Path(tempfile.mkdtemp(prefix="baseline-restore-stage-", dir=str(run_root / ".restore-tmp")))
+        try:
+            stage_root = stage_parent / BASELINE_REL
+            records: list[dict[str, object]] = []
+            seen: set[Path] = set()
+            total_bytes = 0
+            with tarfile.open(archive_path, "r:*") as archive_file:
+                for index, member in enumerate(archive_file):
+                    if index >= MAX_MEMBERS:
+                        raise ValueError("baseline archive has too many members")
+                    if member.issym() or member.islnk() or not (member.isfile() or member.isdir()):
+                        raise ValueError(f"archive contains an unsupported non-regular member: {member.name!r}")
+                    if member.isdir():
+                        directory = PurePosixPath(member.name)
+                        if directory.is_absolute() or any(part in {"", ".", ".."} for part in directory.parts):
+                            raise ValueError(f"unsafe archive member path: {member.name!r}")
+                        continue
+                    target_relative = _normalized_baseline_member(member.name)
+                    if target_relative is None:
+                        continue
+                    if target_relative in seen:
+                        raise ValueError(f"duplicate baseline member: {member.name!r}")
+                    seen.add(target_relative)
+                    total_bytes += int(member.size)
+                    if total_bytes > MAX_TOTAL_BYTES:
+                        raise ValueError("baseline evidence exceeds the total byte limit")
+                    source = archive_file.extractfile(member)
+                    if source is None:
+                        raise ValueError(f"cannot read archive member: {member.name!r}")
+                    payload = _read_member(source, int(member.size))
+                    stage_path = stage_root / target_relative.relative_to(BASELINE_REL)
+                    stage_path.parent.mkdir(parents=True, exist_ok=True)
+                    stage_path.write_bytes(payload)
+                    stage_path.chmod(0o600)
+                    records.append({"archive_member": member.name, "target": str(target_relative), "bytes": len(payload), "sha256": sha256_bytes(payload)})
+            if not records:
+                raise ValueError("source archive contains no permitted matched-baseline evidence")
+            validation = _validate_baseline_tree(
+                stage_root,
+                expected_policy_sha256=expected_policy_sha256,
+                expected_policy_revision=expected_policy_revision,
+                expected_policy_prefix=expected_policy_prefix,
+                expected_seed=expected_seed,
+                expected_renderer_sha256=renderer_sha256,
+                eval_manifest=eval_manifest,
+                flow_source=flow_source,
+                renderer_path=renderer_path,
+            )
+            target_root = run_root / BASELINE_REL
+            for record in records:
+                target = run_root / str(record["target"])
+                if target.is_symlink() or (target.exists() and not target.is_file()):
+                    raise ValueError(f"baseline restore target is not a regular file: {target}")
+                if target.is_file() and sha256_file(target) != record["sha256"]:
+                    raise ValueError(f"refusing to overwrite existing baseline evidence: {target}")
+            reused = installed = 0
+            for record in records:
+                target = run_root / str(record["target"])
+                source = stage_root / target.relative_to(target_root)
+                if target.is_file():
+                    reused += 1
+                    continue
+                target.parent.mkdir(parents=True, exist_ok=True)
+                source.replace(target)
+                target.chmod(0o600)
+                installed += 1
+            receipt = {
+                "schema": BASELINE_SCHEMA, "run_id": RUN_ID,
+                "status": "restored_verified_cached_baseline",
+                "source_kind": source_kind, "source_archive_sha256": expected_sha256,
+                "source_url_host": urllib.parse.urlparse(url).netloc if url else None,
+                "baseline_root": str(target_root), "member_count": len(records),
+                "installed_count": installed, "reused_count": reused,
+                "validation": validation, "members": records,
+                "limitations": [
+                    "Baseline programs, canvases, and invalid/censored receipts were restored from a hash-verified archive; no new model or renderer call was made.",
+                    "Model weights, browser assets, source code, and credentials were excluded by the restore allowlist.",
+                ],
+            }
+            receipt_path = run_root / "baseline-restore-receipt.json"
+            encoded = json.dumps(receipt, indent=2, sort_keys=True) + "\n"
+            if receipt_path.exists():
+                if receipt_path.is_symlink():
+                    raise ValueError(f"existing baseline restore receipt is symlinked: {receipt_path}")
+                existing = json.loads(receipt_path.read_text(encoding="utf-8"))
+                if existing.get("schema") != BASELINE_SCHEMA or existing.get("source_archive_sha256") != expected_sha256 or existing.get("members") != records or existing.get("validation") != validation:
+                    raise ValueError(f"existing baseline restore receipt differs: {receipt_path}")
+                return existing
+            receipt_path.write_text(encoded, encoding="utf-8")
+            receipt_path.chmod(0o600)
+            return receipt
+        finally:
+            shutil.rmtree(stage_parent, ignore_errors=True)
+    finally:
+        if temporary is not None:
+            temporary.cleanup()
+
+
+
 def restore_supervision(*, run_root: Path, expected_sha256: str, renderer_sha256: str, archive: Path | None = None, url: str | None = None) -> dict[str, object]:
     """Restore only a hash-bound paid supervision tree from a public archive."""
     run_root = run_root.expanduser().resolve()
@@ -648,12 +1285,34 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--run-root", type=Path, required=True)
     parser.add_argument("--sha256", required=True)
-    parser.add_argument("--mode", choices=("anchor", "supervision"), default="anchor")
+    parser.add_argument("--mode", choices=("anchor", "supervision", "baseline"), default="anchor")
     parser.add_argument("--renderer-sha256")
+    parser.add_argument("--renderer", type=Path)
+    parser.add_argument("--eval-manifest", type=Path)
+    parser.add_argument("--flow-source", type=Path)
+    parser.add_argument("--policy-sha256", default=BASELINE_POLICY_SHA256)
+    parser.add_argument("--policy-revision", default=BASELINE_POLICY_REVISION)
+    parser.add_argument("--policy-prefix", default=BASELINE_POLICY_PREFIX)
+    parser.add_argument("--seed", type=int, default=BASELINE_SEED)
     source = parser.add_mutually_exclusive_group(required=True)
     source.add_argument("--archive", type=Path)
     source.add_argument("--url")
     args = parser.parse_args()
+    if args.mode == "baseline":
+        if not args.renderer_sha256 or not args.renderer or not args.eval_manifest or not args.flow_source:
+            parser.error("--mode baseline requires --renderer-sha256, --renderer, --eval-manifest, and --flow-source")
+        receipt = restore_baseline(
+            run_root=args.run_root, expected_sha256=args.sha256,
+            expected_policy_sha256=args.policy_sha256,
+            expected_policy_revision=args.policy_revision,
+            expected_policy_prefix=args.policy_prefix,
+            expected_seed=args.seed,
+            renderer_sha256=args.renderer_sha256, renderer_path=args.renderer,
+            eval_manifest=args.eval_manifest, flow_source=args.flow_source,
+            archive=args.archive, url=args.url,
+        )
+        print(json.dumps(receipt, sort_keys=True))
+        return
     if args.mode == "supervision":
         if not args.renderer_sha256:
             parser.error("--renderer-sha256 is required for --mode supervision")

@@ -890,6 +890,55 @@ def build_train_command(runtime_root: Path, config_path: Path, python: str = sys
     return [python, "-m", "torch.distributed.run", "--standalone", "--nnodes=1", "--nproc-per-node=1", str(train), "@", str(config_path)]
 
 
+def build_train_probe_command(runtime_root: Path, config_path: Path, python: str = sys.executable) -> list[str]:
+    """Build the no-model entrypoint probe for the exact packaged trainer."""
+    train = runtime_root / "integrations/speedpainting/mixed_sft/train.py"
+    return [python, str(train), "@", str(config_path)]
+
+
+def _read_hf_token(path: Path) -> str:
+    """Read the protected upload token only for a child-process environment."""
+    candidate = path.expanduser()
+    if candidate.is_symlink() or not candidate.is_file():
+        raise ValueError("HF_TOKEN_PATH must point to a regular node credential file")
+    token = candidate.read_text(encoding="utf-8").strip()
+    if not token:
+        raise ValueError("HF_TOKEN_PATH is empty")
+    return token
+
+
+def _safe_log_tail(path: Path, *, secret: str, lines: int = 80) -> list[str]:
+    """Return a bounded child-log tail with the protected token redacted."""
+    if not path.is_file():
+        return []
+    text = path.read_text(encoding="utf-8", errors="replace")
+    return [line.replace(secret, "<redacted>") for line in text.splitlines()[-lines:]]
+
+
+def _verify_entrypoint_probe(path: Path, config: dict[str, Any]) -> dict[str, Any]:
+    """Bind the parsed child config before permitting the model startup."""
+    lines = [line for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+    if not lines:
+        raise ValueError("trainer entrypoint probe produced no receipt")
+    try:
+        value = json.loads(lines[-1])
+    except json.JSONDecodeError as exc:
+        raise ValueError("trainer entrypoint probe did not emit JSON") from exc
+    if value.get("schema") != "structured-flow-sft-entrypoint-probe-v1" or value.get("status") != "config_parsed":
+        raise ValueError("trainer entrypoint probe did not parse the packaged SFT config")
+    expected = config.get("data", {})
+    checks = {
+        "model_profile": "qwen38_27b",
+        "renderer": config.get("renderer", {}).get("name"),
+        "max_steps": config.get("max_steps"),
+        "batch_size": expected.get("batch_size"),
+        "micro_batch_size": expected.get("micro_batch_size"),
+    }
+    if any(value.get(key) != expected_value for key, expected_value in checks.items()):
+        raise ValueError(f"trainer entrypoint probe differs from prepared config: {value}")
+    return value
+
+
 def train(args: argparse.Namespace) -> dict[str, Any]:
     if sys.platform != "linux":
         raise RuntimeError("warmup training is Linux-node only")
@@ -922,6 +971,7 @@ def train(args: argparse.Namespace) -> dict[str, Any]:
     token_path = Path(os.environ.get("HF_TOKEN_PATH", "")).expanduser()
     if not token_path.is_file():
         raise ValueError("HF_TOKEN_PATH must point to the node credential file; it is never copied to receipts")
+    hf_token = _read_hf_token(token_path)
     repo = os.environ.get("HF_CHECKPOINT_REPO", "")
     upload_run = os.environ.get("HF_CHECKPOINT_RUN", "")
     if not repo or not RUN_NAMESPACE.fullmatch(upload_run):
@@ -934,13 +984,67 @@ def train(args: argparse.Namespace) -> dict[str, Any]:
                 "MIXED_SFT_TRACE": str(output / "batch-shapes.jsonl"), "BRUSH_MODEL_PROFILE": "qwen38_27b",
                 "HF_CHECKPOINT_REPO": repo, "HF_CHECKPOINT_RUN": upload_run, "CUDA_VISIBLE_DEVICES": warmup_gpu,
                 "OMP_NUM_THREADS": "8", "WANDB_MODE": "disabled", "TOKENIZERS_PARALLELISM": "false"})
+    # HF_TOKEN_PATH is a run-local convention whose handling can vary across
+    # the pinned Prime/Hugging Face import paths.  Explicitly pass the
+    # protected value as HF_TOKEN to the child without ever writing it to a
+    # receipt or command log.
+    env["HF_TOKEN"] = hf_token
     existing_pythonpath = [item for item in env.get("PYTHONPATH", "").split(os.pathsep) if item]
     env["PYTHONPATH"] = os.pathsep.join(str(path) for path in (
         runtime / "integrations/speedpainting/mixed_sft", runtime / "integrations/prime/watercolour_sft", runtime / "scripts",
         *[Path(item) for item in existing_pythonpath],
     ))
-    command = build_train_command(runtime, setup / "resolved.toml", args.python)
-    subprocess.run(command, cwd=args.prime_root.resolve(), env=env, check=True)
+    config_path = setup / "resolved.toml"
+    command = build_train_command(runtime, config_path, args.python)
+    logs = output / "logs"
+    logs.mkdir(parents=True, exist_ok=True)
+    stdout_path = logs / "train.stdout.log"
+    stderr_path = logs / "train.stderr.log"
+    probe_stdout_path = logs / "train-entrypoint-probe.stdout.log"
+    probe_stderr_path = logs / "train-entrypoint-probe.stderr.log"
+    _write_json(output / "warmup-command.json", {
+        "schema": "structured-flow-sft-command-v1",
+        "entrypoint": str(runtime / "integrations/speedpainting/mixed_sft/train.py"),
+        "config": str(config_path),
+        "probe_command": build_train_probe_command(runtime, config_path, args.python),
+        "train_command": command,
+        "logs": {
+            "probe_stdout": str(probe_stdout_path), "probe_stderr": str(probe_stderr_path),
+            "stdout": str(stdout_path), "stderr": str(stderr_path),
+        },
+        "model_profile": env["BRUSH_MODEL_PROFILE"],
+        "renderer": config_value.get("renderer"),
+        "hf_token_source": "protected_node_file",
+    })
+    probe_env = dict(env)
+    probe_env["BRUSH_TRAIN_ENTRYPOINT_PROBE"] = "1"
+    probe_command = build_train_probe_command(runtime, config_path, args.python)
+    try:
+        with probe_stdout_path.open("w", encoding="utf-8") as probe_stdout, probe_stderr_path.open("w", encoding="utf-8") as probe_stderr:
+            subprocess.run(probe_command, cwd=args.prime_root.resolve(), env=probe_env,
+                           stdout=probe_stdout, stderr=probe_stderr, check=True)
+        probe_receipt = _verify_entrypoint_probe(probe_stdout_path, config_value)
+        _write_json(output / "warmup-entrypoint-probe.json", probe_receipt)
+    except subprocess.CalledProcessError as exc:
+        _write_json(output / "warmup-entrypoint-probe-failure.json", {
+            "schema": "structured-flow-sft-entrypoint-probe-failure-v1",
+            "returncode": exc.returncode, "command": probe_command,
+            "stdout_tail": _safe_log_tail(probe_stdout_path, secret=hf_token),
+            "stderr_tail": _safe_log_tail(probe_stderr_path, secret=hf_token),
+        })
+        raise
+    try:
+        with stdout_path.open("w", encoding="utf-8") as train_stdout, stderr_path.open("w", encoding="utf-8") as train_stderr:
+            subprocess.run(command, cwd=args.prime_root.resolve(), env=env,
+                           stdout=train_stdout, stderr=train_stderr, check=True)
+    except subprocess.CalledProcessError as exc:
+        _write_json(output / "warmup-training-failure.json", {
+            "schema": "structured-flow-sft-training-failure-v1",
+            "returncode": exc.returncode, "command": command,
+            "stdout_tail": _safe_log_tail(stdout_path, secret=hf_token),
+            "stderr_tail": _safe_log_tail(stderr_path, secret=hf_token),
+        })
+        raise
     _write_json(prepared / "warmup-training-receipt.json", {
         "schema": "structured-flow-sft-training-receipt-v1", "status": "training_finished",
         "gpu_ordinal": warmup_gpu, "prime_commit": PRIME_COMMIT, "hf_checkpoint_run": upload_run,

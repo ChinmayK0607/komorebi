@@ -32,6 +32,117 @@ BROWSER_ROOT="${PAINTER_BROWSER_ROOT:-${PLAYWRIGHT_BROWSERS_PATH:-$RUN/browsers}
 MODEL="${MODEL_DIR:-$PAINTER_NODE_ROOT/model-cache/qwen/1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0}"
 PORT="${PAINTER_BASELINE_PORT:-8000}"
 
+# Cached baseline reuse is a separate opt-in from native anchor restoration.
+REUSE_CACHED_BASELINE="${PAINTER_REUSE_MATCHED_BASELINE_EVIDENCE:-0}"
+[[ "$REUSE_CACHED_BASELINE" == 0 || "$REUSE_CACHED_BASELINE" == 1 ]] || {
+  echo 'PAINTER_REUSE_MATCHED_BASELINE_EVIDENCE must be 0 or 1' >&2
+  exit 1
+}
+
+if [[ "${1:-}" != --preflight && "$REUSE_CACHED_BASELINE" == 1 ]]; then
+  [[ -x "$PY" ]] || { echo "cached baseline requires Prime Python: $PY" >&2; exit 1; }
+  [[ -f "$RUN/restore_anchor_evidence.py" ]] || {
+    echo 'cached baseline restore helper is missing' >&2
+    exit 1
+  }
+  CACHE_ARCHIVE_SHA="${PAINTER_MATCHED_BASELINE_EVIDENCE_SHA256:-ff4efa37835b1a7e3c5e90a628d685f1e94f39cf3d13760e47abab834c1a90c3}"
+  CACHE_ARCHIVE="${PAINTER_MATCHED_BASELINE_EVIDENCE_ARCHIVE:-}"
+  CACHE_URL="${PAINTER_MATCHED_BASELINE_EVIDENCE_URL:-https://huggingface.co/datasets/CK0607/komorebi-painter-experiments/resolve/f72ee86cc24cb5fa3618c649aa1fe32ea22753ae/runs/structured-flow-rl-20261009/evidence.tar.gz}"
+  CACHE_ANCHORS="${PAINTER_ANCHOR_ROOT:-$RUN/curriculum/anchors}"
+  CACHE_STAGE="$RUN/curriculum"
+  [[ -d "$CACHE_ANCHORS" ]] || { echo "cached baseline anchor root is missing: $CACHE_ANCHORS" >&2; exit 1; }
+  [[ -f "$TRAIN_MANIFEST" && -f "$EVAL_MANIFEST" ]] || { echo 'cached baseline requires lazy manifests' >&2; exit 1; }
+  # Restore the exact archived admitted manifests and disabled casebriefs.
+  # This preserves the paid manifest SHA; it never rematerializes prompts.
+  PYTHONPATH="$REPO:$REPO/painter:$RUN${PYTHONPATH:+:$PYTHONPATH}" \
+    "$PY" - "$RUN" "$TRAIN_MANIFEST" "$EVAL_MANIFEST" "$CACHE_ANCHORS" "$CACHE_ARCHIVE_SHA" "$CACHE_ARCHIVE" "$CACHE_URL" <<'PY'
+import importlib.util
+import json
+import sys
+from pathlib import Path
+
+run, train_manifest, heldout_manifest, anchor_root = map(Path, sys.argv[1:5])
+archive_sha, archive_value, archive_url = sys.argv[5:]
+spec = importlib.util.spec_from_file_location("structured_flow_restore_baseline", run / "restore_anchor_evidence.py")
+if spec is None or spec.loader is None:
+    raise SystemExit("cannot load cached baseline restore helper")
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+kwargs = {"archive": Path(archive_value)} if archive_value else {"url": archive_url}
+value = module.restore_cached_pilot_manifests(
+    run_root=run,
+    expected_sha256=archive_sha,
+    train_proposal=run / "curriculum" / "train-proposal.json",
+    heldout_proposal=run / "curriculum" / "heldout-proposal.json",
+    anchor_root=anchor_root,
+    train_manifest=train_manifest,
+    heldout_manifest=heldout_manifest,
+    flow_source=run / "flow_demonstrations.py",
+    **kwargs,
+)
+if value.get("generator_calls") != 0 or value.get("train_rows") != 31 or value.get("heldout_cases") != 16:
+    raise SystemExit(f"unexpected cached archived pilot counts: {json.dumps(value, sort_keys=True)}")
+print(json.dumps(value, sort_keys=True))
+PY
+  CACHE_RESTORE_ARGS=(
+    --run-root "$RUN" --sha256 "$CACHE_ARCHIVE_SHA" --mode baseline
+    --renderer-sha256 "${PAINTER_RENDERER_SHA256:?PAINTER_RENDERER_SHA256 is required}"
+    --renderer "$RENDERER" --eval-manifest "$EVAL_MANIFEST"
+    --flow-source "$RUN/flow_demonstrations.py"
+    --policy-sha256 "$PAINTER_POLICY_SHA256"
+    --policy-revision "$PAINTER_POLICY_REVISION"
+    --policy-prefix "$PAINTER_POLICY_PREFIX"
+    --seed "${PAINTER_EVAL_SEED:-918210}"
+  )
+  if [[ -n "$CACHE_ARCHIVE" ]]; then
+    CACHE_RESTORE_ARGS+=(--archive "$CACHE_ARCHIVE")
+  else
+    CACHE_RESTORE_ARGS+=(--url "$CACHE_URL")
+  fi
+  PYTHONPATH="$REPO:$REPO/painter:$RUN${PYTHONPATH:+:$PYTHONPATH}" \
+    "$PY" "$RUN/restore_anchor_evidence.py" "${CACHE_RESTORE_ARGS[@]}" >"$RUN/baseline-restore.json"
+  mkdir -p "$OUT/logs"
+  "$PY" - "$OUT" "$RUN" "$CACHE_ARCHIVE_SHA" "$CACHE_STAGE" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+out, run, archive_sha, anchor_stage = Path(sys.argv[1]), Path(sys.argv[2]), sys.argv[3], Path(sys.argv[4])
+restore = json.loads((run / "baseline-restore.json").read_text(encoding="utf-8"))
+reuse = json.loads((run / "cached-anchor-reuse.json").read_text(encoding="utf-8"))
+if restore.get("source_archive_sha256") != archive_sha:
+    raise SystemExit("cached baseline archive identity changed during restore")
+if restore.get("validation", {}).get("eval", {}).get("seed") != 918210:
+    raise SystemExit("cached baseline seed is not the pinned 918210")
+if reuse.get("generator_calls") != 0 or reuse.get("train_rows") != 31 or reuse.get("heldout_cases") != 16:
+    raise SystemExit("cached anchor reuse receipt is not 31/16 metadata-only")
+value = {
+    "schema": "structured-flow-matched-baseline-reuse-v1",
+    "status": "reused_cached_baseline_no_generation",
+    "source_archive_sha256": archive_sha,
+    "baseline_restore_receipt": str(run / "baseline-restore.json"),
+    "cached_anchor_reuse_receipt": str(run / "cached-anchor-reuse.json"),
+    "anchor_stage": str(anchor_stage),
+    "generator_calls": 0,
+    "model_calls": 0,
+    "renderer_calls": 0,
+    "judge_calls": 0,
+    "train_rows": 31,
+    "heldout_cases": 16,
+    "invalid_or_censored_retained": bool(restore.get("validation", {}).get("invalid_or_censored_retained")),
+    "limitations": [
+        "This run reused hash-verified baseline and anchor evidence; it did not regenerate a baseline or score it online.",
+        "Invalid and censored baseline receipts remain in the restored evidence tree.",
+    ],
+}
+out.mkdir(parents=True, exist_ok=True)
+(out / "baseline-reuse-receipt.json").write_text(json.dumps(value, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+print(json.dumps(value, sort_keys=True))
+PY
+  echo "MATCHED_FLASH12_BASELINE_REUSED: $OUT"
+  exit 0
+fi
+
 for required in "$PY" "$VLLM" "$EVAL" "$MODEL/config.json" "$FLASH_POINTER" "$FROZEN_POINTER" "$RUN/anchor_bank.py" "$RENDERER" "$RENDERER_PYTHON"; do
   [[ -e "$required" ]] || { echo "missing baseline input: $required" >&2; exit 1; }
 done

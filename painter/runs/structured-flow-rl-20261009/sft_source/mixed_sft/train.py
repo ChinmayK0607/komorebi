@@ -67,6 +67,19 @@ if __name__=='__main__':
     from init_adapter import install_init_hook, install_fresh_base_hook, initialization_mode
     import os
     config=cli(SFTConfig)
+    if os.environ.get('BRUSH_TRAIN_ENTRYPOINT_PROBE') == '1':
+        import json
+        print(json.dumps({
+            'schema': 'structured-flow-sft-entrypoint-probe-v1',
+            'status': 'config_parsed',
+            'model_profile': os.environ.get('BRUSH_MODEL_PROFILE'),
+            'model_name': str(config.model.name),
+            'renderer': config.renderer.name,
+            'max_steps': config.max_steps,
+            'batch_size': config.data.batch_size,
+            'micro_batch_size': config.data.micro_batch_size,
+        }, sort_keys=True), flush=True)
+        raise SystemExit(0)
     if config.data.micro_batch_size!=1 or (config.val and config.val.data.micro_batch_size!=1):
         raise ValueError('SingleExampleDataset requires micro_batch_size=1; changing this silently changes actual examples per optimizer update')
     from scheduled_data import guard_runtime

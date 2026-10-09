@@ -254,6 +254,46 @@ class WarmupTest(unittest.TestCase):
         self.assertEqual(command[-2:], ["@", "/node/setup/resolved.toml"])
         self.assertNotIn("FRESH_BASE=1", command)
 
+    def test_entrypoint_probe_uses_exact_packaged_trainer_without_torchrun(self) -> None:
+        command = warmup.build_train_probe_command(Path("/node/runtime-source"), Path("/node/setup/resolved.toml"), "/node/python")
+        self.assertEqual(command, [
+            "/node/python",
+            "/node/runtime-source/integrations/speedpainting/mixed_sft/train.py",
+            "@",
+            "/node/setup/resolved.toml",
+        ])
+        self.assertNotIn("torch.distributed.run", command)
+        self.assertIn("BRUSH_TRAIN_ENTRYPOINT_PROBE", (RUN / "sft_source/mixed_sft/train.py").read_text(encoding="utf-8"))
+
+    def test_hf_token_is_read_for_child_only(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            token_path = Path(temporary) / "hf-token"
+            token_path.write_text("secret-token\n", encoding="utf-8")
+            self.assertEqual(warmup._read_hf_token(token_path), "secret-token")
+            token_path.write_text("\n", encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "empty"):
+                warmup._read_hf_token(token_path)
+
+    def test_child_failure_tail_redacts_protected_token(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "stderr.log"
+            path.write_text("safe\nsecret-token leaked\n", encoding="utf-8")
+            self.assertEqual(warmup._safe_log_tail(path, secret="secret-token"), ["safe", "<redacted> leaked"])
+
+    def test_entrypoint_probe_receipt_binds_profile_renderer_and_batch(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "probe.stdout"
+            path.write_text(json.dumps({
+                "schema": "structured-flow-sft-entrypoint-probe-v1", "status": "config_parsed",
+                "model_profile": "qwen38_27b", "renderer": "qwen3.5", "max_steps": 4,
+                "batch_size": 3, "micro_batch_size": 1,
+            }) + "\n", encoding="utf-8")
+            config = warmup.build_config(Path("/node/model"), Path("/node/data"))
+            self.assertEqual(warmup._verify_entrypoint_probe(path, config)["status"], "config_parsed")
+            config["renderer"]["name"] = "wrong"
+            with self.assertRaisesRegex(ValueError, "differs"):
+                warmup._verify_entrypoint_probe(path, config)
+
     def test_packaged_reviewed_helpers_are_hash_bound(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             runtime = warmup.materialize_source_layout(RUN / "sft_source", Path(temporary))
