@@ -29,4 +29,4 @@ GPU_ALLOWANCE_USD=18 # current retry: $2 reserved for earlier starts
 bash "$RUN/execute_single.sh" "$RENTAL_START_EPOCH" "$PRICE_USD_PER_HOUR" "$GPU_ALLOWANCE_USD"
 ```
 
-This includes setup, the eight-update training bound, matched pre/post evaluation work, archive/upload, and release reserve in the current `$18` allowance; `$2` remains reserved for prior starts under the original `$20` total GPU cap. No recurring watcher or scheduled task is part of this run.
+This includes setup, the 20-update training bound, matched pre/post evaluation work, archive/upload, and release reserve in the current `$18` allowance; `$2` remains reserved for prior starts under the original `$20` total GPU cap. No recurring watcher or scheduled task is part of this run.

@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""Finite 8-update supervisor for the structured-flow pilot.
+"""Finite 20-update supervisor for the structured-flow pilot.
 
 The proven process-group, metric provenance, and deadline implementation is
 reused from the generic text runner.  This arm changes only the registered
-checkpoint schedule and makes the 4/8 observations non-promotional: budget,
-missing metrics, crashes, and the hard eight-update boundary stop the process.
+checkpoint schedule and makes the 4/8/12/16/20 observations non-promotional:
+budget, missing metrics, crashes, and the hard 20-update boundary stop the
+process.
 """
 
 from __future__ import annotations
@@ -24,17 +25,19 @@ base = importlib.util.module_from_spec(spec)
 sys.modules[spec.name] = base
 spec.loader.exec_module(base)
 
-# Keep the finite controller on the hard eight-update boundary.  The generic
+# Keep the finite controller on the hard 20-update boundary.  The generic
 # supervisor otherwise treats a noisy four-update trend as a stop condition;
-# this arm records truthful 4/8 observations after the process exits and
+# this arm records truthful four-update observations after the process exits and
 # leaves promotion to the matched panel.
 base.CHECKPOINT_STEPS = ()
 base.DEFAULT_MAX_GPU_USD = 20.0
+MAX_UPDATES = 20
+CHECKPOINTS = (4, 8, 12, 16, 20)
 
 
 def _structured_observation(rewards: dict[int, float], checkpoint: int) -> dict[str, object]:
-    if checkpoint not in (4, 8):
-        raise ValueError("structured checkpoints are exactly 4 and 8")
+    if checkpoint not in CHECKPOINTS:
+        raise ValueError("structured checkpoints are exactly 4, 8, 12, 16, and 20")
     missing = [step for step in range(1, checkpoint + 1) if step not in rewards]
     if missing:
         raise base.SupervisorError(f"missing admitted reward step(s) before checkpoint {checkpoint}: {missing[:5]}")
@@ -66,10 +69,10 @@ base.reward_trend = _structured_observation
 
 def _record_observations(metrics_path: Path, trend_path: Path) -> None:
     try:
-        rewards = base.read_optimizer_rewards(metrics_path, max_step=8)
+        rewards = base.read_optimizer_rewards(metrics_path, max_step=MAX_UPDATES)
     except base.SupervisorError:
         return
-    for checkpoint in (4, 8):
+    for checkpoint in CHECKPOINTS:
         if not all(step in rewards for step in range(1, checkpoint + 1)):
             continue
         value = _structured_observation(rewards, checkpoint)
@@ -81,10 +84,11 @@ def main(argv: list[str] | None = None) -> int:
     parser = base._parser()
     args = parser.parse_args(argv)
     # The reused generic pipeline supplies its historical fifty-update value;
-    # this wrapper owns the arm-level bound and clamps that invocation to the
-    # reviewed finite eight-update pilot before spawning any trainer process.
-    if args.max_updates not in (8, 50):
-        raise SystemExit("structured-flow supervisor requires --max-updates 8")
+    # an older controller may also carry eight.  This wrapper owns the
+    # registered arm-level bound and clamps either legacy invocation to 20
+    # before spawning any trainer process.
+    if args.max_updates not in (8, 20, 50):
+        raise SystemExit("structured-flow supervisor requires the registered 20-update target")
     if args.max_gpu_usd > 20:
         raise SystemExit("GPU cap exceeds the hard $20 limit")
     result = base.supervise(
@@ -99,7 +103,7 @@ def main(argv: list[str] | None = None) -> int:
             max_gpu_usd=args.max_gpu_usd,
             reserve_seconds=args.reserve_seconds,
         ),
-        max_updates=8,
+        max_updates=MAX_UPDATES,
         poll_seconds=args.poll_seconds,
         metric_timeout_seconds=args.metric_timeout_seconds,
         initial_metric_timeout_seconds=args.initial_metric_timeout_seconds,

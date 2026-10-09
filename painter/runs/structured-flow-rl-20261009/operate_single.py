@@ -128,6 +128,27 @@ _base_summary = base._remote_summary
 
 def _remote_summary(*args, **kwargs):
     value = _base_summary(*args, **kwargs)
+    # The shared controller summary intentionally exposes only generic shape
+    # fields. Read the structured receipt once more so the controller can
+    # reject a stale 8-update config before training/evaluation proceeds.
+    config = value.get("config")
+    sftp = args[0] if args else kwargs.get("sftp")
+    if isinstance(config, dict) and sftp is not None:
+        try:
+            timeout = max(0.1, min(float(kwargs.get("timeout", 5.0)), 5.0))
+            raw = base._sftp_read(sftp, str(base.REMOTE_RUN / "rl-config-receipt.json"), timeout=timeout)
+            receipt = base._json_bytes(raw)
+            if isinstance(receipt, dict):
+                config.update({
+                    "updates": receipt.get("updates"),
+                    "requested_updates": receipt.get("requested_updates", receipt.get("updates")),
+                    "checkpoint_steps": receipt.get("checkpoint_steps"),
+                })
+        except Exception:
+            # The shared summary has already captured the bounded observation;
+            # validation below fails closed when these structured fields are
+            # unavailable.
+            pass
     preparation = value.get("preparation", {})
     if preparation.get("schema") == "structured-flow-rl-preparation-v1":
         value["phase_ready"] = True
@@ -142,7 +163,7 @@ def _validate_config_summary(summary):
     if preparation.get("schema") != "structured-flow-rl-preparation-v1":
         raise base.OperationError("remote preparation is not structured-flow ready")
     config = summary.get("config", {})
-    expected = (("checkpoint_interval", 4), ("batch_size", 16), ("group_size", 4), ("initial_inflight", 32), ("max_inflight", 32))
+    expected = (("updates", 20), ("checkpoint_steps", [4, 8, 12, 16, 20]), ("checkpoint_interval", 4), ("batch_size", 16), ("group_size", 4), ("initial_inflight", 32), ("max_inflight", 32))
     if any(config.get(key) != value for key, value in expected):
         raise base.OperationError("remote config shape does not match structured-flow pilot")
     if (config.get("deployment") or {}) != {"type": "single_node", "gpus_per_node": 2, "num_train_gpus": 1, "num_infer_gpus": 1}:
@@ -177,7 +198,7 @@ def main(argv=None) -> int:
         raise SystemExit("source-commit must be an immutable full hash")
     if args.plan_only:
         import json
-        print(json.dumps({"schema": "structured-flow-single-operation-plan-v1", "run_name": base.RUN_NAME, "experiment_name": base.EXPERIMENT_NAME, "gpu_cap_usd": window.cap_usd, "topology": {"gpus_per_node": 2, "num_train_gpus": 1, "num_infer_gpus": 1}, "max_updates": 8, "checkpoint_steps": [4, 8], "judge": {"model": "xiaomi/mimo-v2.6-flash", "effort": "medium"}, "source_bundle_bytes": source_bundle.stat().st_size, "credentials_validated": True}, sort_keys=True))
+        print(json.dumps({"schema": "structured-flow-single-operation-plan-v1", "run_name": base.RUN_NAME, "experiment_name": base.EXPERIMENT_NAME, "gpu_cap_usd": window.cap_usd, "topology": {"gpus_per_node": 2, "num_train_gpus": 1, "num_infer_gpus": 1}, "max_updates": 20, "checkpoint_steps": [4, 8, 12, 16, 20], "judge": {"model": "xiaomi/mimo-v2.6-flash", "effort": "medium"}, "source_bundle_bytes": source_bundle.stat().st_size, "credentials_validated": True}, sort_keys=True))
         return 0
     return base.operate(window=window, source_bundle=source_bundle, source_commit=args.source_commit, hf_token_file=token, gateway_env_file=gateway, output_root=args.output_root)
 

@@ -3,6 +3,9 @@ set -Eeuo pipefail
 
 RUN="${PAINTER_RUN_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)}"
 REPO="$(cd "$RUN/../../.." && pwd -P)"
+# Registered amendment: normalize stale inherited launch values before the
+# run-owned runtime validator executes.
+export PAINTER_RL_MAX_STEPS=20 PAINTER_MAX_UPDATES=20 PAINTER_CHECKPOINT_INTERVAL=4 PAINTER_EVAL_PREFERRED_STEP=20
 source "$RUN/runtime_env.sh"
 validate_structured_bindings
 
@@ -73,7 +76,7 @@ fi
 python3 "$RUN/runtime_receipt.py" "${RECEIPT_ARGS[@]}"
 export PAINTER_RL_MODE="$PAINTER_POLICY_MODE" PAINTER_RL_FIXED_OPPONENT=1
 export PAINTER_RL_CONFIG="$CONFIG" PAINTER_RL_MANIFEST="$MANIFEST"
-export PAINTER_RL_RUN_NAME="$PAINTER_RUN_NAME" PAINTER_RL_MAX_STEPS=8
+export PAINTER_RL_RUN_NAME="$PAINTER_RUN_NAME" PAINTER_RL_MAX_STEPS=20
 export PAINTER_RL_ADAPTER_REVISION="$PAINTER_POLICY_REVISION"
 export PAINTER_RL_ADAPTER_PREFIX="$PAINTER_POLICY_PREFIX"
 # The config receipt retains the immutable Flash12 identity under

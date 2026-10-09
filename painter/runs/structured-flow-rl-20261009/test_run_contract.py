@@ -105,9 +105,161 @@ class StructuredFlowRunTests(unittest.TestCase):
     def test_supervisor_source_has_arm_bound_and_no_old_checkpoint_cadence(self):
         text = (RUN / "finite_supervisor.py").read_text()
         self.assertIn("base.CHECKPOINT_STEPS = ()", text)
-        self.assertIn('for checkpoint in (4, 8)', text)
-        self.assertIn("max_updates=8", text)
+        self.assertIn("CHECKPOINTS = (4, 8, 12, 16, 20)", text)
+        self.assertIn("max_updates=MAX_UPDATES", text)
+        self.assertIn("MAX_UPDATES = 20", text)
         self.assertNotIn("max-updates 50", text)
+
+    def test_legacy_eight_update_config_request_is_recorded_but_upgraded_to_twenty(self):
+        config = load("structured_flow_twenty_config_contract", RUN / "prepare_structured_config.py")
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            reference = root / "brief.txt"
+            reference.write_text("Paint one orb.\n")
+            manifest = root / "manifest.json"
+            rows = [{
+                "id": f"case-{index:02d}",
+                "reference_kind": "text",
+                "reference": str(reference),
+                "lazy_opponent": {"model_alias": "sft-step512"},
+            } for index in range(32)]
+            manifest.write_text(json.dumps({"rows": rows}))
+            output = root / "native.toml"
+            config.prepare(
+                output=output,
+                model=root / "model",
+                run_root=root,
+                manifest=manifest,
+                expected_count=32,
+                max_steps=8,
+                checkpoint_interval=4,
+                allow_pending_anchors=True,
+            )
+            receipt = json.loads((root / "rl-config-receipt.json").read_text())
+            self.assertEqual(receipt["requested_updates"], 8)
+            self.assertEqual(receipt["updates"], 20)
+            self.assertEqual(receipt["effective_updates"], 20)
+            self.assertEqual(receipt["checkpoint_steps"], [4, 8, 12, 16, 20])
+            self.assertIn("max_steps = 20", output.read_text())
+
+    def test_final_config_refresh_repairs_existing_eight_update_receipt(self):
+        config = load("structured_flow_refresh_config_contract", RUN / "prepare_structured_config.py")
+        refresh = load("structured_flow_refresh_contract", RUN / "run_from_sft.py")
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            reference = root / "brief.txt"
+            reference.write_text("Paint one orb.\n")
+            opponent = root / "opponent.png"
+            opponent.write_bytes(b"PNG fixture")
+            rows = [{
+                "id": f"case-{index:02d}",
+                "reference_kind": "text",
+                "reference": str(reference),
+                "opponent": str(opponent),
+                "opponent_sha256": hashlib.sha256(opponent.read_bytes()).hexdigest(),
+                "anchor_status": "verified_file",
+            } for index in range(32)]
+            manifest = root / "manifest.json"
+            manifest.write_text(json.dumps({"rows": rows}))
+            output = root / "native.toml"
+            config.prepare(
+                output=output,
+                model=root / "model",
+                run_root=root,
+                manifest=manifest,
+                expected_count=32,
+                max_steps=20,
+                checkpoint_interval=4,
+            )
+            receipt_path = root / "rl-config-receipt.json"
+            receipt = json.loads(receipt_path.read_text())
+            receipt["updates"] = 8
+            receipt.pop("effective_updates", None)
+            receipt["checkpoint_steps"] = [4, 8]
+            receipt_path.write_text(json.dumps(receipt))
+            output.write_text(output.read_text().replace("max_steps = 20", "max_steps = 8"))
+            refresh._refresh_final_config(output, manifest, 32)
+            repaired = json.loads(receipt_path.read_text())
+            self.assertEqual(repaired["requested_updates"], 8)
+            self.assertEqual(repaired["updates"], 20)
+            self.assertEqual(repaired["effective_updates"], 20)
+            self.assertEqual(repaired["checkpoint_steps"], [4, 8, 12, 16, 20])
+            self.assertIn("max_steps = 20", output.read_text())
+
+    def test_controller_rejects_stale_eight_update_remote_receipt(self):
+        operator = load("structured_flow_twenty_controller_contract", RUN / "operate_single.py")
+        base_summary = {
+            "preparation": {"schema": "structured-flow-rl-preparation-v1"},
+            "config": {
+                "updates": 20,
+                "checkpoint_steps": [4, 8, 12, 16, 20],
+                "checkpoint_interval": 4,
+                "batch_size": 16,
+                "group_size": 4,
+                "initial_inflight": 32,
+                "max_inflight": 32,
+                "deployment": {"type": "single_node", "gpus_per_node": 2, "num_train_gpus": 1, "num_infer_gpus": 1},
+            },
+        }
+        operator._validate_config_summary(base_summary)
+        stale = json.loads(json.dumps(base_summary))
+        stale["config"]["updates"] = 8
+        with self.assertRaises(Exception):
+            operator._validate_config_summary(stale)
+
+    def test_archive_selector_maps_legacy_step_eight_to_twenty_and_bounds_fallback(self):
+        with mock.patch.dict(os.environ, {"PAINTER_RUN_NAME": "structured-flow-rl-20261009"}, clear=False):
+            archive = load("structured_flow_twenty_archive_contract", RUN / "safe_archive.py")
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            adapters = root / "async-output/structured-flow-rl-20261009/artifacts/adapters"
+
+            def add_checkpoint(step: int) -> None:
+                checkpoint = adapters / f"step_{step}"
+                checkpoint.mkdir(parents=True)
+                weight = checkpoint / "adapter_model.safetensors"
+                weight.write_bytes(f"step-{step}".encode())
+                digest = archive.digest(weight)
+                (checkpoint / "hf-upload.json").write_text(json.dumps({
+                    "verified": True,
+                    "private": False,
+                    "files": {"adapter_model.safetensors": {"sha256": digest}},
+                }))
+
+            add_checkpoint(12)
+            add_checkpoint(20)
+            selected, selection = archive.select_preferred_public_checkpoint(root, 8)
+            self.assertEqual(selected["step"], 20)
+            self.assertEqual(selection["requested_preferred_step"], 8)
+            self.assertEqual(selection["preferred_step"], 20)
+            self.assertEqual(selection["selected_step"], 20)
+            (adapters / "step_20").rename(adapters / "step_20-unavailable")
+            selected, selection = archive.select_preferred_public_checkpoint(root, 8)
+            self.assertEqual(selected["step"], 12)
+            self.assertEqual(selection["primary_quality_status"], "exploratory_censored")
+            self.assertEqual(selection["fallback_reason"], "registered_final_checkpoint_not_verified_or_unavailable")
+
+    def test_execute_pipeline_binds_twenty_before_inherited_runtime_values(self):
+        execute = (RUN / "execute_pipeline.sh").read_text()
+        bind = "export PAINTER_RL_MAX_STEPS=20 PAINTER_MAX_UPDATES=20 PAINTER_CHECKPOINT_INTERVAL=4 PAINTER_EVAL_PREFERRED_STEP=20"
+        self.assertGreaterEqual(execute.count(bind), 2)
+        self.assertLess(execute.index(bind), execute.index('source "$RUN/runtime_env.sh"'))
+
+    def test_runtime_bindings_normalize_inherited_eight_update_values(self):
+        result = subprocess.run(
+            ["bash", "-c", 'source "$1/runtime_env.sh"; validate_structured_bindings; printf "%s %s %s" "$PAINTER_RL_MAX_STEPS" "$PAINTER_MAX_UPDATES" "$PAINTER_EVAL_PREFERRED_STEP"', "runtime", str(RUN)],
+            env={
+                **os.environ,
+                "PAINTER_RUN_ROOT": str(RUN),
+                "PAINTER_RL_MAX_STEPS": "8",
+                "PAINTER_MAX_UPDATES": "8",
+                "PAINTER_EVAL_PREFERRED_STEP": "8",
+            },
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        self.assertEqual(result.stdout, "20 20 20")
 
     def test_renderer_and_anchor_handoff_are_hash_bound(self):
         prepare = (RUN / "prepare_node.sh").read_text()

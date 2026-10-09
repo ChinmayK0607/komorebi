@@ -2,6 +2,9 @@
 set -Eeuo pipefail
 RUN="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
 BASE="$(cd "$RUN/../text-sft512-consistent-20260930" && pwd -P)"
+# Evaluation must select the registered final checkpoint even when invoked
+# from a shell that inherited the previous eight-update setting.
+export PAINTER_RL_MAX_STEPS=20 PAINTER_MAX_UPDATES=20 PAINTER_CHECKPOINT_INTERVAL=4 PAINTER_EVAL_PREFERRED_STEP=20
 source "$RUN/runtime_env.sh"
 validate_structured_bindings
 export PAINTER_RUN_ROOT="$RUN" PAINTER_RUN_NAME=structured-flow-rl-20261009

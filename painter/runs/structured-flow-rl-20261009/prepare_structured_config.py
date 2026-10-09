@@ -51,7 +51,7 @@ def prepare(
     manifest: Path,
     prime_root: Path | None = None,
     expected_count: int = 32,
-    max_steps: int = 8,
+    max_steps: int = 20,
     checkpoint_interval: int = 4,
     run_name: str = "structured-flow-rl-20261009",
     output_root: str = "rl-rollouts",
@@ -78,8 +78,13 @@ def prepare(
 ) -> dict[str, Any]:
     if run_name != "structured-flow-rl-20261009":
         raise ValueError("run_name is fixed for this experiment")
-    if expected_count < 1 or max_steps != 8 or checkpoint_interval != 4:
-        raise ValueError("structured pilot requires 8 updates, 4-update checkpoints, and a nonempty manifest")
+    if expected_count < 1 or max_steps not in (8, 20) or checkpoint_interval != 4:
+        raise ValueError("structured pilot requires 20 updates, 4-update checkpoints, and a nonempty manifest")
+    # A stale preparation shell may still pass the old eight-update argument.
+    # The registered run amendment owns the effective target: always emit a
+    # 20-update config, while retaining the request for auditability.
+    requested_updates = max_steps
+    effective_updates = 20
     if max_turns != 3:
         raise ValueError("bounded structured-flow pilot uses the three-turn native scope")
     if judge_protocol != "text-paint-sft-pairwise-consistent-v1":
@@ -110,7 +115,7 @@ def prepare(
     relative = str(manifest.resolve().relative_to(run_root.resolve()))
     config = photo.build_config(
         model=str(model), run_root=run_root, manifest=relative,
-        max_steps=max_steps, checkpoint_interval=checkpoint_interval,
+        max_steps=effective_updates, checkpoint_interval=checkpoint_interval,
         run_name=run_name, expected_count=expected_count,
         gpus_per_node=gpus_per_node, num_train_gpus=num_train_gpus,
         num_infer_gpus=num_infer_gpus, batch_size=batch_size,
@@ -142,8 +147,10 @@ def prepare(
         "prime_revision": photo.PRIME_COMMIT,
         "mode": mode,
         "optimizer_resume": False,
-        "updates": max_steps,
-        "checkpoint_steps": [4, 8],
+        "requested_updates": requested_updates,
+        "updates": effective_updates,
+        "effective_updates": effective_updates,
+        "checkpoint_steps": [4, 8, 12, 16, 20],
         "checkpoint_interval": checkpoint_interval,
         "batch_size": batch_size,
         "group_size": group_size,
@@ -176,7 +183,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--manifest", type=Path, required=True)
     parser.add_argument("--prime-root", type=Path)
     parser.add_argument("--expected-count", type=int, default=32)
-    parser.add_argument("--max-steps", type=int, default=8)
+    parser.add_argument("--max-steps", type=int, default=20)
     parser.add_argument("--checkpoint-interval", type=int, default=4)
     parser.add_argument("--run-name", default="structured-flow-rl-20261009")
     parser.add_argument("--output-root", default="rl-rollouts")

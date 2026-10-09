@@ -59,7 +59,7 @@ def build_plan(output: Path, *, proposal_root: Path | None = None) -> dict[str, 
         "run_id": module.RUN_ID,
         "source": {"prepare_curriculum": str(CURRICULUM), "prepare_curriculum_sha256": _sha(CURRICULUM)},
         "pins": PINS,
-        "curriculum": {"counts": counts, "per_stage": stages, "replay_fraction": 0.25, "active_pilot": {"train": 32, "heldout": 16, "updates": 8, "checkpoint_steps": [4, 8]}},
+        "curriculum": {"counts": counts, "per_stage": stages, "replay_fraction": 0.25, "active_pilot": {"train": 32, "heldout": 16, "updates": 20, "checkpoint_steps": [4, 8, 12, 16, 20]}},
         "training": {"batch_size": 16, "group_size": 4, "initial_inflight": 32, "max_inflight": 32, "learning_rate": 1e-6, "trainer_gpus": 1, "inference_gpus": 1, "gpus_per_node": 2, "max_policy_age": 1, "max_turns": 3, "warmup_updates": 4, "warmup_learning_rate": 1e-6, "warmup_gpu": 1, "warmup_optimizer": "fresh", "new_reward_bonus": False},
         "budget": {"gpu_cap_usd": 20.0, "includes": ["setup", "training", "matched_pre_eval", "matched_post_eval", "archive_upload", "release"]},
         "flow_policy": {"env": "PAINTER_STRUCTURED_FLOW_POLICY", "default": "1", "hint_format": "casebrief [SYSTEM] and [USER] sections", "style_or_code_reward": False},
@@ -88,7 +88,7 @@ def validate_plan(path: Path) -> dict[str, Any]:
     if value.get("curriculum", {}).get("counts") != {"all": 300, "train": 240, "heldout": 60}:
         raise ValueError("curriculum count contract changed")
     active = value.get("curriculum", {}).get("active_pilot", {})
-    if active != {"train": 32, "heldout": 16, "updates": 8, "checkpoint_steps": [4, 8]}:
+    if active != {"train": 32, "heldout": 16, "updates": 20, "checkpoint_steps": [4, 8, 12, 16, 20]}:
         raise ValueError("pilot bound changed")
     if value.get("budget", {}).get("gpu_cap_usd") != 20.0:
         raise ValueError("GPU cap changed")

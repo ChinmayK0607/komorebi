@@ -34,7 +34,13 @@ def _refresh_final_config(config_path: Path, manifest_path: Path, admitted_count
     """Regenerate the Prime config/receipt after train-only censoring."""
     receipt_path = config_path.with_name("rl-config-receipt.json")
     receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
-    if receipt.get("curriculum", {}).get("pilot_rows") == admitted_count and receipt.get("manifest_sha256") == _sha256(manifest_path):
+    if (
+        receipt.get("curriculum", {}).get("pilot_rows") == admitted_count
+        and receipt.get("manifest_sha256") == _sha256(manifest_path)
+        and receipt.get("updates") == 20
+        and receipt.get("effective_updates") == 20
+        and receipt.get("checkpoint_steps") == [4, 8, 12, 16, 20]
+    ):
         return
     if not 24 <= admitted_count <= 32:
         raise ValueError(f"admitted train count is outside the bounded pilot range: {admitted_count}")
@@ -54,7 +60,7 @@ def _refresh_final_config(config_path: Path, manifest_path: Path, admitted_count
         manifest=manifest_path,
         prime_root=Path(os.environ["PRIME_ROOT"]) if os.environ.get("PRIME_ROOT") else None,
         expected_count=admitted_count,
-        max_steps=int(receipt.get("updates", 8)),
+        max_steps=int(receipt.get("updates", 20)),
         checkpoint_interval=int(receipt.get("checkpoint_interval", 4)),
         output_root=str(taskset.get("output_root", "rl-rollouts")),
         max_turns=int(receipt.get("max_turns", 3)),

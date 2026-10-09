@@ -6,6 +6,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import subprocess
 import sys
 
 
@@ -17,12 +18,40 @@ def sha(path: Path) -> str:
     return value.hexdigest()
 
 
+def _execution_source_commit(run: Path) -> str:
+    repo = run.parents[2]
+    result = subprocess.run(
+        ["git", "-C", str(repo), "rev-parse", "HEAD"],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    commit = result.stdout.strip()
+    if not commit or any(char not in "0123456789abcdefABCDEF" for char in commit):
+        raise SystemExit("node checkout HEAD is not a hexadecimal commit")
+    return commit
+
+
 def main(argv: list[str]) -> int:
     run, train_path, eval_path, policy_file, frozen_file = map(Path, argv[1:])
     train = json.loads(train_path.read_text())
     heldout = json.loads(eval_path.read_text())
     rows, cases = train.get("rows"), heldout.get("cases")
     receipt = json.loads((run / "rl-config-receipt.json").read_text())
+    # The active amendment may reach validation with the old preparation
+    # process's eight-update receipt already on disk. Rebuild the config in
+    # this fresh validator process so the stale request is recorded while the
+    # effective receipt/config become the registered 20-update target.
+    if receipt.get("updates") == 8:
+        sys.path.insert(0, str(run))
+        from run_from_sft import refresh_final_config_entry
+
+        refresh_final_config_entry(run / "native.toml", train_path)
+        receipt = json.loads((run / "rl-config-receipt.json").read_text())
+    if receipt.get("updates") != 20 or receipt.get("effective_updates") != 20:
+        raise SystemExit("config receipt must bind the registered 20-update target")
+    if receipt.get("checkpoint_steps") != [4, 8, 12, 16, 20] or receipt.get("checkpoint_interval") != 4:
+        raise SystemExit("config receipt must bind checkpoints 4,8,12,16,20 at interval 4")
     expected_train = receipt.get("curriculum", {}).get("pilot_rows")
     if not isinstance(expected_train, int) or not 24 <= expected_train <= 32:
         raise SystemExit("config receipt must bind an admitted train count in [24, 32]")
@@ -66,12 +95,14 @@ def main(argv: list[str]) -> int:
         "policy_adapter_sha256": actual_policy_sha,
         "parent_policy_adapter_sha256": parent_policy_sha,
         "frozen_sft_adapter_sha256": sha(frozen / "adapter_model.safetensors"),
+        "updates": receipt["updates"],
+        "requested_updates": receipt.get("requested_updates", receipt["updates"]),
+        "checkpoint_steps": receipt["checkpoint_steps"],
         "optimizer_resume": False,
         "train_manifest_sha256": sha(train_path),
         "config_sha256": sha(config),
         "pilot_train_rows": expected_train,
         "matched_heldout_cases": 16,
-        "checkpoint_steps": [4, 8],
         "structured_flow_policy_enabled": os.environ.get("PAINTER_STRUCTURED_FLOW_POLICY") == "1",
         "code_supervision_enabled": os.environ.get("PAINTER_CODE_SUPERVISION_ENABLED") == "1",
         "anchor_bank_status": f"pilot_only; admitted_{expected_train}_of_32_train; remaining_208_train_and_44_heldout_pending_render",
@@ -96,9 +127,16 @@ def main(argv: list[str]) -> int:
     evaluation = run / "evaluation"
     evaluation.mkdir(parents=True, exist_ok=True)
     (evaluation / "matched16-manifest.json").write_bytes(eval_path.read_bytes())
+    execution_source = _execution_source_commit(run)
+    bootstrap_source = os.environ.get("PAINTER_SOURCE_COMMIT", "")
+    if bootstrap_source and any(char not in "0123456789abcdefABCDEF" for char in bootstrap_source):
+        raise SystemExit("PAINTER_SOURCE_COMMIT is not hexadecimal")
     identity = {
         "schema": "structured-flow-source-identity-v1",
         "run_name": run.name,
+        "source_commit": execution_source,
+        "execution_source_git_commit": execution_source,
+        "bootstrap_pipeline_source_git_commit": bootstrap_source or None,
         "model_revision": value["base_model_revision"],
         "initializer_revision": value["policy_initializer"]["revision"],
         "initializer_prefix": value["policy_initializer"]["prefix"],
