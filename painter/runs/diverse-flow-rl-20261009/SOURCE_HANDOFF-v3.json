@@ -1,0 +1,13 @@
+{
+  "source_commit": "60919b1c07969664c8e4d35a6ef93b4efe1984fd",
+  "sha256": "a6b7f22e4263d0daa0978412a3ea6a600ea3632fc68fcdd7120ad8d169d5acdf",
+  "bytes": 3901878,
+  "repo_id": "CK0607/komorebi-painter-experiments",
+  "revision": "7892910f0e851250b09a8e047fc9b84ee7db0df7",
+  "path": "execution-source/diverse-flow-rl-20261009/source-60919b1c07969664c8e4d35a6ef93b4efe1984fd.bundle",
+  "anonymous_hash_verified": true,
+  "public_url": "https://huggingface.co/datasets/CK0607/komorebi-painter-experiments/resolve/7892910f0e851250b09a8e047fc9b84ee7db0df7/execution-source/diverse-flow-rl-20261009/source-60919b1c07969664c8e4d35a6ef93b4efe1984fd.bundle",
+  "prior_gpu_reserve_usd": 1,
+  "remaining_gpu_allowance_usd": 19,
+  "cumulative_cap_usd": 20
+}

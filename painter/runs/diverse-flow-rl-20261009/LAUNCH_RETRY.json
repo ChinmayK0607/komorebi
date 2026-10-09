@@ -1,0 +1,27 @@
+{
+  "schema": "diverse-flow-retry-launch-v1",
+  "observed_utc": "2026-10-09T10:42:37.706760+00:00",
+  "source_commit": "60919b1c07969664c8e4d35a6ef93b4efe1984fd",
+  "source_bundle_sha256": "a6b7f22e4263d0daa0978412a3ea6a600ea3632fc68fcdd7120ad8d169d5acdf",
+  "prime_commit": "26b3131d2716a4f8210b165df584b83b4bc54f61",
+  "prime_bundle_sha256": "64b035e176df1aa850280f9bcdad5cedef8108636b59a5c29f2af8b014cf3dbe",
+  "rental_start_epoch": 1791542407.110288,
+  "whole_node_price_usd_hour": 1.52,
+  "allocation_cap_usd": 19,
+  "prior_start_reserve_usd": 1,
+  "cumulative_gpu_cap_usd": 20,
+  "actual_gpu_count": 4,
+  "actual_min_gpu_memory_mib": 49140,
+  "topology": {
+    "gpus_per_node": 4,
+    "inference_tensor_parallel": 2,
+    "num_infer_gpus": 2,
+    "num_train_gpus": 2
+  },
+  "remote_detached_started": true,
+  "confirmed_optimizer_updates": 0,
+  "phase": "model_preparation",
+  "offline_checks_passed": 30,
+  "quality_result": "pending",
+  "scheduled_automation_created": false
+}
