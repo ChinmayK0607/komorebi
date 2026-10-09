@@ -1099,6 +1099,43 @@ mv "$flow_tmp" "$run_root/flow-supervision-build.json"
         self.assertIn('PLAYWRIGHT_BROWSERS_PATH="$RUN/browsers"', evaluate)
         self.assertIn('export PLAYWRIGHT_BROWSERS_PATH="${PLAYWRIGHT_BROWSERS_PATH:-$PAINTER_BROWSER_ROOT}"', runtime)
 
+    def test_evaluate_forwards_step_scope_and_preflight_once(self):
+        """Exercise the wrapper-to-generic-evaluator argv boundary offline."""
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            stub_bin = root / "bin"
+            stub_bin.mkdir()
+            capture = root / "argv.txt"
+            fake_python = stub_bin / "python3"
+            fake_python.write_text(
+                "#!/bin/sh\n"
+                "target=\"$3\"\n"
+                "cat >\"$target\" <<'EOF'\n"
+                "#!/bin/sh\n"
+                "printf '%s\\n' \"$@\" >\"$STUB_EVALUATOR_ARGV\"\n"
+                "EOF\n"
+                "chmod 700 \"$target\"\n"
+            )
+            fake_python.chmod(0o700)
+            environment = os.environ.copy()
+            environment.update({
+                "PATH": str(stub_bin) + os.pathsep + environment.get("PATH", ""),
+                "STUB_EVALUATOR_ARGV": str(capture),
+            })
+            for arguments, expected in (
+                (("4", "all"), ["4", "all"]),
+                (("4", "all", "--preflight"), ["4", "all", "--preflight"]),
+            ):
+                result = subprocess.run(
+                    ["bash", str(RUN / "evaluate.sh"), *arguments],
+                    cwd=RUN.parents[2],
+                    env=environment,
+                    capture_output=True,
+                    text=True,
+                )
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertEqual(capture.read_text().splitlines(), expected)
+
     def test_anchor_batch_passes_verified_browser_root_to_native_eval(self):
         bank = load("structured_flow_anchor_browser_contract", RUN / "anchor_bank.py")
         frozen = importlib.import_module("painter.frozen_opponent")

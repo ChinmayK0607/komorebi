@@ -1,5 +1,15 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
+STEP="${1:-}"
+SCOPE="${2:-all}"
+MODE="${3:-}"
+[[ $# -ge 1 && $# -le 3 ]] || { echo 'usage: evaluate.sh STEP [all|balanced16] [--preflight]' >&2; exit 2; }
+[[ "$STEP" =~ ^[1-9][0-9]*$ && ( "$SCOPE" == all || "$SCOPE" == balanced16 ) ]] || {
+  echo 'STEP must be positive and SCOPE must be all or balanced16' >&2; exit 2;
+}
+[[ -z "$MODE" || "$MODE" == --preflight ]] || {
+  echo 'usage: evaluate.sh STEP [all|balanced16] [--preflight]' >&2; exit 2;
+}
 RUN="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
 BASE="$(cd "$RUN/../text-sft512-consistent-20260930" && pwd -P)"
 # Evaluation must select the registered final checkpoint even when invoked
@@ -13,7 +23,7 @@ export PAINTER_PRIME_ROLE=evaluation
 validate_structured_bindings
 export PAINTER_RUN_ROOT="$RUN" PAINTER_RUN_NAME=structured-flow-rl-20261009
 export PAINTER_EVAL_MANIFEST="$RUN/curriculum/matched16-manifest.json"
-export PAINTER_EVAL_EXPECTED_COUNT=16 PAINTER_EVAL_SCOPE=all
+export PAINTER_EVAL_EXPECTED_COUNT=16 PAINTER_EVAL_SCOPE="$SCOPE"
 export PAINTER_JUDGE_MODEL=xiaomi/mimo-v2.6-flash PAINTER_JUDGE_EFFORT=medium
 export PAINTER_JUDGE_FORMAT=identity-joint-side-schema-v2-generic-v1
 # The generic evaluator assigns PYTHONPATH itself, which would hide the
@@ -45,4 +55,6 @@ target.write_text(text, encoding="utf-8")
 target.chmod(0o700)
 PY
 export PAINTER_PRIME_ROLE=evaluation PAINTER_STRUCTURED_FLOW_POLICY=1
-exec bash "$PATCHED_EVALUATOR" "$1" all "${2:-}"
+EVALUATOR_ARGS=("$STEP" "$SCOPE")
+[[ -z "$MODE" ]] || EVALUATOR_ARGS+=("$MODE")
+exec bash "$PATCHED_EVALUATOR" "${EVALUATOR_ARGS[@]}"

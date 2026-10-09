@@ -1,0 +1,117 @@
+{
+  "schema": "structured-flow-attempt-outcome-v1",
+  "date": "2026-10-09",
+  "source_commit": "9fb4f7a16c0016e55a4ff13ae5d67f4109b4b285",
+  "config_sha256": "0eb4f0d12a996ade41fe2229599a0377bce35c21fec30bd7c5e13d9869174438",
+  "train_manifest_sha256": "a5a7651c7363ba5876c46ab39f146bae6e803b59cad8aa674f5402b79a99a694",
+  "heldout_manifest_sha256": "ee6c62716723d237f9f5dab81063d3c2efc20daced74ebeb18da8b1993233532",
+  "initializer": {
+    "repo": "CK0607/qwen3.8-27b-brush-painting",
+    "revision": "1227a2427a8ae16014d2fdca4d1adb6855d3fa1c",
+    "path": "rl-judge-matched-20261004-flash/step_12"
+  },
+  "matched_quality_baseline": "Flash12 initializer on exact heldout16; frozen SFT512 remains reward opponent",
+  "target_optimizer_updates": 20,
+  "completed_optimizer_updates": 5,
+  "stop_reason": "finite_cost_deadline",
+  "checkpoint_step": 4,
+  "supervised_warmup_pending": true,
+  "evaluation": {
+    "exit_code": 2,
+    "completed_cases": 0,
+    "reason": "wrapper forwarded STEP all all; generic evaluator rejected third mode argument",
+    "learning_improvement_established": false
+  },
+  "reward": {
+    "metric": "train/agg/effective/agent/reward/mean",
+    "denominator": "admitted optimizer batches; changing sampled subjects, not fixed validation",
+    "batches": [
+      {
+        "batch": 1,
+        "effective_reward_mean": 0.3958333333333333
+      },
+      {
+        "batch": 2,
+        "effective_reward_mean": 0.26041666666666663
+      },
+      {
+        "batch": 3,
+        "effective_reward_mean": 0.15625
+      },
+      {
+        "batch": 4,
+        "effective_reward_mean": 0.22916666666666666
+      },
+      {
+        "batch": 5,
+        "effective_reward_mean": 0.16666666666666666
+      }
+    ],
+    "first_two_mean": 0.328125,
+    "next_two_mean": 0.19270833333333331,
+    "rising": false
+  },
+  "trainer_completed_lines": [
+    "[trainer0]:04:49:55 SUCCESS Step 1 | 13m 48s | Loss -0.0017 | Entropy 0.5510 | Mismatch KL 0.0003 | Grad. Norm 0.0266 | LR 1.00e-06 | Throughput 457 tokens/s | MFU 9.9% | Peak Mem. 73.3 GiB",
+    "[trainer0]:04:51:37 SUCCESS Step 2 |  1m 41s | Loss 0.0034 | Entropy 0.5611 | Mismatch KL 0.0003 | Grad. Norm 0.0228 | LR 1.00e-06 | Throughput 1799 tokens/s | MFU 38.9% | Peak Mem. 73.2 GiB",
+    "[trainer0]:05:05:53 SUCCESS Step 3 | 14m 16s | Loss -0.0084 | Entropy 0.6093 | Mismatch KL 0.0003 | Grad. Norm 0.0107 | LR 1.00e-06 | Throughput 1119 tokens/s | MFU 24.2% | Peak Mem. 73.2 GiB",
+    "[trainer0]:05:08:15 SUCCESS Step 4 |  2m 21s | Loss 0.0022 | Entropy 0.5797 | Mismatch KL 0.0003 | Grad. Norm 0.0150 | LR 1.00e-06 | Throughput 1284 tokens/s | MFU 27.7% | Peak Mem. 73.1 GiB",
+    "[trainer0]:05:17:07 SUCCESS Step 5 |  8m 51s | Loss 0.0035 | Entropy 0.4572 | Mismatch KL 0.0003 | Grad. Norm 0.0134 | LR 1.00e-06 | Throughput 1785 tokens/s | MFU 38.5% | Peak Mem. 73.2 GiB"
+  ],
+  "render_receipts": {
+    "scope": "rl-rollouts/training only; render attempts, not terminal episode validity",
+    "count": 456,
+    "valid": 340,
+    "invalid": 116,
+    "render_timeouts": 11,
+    "elapsed_seconds_mean": 11.25126754385965,
+    "elapsed_seconds_median": 5.1370000000000005,
+    "elapsed_seconds_p95": 22.327,
+    "elapsed_seconds_max": 180.098
+  },
+  "text_judge_receipts": {
+    "scored": 80,
+    "uncertain": 5
+  },
+  "public_evidence": [
+    {
+      "repo": "CK0607/komorebi-painter-experiments",
+      "repo_type": "dataset",
+      "revision": "cec8e7133738b03337ee4cae3f1c3fffdd91bc7f",
+      "path": "runs/structured-flow-rl-20261009/evidence.tar.gz",
+      "bytes": 146762550,
+      "sha256": "9ec7942d8666f09ff794d635d306b6f1cfb6d440f55186fec32f6c1befb5ffdb",
+      "expected_sha256": "9ec7942d8666f09ff794d635d306b6f1cfb6d440f55186fec32f6c1befb5ffdb",
+      "anonymous_hash_verified": true
+    },
+    {
+      "repo": "CK0607/qwen3.8-27b-brush-painting",
+      "repo_type": "model",
+      "revision": "d4ae68d425b5728ffb69aeabce82dd54231486f2",
+      "path": "structured-flow-rl-20261009/step_4/adapter_model.safetensors",
+      "bytes": 233590600,
+      "sha256": "51e35b6fb48c2cf019309f928f292cd9852cfdd2af29abe3f8714d6c429922bf",
+      "expected_sha256": "51e35b6fb48c2cf019309f928f292cd9852cfdd2af29abe3f8714d6c429922bf",
+      "anonymous_hash_verified": true
+    }
+  ],
+  "gpu_accounting": {
+    "whole_node_rate_usd_per_hour": 3.72,
+    "attempt_estimate_usd": 3.414,
+    "cumulative_pilot_estimate_usd": 16.893,
+    "original_cumulative_ceiling_usd": 20,
+    "method": "controller start minus rental start plus release-request elapsed plus60second margin; prior attempts13.4790",
+    "not_invoice": true,
+    "excludes_api": true,
+    "currently_owned_nodes": 0
+  },
+  "profile_record": "PROFILE-attempt21.json",
+  "pipeline_saturated": false,
+  "profile_scope": "Finite startup and first-batch window; not full-run utilization. Inference busy while trainer spent substantial time waiting or compiling. No optimizer update proof at collection.",
+  "fix": {
+    "root_cause": "pipeline calls STEP all; wrapper appended all and forwarded prior scope as mode",
+    "validation": "113 structured tests passed; bash syntax passed",
+    "changes_model_data_renderer_or_reward": false
+  },
+  "next_decision": "Recover matched checkpoint4 evaluation before any further scaling; no new rental in this status/repair turn. Measure rollout waiting, model-invalid brush API actions and long renderer tail. Supervised flow teaching remains pending."
+}
