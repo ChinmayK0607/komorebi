@@ -5,6 +5,7 @@ import importlib.util
 import json
 import os
 from pathlib import Path
+import subprocess
 import sys
 import tempfile
 import tomllib
@@ -326,6 +327,37 @@ class LaunchHandoffTests(unittest.TestCase):
         self.assertIn('renderer_probe.get("status") != "verified"', LAUNCH_SOURCE)
         self.assertIn('TRAIN_GPUS=', LAUNCH_SOURCE)
         self.assertNotIn('PAINTER_NUM_TRAIN_GPUS=2', LAUNCH_SOURCE)
+
+    def test_launcher_canonicalizes_photo_trainer_root_before_comparison(self) -> None:
+        self.assertIn(
+            'EXPECTED_TRAIN_WRAPPER_ROOT="$(cd "$RUN_SOURCE_ROOT/../photo-curriculum-rl-20260922" && pwd -P)"',
+            LAUNCH_SOURCE,
+        )
+        self.assertIn(
+            'TRAIN_WRAPPER_ROOT="$(cd "$(dirname "$TRAIN_WRAPPER")" && pwd -P)"',
+            LAUNCH_SOURCE,
+        )
+        self.assertIn(
+            '[[ "$TRAIN_WRAPPER_ROOT" == "$EXPECTED_TRAIN_WRAPPER_ROOT" ]]',
+            LAUNCH_SOURCE,
+        )
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            run_root = root / "staged-family-balanced-20261010"
+            trainer_root = root / "photo-curriculum-rl-20260922"
+            run_root.mkdir()
+            trainer_root.mkdir()
+            (trainer_root / "train_from_sft.py").write_text("# fixture\n", encoding="utf-8")
+            shell = f'''\
+set -Eeuo pipefail
+RUN_SOURCE_ROOT="$(cd "{run_root}" && pwd -P)"
+TRAIN_WRAPPER="$RUN_SOURCE_ROOT/../photo-curriculum-rl-20260922/train_from_sft.py"
+EXPECTED_TRAIN_WRAPPER_ROOT="$(cd "$RUN_SOURCE_ROOT/../photo-curriculum-rl-20260922" && pwd -P)"
+TRAIN_WRAPPER_ROOT="$(cd "$(dirname "$TRAIN_WRAPPER")" && pwd -P)"
+[[ "$TRAIN_WRAPPER_ROOT" == "$EXPECTED_TRAIN_WRAPPER_ROOT" ]]
+'''
+            completed = subprocess.run(["bash", "-c", shell], capture_output=True, text=True, check=False)
+            self.assertEqual(completed.returncode, 0, completed.stderr)
 
     def test_run_surface_records_hash_all_preflight_and_reviewed_wrappers(self) -> None:
         config = json.loads((RUN / "config.json").read_text(encoding="utf-8"))

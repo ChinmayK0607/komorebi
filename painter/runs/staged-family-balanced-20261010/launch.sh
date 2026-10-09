@@ -19,6 +19,8 @@ CONFIG="${PAINTER_RL_CONFIG:-$NODE_ROOT/native.toml}"
 PYTHON="${PAINTER_PRIME_PYTHON:-$PRIME_ROOT/.venv/bin/python}"
 RUN_WRAPPER="${PAINTER_PRIME_RUN_WRAPPER:-$RUN_SOURCE_ROOT/run_from_sft.py}"
 TRAIN_WRAPPER="${PAINTER_PRIME_TRAIN_WRAPPER:-$RUN_SOURCE_ROOT/../photo-curriculum-rl-20260922/train_from_sft.py}"
+EXPECTED_TRAIN_WRAPPER_ROOT="$(cd "$RUN_SOURCE_ROOT/../photo-curriculum-rl-20260922" && pwd -P)" || { echo 'the reviewed photo trainer directory is missing' >&2; exit 1; }
+TRAIN_WRAPPER_ROOT="$(cd "$(dirname "$TRAIN_WRAPPER")" && pwd -P)"
 MODEL_DIR="${MODEL_DIR:?set MODEL_DIR to the local base snapshot}"
 POLICY_ADAPTER="${WATERCOLOUR_INIT_ADAPTER:?set WATERCOLOUR_INIT_ADAPTER to the verified Flash12 adapter}"
 FROZEN_ADAPTER="${PAINTER_FROZEN_SFT_ADAPTER:?set PAINTER_FROZEN_SFT_ADAPTER to the verified SFT512 adapter}"
@@ -36,7 +38,7 @@ TIMEOUT_SECONDS="${PAINTER_RUN_TIMEOUT_SECONDS:-172800}"
 [[ -f "$MATERIALIZED_ROOT/train-manifest.json" && -f "$MATERIALIZED_ROOT/heldout-manifest.json" ]] || { echo 'materialized manifests are missing' >&2; exit 1; }
 [[ -f "$RUN_WRAPPER" && -f "$TRAIN_WRAPPER" ]] || { echo 'reviewed Prime wrappers are missing' >&2; exit 1; }
 [[ "$(cd "$(dirname "$RUN_WRAPPER")" && pwd -P)" == "$RUN_SOURCE_ROOT" ]] || { echo 'the staged run wrapper must remain run-owned' >&2; exit 1; }
-[[ "$(cd "$(dirname "$TRAIN_WRAPPER")" && pwd -P)" == "$RUN_SOURCE_ROOT/../photo-curriculum-rl-20260922" ]] || { echo 'the reviewed photo trainer wrapper is required' >&2; exit 1; }
+[[ "$TRAIN_WRAPPER_ROOT" == "$EXPECTED_TRAIN_WRAPPER_ROOT" ]] || { echo 'the reviewed photo trainer wrapper is required' >&2; exit 1; }
 [[ "$(git -C "$PRIME_ROOT" rev-parse HEAD)" == "$PRIME_COMMIT" ]] || { echo "Prime checkout is not pinned to $PRIME_COMMIT" >&2; exit 1; }
 [[ -d "$MODEL_DIR" && "$(basename "$MODEL_DIR")" == "$BASE_MODEL_REVISION" ]] || { echo "MODEL_DIR must end in $BASE_MODEL_REVISION" >&2; exit 1; }
 [[ -f "$POLICY_ADAPTER/adapter_model.safetensors" && -f "$FROZEN_ADAPTER/adapter_model.safetensors" ]] || { echo 'verified adapters are incomplete' >&2; exit 1; }
