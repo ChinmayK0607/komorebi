@@ -6,6 +6,10 @@ set -Eeuo pipefail
 # repair targets.  It also never copies HF_TOKEN_PATH into the warmup output.
 RUN="${PAINTER_RUN_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)}"
 source "$RUN/runtime_env.sh"
+# Warmup consumes already-reviewed rich JSONL and is outside RL group
+# admission.  Override a stale orchestrator role inherited from a controller
+# so its processor/trainer imports cannot attempt the RL guard.
+export PAINTER_PRIME_ROLE=warmup
 validate_structured_bindings
 [[ "$(uname -s)" == Linux ]] || { echo 'warmup training requires the Linux GPU node' >&2; exit 1; }
 

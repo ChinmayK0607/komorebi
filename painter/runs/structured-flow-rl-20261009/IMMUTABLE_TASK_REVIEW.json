@@ -6,7 +6,9 @@
   "reviewed_changes": [
     "validated immutable copy of task data",
     "copy task wrapper and return patched tasks from both taskset hooks",
-    "real 16-task evaluator load before vLLM startup"
+    "real 16-task evaluator load before vLLM startup",
+    "warmup launcher explicitly binds non-RL role before imports",
+    "RL launcher binds orchestrator role after mandatory group guard variables"
   ],
   "parent_validation": {
     "structured_unit_tests": 93,
@@ -14,7 +16,8 @@
     "shell_syntax": true,
     "python_compile": true,
     "diff_check": true,
-    "actual_linux_task_load_pending": true
+    "actual_linux_task_load_pending": true,
+    "role_handoff_run_contract_tests": 38
   },
   "experiment_changed": false,
   "rl_updates": 20,

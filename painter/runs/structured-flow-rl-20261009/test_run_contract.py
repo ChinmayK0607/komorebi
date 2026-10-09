@@ -558,6 +558,10 @@ class StructuredFlowRunTests(unittest.TestCase):
         self.assertNotIn('PAINTER_PRIME_ROLE=orchestrator', evaluator)
         self.assertIn('PAINTER_STRUCTURED_FLOW_POLICY=1', evaluator)
         self.assertIn('PYTHONPATH="$REPO:$REPO/painter:$RUN"', evaluator)
+        self.assertIn('export PAINTER_PRIME_ROLE=warmup', (RUN / 'warmup.sh').read_text())
+        run_script = (RUN / 'run.sh').read_text()
+        self.assertIn('export PAINTER_PRIME_ROLE=orchestrator', run_script)
+        self.assertLess(run_script.index('PAINTER_WHOLE_GROUP_ADMISSION=1'), run_script.index('export PAINTER_PRIME_ROLE=orchestrator'))
 
     def test_ungrouped_evaluation_role_keeps_flow_hook_without_training_guard(self):
         """Baseline/eval must patch prompts without activating RL admission."""

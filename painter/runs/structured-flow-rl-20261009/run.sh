@@ -89,6 +89,10 @@ export PAINTER_WHOLE_GROUP_ADMISSION=1 PAINTER_WHOLE_GROUP_SIZE="$PAINTER_GROUP_
 export PAINTER_GROUP_RANK_MODULE=painter.consistent_group_admission
 export PAINTER_CONSISTENT_GUARD_RECEIPT="${PAINTER_CONSISTENT_GUARD_RECEIPT:-$RUN/consistent-group-admission-activation.json}"
 export PAINTER_CONSISTENT_GROUP_TELEMETRY="${PAINTER_CONSISTENT_GROUP_TELEMETRY:-$RUN/consistent-group-admission.jsonl}"
+# Make the RL role explicit after the group contract is present.  This keeps
+# Prime's orchestrator children fail-closed even when the controller carried
+# a baseline/evaluation/warmup role into the training handoff.
+export PAINTER_PRIME_ROLE=orchestrator
 export PAINTER_RENDERER_PATH PAINTER_RENDERER_PYTHON_PATH
 export PAINTER_GATEWAY_ENV_FILE HF_TOKEN_PATH
 export PYTHONPATH="$REPO:$REPO/painter:$RUN${PYTHONPATH:+:$PYTHONPATH}"
