@@ -86,6 +86,15 @@ def _path(value: Any, description: str, *, directory: bool = False, executable: 
     return path.resolve(strict=True)
 
 
+def _runtime_executable(value: Any, description: str, runtime_root: Path) -> Path:
+    if not isinstance(value, str) or not value or not Path(value).is_absolute():
+        raise PreparedLaunchError(f"{description} must be an absolute path")
+    try:
+        return BOOTSTRAP.ensure_runtime_executable(Path(value), description, runtime_root)
+    except BOOTSTRAP.BootstrapError as exc:
+        raise PreparedLaunchError(str(exc)) from exc
+
+
 def _same(left: Path, right: Path, description: str) -> None:
     if left.resolve() != right.resolve():
         raise PreparedLaunchError(f"{description} does not match the verified receipt")
@@ -142,7 +151,7 @@ def _validate_renderer(ready: dict[str, Any]) -> tuple[Path, Path, Path]:
         raise PreparedLaunchError("renderer sandbox/Node helper did not pass")
     renderer = _path(pin.get("renderer"), "renderer")
     p5_brush = _path(pin.get("p5_brush"), "p5.brush asset")
-    renderer_python = _path(pin.get("renderer_python"), "renderer interpreter", executable=True)
+    renderer_python = _runtime_executable(pin.get("renderer_python"), "renderer interpreter", Path(str(pin.get("renderer_python"))).parent.parent)
     browser_root = _path(pin.get("browsers"), "renderer browser root", directory=True)
     if sha256_file(renderer) != RENDERER_SHA256 or sha256_file(p5_brush) != P5_BRUSH_SHA256 or sha256_file(renderer_python) != pin.get("renderer_python_sha256"):
         raise PreparedLaunchError("renderer or interpreter bytes changed after preparation")
@@ -169,7 +178,7 @@ def validate_ready(*, ready_path: Path, node_root: Path, visible_gpus: int) -> d
     if not isinstance(prime, dict) or prime.get("revision") != PRIME_COMMIT:
         raise PreparedLaunchError("Prime identity is not pinned")
     prime_root = _path(prime.get("root"), "Prime root", directory=True)
-    prime_python = _path(prime.get("python"), "Prime Python", executable=True)
+    prime_python = _runtime_executable(prime.get("python"), "Prime Python", prime_root / ".venv")
     _same(prime_python, prime_root / ".venv/bin/python", "Prime Python")
 
     model = ready.get("model")

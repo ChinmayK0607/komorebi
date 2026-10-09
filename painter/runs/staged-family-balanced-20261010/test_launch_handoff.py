@@ -25,6 +25,7 @@ def load(name: str, filename: str):
 
 
 CONFIG = load("staged_launch_prepare_config", "prepare_config.py")
+PREPARE_NODE = load("staged_launch_prepare_node", "prepare_node.py")
 WRAPPER = load("staged_launch_wrapper", "run_from_sft.py")
 CANARY = load("staged_launch_canary", "canary.py")
 CANARY_SOURCE = (RUN / "canary.py").read_text(encoding="utf-8")
@@ -104,6 +105,29 @@ class LaunchHandoffTests(unittest.TestCase):
             )
             self.assertEqual((one_plus_one["deployment"]["num_train_gpus"], one_plus_one["deployment"]["num_infer_gpus"]), (1, 1))
             self.assertEqual((two_plus_two["deployment"]["num_train_gpus"], two_plus_two["deployment"]["num_infer_gpus"]), (2, 2))
+
+    def test_prepare_helpers_accept_venv_links_but_reject_escape(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            home = root / "python-home"
+            home.mkdir()
+            target = home / "python3.12"
+            target.write_text("#!/bin/sh\n", encoding="utf-8")
+            target.chmod(0o755)
+            venv = root / "venv"
+            (venv / "bin").mkdir(parents=True)
+            (venv / "pyvenv.cfg").write_text(f"home = {home}\n", encoding="utf-8")
+            link = venv / "bin/python"
+            link.symlink_to(target)
+            self.assertEqual(PREPARE_NODE._runtime_executable(link, "Prime Python", venv), link.absolute())
+            self.assertEqual(CONFIG._runtime_executable(link, "renderer Python", venv), link.absolute())
+            link.unlink()
+            outside = root / "outside"
+            outside.write_text("#!/bin/sh\n", encoding="utf-8")
+            outside.chmod(0o755)
+            link.symlink_to(outside)
+            with self.assertRaises(ValueError):
+                PREPARE_NODE._runtime_executable(link, "Prime Python", venv)
 
     def test_staged_wrapper_uses_photo_runner_and_forwards_activation(self) -> None:
         self.assertIn('SOURCE = RUN.parent / "photo-curriculum-rl-20260922" / "run_from_sft.py"', WRAPPER_SOURCE)

@@ -67,6 +67,46 @@ def _regular_file(path: Path, description: str) -> Path:
     return path.resolve(strict=True)
 
 
+def _runtime_executable(path: Path, description: str, runtime_root: Path) -> Path:
+    """Validate a venv interpreter link while preserving its venv path."""
+
+    path = path.expanduser().absolute()
+    runtime_root = runtime_root.expanduser().absolute()
+    try:
+        path.relative_to(runtime_root)
+    except ValueError as exc:
+        raise ValueError(f"{description} is outside its runtime root: {path}") from exc
+    if not path.exists() and not path.is_symlink():
+        raise ValueError(f"{description} is missing: {path}")
+    target = path.resolve(strict=True)
+    if not target.is_file() or (target.stat().st_mode & 0o111) == 0:
+        raise ValueError(f"{description} does not resolve to an executable file: {path}")
+    if path.is_symlink():
+        allowed = [runtime_root.resolve(strict=True)]
+        allowed_targets: list[Path] = []
+        pyvenv = runtime_root / "pyvenv.cfg"
+        if pyvenv.is_file() and not pyvenv.is_symlink():
+            for line in pyvenv.read_text(encoding="utf-8").splitlines():
+                if line.strip().lower().startswith("home ="):
+                    home = Path(line.split("=", 1)[1].strip()).expanduser()
+                    if home.is_absolute():
+                        allowed.append(home.resolve(strict=True))
+                elif line.strip().lower().startswith("executable ="):
+                    executable = Path(line.split("=", 1)[1].strip()).expanduser()
+                    if executable.is_absolute():
+                        allowed_targets.append(executable.resolve(strict=True))
+        if target not in allowed_targets and not any(target == root or root in target.parents for root in allowed):
+            raise ValueError(f"{description} resolves outside its trusted interpreter roots: {target}")
+        current = target
+        while True:
+            if current.stat().st_mode & 0o022:
+                raise ValueError(f"{description} target is writable by group/other: {current}")
+            if current.parent == current:
+                break
+            current = current.parent
+    return path
+
+
 def _directory(path: Path, description: str) -> Path:
     path = path.expanduser()
     if path.is_symlink() or not path.is_dir():
@@ -97,9 +137,7 @@ def build_config(
     if renderer is not None:
         renderer = _regular_file(renderer, "renderer")
     if renderer_python is not None:
-        renderer_python = renderer_python.expanduser().resolve()
-        if renderer_python.is_symlink() or not renderer_python.is_file() or (renderer_python.stat().st_mode & 0o111) == 0:
-            raise ValueError(f"renderer Python must be an executable regular file: {renderer_python}")
+        renderer_python = _runtime_executable(renderer_python, "renderer Python", renderer_python.parent.parent)
 
     config = _build_base_config(
         model=str(model),

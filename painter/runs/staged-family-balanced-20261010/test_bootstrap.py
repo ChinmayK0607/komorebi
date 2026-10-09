@@ -121,6 +121,30 @@ class BootstrapUnitTests(unittest.TestCase):
             self.assertEqual(json.loads(path.read_text())["status"], "ready_no_launch")
             self.assertEqual(list(path.parent.glob("*.tmp")), [])
 
+    def test_runtime_verifier_preserves_normal_venv_symlink_and_rejects_escape(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            interpreter_home = root / "trusted-python"
+            interpreter_home.mkdir()
+            target = interpreter_home / "python3.12"
+            target.write_text("#!/bin/sh\n", encoding="utf-8")
+            target.chmod(0o755)
+            venv = root / "venv"
+            (venv / "bin").mkdir(parents=True)
+            (venv / "pyvenv.cfg").write_text(f"home = {interpreter_home}\n", encoding="utf-8")
+            link = venv / "bin/python"
+            link.symlink_to(target)
+            self.assertEqual(BOOTSTRAP.ensure_runtime_executable(link, "fixture venv Python", venv), link.absolute())
+            self.assertTrue(link.is_symlink())
+
+            escape = root / "escape-python"
+            escape.write_text("#!/bin/sh\n", encoding="utf-8")
+            escape.chmod(0o755)
+            link.unlink()
+            link.symlink_to(escape)
+            with self.assertRaises(BOOTSTRAP.BootstrapError):
+                BOOTSTRAP.ensure_runtime_executable(link, "fixture venv Python", venv)
+
     def test_shell_and_source_are_foreground_and_pinned(self) -> None:
         shell = (RUN / "bootstrap.sh").read_text()
         source = (RUN / "bootstrap.py").read_text()

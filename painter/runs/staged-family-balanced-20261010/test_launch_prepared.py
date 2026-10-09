@@ -92,6 +92,28 @@ class PreparedLaunchTests(unittest.TestCase):
             with self.assertRaises(HANDOFF.PreparedLaunchError):
                 HANDOFF.build_launch_environment(verified=self._verified(root), gateway_env=gateway, timeout_seconds=0)
 
+    def test_receipt_runtime_path_accepts_venv_link_and_rejects_escape(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            home = root / "python-home"
+            home.mkdir()
+            target = home / "python3.12"
+            target.write_text("#!/bin/sh\n", encoding="utf-8")
+            target.chmod(0o755)
+            venv = root / "venv"
+            (venv / "bin").mkdir(parents=True)
+            (venv / "pyvenv.cfg").write_text(f"home = {home}\n", encoding="utf-8")
+            link = venv / "bin/python"
+            link.symlink_to(target)
+            self.assertEqual(HANDOFF._runtime_executable(str(link), "receipt Python", venv), link.absolute())
+            link.unlink()
+            outside = root / "outside"
+            outside.write_text("#!/bin/sh\n", encoding="utf-8")
+            outside.chmod(0o755)
+            link.symlink_to(outside)
+            with self.assertRaises(HANDOFF.PreparedLaunchError):
+                HANDOFF._runtime_executable(str(link), "receipt Python", venv)
+
     def test_topology_shape_is_checked_before_launch(self) -> None:
         ready = {"topology": {"gpus_per_node": 2, "num_train_gpus": 1, "num_infer_gpus": 1}}
         self.assertEqual(HANDOFF._validate_topology(ready, visible_gpus=2)["gpus_per_node"], 2)

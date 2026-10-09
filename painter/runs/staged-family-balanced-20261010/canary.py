@@ -110,7 +110,7 @@ def _renderer_probe(
     """Render one fixed p5.brush line through the verified renderer boundary."""
 
     renderer = PREP._file(renderer, "prepared renderer")
-    renderer_python = PREP._file(renderer_python, "prepared renderer Python", executable=True)
+    renderer_python = PREP._runtime_executable(renderer_python, "prepared renderer Python", renderer_python.parent.parent)
     actual_renderer_sha = sha256_file(renderer)
     if actual_renderer_sha != RENDERER_SHA256:
         raise ValueError(f"renderer SHA-256 is {actual_renderer_sha}, expected {RENDERER_SHA256}")
@@ -269,9 +269,7 @@ def _runtime_environment(*, prepare_receipt: dict[str, Any], source_root: Path, 
 
 
 def run_probe(*, prime_python: Path, source_root: Path, repo_root: Path, state_path: Path, runtime_env: dict[str, str]) -> dict[str, Any]:
-    prime_python = prime_python.resolve(strict=True)
-    if prime_python.is_symlink() or not prime_python.is_file() or (prime_python.stat().st_mode & 0o111) == 0:
-        raise ValueError("pinned Prime Python is not an executable regular file")
+    prime_python = PREP._runtime_executable(prime_python, "pinned Prime Python", prime_python.parent.parent)
     env = {
         key: value
         for key, value in os.environ.items()
@@ -347,7 +345,7 @@ def canary(*, source_root: Path, node_root: Path, materialized_root: Path, repo_
     if prepare_receipt.get("config", {}).get("sha256") != sha256_file(config_path):
         raise ValueError("prepared config changed after node preparation")
     prime_root = PREP._directory(Path(str(prepare_receipt.get("prime_root", ""))), "prepared Prime root")
-    prime_python = PREP._file(prime_root / ".venv/bin/python", "prepared Prime Python", executable=True)
+    prime_python = PREP._runtime_executable(prime_root / ".venv/bin/python", "prepared Prime Python", prime_root / ".venv")
     revision = PREP._git_revision(prime_root)
     state_path = node_root / "runtime-state.json"
     probe = run_probe(
@@ -361,10 +359,10 @@ def canary(*, source_root: Path, node_root: Path, materialized_root: Path, repo_
     if not isinstance(prepared_renderer, dict):
         raise ValueError("node preparation receipt lacks the verified renderer identity")
     renderer = PREP._file(Path(str(prepared_renderer.get("path", ""))), "prepared renderer")
-    renderer_python = PREP._file(
+    renderer_python = PREP._runtime_executable(
         Path(str(prepared_renderer.get("python", ""))),
         "prepared renderer Python",
-        executable=True,
+        Path(str(prepared_renderer.get("python", ""))).parent.parent,
     )
     if prepared_renderer.get("sha256") != RENDERER_SHA256:
         raise ValueError("node preparation receipt renderer hash is not pinned")

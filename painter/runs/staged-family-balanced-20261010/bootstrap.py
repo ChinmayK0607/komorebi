@@ -109,6 +109,57 @@ def ensure_regular(path: Path, description: str, *, executable: bool = False) ->
     return path.resolve(strict=True)
 
 
+def ensure_runtime_executable(path: Path, description: str, runtime_root: Path) -> Path:
+    """Validate a venv interpreter while preserving its symlink path.
+
+    CPython venvs normally expose ``bin/python`` as a symlink to the base
+    interpreter.  The link is accepted only when it lives below the expected
+    venv, resolves to a regular executable, and its target is either inside
+    that venv or below the interpreter home recorded in ``pyvenv.cfg``.  The
+    returned path remains the venv link so Python keeps the venv prefix.
+    """
+
+    path = path.expanduser().absolute()
+    runtime_root = runtime_root.expanduser().absolute()
+    try:
+        path.relative_to(runtime_root)
+    except ValueError as exc:
+        raise BootstrapError(f"{description} is outside its runtime root: {path}") from exc
+    if not path.exists() and not path.is_symlink():
+        raise BootstrapError(f"{description} is missing: {path}")
+    target = path.resolve(strict=True)
+    if not target.is_file() or not os.access(target, os.X_OK):
+        raise BootstrapError(f"{description} does not resolve to an executable file: {path}")
+    if path.is_symlink():
+        allowed_roots = [runtime_root.resolve(strict=True)]
+        allowed_targets: list[Path] = []
+        pyvenv = runtime_root / "pyvenv.cfg"
+        if pyvenv.is_file() and not pyvenv.is_symlink():
+            for line in pyvenv.read_text(encoding="utf-8").splitlines():
+                if line.strip().lower().startswith("home ="):
+                    home = Path(line.split("=", 1)[1].strip()).expanduser()
+                    if home.is_absolute():
+                        allowed_roots.append(home.resolve(strict=True))
+                elif line.strip().lower().startswith("executable ="):
+                    executable = Path(line.split("=", 1)[1].strip()).expanduser()
+                    if executable.is_absolute():
+                        allowed_targets.append(executable.resolve(strict=True))
+        if target not in allowed_targets and not any(target == root or root in target.parents for root in allowed_roots):
+            raise BootstrapError(f"{description} resolves outside its trusted interpreter roots: {target}")
+        current = target
+        while True:
+            try:
+                mode = current.stat().st_mode
+            except OSError as exc:
+                raise BootstrapError(f"cannot inspect {description} target: {current}") from exc
+            if mode & 0o022:
+                raise BootstrapError(f"{description} target is writable by group/other: {current}")
+            if current.parent == current:
+                break
+            current = current.parent
+    return path
+
+
 def validate_topology(*, gpus_per_node: int, num_train_gpus: int, num_infer_gpus: int, visible_gpus: int) -> None:
     if (num_train_gpus, num_infer_gpus) not in {(1, 1), (2, 2)}:
         raise ValueError("staged topology must be exactly 1+1 or 2+2 GPUs")
@@ -157,7 +208,7 @@ def ensure_bootstrap_env(node_root: Path) -> tuple[Path, Path]:
     uv = root / "bin/uv"
     if not python.exists():
         run_checked([sys.executable, "-m", "venv", str(root)])
-    python = ensure_regular(python, "bootstrap Python", executable=True)
+    python = ensure_runtime_executable(python, "bootstrap Python", root)
     if not uv.exists():
         run_checked([str(python), "-m", "pip", "install", f"uv=={BOOTSTRAP_UV}"])
     uv = ensure_regular(uv, "pinned uv", executable=True)
@@ -210,7 +261,7 @@ def ensure_prime_runtime(*, run_root: Path, prime_root: Path, uv: Path) -> Path:
     if receipt.is_file() and prime_python.is_file():
         value = read_json(receipt)
         if value.get("setup_complete") is True and value.get("prime_revision") == PRIME_COMMIT:
-            return ensure_regular(prime_python, "Prime Python", executable=True)
+            return ensure_runtime_executable(prime_python, "Prime Python", prime_root / ".venv")
         raise BootstrapError("existing Prime runtime receipt is not the pinned runtime")
     if receipt.exists() or prime_python.exists():
         raise BootstrapError("partial Prime runtime is present; refusing to overwrite it")
@@ -219,7 +270,7 @@ def ensure_prime_runtime(*, run_root: Path, prime_root: Path, uv: Path) -> Path:
     env["PRIME_ROOT"] = str(prime_root)
     env["UV_BIN"] = str(uv)
     run_checked(["bash", str(helper), str(runtime_root)], env=env, timeout=3600)
-    return ensure_regular(prime_python, "Prime Python", executable=True)
+    return ensure_runtime_executable(prime_python, "Prime Python", prime_root / ".venv")
 
 
 def ensure_model(*, node_root: Path, bootstrap_python: Path) -> Path:
@@ -427,7 +478,7 @@ def ensure_renderer(*, node_root: Path, bootstrap_python: Path, uv: Path, prime_
         runtime = read_json(helper_receipt_path)
         renderer = ensure_regular(Path(str(pin.get("renderer", ""))), "prepared renderer")
         asset = ensure_regular(Path(str(pin.get("p5_brush", ""))), "prepared p5.brush asset")
-        renderer_python = ensure_regular(Path(str(pin.get("renderer_python", ""))), "renderer interpreter", executable=True)
+        renderer_python = ensure_runtime_executable(Path(str(pin.get("renderer_python", ""))), "renderer interpreter", env_root)
         if pin.get("renderer_sha256") != RENDERER_SHA256 or sha256_file(renderer) != RENDERER_SHA256 or pin.get("p5_brush_sha256") != P5_BRUSH_SHA256 or sha256_file(asset) != P5_BRUSH_SHA256:
             raise BootstrapError("prepared renderer or p5.brush asset changed after verification")
         if sha256_file(renderer_python) != pin.get("renderer_python_sha256"):
@@ -464,7 +515,7 @@ def ensure_renderer(*, node_root: Path, bootstrap_python: Path, uv: Path, prime_
     runtime = read_json(helper_receipt_path)
     if runtime.get("sandbox_smoke") != "passed" or runtime.get("node_check") != "passed":
         raise BootstrapError("reviewed renderer helper did not pass sandbox and Node checks")
-    renderer_python = ensure_regular(renderer_python, "renderer interpreter", executable=True)
+    renderer_python = ensure_runtime_executable(renderer_python, "renderer interpreter", env_root)
     pin = {
         "schema": "staged-family-balanced-renderer-pin-v1",
         "renderer": str(renderer), "renderer_sha256": RENDERER_SHA256,
@@ -512,7 +563,8 @@ def expose_renderer_runtime(node_root: Path, render_root: Path, browser_root: Pa
     for path in (bundle / "cancellable_watercolour_renderer.py", bundle / "frozen_watercolour_renderer.py", *(bundle / "assets").glob("*"), *(render_root / "vendor/integrations/watercolour/assets").glob("*")):
         if path.is_file() and not path.is_symlink():
             os.chmod(path, 0o644)
-    os.chmod(renderer_python, 0o755)
+    if not renderer_python.is_symlink():
+        os.chmod(renderer_python, 0o755)
 
 
 def ensure_materialized(*, node_root: Path, source_assets: Path, source_root: Path, bootstrap_python: Path) -> Path:

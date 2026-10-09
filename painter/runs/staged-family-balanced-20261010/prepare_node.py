@@ -76,6 +76,46 @@ def _file(path: Path, description: str, *, executable: bool = False) -> Path:
     return path.resolve(strict=True)
 
 
+def _runtime_executable(path: Path, description: str, runtime_root: Path) -> Path:
+    """Accept only a normal venv interpreter link and preserve that link."""
+
+    path = path.expanduser().absolute()
+    runtime_root = runtime_root.expanduser().absolute()
+    try:
+        path.relative_to(runtime_root)
+    except ValueError as exc:
+        raise ValueError(f"{description} is outside its runtime root: {path}") from exc
+    if not path.exists() and not path.is_symlink():
+        raise ValueError(f"{description} is missing: {path}")
+    target = path.resolve(strict=True)
+    if not target.is_file() or (target.stat().st_mode & 0o111) == 0:
+        raise ValueError(f"{description} does not resolve to an executable file: {path}")
+    if path.is_symlink():
+        allowed = [runtime_root.resolve(strict=True)]
+        allowed_targets: list[Path] = []
+        pyvenv = runtime_root / "pyvenv.cfg"
+        if pyvenv.is_file() and not pyvenv.is_symlink():
+            for line in pyvenv.read_text(encoding="utf-8").splitlines():
+                if line.strip().lower().startswith("home ="):
+                    home = Path(line.split("=", 1)[1].strip()).expanduser()
+                    if home.is_absolute():
+                        allowed.append(home.resolve(strict=True))
+                elif line.strip().lower().startswith("executable ="):
+                    executable = Path(line.split("=", 1)[1].strip()).expanduser()
+                    if executable.is_absolute():
+                        allowed_targets.append(executable.resolve(strict=True))
+        if target not in allowed_targets and not any(target == root or root in target.parents for root in allowed):
+            raise ValueError(f"{description} resolves outside its trusted interpreter roots: {target}")
+        current = target
+        while True:
+            if current.stat().st_mode & 0o022:
+                raise ValueError(f"{description} target is writable by group/other: {current}")
+            if current.parent == current:
+                break
+            current = current.parent
+    return path
+
+
 def _atomic_json(path: Path, value: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_name(path.name + ".tmp")
@@ -228,7 +268,7 @@ def prepare_node(
     else:
         node_root.mkdir(parents=True, exist_ok=False)
     prime_root = _directory(prime_root, "Prime root")
-    prime_python = _file(prime_root / ".venv/bin/python", "pinned Prime Python", executable=True)
+    prime_python = _runtime_executable(prime_root / ".venv/bin/python", "pinned Prime Python", prime_root / ".venv")
     revision = _git_revision(prime_root)
     protocol_receipt = _validate_protocol(source_root)
     materialized = _validate_materialized(materialized_root)
@@ -242,7 +282,7 @@ def prepare_node(
     renderer = _file(renderer, "renderer")
     if sha256_file(renderer) != RENDERER_SHA256:
         raise ValueError("renderer does not match the pinned renderer SHA-256")
-    renderer_python = _file(renderer_python, "renderer Python", executable=True)
+    renderer_python = _runtime_executable(renderer_python, "renderer Python", renderer_python.parent.parent)
 
     config_path = node_root / "native.toml"
     config_receipt_path = node_root / "config-receipt.json"
