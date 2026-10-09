@@ -37,3 +37,23 @@ The next decision is to run the Linux canary with the pinned Prime revision and 
 The hash-bound run surface in the preparation records includes the prepared `bootstrap.py`/`bootstrap.sh` handoff (`bootstrap.py` SHA-256 `362d0762bbfcdaec2f17fb1f2a0d9303838308a9de4b0334256dd2cd3c9df1ba`; `bootstrap.sh` SHA-256 `37f7d4d151029a6586dc317a4e40420108f7ac33943abb89856c900f687f1b18`), the node-free `materialize.py` asset/manifest materializer, `prepare_config.py` and `prepare_node.py` preflight generators (`prepare_node.py` SHA-256 `27bcaa0d011dcfa1d08ae1de2dcc955b80f560310ace5b522d4d2ac5fb199fac`), `canary.py` (SHA-256 `6314e5f264d386469091879cb42fca4de74f033e404f004a534d197b6d425be4`), the guarded foreground `launch.sh` (SHA-256 `e869e552bba2c979a2cd0a792384b12078b709b133ed42a179198c29a940cbee`), the receipt-derived foreground `launch_prepared.py` (SHA-256 `eca6249653f8d062f1148daf80e9881e8907533676d6d03f54e6c95d2b7d0794`), the run-owned `run_from_sft.py` adapter, `runtime_binding.py`, `sitecustomize.py`, and `prime_tail_purge.py`. It also records the reviewed external photo runner and trainer wrappers used by the handoff. Bootstrap is prepared but unrun: an explicit Linux execution accepts only the exact 1+1 or 2+2 train/inference GPU topologies, binds the trainer helper root to `painter/rl_helpers`, verifies public pinned Prime/model/adapter inputs by SHA-256 and accepts snapshot symlinks only when they resolve to blobs in the same trusted Hugging Face cache, and permits public renderer/browser assets under an explicit verified non-private scratch root while keeping sensitive, model, and source material under the node root, applies the reviewed renderer sandbox helper with its root-to-`runuser painter` boundary, runs materialization, node/config preflight, and canary, then writes `ready_no_launch`; it does not start Prime or training. The prepared launcher requires an explicit owner-only mode-600 gateway file and explicit foreground timeout, validates receipts without reading or logging gateway contents, and performs no scheduling. The public downloads and hardware checks were not executed in this preparation. The canary scope validates the pinned Prime config, exact trainer helper imports, console scripts, and Prime import hook, then runs one bounded real-renderer probe: `Orchestrator.setup` is not called, and no model generation, judge, trainer, inference server, or provider is started. The canary and launch surfaces are prepared but have not been run.
 
 No optimizer, reward, visual, utilization, or cost result is claimed by this record.
+
+## Failed Linux node attempt — not a result
+
+The staged launch used the 2xH100 pod `eager-comet-1d` at $3.70 per whole-node hour. The last observed spend was $3.20 at 0.86 hours; the pod was terminated shortly afterward and the final provider charge is unavailable. The attempt produced zero optimizer updates and zero judge calls. It is infrastructure failure evidence, not a training, quality, or renderer result.
+
+The deterministic failures appeared in this order:
+
+1. Renderer/private-root sandbox.
+2. Stale node symlink and receipt compatibility.
+3. Shallow renderer layout.
+4. Renderer CLI argument forwarding.
+5. Trainer-wrapper path lexical check.
+6. Prime config timeout schema.
+7. Prime console-script PATH.
+8. Trusted Hugging Face snapshot symlink validation.
+9. Wrong `BRUSH_ROOT`.
+
+The latest node reached inference startup: model load took 33.8s, `torch.compile` took 44.4s, and profiling/warmup took 60.3s. Instantaneous startup snapshots showed GPU0 at 100% utilization with 76.3GB resident and GPU1 at 0% with 4MB resident; these snapshots are not a run-level utilization measurement. The orchestrator loaded 96 tasks in 119ms and reached startup broadcast. The trainer then failed before step 0, so no optimizer or judge activity occurred.
+
+The preserved local failure archive is [staged-family-balanced-failures-20261010.tar.gz](local-evidence/staged-family-balanced-failures-20261010.tar.gz), SHA-256 `c50c372e0f73e448122740c82922bb4236fc2efd35c5feb8fbc060664d19ceef`, and is intentionally kept out of Git. Reviewed fixes are commits `3ceaf29`, `ecfe66b`, and `885d60f`. No pod is active. The next decision is no new rental until a Linux CPU/Prime-environment canary exercises console resolution, adapter trust, trainer dependency imports, config schema, and renderer behavior. This record preserves bounded evidence for the attempt and does not claim exhaustive history.
