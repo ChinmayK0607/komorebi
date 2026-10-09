@@ -76,7 +76,7 @@ class NativePaintingRendererTests(unittest.TestCase):
                 output.with_suffix(".json").write_text(json.dumps(receipt))
                 return SimpleNamespace(returncode=0, stderr="")
 
-            with patch.dict(os.environ, {"PAINTER_RENDER_TIMEOUT_SECONDS": "177"}, clear=False):
+            with patch.dict(os.environ, {"PAINTER_RENDER_TIMEOUT_SECONDS": "57"}, clear=False):
                 with patch.object(renderer_module, "_run_renderer_process", side_effect=fake_run) as run:
                     result = renderer_module.render_action(
                         root=root, folder=folder,
@@ -85,11 +85,17 @@ class NativePaintingRendererTests(unittest.TestCase):
                         renderer=renderer, renderer_python=renderer_python,
                     )
             self.assertTrue(result["valid"])
-            self.assertEqual(result["render_timeout_seconds"], 177)
-            self.assertEqual(result["render_process_timeout_seconds"], 197)
+            self.assertEqual(result["render_timeout_seconds"], 57)
+            self.assertEqual(
+                result["render_process_timeout_seconds"],
+                57 + renderer_module.RENDER_PROCESS_GRACE_SECONDS,
+            )
             command = run.call_args.args[0]
-            self.assertEqual(command[command.index("--timeout") + 1], "177")
-            self.assertEqual(run.call_args.kwargs["timeout"], 197)
+            self.assertEqual(command[command.index("--timeout") + 1], "57")
+            self.assertEqual(
+                run.call_args.kwargs["timeout"],
+                57 + renderer_module.RENDER_PROCESS_GRACE_SECONDS,
+            )
             self.assertEqual(run.call_args.kwargs["env"]["PAINTER_PRIME_ROLE"], "renderer")
 
     def test_renderer_interpreter_starts_with_renderer_role_without_rendering(self):
@@ -112,10 +118,17 @@ class NativePaintingRendererTests(unittest.TestCase):
         self.assertEqual(result.stdout.strip(), "renderer")
 
     def test_deadline_rejects_out_of_range_values(self):
-        for value in ("0", "181", "not-an-int"):
+        for value in ("0", "not-an-int"):
             with self.subTest(value=value), patch.dict(os.environ, {"PAINTER_RENDER_TIMEOUT_SECONDS": value}, clear=False):
                 with self.assertRaises(ValueError):
                     renderer_module.render_timeout_seconds()
+
+    def test_historical_deadline_is_clamped_to_the_new_hard_cap(self):
+        with patch.dict(os.environ, {"PAINTER_RENDER_TIMEOUT_SECONDS": "180"}, clear=False):
+            self.assertEqual(
+                renderer_module.render_timeout_seconds(),
+                renderer_module.MAX_RENDER_TIMEOUT_SECONDS,
+            )
 
     def test_cancelled_active_child_is_terminated_as_owned_group(self):
         process = _StubProcess()
@@ -156,6 +169,39 @@ class NativePaintingRendererTests(unittest.TestCase):
                                     cancel_event=threading.Event(),
                                 )
         self.assertEqual(killpg.call_args.args[1], renderer_module.signal.SIGTERM)
+
+    def test_parent_watchdog_writes_an_explicit_timeout_receipt(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            renderer = root / "renderer.py"
+            renderer_python = root / "python"
+            renderer.write_text("# test renderer\n")
+            renderer_python.write_text("# test python\n")
+            with patch.dict(
+                os.environ,
+                {"PAINTER_RENDER_TIMEOUT_SECONDS": "90"},
+                clear=False,
+            ):
+                with patch.object(
+                    renderer_module,
+                    "_run_renderer_process",
+                    side_effect=subprocess.TimeoutExpired(["renderer"], 95),
+                ):
+                    result = renderer_module.render_action(
+                        root=root,
+                        folder=root / "episode",
+                        reply="```javascript\nfunction draw(){noLoop();}\n```",
+                        initial_canvas=None,
+                        initial_program=None,
+                        renderer=renderer,
+                        renderer_python=renderer_python,
+                    )
+            self.assertFalse(result["valid"])
+            self.assertEqual(result["failure_kind"], "program_timeout")
+            receipt = json.loads(Path(result["renderer_receipt"]).read_text())
+            self.assertTrue(receipt["timed_out"])
+            self.assertEqual(receipt["error_code"], "render_timeout")
+            self.assertIn("watchdog", receipt["error"])
 
     def test_receipt_finished_before_cancel_is_never_consumed(self):
         with tempfile.TemporaryDirectory() as temp:
@@ -338,6 +384,50 @@ function draw(){
                             renderer_python=root / "python",
                         )
 
+    def test_missing_no_loop_is_rejected_with_a_preflight_receipt(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            renderer = root / "renderer.py"
+            renderer_python = root / "python"
+            renderer.write_text("# test renderer\n")
+            renderer_python.write_text("# test python\n")
+            with patch.object(renderer_module, "_run_renderer_process") as render_process:
+                result = renderer_module.render_action(
+                    root=root,
+                    folder=root / "episode",
+                    reply="""```javascript
+function setup(){createCanvas(600,600);}
+function draw(){background('#fff');}
+```""",
+                    initial_canvas=None,
+                    initial_program=None,
+                    renderer=renderer,
+                    renderer_python=renderer_python,
+                )
+            self.assertFalse(result["valid"])
+            self.assertEqual(result["failure_kind"], "program_timeout")
+            self.assertTrue(result["renderer_preflight"])
+            self.assertIn("noLoop", result["error"])
+            render_process.assert_not_called()
+            receipt = json.loads(Path(result["renderer_receipt"]).read_text())
+            self.assertEqual(receipt["schema"], "native-painting-render-preflight-v1")
+            self.assertEqual(receipt["error_code"], "render_preflight")
+            self.assertFalse(receipt["timed_out"])
+
+    def test_no_loop_in_a_comment_does_not_satisfy_preflight(self):
+        self.assertTrue(
+            renderer_module._missing_draw_completion_call(
+                "function draw(){/* noLoop(); */ background('#fff');}"
+            )
+        )
+
+    def test_no_loop_sketch_reaches_renderer_unchanged(self):
+        self.assertFalse(
+            renderer_module._missing_draw_completion_call(
+                "function draw(){background('#fff'); noLoop();}"
+            )
+        )
+
     def test_blank_canvas_is_model_failure_even_when_renderer_reports_valid(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
@@ -417,13 +507,16 @@ function draw(){
             with patch.object(renderer_module, "_run_renderer_process", side_effect=fake_run):
                 result = renderer_module.render_action(
                     root=root, folder=folder,
-                    reply="```javascript\nfunction draw() {}\n```",
+                    reply="```javascript\nfunction draw() { noLoop(); }\n```",
                     initial_canvas=None, initial_program=None,
                     renderer=renderer, renderer_python=renderer_python,
                 )
             self.assertFalse(result["valid"])
             self.assertEqual(result["failure_kind"], "program_timeout")
             self.assertIn("noLoop", result["error"])
+            receipt = json.loads(Path(result["renderer_receipt"]).read_text())
+            self.assertTrue(receipt["timed_out"])
+            self.assertEqual(receipt["error_code"], "render_timeout")
 
 
 if __name__ == "__main__":

@@ -22,13 +22,16 @@ from typing import Any
 
 from PIL import Image, ImageStat
 
-DEFAULT_RENDER_TIMEOUT_SECONDS = 180
-MAX_RENDER_TIMEOUT_SECONDS = 180
+DEFAULT_RENDER_TIMEOUT_SECONDS = 90
+MAX_RENDER_TIMEOUT_SECONDS = 90
+RENDER_PROCESS_GRACE_SECONDS = 5
 RENDER_CANCEL_GRACE_SECONDS = 5.0
 RENDER_WAIT_POLL_SECONDS = 0.1
 JS_SYNTAX_PREFLIGHT_ENV = "PAINTER_JS_SYNTAX_PREFLIGHT"
 JS_SYNTAX_PREFLIGHT_TIMEOUT_SECONDS = 5
 MIN_CANVAS_CHANNEL_VARIANCE = 1.0
+_DRAW_FUNCTION_RE = re.compile(r"\bfunction\s+draw\s*\(")
+_NO_LOOP_CALL_RE = re.compile(r"\bnoLoop\s*\(")
 
 
 @dataclass(frozen=True)
@@ -301,19 +304,163 @@ def extract_sketch(reply: str) -> str:
     raise ValueError("No complete JavaScript code block")
 
 
+def _js_without_comments_and_strings(source: str) -> str:
+    """Blank comments and quoted literals for conservative source checks.
+
+    This is deliberately not a JavaScript parser.  It only prevents a
+    ``noLoop()`` mention in a comment/string from satisfying the render
+    completion guard.  Syntax remains the browser/Node preflight's job.
+    """
+
+    output: list[str] = []
+    index = 0
+    state = "code"
+    quote = ""
+    while index < len(source):
+        char = source[index]
+        next_char = source[index + 1] if index + 1 < len(source) else ""
+        if state == "code":
+            if char == "/" and next_char == "/":
+                output.extend((" ", " "))
+                index += 2
+                state = "line_comment"
+                continue
+            if char == "/" and next_char == "*":
+                output.extend((" ", " "))
+                index += 2
+                state = "block_comment"
+                continue
+            if char in {"'", '"', "`"}:
+                output.append(" ")
+                quote = char
+                state = "string"
+                index += 1
+                continue
+            output.append(char)
+            index += 1
+            continue
+        if state == "line_comment":
+            if char in "\r\n":
+                output.append(char)
+                state = "code"
+            else:
+                output.append(" ")
+            index += 1
+            continue
+        if state == "block_comment":
+            if char == "*" and next_char == "/":
+                output.extend((" ", " "))
+                index += 2
+                state = "code"
+            else:
+                output.append("\n" if char in "\r\n" else " ")
+                index += 1
+            continue
+        # Quoted strings/templates are opaque for this completion check.
+        if char == "\\":
+            output.extend((" ", " "))
+            index += 2
+        elif char == quote:
+            output.append(" ")
+            index += 1
+            state = "code"
+        else:
+            output.append("\n" if char in "\r\n" else " ")
+            index += 1
+    return "".join(output)
+
+
+def _missing_draw_completion_call(program: str) -> bool:
+    """Return whether a declared p5 draw loop lacks a direct ``noLoop`` call."""
+
+    source = _js_without_comments_and_strings(program)
+    return bool(_DRAW_FUNCTION_RE.search(source)) and not _NO_LOOP_CALL_RE.search(source)
+
+
+def _write_preflight_receipt(
+    receipt_path: Path,
+    *,
+    source: Path,
+    error: str,
+) -> None:
+    """Persist a deterministic rejection when no browser process is needed."""
+
+    receipt_path.write_text(
+        json.dumps(
+            {
+                "schema": "native-painting-render-preflight-v1",
+                "valid": False,
+                "timed_out": False,
+                "preflight_rejected": True,
+                "error_code": "render_preflight",
+                "error": error,
+                "source": str(source),
+                "source_sha256": _sha(source),
+                "elapsed_seconds": 0.0,
+            },
+            indent=2,
+        )
+        + "\n"
+    )
+
+
+def _write_timeout_receipt(
+    receipt_path: Path,
+    *,
+    source: Path,
+    error: str,
+    elapsed_seconds: float,
+    process_timeout_seconds: float,
+) -> None:
+    """Persist an explicit timeout when the parent watchdog kills the child."""
+
+    receipt_path.write_text(
+        json.dumps(
+            {
+                "schema": "native-painting-render-timeout-v1",
+                "valid": False,
+                "timed_out": True,
+                "error_code": "render_timeout",
+                "error": error,
+                "source": str(source),
+                "source_sha256": _sha(source),
+                "elapsed_seconds": round(elapsed_seconds, 3),
+                "process_timeout_seconds": process_timeout_seconds,
+                "parent_watchdog": True,
+            },
+            indent=2,
+        )
+        + "\n"
+    )
+
+
 def _sha(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
 def render_timeout_seconds() -> int:
+    """Return the effective deadline, clamping legacy values to the hard cap.
+
+    Existing launch receipts bind ``180`` for historical runs.  Treating that
+    value as a request for the new 90-second cap keeps those launchers
+    runnable while making it impossible for configuration to reintroduce the
+    observed 180-second tail.
+    """
+
     raw = os.environ.get("PAINTER_RENDER_TIMEOUT_SECONDS", str(DEFAULT_RENDER_TIMEOUT_SECONDS))
     try:
         value = int(raw)
     except ValueError as exc:
-        raise ValueError("PAINTER_RENDER_TIMEOUT_SECONDS must be an integer from 1 to 180") from exc
-    if not 1 <= value <= MAX_RENDER_TIMEOUT_SECONDS:
-        raise ValueError("PAINTER_RENDER_TIMEOUT_SECONDS must be an integer from 1 to 180")
-    return value
+        raise ValueError(
+            "PAINTER_RENDER_TIMEOUT_SECONDS must be an integer from 1 to "
+            f"{MAX_RENDER_TIMEOUT_SECONDS}"
+        ) from exc
+    if value < 1:
+        raise ValueError(
+            "PAINTER_RENDER_TIMEOUT_SECONDS must be an integer from 1 to "
+            f"{MAX_RENDER_TIMEOUT_SECONDS}"
+        )
+    return min(value, MAX_RENDER_TIMEOUT_SECONDS)
 
 
 def _renderer_child_environment(root: Path) -> dict[str, str]:
@@ -420,30 +567,70 @@ def render_action(
         row.update(valid=True, canvas=str(initial_canvas), no_change=True)
         return row
 
+    output = folder / "painting.png"
+    if _missing_draw_completion_call(program):
+        error = (
+            "Painting program must call noLoop() in draw(); this prevents an "
+            "unbounded animation loop from consuming the render budget."
+        )
+        receipt_path = output.with_suffix(".json")
+        _write_preflight_receipt(receipt_path, source=source, error=error)
+        row.update(
+            error=error,
+            renderer_errors=[error],
+            failure_kind="program_timeout",
+            renderer_receipt=str(receipt_path),
+            renderer_preflight=True,
+        )
+        return row
+
     renderer = renderer or root / "vendor/integrations/watercolour/renderer.py"
     renderer_python = renderer_python or root / "renderer-env/bin/python"
     if not renderer.is_file() or not renderer_python.is_file():
         raise RuntimeError(f"renderer runtime is missing under {root}")
     deadline_seconds = render_timeout_seconds()
     row["render_timeout_seconds"] = deadline_seconds
-    row["render_process_timeout_seconds"] = deadline_seconds + 20
-    output = folder / "painting.png"
+    row["render_process_timeout_seconds"] = deadline_seconds + RENDER_PROCESS_GRACE_SECONDS
     command = [
         "/usr/sbin/runuser", "-u", "painter", "--", str(renderer_python),
         str(renderer), str(source), "--output", str(output), "--timeout", str(deadline_seconds),
         "--backend", "swiftshader",
     ]
     child_env = _renderer_child_environment(root)
-    completed = _run_renderer_process(
-        command,
-        env=child_env,
-        timeout=deadline_seconds + 20,
-        cancel_event=cancel_event,
-    )
+    process_timeout_seconds = deadline_seconds + RENDER_PROCESS_GRACE_SECONDS
+    renderer_started = time.monotonic()
+    try:
+        completed = _run_renderer_process(
+            command,
+            env=child_env,
+            timeout=process_timeout_seconds,
+            cancel_event=cancel_event,
+        )
+    except subprocess.TimeoutExpired:
+        receipt_path = output.with_suffix(".json")
+        error = (
+            "Native renderer process exceeded the bounded watchdog of "
+            f"{process_timeout_seconds:g}s after the {deadline_seconds:g}s render deadline."
+        )
+        _write_timeout_receipt(
+            receipt_path,
+            source=source,
+            error=error,
+            elapsed_seconds=time.monotonic() - renderer_started,
+            process_timeout_seconds=process_timeout_seconds,
+        )
+        row.update(
+            error=f"Your painting program exceeded the {deadline_seconds}s render limit.",
+            renderer_errors=["Painting program exceeded the render limit"],
+            failure_kind="program_timeout",
+            renderer_receipt=str(receipt_path),
+        )
+        return row
     # A process can finish just as cancellation arrives.  Do not consume a
     # receipt produced by that stale action as the next model state.
     _raise_if_cancelled(cancel_event)
     receipt_path = output.with_suffix(".json")
+    row["renderer_receipt"] = str(receipt_path)
     if not receipt_path.is_file():
         raise RuntimeError("renderer produced no receipt: " + completed.stderr[-1000:])
     receipt = json.loads(receipt_path.read_text())
@@ -509,6 +696,8 @@ __all__ = [
     "DEFAULT_RENDER_TIMEOUT_SECONDS",
     "JS_SYNTAX_PREFLIGHT_ENV",
     "JS_SYNTAX_PREFLIGHT_TIMEOUT_SECONDS",
+    "MAX_RENDER_TIMEOUT_SECONDS",
+    "RENDER_PROCESS_GRACE_SECONDS",
     "extract_sketch",
     "render_action",
     "render_timeout_seconds",
