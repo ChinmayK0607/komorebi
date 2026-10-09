@@ -71,7 +71,7 @@
   },
   "config": {
     "path": "config.json",
-    "sha256": "072b172020228d8c09350b4e7067595999b43024c576d160f383e25ad638ed49"
+    "sha256": "10b8649082d0907901a1cf5fc3b6687cb1c456111fbf9144ce733edf657040b6"
   },
   "receipt": {
     "path": "receipt.json",
@@ -199,11 +199,11 @@
       },
       "canary": {
         "path": "canary.py",
-        "sha256": "15b56d5c80b8adc4ff3ae8dd3ef81d2c7fdde885b453ed518e0de58a40186573"
+        "sha256": "ac43e03e08803493df5dbea1555d79e40f46ed92cad2f672bf97d229e4bed7a4"
       },
       "launch": {
         "path": "launch.sh",
-        "sha256": "4d0a16ec695b9f3b713e26f33374e253ff57700772df72b6d814e3e2812bf4c6"
+        "sha256": "ce3a9941b3e51abfc9b3f9bddec27bcd3f648756e6dcf98297b3adfc71cd4a2a"
       },
       "launch_prepared": {
         "path": "launch_prepared.py",

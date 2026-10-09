@@ -17,6 +17,7 @@ POLICY_SHA256="c70c47ec0d6d7172b3bc25c4f54178919cf7c079cd9652fff3bc76db9e1eca79"
 FROZEN_SFT_SHA256="bea72b066986faa1b92b9dc539c710093181ee916b99323e2b2498f318ac1740"
 CONFIG="${PAINTER_RL_CONFIG:-$NODE_ROOT/native.toml}"
 PYTHON="${PAINTER_PRIME_PYTHON:-$PRIME_ROOT/.venv/bin/python}"
+PRIME_BIN="$PRIME_ROOT/.venv/bin"
 RUN_WRAPPER="${PAINTER_PRIME_RUN_WRAPPER:-$RUN_SOURCE_ROOT/run_from_sft.py}"
 TRAIN_WRAPPER="${PAINTER_PRIME_TRAIN_WRAPPER:-$RUN_SOURCE_ROOT/../photo-curriculum-rl-20260922/train_from_sft.py}"
 EXPECTED_TRAIN_WRAPPER_ROOT="$(cd "$RUN_SOURCE_ROOT/../photo-curriculum-rl-20260922" && pwd -P)" || { echo 'the reviewed photo trainer directory is missing' >&2; exit 1; }
@@ -33,7 +34,14 @@ TIMEOUT_SECONDS="${PAINTER_RUN_TIMEOUT_SECONDS:-172800}"
 
 [[ "$(uname -s)" == Linux ]] || { echo 'staged Prime launch requires Linux' >&2; exit 1; }
 [[ $# == 1 ]] || { echo 'usage: launch.sh NODE_ROOT' >&2; exit 2; }
-[[ -x "$PYTHON" ]] || { echo "missing pinned Prime Python: $PYTHON" >&2; exit 1; }
+[[ "$PYTHON" == "$PRIME_BIN/python" && -x "$PYTHON" ]] || { echo "missing pinned Prime Python: $PYTHON" >&2; exit 1; }
+for executable in inference trainer orchestrator; do
+    [[ -f "$PRIME_BIN/$executable" && ! -L "$PRIME_BIN/$executable" && -x "$PRIME_BIN/$executable" ]] || {
+        echo "missing pinned Prime console script: $PRIME_BIN/$executable" >&2
+        exit 1
+    }
+done
+export PATH="$PRIME_BIN${PATH:+:$PATH}"
 [[ -f "$NODE_ROOT/native.toml" && -f "$NODE_ROOT/prepare-receipt.json" && -f "$NODE_ROOT/canary-receipt.json" ]] || { echo 'preparation and canary receipts are required' >&2; exit 1; }
 [[ -f "$MATERIALIZED_ROOT/train-manifest.json" && -f "$MATERIALIZED_ROOT/heldout-manifest.json" ]] || { echo 'materialized manifests are missing' >&2; exit 1; }
 [[ -f "$RUN_WRAPPER" && -f "$TRAIN_WRAPPER" ]] || { echo 'reviewed Prime wrappers are missing' >&2; exit 1; }

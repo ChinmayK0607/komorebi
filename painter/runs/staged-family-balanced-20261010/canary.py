@@ -286,8 +286,26 @@ def _runtime_environment(*, prepare_receipt: dict[str, Any], source_root: Path, 
     }
 
 
-def run_probe(*, prime_python: Path, config_path: Path, source_root: Path, repo_root: Path, state_path: Path, runtime_env: dict[str, str]) -> dict[str, Any]:
+def _prime_console_scripts(*, prime_root: Path, prime_python: Path) -> tuple[Path, dict[str, Path]]:
+    """Require the three Prime entry points in the pinned venv bin directory."""
+
+    prime_bin = prime_root / ".venv/bin"
+    expected_python = prime_bin / "python"
+    if prime_python.absolute() != expected_python.absolute():
+        raise ValueError("pinned Prime Python is outside the exact .venv/bin path")
+    prime_bin = PREP._directory(prime_bin, "pinned Prime venv bin")
+    scripts: dict[str, Path] = {}
+    for name in ("inference", "trainer", "orchestrator"):
+        path = prime_bin / name
+        if path.is_symlink() or not path.is_file() or not os.access(path, os.X_OK):
+            raise ValueError(f"pinned Prime console script is missing or unsafe: {path}")
+        scripts[name] = path
+    return prime_bin, scripts
+
+
+def run_probe(*, prime_python: Path, prime_root: Path, config_path: Path, source_root: Path, repo_root: Path, state_path: Path, runtime_env: dict[str, str]) -> dict[str, Any]:
     prime_python = PREP._runtime_executable(prime_python, "pinned Prime Python", prime_python.parent.parent)
+    prime_bin, scripts = _prime_console_scripts(prime_root=prime_root, prime_python=prime_python)
     env = {
         key: value
         for key, value in os.environ.items()
@@ -314,6 +332,13 @@ def run_probe(*, prime_python: Path, config_path: Path, source_root: Path, repo_
         ),
     })
     env.update(runtime_env)
+    # Keep the probe's command lookup independent of ambient or receipt-derived
+    # PATH values.  The exact pinned venv bin is always first and the fallback
+    # directories are deliberately finite.
+    env["PATH"] = os.pathsep.join((str(prime_bin), "/usr/local/bin", "/usr/bin", "/bin"))
+    for name, path in scripts.items():
+        if shutil.which(name, path=env["PATH"]) != str(path):
+            raise RuntimeError(f"pinned Prime PATH does not resolve {name} to {path}")
     try:
         completed = subprocess.run(
             [str(prime_python), "-c", _probe_code(), str(config_path)],
@@ -338,6 +363,9 @@ def run_probe(*, prime_python: Path, config_path: Path, source_root: Path, repo_
         raise RuntimeError("pinned Prime/runtime hook probe did not emit JSON") from exc
     if not isinstance(result, dict) or result.get("status") != "import_and_hook_passed" or result.get("rl_config_validation") != "passed":
         raise RuntimeError("pinned Prime/runtime hook probe returned an unverified receipt")
+    result["prime_bin"] = str(prime_bin)
+    result["prime_console_scripts"] = {name: str(path) for name, path in scripts.items()}
+    result["path_prefix"] = str(prime_bin)
     return result
 
 
@@ -369,6 +397,7 @@ def canary(*, source_root: Path, node_root: Path, materialized_root: Path, rende
     state_path = node_root / "runtime-state.json"
     probe = run_probe(
         prime_python=prime_python,
+        prime_root=prime_root,
         config_path=config_path,
         source_root=source_root,
         repo_root=repo_root,
@@ -409,6 +438,7 @@ def canary(*, source_root: Path, node_root: Path, materialized_root: Path, rende
         "materialized": materialized,
         "config": {"path": str(config_path), "sha256": sha256_file(config_path), "receipt_sha256": sha256_file(config_receipt_path)},
         "probe": probe,
+        "prime_console_scripts": probe.get("prime_console_scripts"),
         "prime_config_validation": {
             "status": probe.get("rl_config_validation"),
             "model": "prime_rl.configs.rl.RLConfig",

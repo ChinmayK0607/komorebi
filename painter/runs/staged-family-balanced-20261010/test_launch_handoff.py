@@ -272,6 +272,7 @@ class LaunchHandoffTests(unittest.TestCase):
         self.assertIn("from prime_rl.configs.rl import RLConfig", CANARY_SOURCE)
         self.assertIn("RLConfig.model_validate(config)", CANARY_SOURCE)
         self.assertIn('"prime_config_validation":', CANARY_SOURCE)
+        self.assertIn('env["PATH"] = os.pathsep.join((str(prime_bin), "/usr/local/bin", "/usr/bin", "/bin"))', CANARY_SOURCE)
 
     def test_renderer_canary_uses_fake_interpreter_without_chromium(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -305,6 +306,29 @@ class LaunchHandoffTests(unittest.TestCase):
             output = root / "node/renderer-canary/probe.png"
             self.assertTrue(output.is_file())
             self.assertEqual(receipt["png_sha256"], hashlib.sha256(output.read_bytes()).hexdigest())
+
+    def test_canary_requires_prime_scripts_in_exact_venv_bin(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            prime_root = root / "prime"
+            prime_bin = prime_root / ".venv/bin"
+            prime_bin.mkdir(parents=True)
+            python = prime_bin / "python"
+            python.write_text("#!/bin/sh\n", encoding="utf-8")
+            python.chmod(0o755)
+            for name in ("inference", "trainer", "orchestrator"):
+                path = prime_bin / name
+                path.write_text("#!/bin/sh\n", encoding="utf-8")
+                path.chmod(0o755)
+            resolved, scripts = CANARY._prime_console_scripts(
+                prime_root=prime_root,
+                prime_python=python,
+            )
+            self.assertEqual(resolved, prime_bin.resolve())
+            self.assertEqual(set(scripts), {"inference", "trainer", "orchestrator"})
+            (prime_bin / "trainer").unlink()
+            with self.assertRaises(ValueError):
+                CANARY._prime_console_scripts(prime_root=prime_root, prime_python=python)
 
     def test_root_renderer_canary_uses_painter_boundary(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -381,6 +405,38 @@ class LaunchHandoffTests(unittest.TestCase):
         self.assertIn('renderer_probe.get("status") != "verified"', LAUNCH_SOURCE)
         self.assertIn('TRAIN_GPUS=', LAUNCH_SOURCE)
         self.assertNotIn('PAINTER_NUM_TRAIN_GPUS=2', LAUNCH_SOURCE)
+        self.assertIn('PRIME_BIN="$PRIME_ROOT/.venv/bin"', LAUNCH_SOURCE)
+        self.assertIn('export PATH="$PRIME_BIN${PATH:+:$PATH}"', LAUNCH_SOURCE)
+        self.assertIn('for executable in inference trainer orchestrator; do', LAUNCH_SOURCE)
+
+    def test_launcher_prime_path_precedes_sanitized_ambient_path(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            prime_bin = root / "prime/.venv/bin"
+            ambient = root / "ambient"
+            prime_bin.mkdir(parents=True)
+            ambient.mkdir()
+            for name in ("python", "inference", "trainer", "orchestrator"):
+                path = prime_bin / name
+                path.write_text("#!/bin/sh\n", encoding="utf-8")
+                path.chmod(0o755)
+            (ambient / "inference").write_text("#!/bin/sh\n", encoding="utf-8")
+            (ambient / "inference").chmod(0o755)
+            shell = f'''\
+set -Eeuo pipefail
+PRIME_ROOT="{root / "prime"}"
+PYTHON="$PRIME_ROOT/.venv/bin/python"
+PRIME_BIN="$PRIME_ROOT/.venv/bin"
+[[ "$PYTHON" == "$PRIME_BIN/python" && -x "$PYTHON" ]]
+for executable in inference trainer orchestrator; do
+    [[ -f "$PRIME_BIN/$executable" && ! -L "$PRIME_BIN/$executable" && -x "$PRIME_BIN/$executable" ]]
+done
+PATH="{ambient}"
+export PATH="$PRIME_BIN${{PATH:+:$PATH}}"
+[[ "$(command -v inference)" == "$PRIME_BIN/inference" ]]
+'''
+            completed = subprocess.run(["bash", "-c", shell], capture_output=True, text=True, check=False)
+            self.assertEqual(completed.returncode, 0, completed.stderr)
 
     def test_launcher_canonicalizes_photo_trainer_root_before_comparison(self) -> None:
         self.assertIn(
