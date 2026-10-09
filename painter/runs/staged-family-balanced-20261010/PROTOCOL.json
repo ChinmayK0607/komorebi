@@ -71,11 +71,11 @@
   },
   "config": {
     "path": "config.json",
-    "sha256": "17b97f705eb98ea0745afd14316f2d8193aff3d0721830f5f3e4a73b26389e8b"
+    "sha256": "43c0959b5d70f1c201a5d65cc2cf1a606bf8674e11d00d28a0bec1679748c5da"
   },
   "receipt": {
     "path": "receipt.json",
-    "sha256": "8bcb6403b739e4c9c97c0b39a57e06b2eb3f08fa0bc087ade560c6ac50216897"
+    "sha256": "2e4f55e39bb14fcc69bc71a0926db03f7a73c0b6d0a8b0341990589d185de9df"
   },
   "tail_purge_hook": {
     "path": "prime_tail_purge.py",
@@ -162,7 +162,7 @@
     "runtime_batch_boundary": "required: defer Prime _maybe_batch until the active six-group cycle has a pass receipt; carried traces may fill the next optimizer batch only after that cycle completes",
     "runtime_sampling_attempt_cap": "required: every completed six-group attempt, including censored retries, increments persisted per-stage attempts and stops at the finite two-times cap",
     "runtime_stale_group_cancellation": "required: stale GroupCancellation voids every arrived group member as pipeline evidence and must leave no native pending IDs; non-stale cancellation may admit three scored traces with explicit placeholders",
-    "preflight_surface": "hash-bound bootstrap, materializer, config/node preparation, HF snapshot-cache validation, import-hook/real-renderer canary, foreground launch, receipt-derived launch_prepared.py handoff, run-owned adapter, runtime binding, sitecustomize, tail purge, and reviewed external photo runner/trainer wrappers; bootstrap/canary/launch/launch_prepared are prepared but not run",
+    "preflight_surface": "hash-bound bootstrap, materializer, config/node preparation, HF snapshot-cache validation, explicit verified non-private renderer/browser scratch root, import-hook/real-renderer canary, foreground launch, receipt-derived launch_prepared.py handoff, run-owned adapter, runtime binding, sitecustomize, tail purge, and reviewed external photo runner/trainer wrappers; bootstrap/canary/launch/launch_prepared are prepared but not run",
     "bootstrap": "bootstrap.py/bootstrap.sh are prepared but unrun; an explicit Linux execution accepts only exact 1+1 or 2+2 train/inference GPU topologies, verifies public pinned downloads, applies the reviewed renderer sandbox helper, runs materialization/preflight/canary, and writes ready_no_launch without starting Prime"
   },
   "results": {
@@ -179,7 +179,7 @@
     "files": {
       "bootstrap": {
         "path": "bootstrap.py",
-        "sha256": "6ea0097c6445e76a3c5c2613213a342d7e8dc7af1a82ae09413e2db2dbc6fb94"
+        "sha256": "b653605cf833102824085b22f1046734adbf61b956703bf80fe139fe9affd434"
       },
       "bootstrap_shell": {
         "path": "bootstrap.sh",
@@ -195,19 +195,19 @@
       },
       "prepare_node": {
         "path": "prepare_node.py",
-        "sha256": "6e133323ed4ed621e528bd25758e16488700d93a70ac0762d5a13062b6240692"
+        "sha256": "27bcaa0d011dcfa1d08ae1de2dcc955b80f560310ace5b522d4d2ac5fb199fac"
       },
       "canary": {
         "path": "canary.py",
-        "sha256": "c2af543d04869da7a1c0f920fddc135518d3e375a26229ba10a7cb4fc193dfe2"
+        "sha256": "7a8ef495e2ae863121eb7f26cec4c88412a6ab099914714184d5af2f9dbd6243"
       },
       "launch": {
         "path": "launch.sh",
-        "sha256": "1c6162497217e6785d96793a86e9c31c15bf81a6635ab204a584182e6ec2d94e"
+        "sha256": "f288960d4d2a0662f8a1158da64dd41377cec7db2bcd64f4a134233934e64db5"
       },
       "launch_prepared": {
         "path": "launch_prepared.py",
-        "sha256": "d928b93ef332c0ac07a5d67a2dd47effc9eb824746b4e91cd98d6ab824abfcc7"
+        "sha256": "4a528dbca4109a76eb9b9cdc7c4ca55015c1695a89c87feac40e514aba9275c0"
       },
       "run_from_sft": {
         "path": "run_from_sft.py",

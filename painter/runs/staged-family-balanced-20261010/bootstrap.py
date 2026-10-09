@@ -101,6 +101,32 @@ def ensure_dir(path: Path, description: str, *, create: bool = True) -> Path:
     return path.resolve(strict=True)
 
 
+def ensure_renderer_root(node_root: Path, requested: Path | None = None) -> Path:
+    """Create/validate the public renderer root without following its link."""
+
+    node_root = node_root.expanduser().absolute()
+    candidate = (requested if requested is not None else node_root / "renderer").expanduser()
+    if not candidate.is_absolute():
+        raise BootstrapError("renderer root must be an absolute path")
+    candidate = candidate.absolute()
+    try:
+        candidate.relative_to(node_root)
+    except ValueError:
+        pass
+    else:
+        if candidate != node_root / "renderer":
+            raise BootstrapError("renderer root inside node root must be the dedicated renderer directory")
+    if candidate.is_symlink():
+        raise BootstrapError(f"renderer root cannot be a symlink: {candidate}")
+    if candidate.exists() and not candidate.is_dir():
+        raise BootstrapError(f"renderer root is not a directory: {candidate}")
+    candidate.mkdir(parents=True, exist_ok=True)
+    if candidate.is_symlink():
+        raise BootstrapError(f"renderer root became a symlink: {candidate}")
+    os.chmod(candidate, 0o700)
+    return candidate.resolve(strict=True)
+
+
 def ensure_regular(path: Path, description: str, *, executable: bool = False) -> Path:
     if path.is_symlink() or not path.is_file():
         raise BootstrapError(f"{description} is not a regular file: {path}")
@@ -496,10 +522,10 @@ def ensure_source_assets(*, node_root: Path, bootstrap_python: Path, source_root
     return extraction / "curriculum", receipt
 
 
-def ensure_renderer(*, node_root: Path, bootstrap_python: Path, uv: Path, prime_root: Path) -> tuple[Path, Path, Path, dict[str, Any]]:
+def ensure_renderer(*, node_root: Path, renderer_root: Path, bootstrap_python: Path, uv: Path, prime_root: Path) -> tuple[Path, Path, Path, dict[str, Any]]:
     """Build the reviewed centroid overlay and run its sandboxed runtime helper."""
 
-    render_root = ensure_dir(node_root / "renderer", "renderer runtime")
+    render_root = ensure_dir(renderer_root, "renderer runtime")
     env_root = render_root / "renderer-env"
     renderer_python = env_root / "bin/python"
     browser_root = ensure_dir(render_root / "browsers", "renderer browsers")
@@ -513,9 +539,18 @@ def ensure_renderer(*, node_root: Path, bootstrap_python: Path, uv: Path, prime_
     if pin_receipt_path.is_file() and helper_receipt_path.is_file():
         pin = read_json(pin_receipt_path)
         runtime = read_json(helper_receipt_path)
+        if pin.get("renderer_root") != str(render_root):
+            raise BootstrapError("prepared renderer root does not match the requested renderer root")
         renderer = ensure_regular(Path(str(pin.get("renderer", ""))), "prepared renderer")
         asset = ensure_regular(Path(str(pin.get("p5_brush", ""))), "prepared p5.brush asset")
         renderer_python = ensure_runtime_executable(Path(str(pin.get("renderer_python", ""))), "renderer interpreter", env_root)
+        for path, description in ((renderer, "prepared renderer"), (asset, "prepared p5.brush asset"), (renderer_python, "renderer interpreter")):
+            try:
+                path.absolute().relative_to(render_root.absolute())
+            except ValueError as exc:
+                raise BootstrapError(f"{description} is outside the requested renderer root") from exc
+        if pin.get("browsers") != str(browser_root):
+            raise BootstrapError("prepared renderer browser root does not match the requested renderer root")
         if pin.get("renderer_sha256") != RENDERER_SHA256 or sha256_file(renderer) != RENDERER_SHA256 or pin.get("p5_brush_sha256") != P5_BRUSH_SHA256 or sha256_file(asset) != P5_BRUSH_SHA256:
             raise BootstrapError("prepared renderer or p5.brush asset changed after verification")
         if sha256_file(renderer_python) != pin.get("renderer_python_sha256"):
@@ -555,6 +590,7 @@ def ensure_renderer(*, node_root: Path, bootstrap_python: Path, uv: Path, prime_
     renderer_python = ensure_runtime_executable(renderer_python, "renderer interpreter", env_root)
     pin = {
         "schema": "staged-family-balanced-renderer-pin-v1",
+        "renderer_root": str(render_root),
         "renderer": str(renderer), "renderer_sha256": RENDERER_SHA256,
         "p5_brush": str(asset), "p5_brush_sha256": P5_BRUSH_SHA256,
         "renderer_python": str(renderer_python), "renderer_python_sha256": sha256_file(renderer_python),
@@ -626,7 +662,7 @@ def ensure_materialized(*, node_root: Path, source_assets: Path, source_root: Pa
     return output
 
 
-def ensure_prepared(*, node_root: Path, source_root: Path, materialized: Path, prime_root: Path, model: Path, policy: Path, frozen: Path, renderer: Path, renderer_python: Path, gpus_per_node: int, num_train_gpus: int, num_infer_gpus: int, bootstrap_python: Path) -> Path:
+def ensure_prepared(*, node_root: Path, renderer_root: Path, source_root: Path, materialized: Path, prime_root: Path, model: Path, policy: Path, frozen: Path, renderer: Path, renderer_python: Path, gpus_per_node: int, num_train_gpus: int, num_infer_gpus: int, bootstrap_python: Path) -> Path:
     preflight = node_root / "config-preflight"
     config_path = preflight / "native.toml"
     config_receipt = preflight / "config-receipt.json"
@@ -642,7 +678,7 @@ def ensure_prepared(*, node_root: Path, source_root: Path, materialized: Path, p
         if prepared.exists():
             raise BootstrapError("partial prepared node directory exists")
         run_checked([
-            str(bootstrap_python), str(RUN_ROOT / "prepare_node.py"), "--source-root", str(source_root), "--node-root", str(prepared), "--materialized-root", str(materialized), "--prime-root", str(prime_root), "--model-dir", str(model), "--policy-adapter", str(policy), "--frozen-adapter", str(frozen), "--renderer", str(renderer), "--renderer-python", str(renderer_python), "--repo-root", str(REPO_ROOT), "--gpus-per-node", str(gpus_per_node), "--num-train-gpus", str(num_train_gpus), "--num-infer-gpus", str(num_infer_gpus),
+            str(bootstrap_python), str(RUN_ROOT / "prepare_node.py"), "--source-root", str(source_root), "--node-root", str(prepared), "--materialized-root", str(materialized), "--prime-root", str(prime_root), "--model-dir", str(model), "--policy-adapter", str(policy), "--frozen-adapter", str(frozen), "--renderer", str(renderer), "--renderer-python", str(renderer_python), "--renderer-root", str(renderer_root), "--repo-root", str(REPO_ROOT), "--gpus-per-node", str(gpus_per_node), "--num-train-gpus", str(num_train_gpus), "--num-infer-gpus", str(num_infer_gpus),
         ], timeout=600)
     else:
         ensure_dir(prepared, "prepared node")
@@ -650,31 +686,34 @@ def ensure_prepared(*, node_root: Path, source_root: Path, materialized: Path, p
     return prepared
 
 
-def ensure_canary(*, prepared: Path, source_root: Path, materialized: Path, bootstrap_python: Path) -> dict[str, Any]:
+def ensure_canary(*, prepared: Path, renderer_root: Path, source_root: Path, materialized: Path, bootstrap_python: Path) -> dict[str, Any]:
     receipt_path = prepared / "canary-receipt.json"
     if receipt_path.is_file():
         value = read_json(receipt_path)
-        if value.get("status") != "passed_import_hook_and_renderer" or value.get("orchestrator_setup_called") is not False:
+        if value.get("status") != "passed_import_hook_and_renderer" or value.get("orchestrator_setup_called") is not False or value.get("renderer_root") != str(renderer_root):
             raise BootstrapError("existing canary receipt is not a passing no-launch canary")
         return value
     env = dict(os.environ)
     renderer = read_json(prepared / "prepare-receipt.json").get("renderer", {})
-    renderer_python = Path(str(renderer.get("python", ""))).resolve()
-    browser_root = renderer_python.parents[2] / "browsers"
+    if renderer.get("renderer_root") != str(renderer_root):
+        raise BootstrapError("prepared renderer receipt does not match the requested renderer root")
+    browser_root = renderer_root / "browsers"
     env["PAINTER_BROWSER_ROOT"] = str(browser_root)
-    run_checked([str(bootstrap_python), str(RUN_ROOT / "canary.py"), "--source-root", str(source_root), "--node-root", str(prepared), "--materialized-root", str(materialized), "--repo-root", str(REPO_ROOT)], env=env, timeout=600)
+    run_checked([str(bootstrap_python), str(RUN_ROOT / "canary.py"), "--source-root", str(source_root), "--node-root", str(prepared), "--materialized-root", str(materialized), "--renderer-root", str(renderer_root), "--repo-root", str(REPO_ROOT)], env=env, timeout=600)
     value = read_json(receipt_path)
     if value.get("status") != "passed_import_hook_and_renderer":
         raise BootstrapError("canary did not produce the required import and renderer status")
     return value
 
 
-def validate_ready(path: Path, *, topology: dict[str, int]) -> dict[str, Any]:
+def validate_ready(path: Path, *, topology: dict[str, int], renderer_root: Path) -> dict[str, Any]:
     value = read_json(path)
     if value.get("schema") != "staged-family-balanced-bootstrap-ready-v1" or value.get("status") != "ready_no_launch" or value.get("run_id") != RUN_ID:
         raise BootstrapError("existing bootstrap receipt is not a staged no-launch receipt")
     if value.get("topology") != topology:
         raise BootstrapError("existing bootstrap receipt has a different GPU topology")
+    if value.get("renderer_root") != str(renderer_root):
+        raise BootstrapError("existing bootstrap receipt has a different renderer root")
     return value
 
 
@@ -682,12 +721,13 @@ def bootstrap(args: argparse.Namespace) -> dict[str, Any]:
     visible = visible_gpu_count()
     validate_topology(gpus_per_node=args.gpus_per_node, num_train_gpus=args.num_train_gpus, num_infer_gpus=args.num_infer_gpus, visible_gpus=visible)
     node_root = ensure_dir(args.node_root, "node root")
+    renderer_root = ensure_renderer_root(node_root, args.renderer_root)
     for name in ("private", "logs", "staging"):
         ensure_dir(node_root / name, f"protected node {name}")
     ready_path = node_root / "bootstrap-ready.json"
     topology = {"gpus_per_node": args.gpus_per_node, "num_train_gpus": args.num_train_gpus, "num_infer_gpus": args.num_infer_gpus}
     if ready_path.is_file():
-        return validate_ready(ready_path, topology=topology)
+        return validate_ready(ready_path, topology=topology, renderer_root=renderer_root)
     if ready_path.exists():
         raise BootstrapError("partial bootstrap receipt exists")
     bootstrap_python, uv = ensure_bootstrap_env(node_root)
@@ -697,14 +737,14 @@ def bootstrap(args: argparse.Namespace) -> dict[str, Any]:
     model = ensure_model(node_root=node_root, bootstrap_python=bootstrap_python)
     policy = ensure_adapter(node_root=node_root, bootstrap_python=bootstrap_python, revision=POLICY_REVISION, prefix=POLICY_PREFIX, expected_sha=POLICY_SHA256, name="policy")
     frozen = ensure_adapter(node_root=node_root, bootstrap_python=bootstrap_python, revision=FROZEN_REVISION, prefix=FROZEN_PREFIX, expected_sha=FROZEN_SHA256, name="frozen")
-    renderer, renderer_python, browser_root, renderer_receipt = ensure_renderer(node_root=node_root, bootstrap_python=bootstrap_python, uv=uv, prime_root=prime_root)
+    renderer, renderer_python, browser_root, renderer_receipt = ensure_renderer(node_root=node_root, renderer_root=renderer_root, bootstrap_python=bootstrap_python, uv=uv, prime_root=prime_root)
     source_assets, source_receipt = ensure_source_assets(node_root=node_root, bootstrap_python=bootstrap_python, source_root=args.source_root)
     materialized = ensure_materialized(node_root=node_root, source_assets=source_assets, source_root=args.source_root, bootstrap_python=bootstrap_python)
-    prepared = ensure_prepared(node_root=node_root, source_root=args.source_root, materialized=materialized, prime_root=prime_root, model=model, policy=policy, frozen=frozen, renderer=renderer, renderer_python=renderer_python, gpus_per_node=args.gpus_per_node, num_train_gpus=args.num_train_gpus, num_infer_gpus=args.num_infer_gpus, bootstrap_python=bootstrap_python)
-    canary = ensure_canary(prepared=prepared, source_root=args.source_root, materialized=materialized, bootstrap_python=bootstrap_python)
+    prepared = ensure_prepared(node_root=node_root, renderer_root=renderer_root, source_root=args.source_root, materialized=materialized, prime_root=prime_root, model=model, policy=policy, frozen=frozen, renderer=renderer, renderer_python=renderer_python, gpus_per_node=args.gpus_per_node, num_train_gpus=args.num_train_gpus, num_infer_gpus=args.num_infer_gpus, bootstrap_python=bootstrap_python)
+    canary = ensure_canary(prepared=prepared, renderer_root=renderer_root, source_root=args.source_root, materialized=materialized, bootstrap_python=bootstrap_python)
     ready = {
         "schema": "staged-family-balanced-bootstrap-ready-v1", "status": "ready_no_launch", "run_id": RUN_ID,
-        "node_root": str(node_root), "repo_root": str(REPO_ROOT), "source_root": str(args.source_root),
+        "node_root": str(node_root), "renderer_root": str(renderer_root), "repo_root": str(REPO_ROOT), "source_root": str(args.source_root),
         "brush_root": str(REPO_ROOT / "painter"),
         "topology": topology, "visible_gpu_count": visible, "training_started": False, "model_generation": False, "judge_calls": False, "background_processes_left_running": False, "credentials_embedded": False,
         "prime": {"root": str(prime_root), "revision": PRIME_COMMIT, "python": str(prime_python)},
@@ -721,6 +761,7 @@ def bootstrap(args: argparse.Namespace) -> dict[str, Any]:
 def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--node-root", type=Path, required=True)
+    parser.add_argument("--renderer-root", type=Path, default=None)
     parser.add_argument("--prime-root", type=Path)
     parser.add_argument("--source-root", type=Path, default=RUN_ROOT)
     parser.add_argument("--gpus-per-node", type=int, required=True)

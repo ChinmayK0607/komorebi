@@ -145,6 +145,44 @@ class BootstrapUnitTests(unittest.TestCase):
             with self.assertRaises(BOOTSTRAP.BootstrapError):
                 BOOTSTRAP.ensure_runtime_executable(link, "fixture venv Python", venv)
 
+    def test_explicit_renderer_root_is_used_and_old_default_is_preserved(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            node = root / "node"
+            node.mkdir()
+            old = node / "renderer"
+            old.mkdir()
+            (old / "partial.marker").write_text("preserve\n", encoding="utf-8")
+            explicit = root / "workspace" / "painter-renderer"
+            selected = BOOTSTRAP.ensure_renderer_root(node, explicit)
+            self.assertEqual(selected, explicit.resolve())
+            self.assertTrue((old / "partial.marker").is_file())
+            self.assertFalse(selected.is_symlink())
+            with self.assertRaises(BOOTSTRAP.BootstrapError):
+                BOOTSTRAP.ensure_renderer_root(node, node / "models")
+            link = root / "renderer-link"
+            link.symlink_to(explicit, target_is_directory=True)
+            with self.assertRaises(BOOTSTRAP.BootstrapError):
+                BOOTSTRAP.ensure_renderer_root(node, link)
+
+    def test_ready_receipt_binds_renderer_root(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            receipt = root / "bootstrap-ready.json"
+            renderer_root = root / "renderer"
+            renderer_root.mkdir()
+            value = {
+                "schema": "staged-family-balanced-bootstrap-ready-v1",
+                "status": "ready_no_launch",
+                "run_id": BOOTSTRAP.RUN_ID,
+                "topology": {"gpus_per_node": 2, "num_train_gpus": 1, "num_infer_gpus": 1},
+                "renderer_root": str(renderer_root.resolve()),
+            }
+            receipt.write_text(json.dumps(value), encoding="utf-8")
+            self.assertEqual(BOOTSTRAP.validate_ready(receipt, topology=value["topology"], renderer_root=renderer_root.resolve()), value)
+            with self.assertRaises(BOOTSTRAP.BootstrapError):
+                BOOTSTRAP.validate_ready(receipt, topology=value["topology"], renderer_root=root / "other-renderer")
+
     def test_hf_snapshot_blob_symlink_is_allowed_but_cache_escape_is_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

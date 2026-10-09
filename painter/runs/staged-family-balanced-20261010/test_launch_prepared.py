@@ -18,7 +18,7 @@ SPEC.loader.exec_module(HANDOFF)
 
 class PreparedLaunchTests(unittest.TestCase):
     def _verified(self, root: Path) -> dict[str, object]:
-        paths = {name: root / name for name in ("repo", "prime", "prime-python", "materialized", "model", "policy", "frozen", "renderer", "renderer-python", "browsers", "brush", "prepared")}
+        paths = {name: root / name for name in ("repo", "prime", "prime-python", "materialized", "model", "policy", "frozen", "renderer", "renderer-python", "renderer-root", "browsers", "brush", "prepared")}
         for name, path in paths.items():
             if name.endswith("python") or name in {"renderer", "brush"}:
                 path.write_text("fixture\n", encoding="utf-8")
@@ -32,7 +32,7 @@ class PreparedLaunchTests(unittest.TestCase):
             "repo_root": paths["repo"], "prime_root": paths["prime"], "prime_python": paths["prime-python"],
             "materialized": paths["materialized"], "model_dir": paths["model"], "policy": paths["policy"],
             "frozen": paths["frozen"], "renderer": paths["renderer"], "renderer_python": paths["renderer-python"],
-            "browser_root": paths["browsers"], "brush_root": paths["brush"], "prepared": paths["prepared"],
+            "browser_root": paths["browsers"], "renderer_root": paths["renderer-root"], "brush_root": paths["brush"], "prepared": paths["prepared"],
             "gateway": gateway,
         }
 
@@ -50,6 +50,7 @@ class PreparedLaunchTests(unittest.TestCase):
             self.assertEqual(env["PAINTER_FROZEN_SFT_ADAPTER"], str(verified["frozen"]))
             self.assertEqual(env["PAINTER_RENDERER_PATH"], str(verified["renderer"]))
             self.assertEqual(env["PAINTER_RENDERER_PYTHON_PATH"], str(verified["renderer_python"]))
+            self.assertEqual(env["PAINTER_RENDERER_ROOT"], str(verified["renderer_root"]))
             self.assertEqual(env["PAINTER_BROWSER_ROOT"], str(verified["browser_root"]))
             self.assertEqual(env["BRUSH_ROOT"], str(verified["brush_root"]))
             self.assertEqual(env["PAINTER_GATEWAY_ENV_FILE"], str(gateway.resolve()))
@@ -137,6 +138,52 @@ class PreparedLaunchTests(unittest.TestCase):
             weights.symlink_to(outside)
             with self.assertRaises(HANDOFF.PreparedLaunchError):
                 HANDOFF._weights(adapter, hashlib.sha256(b"escape").hexdigest(), "fixture adapter")
+
+    def test_renderer_validation_follows_explicit_renderer_root(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            renderer_root = root / "workspace" / "painter-renderer"
+            renderer_root.mkdir(parents=True)
+            renderer_root = renderer_root.resolve()
+            runtime_bin = renderer_root / "renderer-env" / "bin"
+            runtime_bin.mkdir(parents=True)
+            browser_root = renderer_root / "browsers"
+            browser_root.mkdir()
+            renderer = renderer_root / "cancellable-runtime" / "renderer.py"
+            p5_brush = renderer_root / "cancellable-runtime" / "assets" / "p5.brush.js"
+            renderer.parent.mkdir(parents=True)
+            p5_brush.parent.mkdir()
+            renderer.write_bytes(b"renderer")
+            p5_brush.write_bytes(b"p5")
+            renderer_python = runtime_bin / "python"
+            renderer_python.write_text("#!/bin/sh\n", encoding="utf-8")
+            renderer_python.chmod(0o755)
+            pin = {
+                "renderer_root": str(renderer_root),
+                "renderer": str(renderer),
+                "renderer_sha256": hashlib.sha256(renderer.read_bytes()).hexdigest(),
+                "p5_brush": str(p5_brush),
+                "p5_brush_sha256": hashlib.sha256(p5_brush.read_bytes()).hexdigest(),
+                "renderer_python": str(renderer_python),
+                "renderer_python_sha256": hashlib.sha256(renderer_python.read_bytes()).hexdigest(),
+                "playwright": HANDOFF.BOOTSTRAP.PLAYWRIGHT_VERSION,
+                "pillow": HANDOFF.BOOTSTRAP.PILLOW_VERSION,
+                "browsers": str(browser_root),
+            }
+            ready = {
+                "renderer_root": str(renderer_root),
+                "renderer": {
+                    "pin": pin,
+                    "runtime_helper": {"sandbox_smoke": "passed", "node_check": "passed", "browser_root": str(browser_root)},
+                },
+            }
+            with patch.object(HANDOFF, "RENDERER_SHA256", pin["renderer_sha256"]), patch.object(HANDOFF, "P5_BRUSH_SHA256", pin["p5_brush_sha256"]):
+                validated = HANDOFF._validate_renderer(ready)
+            self.assertEqual(validated[-1], renderer_root)
+            ready["renderer_root"] = str(root / "wrong-root")
+            with patch.object(HANDOFF, "RENDERER_SHA256", pin["renderer_sha256"]), patch.object(HANDOFF, "P5_BRUSH_SHA256", pin["p5_brush_sha256"]):
+                with self.assertRaises(HANDOFF.PreparedLaunchError):
+                    HANDOFF._validate_renderer(ready)
 
     def test_topology_shape_is_checked_before_launch(self) -> None:
         ready = {"topology": {"gpus_per_node": 2, "num_train_gpus": 1, "num_infer_gpus": 1}}

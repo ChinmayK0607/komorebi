@@ -23,6 +23,7 @@ MODEL_DIR="${MODEL_DIR:?set MODEL_DIR to the local base snapshot}"
 POLICY_ADAPTER="${WATERCOLOUR_INIT_ADAPTER:?set WATERCOLOUR_INIT_ADAPTER to the verified Flash12 adapter}"
 FROZEN_ADAPTER="${PAINTER_FROZEN_SFT_ADAPTER:?set PAINTER_FROZEN_SFT_ADAPTER to the verified SFT512 adapter}"
 BRUSH_ROOT="${BRUSH_ROOT:?set BRUSH_ROOT to the reviewed brush helper tree}"
+RENDERER_ROOT="${PAINTER_RENDERER_ROOT:?set PAINTER_RENDERER_ROOT to the verified renderer root}"
 GATEWAY_ENV_FILE="${PAINTER_GATEWAY_ENV_FILE:?set PAINTER_GATEWAY_ENV_FILE to the owner-only judge credential file}"
 RENDERER_PATH="${PAINTER_RENDERER_PATH:?set PAINTER_RENDERER_PATH to the verified renderer}"
 RENDERER_PYTHON_PATH="${PAINTER_RENDERER_PYTHON_PATH:?set PAINTER_RENDERER_PYTHON_PATH to the renderer interpreter}"
@@ -41,6 +42,7 @@ TIMEOUT_SECONDS="${PAINTER_RUN_TIMEOUT_SECONDS:-172800}"
 [[ -f "$POLICY_ADAPTER/adapter_model.safetensors" && -f "$FROZEN_ADAPTER/adapter_model.safetensors" ]] || { echo 'verified adapters are incomplete' >&2; exit 1; }
 [[ "$(cd "$POLICY_ADAPTER" && pwd -P)" != "$(cd "$FROZEN_ADAPTER" && pwd -P)" ]] || { echo 'policy and frozen adapters must be distinct' >&2; exit 1; }
 [[ -f "$RENDERER_PATH" && -x "$RENDERER_PYTHON_PATH" ]] || { echo 'verified renderer paths are missing' >&2; exit 1; }
+[[ -d "$RENDERER_ROOT" && ! -L "$RENDERER_ROOT" ]] || { echo 'verified renderer root is missing or symlinked' >&2; exit 1; }
 [[ -f "$GATEWAY_ENV_FILE" && ! -L "$GATEWAY_ENV_FILE" && "$(stat -c %a "$GATEWAY_ENV_FILE")" == 600 ]] || { echo 'judge credential file must be owner-only mode 600' >&2; exit 1; }
 [[ ! -e "$NODE_ROOT/launch.started" && ! -e "$NODE_ROOT/async-output" ]] || { echo 'existing staged output; preserve it before another launch' >&2; exit 1; }
 [[ "$TIMEOUT_SECONDS" =~ ^[1-9][0-9]*$ && "$TIMEOUT_SECONDS" -le 604800 ]] || { echo 'PAINTER_RUN_TIMEOUT_SECONDS must be 1..604800' >&2; exit 2; }

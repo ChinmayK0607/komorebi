@@ -285,6 +285,7 @@ def prepare_node(
     frozen_adapter: Path,
     renderer: Path,
     renderer_python: Path,
+    renderer_root: Path,
     repo_root: Path = REPO_ROOT,
     gpus_per_node: int = 4,
     num_train_gpus: int = 2,
@@ -302,6 +303,7 @@ def prepare_node(
     else:
         node_root.mkdir(parents=True, exist_ok=False)
     prime_root = _directory(prime_root, "Prime root")
+    renderer_root = _directory(renderer_root, "renderer root")
     prime_python = _runtime_executable(prime_root / ".venv/bin/python", "pinned Prime Python", prime_root / ".venv")
     revision = _git_revision(prime_root)
     protocol_receipt = _validate_protocol(source_root)
@@ -314,9 +316,17 @@ def prepare_node(
     policy = _validate_adapter(policy_adapter, POLICY_SHA256, "Flash12 policy initializer")
     frozen = _validate_adapter(frozen_adapter, FROZEN_SFT_SHA256, "frozen SFT512 opponent")
     renderer = _file(renderer, "renderer")
+    try:
+        renderer.absolute().relative_to(renderer_root.absolute())
+    except ValueError as exc:
+        raise ValueError("renderer is outside the verified renderer root") from exc
     if sha256_file(renderer) != RENDERER_SHA256:
         raise ValueError("renderer does not match the pinned renderer SHA-256")
     renderer_python = _runtime_executable(renderer_python, "renderer Python", renderer_python.parent.parent)
+    try:
+        renderer_python.absolute().relative_to(renderer_root.absolute())
+    except ValueError as exc:
+        raise ValueError("renderer Python is outside the verified renderer root") from exc
 
     config_path = node_root / "native.toml"
     config_receipt_path = node_root / "config-receipt.json"
@@ -352,7 +362,7 @@ def prepare_node(
         "model": {"path": str(model_dir), "revision": BASE_MODEL_REVISION, "config_sha256": sha256_file(model_dir / "config.json")},
         "policy_initializer": policy,
         "frozen_sft": frozen,
-        "renderer": {"path": str(renderer), "sha256": RENDERER_SHA256, "python": str(renderer_python)},
+        "renderer": {"root": str(renderer_root), "path": str(renderer), "sha256": RENDERER_SHA256, "python": str(renderer_python)},
         "config": {"path": str(config_path), "sha256": sha256_file(config_path), "receipt_sha256": sha256_file(config_receipt_path)},
         "config_contract": {"batch_size": 24, "group_size": 4, "constant_trainer_batch_size": True, "optimizer_updates": 20, "checkpoint_interval": 4, "train_rows": 96, "heldout_rows": 32},
         "prime_validation": "deferred_to_canary",
@@ -372,6 +382,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--frozen-adapter", type=Path, required=True)
     parser.add_argument("--renderer", type=Path, required=True)
     parser.add_argument("--renderer-python", type=Path, required=True)
+    parser.add_argument("--renderer-root", type=Path, required=True)
     parser.add_argument("--repo-root", type=Path, default=REPO_ROOT)
     parser.add_argument("--gpus-per-node", type=int, default=4)
     parser.add_argument("--num-train-gpus", type=int, default=2)

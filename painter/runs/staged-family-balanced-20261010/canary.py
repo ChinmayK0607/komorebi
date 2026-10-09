@@ -323,10 +323,11 @@ def run_probe(*, prime_python: Path, source_root: Path, repo_root: Path, state_p
     return result
 
 
-def canary(*, source_root: Path, node_root: Path, materialized_root: Path, repo_root: Path = REPO_ROOT) -> dict[str, Any]:
+def canary(*, source_root: Path, node_root: Path, materialized_root: Path, renderer_root: Path, repo_root: Path = REPO_ROOT) -> dict[str, Any]:
     PREP.require_linux()
     source_root = PREP._directory(source_root, "staged source root")
     node_root = PREP._directory(node_root, "node root")
+    renderer_root = PREP._directory(renderer_root, "renderer root")
     repo_root = PREP._directory(repo_root, "repository root")
     materialized = PREP._validate_materialized(materialized_root)
     prepare_receipt_path = PREP._file(node_root / "prepare-receipt.json", "node preparation receipt")
@@ -358,6 +359,8 @@ def canary(*, source_root: Path, node_root: Path, materialized_root: Path, repo_
     prepared_renderer = prepare_receipt.get("renderer")
     if not isinstance(prepared_renderer, dict):
         raise ValueError("node preparation receipt lacks the verified renderer identity")
+    if prepared_renderer.get("root") != str(renderer_root):
+        raise ValueError("node preparation renderer root does not match the canary root")
     renderer = PREP._file(Path(str(prepared_renderer.get("path", ""))), "prepared renderer")
     renderer_python = PREP._runtime_executable(
         Path(str(prepared_renderer.get("python", ""))),
@@ -370,7 +373,7 @@ def canary(*, source_root: Path, node_root: Path, materialized_root: Path, repo_
         renderer=renderer,
         renderer_python=renderer_python,
         node_root=node_root,
-        browser_root=Path(os.environ["PAINTER_BROWSER_ROOT"]) if os.environ.get("PAINTER_BROWSER_ROOT") else None,
+        browser_root=renderer_root / "browsers",
     )
     receipt = {
         "schema": "staged-family-balanced-prime-canary-v1",
@@ -383,6 +386,7 @@ def canary(*, source_root: Path, node_root: Path, materialized_root: Path, repo_
         "prime_python": str(prime_python),
         "source_root": str(source_root),
         "node_root": str(node_root),
+        "renderer_root": str(renderer_root),
         "materialized": materialized,
         "config": {"path": str(config_path), "sha256": sha256_file(config_path), "receipt_sha256": sha256_file(config_receipt_path)},
         "probe": probe,
@@ -411,6 +415,7 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--source-root", type=Path, default=RUN_ROOT)
     parser.add_argument("--node-root", type=Path, required=True)
+    parser.add_argument("--renderer-root", type=Path, required=True)
     parser.add_argument("--materialized-root", type=Path, required=True)
     parser.add_argument("--repo-root", type=Path, default=REPO_ROOT)
     args = parser.parse_args(argv)

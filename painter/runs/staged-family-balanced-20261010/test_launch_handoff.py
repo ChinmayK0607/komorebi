@@ -216,6 +216,7 @@ class LaunchHandoffTests(unittest.TestCase):
         self.assertLessEqual(CANARY.RENDER_TIMEOUT_SECONDS, 90)
         self.assertNotIn("Orchestrator()", CANARY_SOURCE)
         self.assertNotIn("Orchestrator.setup(", CANARY_SOURCE)
+        self.assertIn('"renderer_root": str(renderer_root)', CANARY_SOURCE)
 
     def test_renderer_canary_uses_fake_interpreter_without_chromium(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -283,6 +284,7 @@ class LaunchHandoffTests(unittest.TestCase):
         self.assertNotIn("nohup", LAUNCH_SOURCE)
         self.assertNotIn("export PAINTER_PRIME_ROLE=orchestrator", LAUNCH_SOURCE)
         self.assertIn('export WATERCOLOUR_INIT_ADAPTER="$POLICY_ADAPTER" PAINTER_FROZEN_SFT_ADAPTER="$FROZEN_ADAPTER"', LAUNCH_SOURCE)
+        self.assertIn('PAINTER_RENDERER_ROOT', LAUNCH_SOURCE)
         self.assertIn('"constant_trainer_batch_size") is not True', LAUNCH_SOURCE)
         self.assertIn('"policy_initializer":', LAUNCH_SOURCE)
         self.assertIn('"frozen_sft":', LAUNCH_SOURCE)

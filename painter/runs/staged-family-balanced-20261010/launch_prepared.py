@@ -143,7 +143,7 @@ def _validate_topology(ready: dict[str, Any], *, visible_gpus: int) -> dict[str,
     return result
 
 
-def _validate_renderer(ready: dict[str, Any]) -> tuple[Path, Path, Path]:
+def _validate_renderer(ready: dict[str, Any]) -> tuple[Path, Path, Path, Path]:
     renderer_record = ready.get("renderer")
     if not isinstance(renderer_record, dict):
         raise PreparedLaunchError("bootstrap receipt lacks renderer identity")
@@ -155,13 +155,21 @@ def _validate_renderer(ready: dict[str, Any]) -> tuple[Path, Path, Path]:
         raise PreparedLaunchError("renderer pin is not the reviewed runtime")
     if runtime.get("sandbox_smoke") != "passed" or runtime.get("node_check") != "passed" or runtime.get("browser_root") != pin.get("browsers"):
         raise PreparedLaunchError("renderer sandbox/Node helper did not pass")
+    renderer_root = _path(ready.get("renderer_root"), "renderer root", directory=True)
+    if pin.get("renderer_root") != str(renderer_root):
+        raise PreparedLaunchError("renderer pin root does not match the bootstrap receipt")
     renderer = _path(pin.get("renderer"), "renderer")
     p5_brush = _path(pin.get("p5_brush"), "p5.brush asset")
     renderer_python = _runtime_executable(pin.get("renderer_python"), "renderer interpreter", Path(str(pin.get("renderer_python"))).parent.parent)
     browser_root = _path(pin.get("browsers"), "renderer browser root", directory=True)
+    for path, description in ((renderer, "renderer"), (p5_brush, "p5.brush asset"), (renderer_python, "renderer interpreter"), (browser_root, "renderer browser root")):
+        try:
+            path.absolute().relative_to(renderer_root.absolute())
+        except ValueError as exc:
+            raise PreparedLaunchError(f"{description} is outside the verified renderer root") from exc
     if sha256_file(renderer) != RENDERER_SHA256 or sha256_file(p5_brush) != P5_BRUSH_SHA256 or sha256_file(renderer_python) != pin.get("renderer_python_sha256"):
         raise PreparedLaunchError("renderer or interpreter bytes changed after preparation")
-    return renderer, renderer_python, browser_root
+    return renderer, renderer_python, browser_root, renderer_root
 
 
 def validate_ready(*, ready_path: Path, node_root: Path, visible_gpus: int) -> dict[str, Any]:
@@ -210,7 +218,7 @@ def validate_ready(*, ready_path: Path, node_root: Path, visible_gpus: int) -> d
     _weights(policy, POLICY_SHA256, "Flash12 adapter")
     _weights(frozen, FROZEN_SHA256, "frozen SFT adapter")
 
-    renderer, renderer_python, browser_root = _validate_renderer(ready)
+    renderer, renderer_python, browser_root, renderer_root = _validate_renderer(ready)
     materialized = _path(ready.get("materialized_root"), "materialized root", directory=True)
     materialization = _read_json(materialized / "materialization-receipt.json", "materialization receipt")
     counts = materialization.get("counts")
@@ -230,7 +238,7 @@ def validate_ready(*, ready_path: Path, node_root: Path, visible_gpus: int) -> d
     if not isinstance(renderer_probe, dict) or renderer_probe.get("status") != "verified" or renderer_probe.get("valid") is not True or renderer_probe.get("renderer_sha256") != RENDERER_SHA256:
         raise PreparedLaunchError("verified renderer canary is required")
     prepared_renderer = prepare.get("renderer")
-    if not isinstance(prepared_renderer, dict) or prepared_renderer.get("path") != str(renderer) or prepared_renderer.get("python") != str(renderer_python) or prepared_renderer.get("sha256") != RENDERER_SHA256:
+    if not isinstance(prepared_renderer, dict) or prepared_renderer.get("root") != str(renderer_root) or prepared_renderer.get("path") != str(renderer) or prepared_renderer.get("python") != str(renderer_python) or prepared_renderer.get("sha256") != RENDERER_SHA256:
         raise PreparedLaunchError("prepared renderer receipt does not match the bootstrap pin")
     if prepare.get("prime_revision") != PRIME_COMMIT or prepare.get("prime_root") != str(prime_root):
         raise PreparedLaunchError("prepared Prime receipt does not match the bootstrap pin")
@@ -255,7 +263,7 @@ def validate_ready(*, ready_path: Path, node_root: Path, visible_gpus: int) -> d
         "ready": ready, "topology": topology, "repo_root": repo, "source_root": source,
         "brush_root": brush_root, "prime_root": prime_root, "prime_python": prime_python,
         "model_dir": model_dir, "policy": policy, "frozen": frozen,
-        "renderer": renderer, "renderer_python": renderer_python, "browser_root": browser_root,
+        "renderer": renderer, "renderer_python": renderer_python, "browser_root": browser_root, "renderer_root": renderer_root,
         "materialized": materialized, "prepared": prepared,
     }
 
@@ -281,6 +289,7 @@ def build_launch_environment(*, verified: dict[str, Any], gateway_env: Path, tim
         "PAINTER_FROZEN_SFT_ADAPTER": str(verified["frozen"]),
         "PAINTER_RENDERER_PATH": str(verified["renderer"]),
         "PAINTER_RENDERER_PYTHON_PATH": str(verified["renderer_python"]),
+        "PAINTER_RENDERER_ROOT": str(verified["renderer_root"]),
         "PAINTER_BROWSER_ROOT": str(verified["browser_root"]),
         "BRUSH_ROOT": str(verified["brush_root"]),
         "PAINTER_GATEWAY_ENV_FILE": str(gateway_env),
