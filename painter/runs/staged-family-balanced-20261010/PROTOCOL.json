@@ -71,11 +71,11 @@
   },
   "config": {
     "path": "config.json",
-    "sha256": "1d0e044b964b7887d7267713f4532fa26a752ca04f2440d09cf8b2f55760947f"
+    "sha256": "eab319f8cc77c012d3e23a8eeaf6b4426f3d7e984e754b33850accd09142acaf"
   },
   "receipt": {
     "path": "receipt.json",
-    "sha256": "b43d18517455a937fcde7c5c3c0937689ae0ba3bf9b3d1c26e3acc8350a27e87"
+    "sha256": "3037d4f56a12a07089e7e35d3d9e90ac9b8daff03ae8c3f6981ddd4cf954a873"
   },
   "tail_purge_hook": {
     "path": "prime_tail_purge.py",
@@ -84,6 +84,30 @@
     "validated": true,
     "full_prime_compatibility": false,
     "required_before_stage_advance": true
+  },
+  "runtime_binding": {
+    "path": "runtime_binding.py",
+    "sitecustomize": "sitecustomize.py",
+    "sha256": "b83694b9e76288b8d136b942e5ef85e503d540e033d30470657558e8e54fedb9",
+    "sitecustomize_sha256": "4f0d96b1f0cfeeccd8fcd3d7b0516e7fda2f27c3c565181458bc99be170eb3b1",
+    "status": "node_free_fake_prime_validated_pending_linux_canary",
+    "validated": true,
+    "full_prime_compatibility": false,
+    "atomic_state": true,
+    "stage_tail_purge_required_before_advance": true,
+    "optimizer_update_confirmation": "TrainBatch selection is journaled first; only WeightWatcher.on_update for the expected policy version records the optimizer update",
+    "dispatch_gate": "binding-owned six-group gate is layered with Prime lead permission; active groups drain while fresh dispatch is paused",
+    "trainer_candidate_inventory": "controller inventory contains only exact trace IDs present in native TrainSink.pending_batch after process_group",
+    "activation_env": {
+      "PAINTER_STAGED_CURRICULUM_ENABLE": "1",
+      "PAINTER_STAGED_CURRICULUM_RUN_ID": "staged-family-balanced-20261010",
+      "PAINTER_STAGED_CURRICULUM_PROTOCOL": "staged-family-balanced-protocol-v1",
+      "PAINTER_STAGED_CURRICULUM_ADMISSION": "1",
+      "PAINTER_STAGED_CURRICULUM_ROOT": "<run-root>",
+      "PAINTER_STAGED_CURRICULUM_STATE": "<run-root>/runtime-state.json"
+    },
+    "batch_boundary": "_maybe_batch remains closed during group assembly and is released only after the active six-group pass receipt; in-group calls cannot ship carry-over traces",
+    "resume_scope": "only clean optimizer/stage boundaries or a persisted exact selected-batch/update/tail-purge reconciliation may resume; partial native buffers fail closed"
   },
   "reward_and_renderer": {
     "judge_model": "xiaomi/mimo-v2.6-flash",
@@ -131,8 +155,15 @@
   "pending_choices": {
     "batch_size": "Prime batch_size=24 counts trainable traces; six per-family groups provide 24 cycle capacity, partial groups can span cycles, and the node-free Prime compatibility check is required before allocation",
     "prime_tail_purge_hook": "required before any stage transition; the runtime must physically consume and purge the exact recorded stage-tail trace IDs, so this preparation is not launch-ready",
+    "runtime_censored_cycle_purge": "required: purge every native pending trace attributable to a censored six-group cycle before reopening the deterministic retry gate",
+    "runtime_resume_reconciliation": "required: reconcile only a persisted exact selected TrainBatch against native startup policy.version/progress.step; partial cycle, dispatch cursor, or orphaned inventory states fail closed because native buffers are not durable",
     "renderer_canary": "measure the repaired renderer tail before any scaled rental",
-      "quality_threshold": "schedule completion is a progression receipt, not a quality gate or claim of visual improvement; judge outcomes remain descriptive until the matched panel is complete"
+    "quality_threshold": "schedule completion is a progression receipt, not a quality gate or claim of visual improvement; judge outcomes remain descriptive until the matched panel is complete",
+    "runtime_batch_boundary": "required: defer Prime _maybe_batch until the active six-group cycle has a pass receipt; carried traces may fill the next optimizer batch only after that cycle completes",
+    "runtime_sampling_attempt_cap": "required: every completed six-group attempt, including censored retries, increments persisted per-stage attempts and stops at the finite two-times cap",
+    "runtime_stale_group_cancellation": "required: stale GroupCancellation voids every arrived group member as pipeline evidence and must leave no native pending IDs; non-stale cancellation may admit three scored traces with explicit placeholders",
+    "preflight_surface": "hash-bound bootstrap, materializer, config/node preparation, import-hook/real-renderer canary, foreground launch, receipt-derived launch_prepared.py handoff, run-owned adapter, runtime binding, sitecustomize, tail purge, and reviewed external photo runner/trainer wrappers; bootstrap/canary/launch/launch_prepared are prepared but not run",
+    "bootstrap": "bootstrap.py/bootstrap.sh are prepared but unrun; an explicit Linux execution accepts only exact 1+1 or 2+2 train/inference GPU topologies, verifies public pinned downloads, applies the reviewed renderer sandbox helper, runs materialization/preflight/canary, and writes ready_no_launch without starting Prime"
   },
   "results": {
     "status": "pending_no_gpu",
@@ -141,5 +172,121 @@
     "gpu_utilization": null,
     "cost": null,
     "next_decision": "await node-free compatibility and renderer-canary review"
+  },
+  "run_surface": {
+    "schema": "staged-family-balanced-run-surface-v1",
+    "status": "prepared_offline_not_run",
+    "files": {
+      "bootstrap": {
+        "path": "bootstrap.py",
+        "sha256": "b69482ab714f0f6fe7dee48a394ccfb1358a765b173725a207bb0353808bfbaf"
+      },
+      "bootstrap_shell": {
+        "path": "bootstrap.sh",
+        "sha256": "37f7d4d151029a6586dc317a4e40420108f7ac33943abb89856c900f687f1b18"
+      },
+      "materializer": {
+        "path": "materialize.py",
+        "sha256": "0f8e225ba1bc35592ecc9821b3ad3906b21e6ee685d384b9c8ef438f8484d5a8"
+      },
+      "prepare_config": {
+        "path": "prepare_config.py",
+        "sha256": "cd760069d21598d32cd62116748361d7f4439a737905cfeb906f5d640da6f278"
+      },
+      "prepare_node": {
+        "path": "prepare_node.py",
+        "sha256": "0b308d6af85bf8f7ab88c067a86c63a237d6972bbb1a244eb9c652e57897bfe7"
+      },
+      "canary": {
+        "path": "canary.py",
+        "sha256": "b349a70242c95ff6844dc91d2fe603ee6717ea32d2ef29b53f4017d8966087cf"
+      },
+      "launch": {
+        "path": "launch.sh",
+        "sha256": "ed55c57dd1bea099cf879b6c4ae706a22950789be477bbe11024749c7a1c07ad"
+      },
+      "launch_prepared": {
+        "path": "launch_prepared.py",
+        "sha256": "fa44ab6fcc3ada697ef56e8a5bb0ac6769b6ba4fafb8a5755e8a35a38aadd576"
+      },
+      "run_from_sft": {
+        "path": "run_from_sft.py",
+        "sha256": "f8d6fc87d702ba50930545547f1fc185a5fa3879e86e5ab76ccfbba03f2383d0"
+      },
+      "runtime_binding": {
+        "path": "runtime_binding.py",
+        "sha256": "b83694b9e76288b8d136b942e5ef85e503d540e033d30470657558e8e54fedb9"
+      },
+      "sitecustomize": {
+        "path": "sitecustomize.py",
+        "sha256": "4f0d96b1f0cfeeccd8fcd3d7b0516e7fda2f27c3c565181458bc99be170eb3b1"
+      },
+      "prime_tail_purge": {
+        "path": "prime_tail_purge.py",
+        "sha256": "0535199e4d6076a939122d8ad0c4c7a67e8d00dedd26acec35a71083094f5bfb"
+      },
+      "photo_runner": {
+        "path": "../photo-curriculum-rl-20260922/run_from_sft.py",
+        "sha256": "fa5ff58e23ba32d7f8236ee1359d9af9732c54cbfa114251c6d9ae964463c7d1",
+        "status": "reviewed_external_wrapper"
+      },
+      "photo_trainer": {
+        "path": "../photo-curriculum-rl-20260922/train_from_sft.py",
+        "sha256": "eea061f95c32559329ab30d08db8b5664d0966c9dbf7a199d98afb156e254491",
+        "status": "reviewed_external_wrapper"
+      }
+    },
+    "bootstrap_scope": {
+      "status": "prepared_not_run",
+      "receipt_status": "ready_no_launch",
+      "public_pinned_downloads": "prepared_only_not_executed_in_this_preparation",
+      "topologies": [
+        {
+          "gpus_per_node": 2,
+          "num_train_gpus": 1,
+          "num_infer_gpus": 1
+        },
+        {
+          "gpus_per_node": 4,
+          "num_train_gpus": 2,
+          "num_infer_gpus": 2
+        }
+      ],
+      "renderer_sandbox_helper": "reviewed prepare_renderer_runtime.py/patch_brush_centroid.py with a root-to-runuser painter boundary",
+      "steps": [
+        "public pinned Prime/model/adapter inputs",
+        "reviewed renderer sandbox helper",
+        "materialize.py",
+        "prepare_config.py",
+        "prepare_node.py",
+        "canary.py"
+      ],
+      "launch_called": false,
+      "training_started": false,
+      "model_generation": false,
+      "judge_calls": false,
+      "network_or_hardware_used": false
+    },
+    "canary_scope": {
+      "status": "prepared_not_run",
+      "scope": "pinned Prime import hook plus one bounded real renderer probe",
+      "orchestrator_setup_called": false,
+      "gpu_or_cuda": false,
+      "network": false,
+      "model": false,
+      "judge": false
+    },
+    "launch_scope": {
+      "status": "prepared_guarded_foreground_not_run",
+      "background_processes_started_by_shell": false,
+      "bounded_timeout": true,
+      "gpu_model_judge_execution": "deferred_until_explicit_launch",
+      "receipt_derived_launcher": "launch_prepared.py",
+      "requires_explicit_timeout_seconds": true,
+      "requires_owner_only_gateway_mode": "0600",
+      "gateway_contents_read_or_logged": false,
+      "scheduling": false
+    },
+    "no_gpu_or_external_calls": true
   }
 }

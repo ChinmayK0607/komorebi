@@ -199,6 +199,14 @@ class PreparationTests(unittest.TestCase):
             manifest = json.loads((Path(directory) / "curriculum-manifest.json").read_text())
             config = json.loads((Path(directory) / "config.json").read_text())
             self.assertEqual(config["curriculum"]["manifest_sha256"], curriculum.sha256_bytes(curriculum._canonical(manifest)))
+            surface = config["run_surface"]
+            self.assertEqual(surface["files"]["bootstrap"]["path"], "bootstrap.py")
+            self.assertEqual(surface["files"]["bootstrap_shell"]["path"], "bootstrap.sh")
+            self.assertEqual(surface["files"]["launch_prepared"]["path"], "launch_prepared.py")
+            self.assertEqual(surface["bootstrap_scope"]["status"], "prepared_not_run")
+            self.assertEqual(surface["bootstrap_scope"]["receipt_status"], "ready_no_launch")
+            self.assertEqual(surface["launch_scope"]["receipt_derived_launcher"], "launch_prepared.py")
+            self.assertEqual(surface["launch_scope"]["requires_owner_only_gateway_mode"], "0600")
 
 
 
@@ -261,6 +269,26 @@ class ControllerTests(unittest.TestCase):
         self.assertEqual(receipt["family_model_invalid_counts"][slots[0]["family"]], 1)
         self.assertEqual(receipt["family_scored_trace_counts"][slots[0]["family"]], 4)
         self.assertEqual(receipt["model_invalid_evidence"][0]["evidence"]["source"], "offline-test")
+
+    def test_censored_retries_consume_finite_sampling_attempt_cap(self) -> None:
+        controller = curriculum.StageController(self.plan)
+        slots = cycle_slots(self.plan, 1, 1)
+        records = [valid_group(slot) for slot in slots]
+        for rollout in records[0]["rollouts"][2:]:
+            rollout.update({
+                "ownership": "judge",
+                "status": "judge_uncertain",
+                "reward_status": "unscored",
+                "reward": None,
+                "evidence": {"source": "offline-test", "reason": "uncertain"},
+            })
+        cap = self.plan["stages"][0]["max_sampling_cycles"]
+        for _ in range(cap):
+            receipt = controller.observe_cycle(records)
+            self.assertEqual(receipt["status"], "censored")
+        self.assertTrue(controller.halted)
+        self.assertEqual(receipt["decision"], "stop")
+        self.assertEqual(receipt["sampling_attempt"], cap)
 
     def test_judge_uncertainty_excludes_known_valid_rollout(self) -> None:
         controller = curriculum.StageController(self.plan)

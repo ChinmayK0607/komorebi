@@ -111,6 +111,97 @@ def sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
+def build_run_surface() -> dict[str, Any]:
+    """Return hash-bound preparation, canary, and launch surface metadata."""
+
+    run_root = Path(__file__).resolve().parent
+    local_files = {
+        "bootstrap": "bootstrap.py",
+        "bootstrap_shell": "bootstrap.sh",
+        "materializer": "materialize.py",
+        "prepare_config": "prepare_config.py",
+        "prepare_node": "prepare_node.py",
+        "canary": "canary.py",
+        "launch": "launch.sh",
+        "launch_prepared": "launch_prepared.py",
+        "run_from_sft": "run_from_sft.py",
+        "runtime_binding": "runtime_binding.py",
+        "sitecustomize": "sitecustomize.py",
+        "prime_tail_purge": "prime_tail_purge.py",
+    }
+    files: dict[str, Any] = {}
+    for name, relative in local_files.items():
+        path = run_root / relative
+        if not path.is_file() or path.is_symlink():
+            raise CurriculumError(f"run surface file is missing or symlinked: {relative}")
+        files[name] = {"path": relative, "sha256": sha256_file(path)}
+    reviewed_root = run_root.parent / "photo-curriculum-rl-20260922"
+    reviewed_files = {
+        "photo_runner": "run_from_sft.py",
+        "photo_trainer": "train_from_sft.py",
+    }
+    reviewed: dict[str, Any] = {}
+    for name, relative in reviewed_files.items():
+        path = reviewed_root / relative
+        if not path.is_file() or path.is_symlink():
+            raise CurriculumError(f"reviewed photo wrapper is missing or symlinked: {relative}")
+        reviewed[name] = {
+            "path": f"../photo-curriculum-rl-20260922/{relative}",
+            "sha256": sha256_file(path),
+            "status": "reviewed_external_wrapper",
+        }
+    files.update(reviewed)
+    return {
+        "schema": "staged-family-balanced-run-surface-v1",
+        "status": "prepared_offline_not_run",
+        "files": files,
+        "bootstrap_scope": {
+            "status": "prepared_not_run",
+            "receipt_status": "ready_no_launch",
+            "public_pinned_downloads": "prepared_only_not_executed_in_this_preparation",
+            "topologies": [
+                {"gpus_per_node": 2, "num_train_gpus": 1, "num_infer_gpus": 1},
+                {"gpus_per_node": 4, "num_train_gpus": 2, "num_infer_gpus": 2},
+            ],
+            "renderer_sandbox_helper": "reviewed prepare_renderer_runtime.py/patch_brush_centroid.py with a root-to-runuser painter boundary",
+            "steps": [
+                "public pinned Prime/model/adapter inputs",
+                "reviewed renderer sandbox helper",
+                "materialize.py",
+                "prepare_config.py",
+                "prepare_node.py",
+                "canary.py",
+            ],
+            "launch_called": False,
+            "training_started": False,
+            "model_generation": False,
+            "judge_calls": False,
+            "network_or_hardware_used": False,
+        },
+        "canary_scope": {
+            "status": "prepared_not_run",
+            "scope": "pinned Prime import hook plus one bounded real renderer probe",
+            "orchestrator_setup_called": False,
+            "gpu_or_cuda": False,
+            "network": False,
+            "model": False,
+            "judge": False,
+        },
+        "launch_scope": {
+            "status": "prepared_guarded_foreground_not_run",
+            "background_processes_started_by_shell": False,
+            "bounded_timeout": True,
+            "gpu_model_judge_execution": "deferred_until_explicit_launch",
+            "receipt_derived_launcher": "launch_prepared.py",
+            "requires_explicit_timeout_seconds": True,
+            "requires_owner_only_gateway_mode": "0600",
+            "gateway_contents_read_or_logged": False,
+            "scheduling": False,
+        },
+        "no_gpu_or_external_calls": True,
+    }
+
+
 def _canonical(value: Any) -> bytes:
     return (json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=True) + "\n").encode("utf-8")
 
@@ -360,7 +451,34 @@ def build_config(curriculum: Mapping[str, Any] | None = None) -> dict[str, Any]:
             "prime_tail_purge_hook": "required runtime hook must physically consume and purge the recorded stage-tail trace IDs before an optimizer-target receipt can advance stages",
             "renderer_canary": "must measure the repaired renderer tail before any scaled rental",
             "stage_quality_threshold": "no unregistered quality threshold is applied; optimizer target completion advances the schedule, while receipts require valid admitted groups and explicit family quotas",
+            "sampling_attempt_accounting": "each completed six-group attempt, including censored retries, increments persisted per-stage attempts and is bounded by the two-times refill cap",
+            "batch_boundary_guard": "native TrainSink._maybe_batch is blocked during group assembly and released only after a run-owned six-group pass receipt",
+            "stale_group_cancellation": "stale GroupCancellation voids every arrived member as pipeline evidence and never enters the trainer candidate inventory",
+            "bootstrap": "bootstrap.py/bootstrap.sh are prepared but unrun; on an explicit Linux execution they accept only exact 1+1 or 2+2 train/inference GPU topologies, verify public pinned downloads, run the reviewed renderer sandbox helper plus materialization/preflight/canary, and write ready_no_launch without starting Prime",
         },
+        "runtime_binding": {
+            "module": "runtime_binding.py",
+            "sitecustomize": "sitecustomize.py",
+            "status": "node_free_fake_prime_validated_pending_linux_canary",
+            "prime_revision": PRIME_REVISION,
+            "activation": {
+                "PAINTER_STAGED_CURRICULUM_ENABLE": "1",
+                "PAINTER_STAGED_CURRICULUM_RUN_ID": RUN_ID,
+                "PAINTER_STAGED_CURRICULUM_PROTOCOL": "staged-family-balanced-protocol-v1",
+                "PAINTER_STAGED_CURRICULUM_ADMISSION": "1",
+                "PAINTER_STAGED_CURRICULUM_ROOT": "<run-root>",
+                "PAINTER_STAGED_CURRICULUM_STATE": "<run-root>/runtime-state.json",
+            },
+            "atomic_state": True,
+            "stage_tail_purge_required_before_advance": True,
+            "optimizer_update_confirmation": "TrainBatch selection is journaled first; only WeightWatcher.on_update for the expected policy version records the optimizer update",
+            "dispatch_gate": "binding-owned six-group gate is layered with Prime lead permission; active groups drain while fresh dispatch is paused",
+            "trainer_candidate_inventory": "controller inventory contains only exact trace IDs present in native TrainSink.pending_batch after process_group",
+            "batch_boundary": "_maybe_batch is allowed only after the active six-group cycle pass; in-group calls are fail-closed and cannot ship carry-over traces",
+            "resume_scope": "only clean optimizer/stage boundaries or a persisted exact selected-batch/update/tail-purge reconciliation may resume; partial native buffers fail closed",
+            "full_prime_compatibility": False,
+        },
+        "run_surface": build_run_surface(),
     }
 
 
@@ -546,8 +664,9 @@ def admit_action(
             raise ActionAdmissionError("model-invalid rollout needs model-owned boolean validity evidence")
         if all(value is True for value in validity):
             raise ActionAdmissionError("model-invalid rollout must identify at least one invalid action/canvas field")
-        if record.get("reward_status") != "scored" or "reward" not in record:
-            raise ActionAdmissionError("model-invalid rollout needs an explicit scored zero")
+        reward_status = record.get("reward_status")
+        if not (reward_status == "scored" or (isinstance(reward_status, str) and reward_status.startswith("model_invalid_"))) or "reward" not in record:
+            raise ActionAdmissionError("model-invalid rollout needs an explicit model-invalid or scored zero")
         reward = record.get("reward")
         if isinstance(reward, bool) or not isinstance(reward, (int, float)) or not math.isfinite(float(reward)) or float(reward) != 0.0:
             raise ActionAdmissionError("model-invalid rollout must carry finite reward zero")
@@ -644,6 +763,7 @@ def admit_group(
             "scored_rollouts": len(admitted),
             "excluded_rollouts": len(excluded),
             "scored_trace_count": len(admitted),
+            "trainer_candidate_trace_ids": record.get("trainer_candidate_trace_ids"),
             "admission": "censored",
             "censor_reason": "fewer_than_minimum_scored_rollouts",
         }
@@ -657,6 +777,7 @@ def admit_group(
         "scored_rollouts": len(admitted),
         "excluded_rollouts": len(excluded),
         "scored_trace_count": len(admitted),
+        "trainer_candidate_trace_ids": record.get("trainer_candidate_trace_ids"),
         "admission": "admitted",
     }
 
@@ -677,6 +798,7 @@ class StageController:
     stage_optimizer_updates_observed: int = 0
     completed_cycle_ids: list[str] = field(default_factory=list)
     trace_ids_by_cycle: dict[str, list[str]] = field(default_factory=dict)
+    sampling_attempts_by_stage: dict[str, int] = field(default_factory=dict)
     halted: bool = False
 
     def _available_trace_total(self) -> int:
@@ -699,12 +821,17 @@ class StageController:
         if self.halted:
             raise CurriculumError("controller is halted; a new run is required")
         stage = self._stage()
-        if self.next_cycle > stage["max_sampling_cycles"]:
+        attempt_key = str(self.active_stage)
+        attempts = self.sampling_attempts_by_stage.get(attempt_key, 0)
+        if attempts >= stage["max_sampling_cycles"]:
             return self._stop(stage, "sampling_cycle_cap_exhausted", {
                 "max_sampling_cycles": stage["max_sampling_cycles"],
+                "sampling_attempts": attempts,
                 "stage_optimizer_updates_observed": self.stage_optimizer_updates_observed,
                 "stage_optimizer_updates_target": stage["optimizer_updates_target"],
             })
+        attempts += 1
+        self.sampling_attempts_by_stage[attempt_key] = attempts
         expected = [slot for slot in stage["schedule"] if slot["cycle"] == self.next_cycle]
         if len(records) != len(expected):
             return self._stop(stage, "wrong_cycle_cardinality", {"expected": len(expected), "observed": len(records)})
@@ -732,13 +859,25 @@ class StageController:
         group_counts: dict[str, int] = {}
         scored_counts: dict[str, int] = {}
         excluded_counts: dict[str, int] = {}
+        trainer_candidate_counts: dict[str, int] = {}
         model_invalid_counts: dict[str, int] = {}
         admitted_rollouts = [rollout for group in admitted_groups for rollout in group["rollouts"]]
         excluded_rollouts = [rollout for group in admitted_groups for rollout in group["excluded"]]
+        trainer_candidate_ids_by_group: dict[str, list[str]] = {}
         for group in admitted_groups:
             group_counts[group["family"]] = group_counts.get(group["family"], 0) + 1
             scored_counts[group["family"]] = scored_counts.get(group["family"], 0) + group["scored_rollouts"]
             excluded_counts[group["family"]] = excluded_counts.get(group["family"], 0) + group["excluded_rollouts"]
+            candidates = group.get("trainer_candidate_trace_ids")
+            if candidates is None:
+                candidates = [rollout["trace_id"] for rollout in group["rollouts"]]
+            if not isinstance(candidates, list) or any(not isinstance(value, str) or not value.strip() for value in candidates):
+                return self._stop(stage, "trainer_candidate_identity_malformed", {"group_id": group["group_id"]})
+            scored_ids = {rollout["trace_id"] for rollout in group["rollouts"]}
+            if len(set(candidates)) != len(candidates) or not set(candidates).issubset(scored_ids):
+                return self._stop(stage, "trainer_candidate_not_scored_subset", {"group_id": group["group_id"]})
+            trainer_candidate_ids_by_group[group["group_id"]] = list(candidates)
+            trainer_candidate_counts[group["family"]] = trainer_candidate_counts.get(group["family"], 0) + len(candidates)
             model_invalid_counts[group["family"]] = model_invalid_counts.get(group["family"], 0) + sum(
                 1 for rollout in group["rollouts"] if rollout["model_invalid"]
             )
@@ -761,12 +900,14 @@ class StageController:
             "rollouts_observed": len(admitted_rollouts) + len(excluded_rollouts),
             "scored_rollouts": len(admitted_rollouts),
             "excluded_rollouts": len(excluded_rollouts),
-            "trainer_traces": len(admitted_rollouts),
+            "trainer_traces": sum(len(values) for values in trainer_candidate_ids_by_group.values()),
+            "scored_trace_exposure": len(admitted_rollouts),
             "family_scheduled_trace_counts": {
                 family: ROLLOUTS_PER_PROMPT for family in stage["train_families"]
             },
             "family_group_counts": group_counts,
             "family_scored_trace_counts": scored_counts,
+            "family_trainer_candidate_trace_counts": trainer_candidate_counts,
             "family_excluded_rollout_counts": excluded_counts,
             "family_model_invalid_counts": model_invalid_counts,
             "excluded_evidence": [
@@ -782,9 +923,11 @@ class StageController:
             "stage_optimizer_updates_observed": self.stage_optimizer_updates_observed,
             "stage_optimizer_updates_target": stage["optimizer_updates_target"],
             "mean_reward": mean_reward,
+            "sampling_attempt": attempts,
+            "sampling_attempt_cap": stage["max_sampling_cycles"],
         }
         self.completed_cycle_ids.append(receipt["cycle_id"])
-        cycle_trace_ids = [rollout["trace_id"] for rollout in admitted_rollouts]
+        cycle_trace_ids = [trace_id for group in admitted_groups for trace_id in trainer_candidate_ids_by_group[group["group_id"]]]
         if len(set(cycle_trace_ids)) != len(cycle_trace_ids):
             return self._stop(stage, "duplicate_trace_id", {"cycle": receipt["cycle_id"]})
         prior_trace_ids = {trace_id for trace_ids in self.trace_ids_by_cycle.values() for trace_id in trace_ids}
@@ -794,6 +937,7 @@ class StageController:
         receipt["trace_inventory_by_cycle"] = dict(self.trace_inventory_by_cycle)
         receipt["trace_ids_by_cycle"] = {cycle_id: list(trace_ids) for cycle_id, trace_ids in self.trace_ids_by_cycle.items()}
         receipt["available_scored_traces"] = self._available_trace_total()
+        receipt["trainer_candidate_trace_ids_by_group"] = trainer_candidate_ids_by_group
         if self.next_cycle == stage["max_sampling_cycles"]:
             receipt["cycle_cap_reached"] = True
         self.next_cycle += 1
@@ -981,7 +1125,7 @@ class StageController:
                 for rollout in group["rollouts"] if rollout["model_invalid"]
             )
 
-        return {
+        receipt = {
             "schema": "staged-family-balanced-controller-receipt-v1",
             "run_id": RUN_ID,
             "stage": self.active_stage,
@@ -1013,7 +1157,14 @@ class StageController:
             "optimizer_updates_observed": self.optimizer_updates_observed,
             "stage_optimizer_updates_observed": self.stage_optimizer_updates_observed,
             "stage_optimizer_updates_target": stage["optimizer_updates_target"],
+            "sampling_attempt": self.sampling_attempts_by_stage.get(str(self.active_stage), 0),
+            "sampling_attempt_cap": stage["max_sampling_cycles"],
         }
+        if self.sampling_attempts_by_stage.get(str(self.active_stage), 0) >= stage["max_sampling_cycles"]:
+            receipt["decision"] = "stop"
+            receipt["reason"] = "sampling_cycle_cap_exhausted_before_optimizer_target"
+            self.halted = True
+        return receipt
 
     def _stop(self, stage: Mapping[str, Any], reason: str, details: Mapping[str, Any]) -> dict[str, Any]:
         self.halted = True
@@ -1061,12 +1212,28 @@ def write_preparation(output: Path, *, prime_root: Path | None = None) -> dict[s
             "physically_purges_train_sink": True,
             "no_gpu_or_external_calls": True,
         },
+        "runtime_binding": {
+            "schema": "staged-family-balanced-runtime-binding-v1",
+            "module": "runtime_binding.py",
+            "sitecustomize": "sitecustomize.py",
+            "status": "node_free_fake_prime_validated_pending_linux_canary",
+            "validated": True,
+            "validation_scope": "fake Prime async/order and pinned-source-shape tests in test_runtime_binding.py",
+            "atomic_state": True,
+            "stage_tail_purge_required_before_advance": True,
+            "optimizer_update_confirmation": "TrainBatch selection is journaled first; only WeightWatcher.on_update for the expected policy version records the optimizer update",
+            "dispatch_gate": "binding-owned six-group gate is layered with Prime lead permission; active groups drain while fresh dispatch is paused",
+            "trainer_candidate_inventory": "controller inventory contains only exact trace IDs present in native TrainSink.pending_batch after process_group",
+            "full_prime_compatibility": False,
+            "no_gpu_or_external_calls": True,
+        },
         "no_gpu_or_external_calls": True,
         "limitations": [
             "Source rows and heldout panel are inherited by hash from the completed diverse-flow proposal.",
             "Batch size 24 is the optimizer trace capacity; each sampling cycle schedules six exact per-family groups with four rollout capacity, while uncertainty can reduce a group to three scored traces and make an optimizer batch span cycles.",
             "Stages advance only on their optimizer target receipts; each stage has a finite two-times sampling-cycle refill cap and cannot mix leftover traces into the next stage.",
-            "The node-free Prime tail-purge adapter is implemented and tested against fake TrainSink surfaces, but physical runtime binding to Prime remains pending; no launch-ready claim is made.",
+            "Censored retries count toward a persisted per-stage sampling-attempt cap; repeated censorship stops before the optimizer target instead of retrying indefinitely.",
+            "The node-free Prime tail-purge adapter and run-owned runtime binding are tested against fake TrainSink/TrainSource/Dispatcher surfaces, but the Linux canary and full Prime compatibility remain pending; no launch-ready claim is made.",
             "Anchors, renderer canary, model execution, rewards and visual judgments remain pending.",
         ],
     }
