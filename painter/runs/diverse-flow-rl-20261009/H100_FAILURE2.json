@@ -1,0 +1,46 @@
+{
+  "schema": "diverse-flow-h100-failure-v2",
+  "date": "2026-10-09",
+  "status": "released_before_rl",
+  "source_commit": "0a0cc201f74c9f1e8facbf01036e3346cf5c4d01",
+  "source_bundle_sha256": "1d3ed1fcad7da992b1d8282700472de9037d9618b174defb696a4dd70071b07f",
+  "hardware": {
+    "gpu_type": "H100",
+    "gpu_count": 2,
+    "gpu_memory_mib_each": 81559,
+    "whole_node_usd_per_hour": 3.7
+  },
+  "completed": [
+    "source and two-GPU topology verification",
+    "public four-update SFT adapter restore and hash verification",
+    "32-case post-warmup matched panel generation"
+  ],
+  "failure": {
+    "phase": "strict resolved-config validation before RL launch",
+    "message": "remote config shape does not match Diverse-flow pilot",
+    "root_cause": "post-anchor config refresh copied historical initial_inflight=32 and max_inflight=32 from the public SFT receipt, overriding the amended 16/16 defaults",
+    "rl_optimizer_updates": 0,
+    "judge_reward_calls": 0,
+    "quality_result": false
+  },
+  "repair": {
+    "decision": "hard-bind the amended run's 16/16 inflight contract during final config refresh",
+    "regression": "legacy 32/32 receipt must regenerate a 16/16 resolved receipt",
+    "rubric_or_reward_change": false,
+    "whole_group_validity_change": false
+  },
+  "cost": {
+    "elapsed_seconds_to_release_request": 953.0509533882141,
+    "attempt_gpu_estimate_usd": 0.9795240354262207,
+    "prior_campaign_estimate_usd": 8.124654494579177,
+    "combined_campaign_estimate_usd": 9.104178530005397,
+    "notes": "Rental-clock estimates only; API cost is excluded and values are not provider invoices."
+  },
+  "evidence": {
+    "controller_journal": "private/launch-v9/operations-single.jsonl",
+    "allocation_receipt": "private/launch-v9/allocation-receipt.json",
+    "pod_inventory_after_release": "no active pods",
+    "archive_preserved": false,
+    "limitation": "The remote panel was not archived after fail-closed config validation and is not treated as a result."
+  }
+}

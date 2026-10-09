@@ -25,6 +25,13 @@ sys.modules[spec.name] = base
 spec.loader.exec_module(base)
 
 
+# The current Diverse-flow amendment caps external judge pressure at one
+# batch-sized decode window.  Do not inherit the historical 32/32 values from
+# the public SFT receipt when the post-anchor config is regenerated.
+AMENDED_INITIAL_INFLIGHT = 16
+AMENDED_MAX_INFLIGHT = 16
+
+
 def _sha256(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as stream:
@@ -83,8 +90,8 @@ def _refresh_final_config(config_path: Path, manifest_path: Path, admitted_count
         num_infer_gpus=int(receipt.get("deployment", {}).get("num_infer_gpus", 2)),
         batch_size=int(receipt.get("batch_size", 16)),
         group_size=int(receipt.get("group_size", 4)),
-        initial_inflight=int(receipt.get("initial_inflight", 16)),
-        max_inflight=int(receipt.get("max_inflight", 16)),
+        initial_inflight=AMENDED_INITIAL_INFLIGHT,
+        max_inflight=AMENDED_MAX_INFLIGHT,
         renderer=taskset.get("renderer"),
         renderer_python=taskset.get("renderer_python"),
         activation_cpu_offload=bool(receipt.get("activation_cpu_offload", True)),
