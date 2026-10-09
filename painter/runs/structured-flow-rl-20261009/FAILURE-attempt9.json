@@ -1,0 +1,53 @@
+{
+  "attempt": 9,
+  "cause": "one training frozen SFT512 anchor remained model-invalid after one bounded resample; all-or-nothing materializer stopped47usableanchors",
+  "cost": {
+    "api_excluded": true,
+    "attempt_gpu_usd_estimate": 1.1678,
+    "basis": "controller_elapsed_to_release_request_not_invoice",
+    "cumulative_gpu_usd_estimate": 5.0168,
+    "elapsed_seconds": 1136.2451348304749,
+    "next_gpu_allowance_usd": 14.75,
+    "prior_start_reserve_usd": 5.25,
+    "total_ceiling_usd": 20,
+    "whole_node_usd_per_hour": 3.7
+  },
+  "failed_training_case": "sf-s2-tr-connected-bicycle-00",
+  "heldout_valid": 16,
+  "next_decision": "Censor the one model-invalid training brief with raw failure receipts; keep original32/16proposal, all16heldout, initializer/teacher/judge/settings unchanged. Admit31 training briefs; reuse all47valid anchors without newgeneration. Skip redundant Prime Git fetch via verified local seed.",
+  "optimizer_updates": 0,
+  "public_evidence": {
+    "anonymous_download_verified": true,
+    "bytes": 33648581,
+    "members": 909,
+    "path": "runs/structured-flow-rl-20261009/evidence.tar.gz",
+    "repo": "CK0607/komorebi-painter-experiments",
+    "revision": "9a7fc6352b8d0fcf89fca178be9359175da29071",
+    "sha256": "1e72323dfd9bdcf97f857708b02e2b22deebee125c30dbff7488702cfb3896a8"
+  },
+  "recurring_automation_created": false,
+  "release": {
+    "controller_requested": true,
+    "independent_owned_node_count": 0
+  },
+  "render_errors": [
+    "No brush or color set. Call brush.set before drawing."
+  ],
+  "schema": "structured-flow-failure-v1",
+  "source_commit": "60267c0098c4e9f09979f3c2bc05659849312f46",
+  "status": "failed_before_warmup",
+  "utilization": {
+    "gpu_denominator": 2,
+    "inference_busy_ge10_fraction": 0.23076923076923078,
+    "inference_mean_percent": 20.278846153846153,
+    "phase": "bootstrap_and_baseline_retry_not_learning",
+    "pipeline_saturated": false,
+    "samples_per_gpu": 104,
+    "sampling_interval_seconds": 10,
+    "trainer_mean_percent": 0,
+    "window_end": "2026-10-09 00:00:46.460 UTC",
+    "window_start": "2026-10-08 23:43:35.895 UTC",
+    "window_terminated_with_node_before_20minute_sampler_limit": true
+  },
+  "valid_frozen_anchors": 47
+}
