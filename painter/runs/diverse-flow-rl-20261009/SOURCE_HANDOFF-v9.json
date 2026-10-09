@@ -1,0 +1,28 @@
+{
+  "schema": "diverse-flow-public-source-handoff-v9",
+  "status": "public_anonymously_hash_verified",
+  "bundle": {
+    "bytes": 3957030,
+    "git_commit": "0a0cc201f74c9f1e8facbf01036e3346cf5c4d01",
+    "sha256": "1d3ed1fcad7da992b1d8282700472de9037d9618b174defb696a4dd70071b07f"
+  },
+  "public_source": {
+    "repository": "CK0607/komorebi-painter-experiments",
+    "repository_type": "dataset",
+    "revision": "ad0cb2d4f786b322d3bf282a54e9a689fe4c26a2",
+    "path": "execution-source/diverse-flow-rl-20261009/0a0cc201f74c9f1e8facbf01036e3346cf5c4d01/source.bundle"
+  },
+  "anonymous_verification": {
+    "bytes_match": true,
+    "sha256": "1d3ed1fcad7da992b1d8282700472de9037d9618b174defb696a4dd70071b07f",
+    "git_bundle_verify": "passed"
+  },
+  "review": {
+    "diverse_flow_tests_passed": 53,
+    "judge_transport_tests_passed": 9,
+    "python_compile": "passed",
+    "diff_check": "passed",
+    "retry_contract": "provider and parse failures retry twice; unresolved evidence remains censored",
+    "inflight_contract": "initial 16, maximum 16"
+  }
+}
