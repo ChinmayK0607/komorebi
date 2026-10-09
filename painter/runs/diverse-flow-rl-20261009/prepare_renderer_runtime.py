@@ -529,6 +529,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--renderer-python", type=Path, required=True)
     parser.add_argument("--browsers", type=Path, required=True)
     parser.add_argument("--prime-venv", type=Path, required=True)
+    parser.add_argument(
+        "--allowed-old-renderer-root", type=Path, action="append", default=None,
+        help="explicit legacy renderer root whose Playwright Node link may be rebound",
+    )
     parser.add_argument("--renderer", type=Path)
     parser.add_argument("--renderer-sha256")
     parser.add_argument("--assets-sha256")
@@ -564,6 +568,7 @@ def main(argv: list[str] | None = None) -> int:
         browsers=args.browsers,
         prime_venv=args.prime_venv,
         smoke=not args.no_smoke,
+        allowed_old_renderer_roots=args.allowed_old_renderer_root,
     )
     return 0
 
