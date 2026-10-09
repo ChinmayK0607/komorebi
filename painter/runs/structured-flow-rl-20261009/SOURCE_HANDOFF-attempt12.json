@@ -1,0 +1,30 @@
+{
+  "schema": "structured-flow-source-handoff-v1",
+  "attempt": 12,
+  "source_commit": "2fede88648ff077864e0d673769a0068a037d7e0",
+  "source_bundle_sha256": "41ad80fee10056df2631dc98076eb28a35aea2f7e078ecd49a4b0ba43fba6608",
+  "source_bundle_bytes": 3711070,
+  "repo_id": "CK0607/komorebi-painter-experiments",
+  "public_revision": "d13064bcb793efa84ebfd5105fca8fe979d683f3",
+  "public_path": "sources/structured-flow-rl-20261009/2fede88648ff077864e0d673769a0068a037d7e0.bundle",
+  "public_source_anonymous_hash_verified": true,
+  "sft_updates": 4,
+  "rl_updates": 20,
+  "checkpoint_steps": [
+    4,
+    8,
+    12,
+    16,
+    20
+  ],
+  "gpu_allowance_usd": 11.75,
+  "prior_attempt_reserve_usd": 8.25,
+  "cumulative_gpu_ceiling_usd": 20,
+  "expected_admitted_train_count": 31,
+  "heldout_count": 16,
+  "new_anchor_generations_expected": 0,
+  "restore_public_revision": "9a7fc6352b8d0fcf89fca178be9359175da29071",
+  "restore_archive_sha256": "1e72323dfd9bdcf97f857708b02e2b22deebee125c30dbff7488702cfb3896a8",
+  "optimizer_updates_observed": 0,
+  "recurring_automation": false
+}
