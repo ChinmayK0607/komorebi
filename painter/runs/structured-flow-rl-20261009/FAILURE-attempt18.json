@@ -1,0 +1,25 @@
+{
+  "schema": "structured-flow-failure-v1",
+  "source_commit": "d708b6d4159bf5e79ec43a0ed97c68fe46850737",
+  "failure_phase": "rollout_harness_site_initialization",
+  "root_cause": "lightweight_null_harness_inherits_orchestrator_role_and_imports_prime_training_guard_before_task_start",
+  "supervised_optimizer_updates": 0,
+  "rl_optimizer_updates": 0,
+  "zero_output_batch_equivalents": 10,
+  "qwen_policy_generation_observed": false,
+  "public_evidence": {
+    "revision": "d6c6d6ca917d9b04adf86d2abdf2b75f54876e1c",
+    "sha256": "63b5ffbb8e0e49c8f76f4043a90342af01f9077bc831aa67b2ff416673adaa4b",
+    "bytes": 47066624,
+    "anonymous_download": true,
+    "remote_lfs_sha256_verified": true
+  },
+  "gpu_clock_conservative_estimate_usd": 0.7811,
+  "elapsed_includes_allocation_handshake_and_60_second_release_margin": true,
+  "prior_estimated_gpu_usd": 10.7943,
+  "cumulative_conservative_estimate_usd": 11.5754,
+  "cost_is_invoice": false,
+  "api_cost_separate": true,
+  "next_decision": "explicit harness role isolation; preserve fail-closed real orchestrator guard; reproduce child import boundary before next rental",
+  "node_absent_confirmed": true
+}

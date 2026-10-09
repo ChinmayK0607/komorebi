@@ -1,0 +1,18 @@
+{
+  "schema": "structured-flow-harness-boundary-parent-review-v1",
+  "real_pinned_prime_commit": "26b3131d2716a4f8210b165df584b83b4bc54f61",
+  "gitlink_verifiers_revision": "828488fffe31aa3332b9d1bd4bd9ee320e375cf1",
+  "runtime_file_sha256": "4914d434071d5b4c492168df4b945c8a3157a9d2b25e61afa76b6f579f1ebb9f",
+  "whole_group_guard_preserved": true,
+  "isolated_script_path": "/tmp/vf-scripts/*.py",
+  "harness_subprocess_without_prime_passed": true,
+  "real_orchestrator_without_prime_fails_closed": true,
+  "clean_checkout_portable_provenance_fixture": true,
+  "structured_tests_passed": 111,
+  "model_renderer_judge_calls": 0,
+  "linux_before_model_loading_probe_pending": true,
+  "fresh_gpu_allowance_usd": 7.75,
+  "previous_start_reserve_usd": 12.25,
+  "original_gpu_ceiling_usd": 20,
+  "rl_updates_target": 20
+}

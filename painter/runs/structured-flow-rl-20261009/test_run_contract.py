@@ -775,6 +775,108 @@ class StructuredFlowRunTests(unittest.TestCase):
                 runpy.run_path(str(RUN / "sitecustomize.py"), run_name="structured_flow_rl_sitecustomize")
         self.assertEqual(calls, ["group"])
 
+    def test_prime_runtime_harness_subprocess_survives_inherited_orchestrator_role(self):
+        """A verifier PEP 723 child must not import Prime's orchestrator guard.
+
+        Prime launches the null harness from ``/tmp/vf-scripts`` while passing
+        the orchestrator's environment through to the sandbox process.  This
+        regression executes that boundary with Prime intentionally unavailable;
+        it proves the run-local exemption is limited to the runtime script
+        path, rather than making a missing Prime import generally ignorable.
+        """
+
+        repo = RUN.parents[2]
+        env = os.environ.copy()
+        env.update(
+            {
+                "PAINTER_PRIME_ROLE": "orchestrator",
+                "PAINTER_WHOLE_GROUP_ADMISSION": "1",
+                "PAINTER_WHOLE_GROUP_SIZE": "8",
+                "PAINTER_JUDGE_PROTOCOL": "text-paint-sft-pairwise-consistent-v1",
+                "PAINTER_STRUCTURED_FLOW_POLICY": "1",
+                "PYTHONPATH": os.pathsep.join((str(RUN), str(repo), str(repo / "painter"))),
+            }
+        )
+        env.pop("PAINTER_ANCHOR_REQUIRE_NO_LOOP", None)
+        # Bind the regression to a checked-in provenance record rather than
+        # an untracked verifier checkout.  When that checkout is available,
+        # verify its immutable source hash against the record as well.
+        provenance = json.loads(
+            (RUN / "prime-runtime-manifest.json").read_text(encoding="utf-8")
+        )
+        self.assertEqual(provenance["schema"], "prime-runtime-harness-provenance-v1")
+        self.assertRegex(provenance["source_revision"], r"^[0-9a-f]{40}$")
+        self.assertRegex(provenance["runtime_file_sha256"], r"^[0-9a-f]{64}$")
+        self.assertEqual(
+            provenance["prepare_uv_script"]["path_template"],
+            "{scripts_dir}/{sha256(script)}.py",
+        )
+        self.assertEqual(provenance["prepare_uv_script"]["argv_tail"], ["interpreter", "path"])
+        runtime_source = repo / "work" / provenance["source_repository"] / provenance["runtime_file"]
+        if runtime_source.is_file():
+            self.assertEqual(
+                hashlib.sha256(runtime_source.read_bytes()).hexdigest(),
+                provenance["runtime_file_sha256"],
+            )
+            runtime_text = runtime_source.read_text(encoding="utf-8")
+            self.assertIn('path = f"{self.scripts_dir}/{digest}.py"', runtime_text)
+            self.assertIn("interpreter, path", runtime_text)
+        harness_root = Path(provenance["runtime_script_root"])
+        harness_root.mkdir(parents=True, exist_ok=True)
+        handle = tempfile.NamedTemporaryFile(
+            mode="w",
+            suffix=".py",
+            prefix="structured-flow-contract-",
+            dir=harness_root,
+            delete=False,
+        )
+        script = Path(handle.name)
+        try:
+            handle.write("print('harness-started', __import__('os').environ['PAINTER_PRIME_ROLE'])\n")
+            handle.close()
+            result = subprocess.run(
+                [sys.executable, str(script)],
+                env=env,
+                capture_output=True,
+                text=True,
+                timeout=10,
+            )
+        finally:
+            script.unlink(missing_ok=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("harness-started orchestrator", result.stdout)
+        self.assertNotIn("prime_rl", result.stderr)
+
+    def test_orchestrator_subprocess_still_fails_closed_without_prime(self):
+        """The same inherited environment still rejects a real entrypoint."""
+
+        repo = RUN.parents[2]
+        env = os.environ.copy()
+        env.update(
+            {
+                "PAINTER_PRIME_ROLE": "orchestrator",
+                "PAINTER_WHOLE_GROUP_ADMISSION": "1",
+                "PAINTER_WHOLE_GROUP_SIZE": "8",
+                "PAINTER_JUDGE_PROTOCOL": "text-paint-sft-pairwise-consistent-v1",
+                "PYTHONPATH": os.pathsep.join((str(RUN), str(repo), str(repo / "painter"))),
+            }
+        )
+        env.pop("PAINTER_STRUCTURED_FLOW_POLICY", None)
+        env.pop("PAINTER_ANCHOR_REQUIRE_NO_LOOP", None)
+        with tempfile.TemporaryDirectory() as directory:
+            script = Path(directory) / "orchestrator-entry.py"
+            script.write_text("print('should-not-start')\n")
+            result = subprocess.run(
+                [sys.executable, str(script)],
+                env=env,
+                capture_output=True,
+                text=True,
+                timeout=10,
+            )
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("consistent group admission activation failed", result.stderr)
+        self.assertIn("prime_rl", result.stderr)
+
     def test_clean_tracked_source_builds_receipts_outside_strict_output_dirs(self):
         """Exercise the actual builders with the same shell redirection shape.
 
