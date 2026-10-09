@@ -83,3 +83,6 @@ Evaluation recovery launched on2026-10-09: sourcea9df883edc126fdb50f0f2486a84f99
 
 
 First evaluation-only launch failedbeforemodel loading: shared text-pairwise bootstrap required2visibleGPUs despite explicit evaluation-only physical1mode.0newepisodes/optimizerupdates; finitecontrollerreleasednode. Public failure archive unconfirmed; screenedcontrollerdiagnostics retainedprivately. EVAL_STEP4_FAILURE1.json records exactconservativecostmethod, cumulativeestimate andnext$2.85allowance underoriginal$20 ceiling. Nextfixexercises actualbootstrapphysicalGPUadmission beforepackage/model setup.
+
+
+Evaluation retry1 launched: actualsource746e7bee3168854f862e57e38844f12d0c4922e6/publicbundle80b8c91b2d3ade7bbafd973467c4989477b402819badb0d0330be3a94e8e7648 atHFdatasetrevision3fc2bdbb7923d397c76a9078246f0ef5c8c887cc.120 structuredtests includingrealsharedbootstrapshellGPUadmissionpass. Actualphysical143771MiBsingleH200verified, zero trainer, whole-node$3.884/hour, freshallowance$2.85 plusprior GPUestimate$17.0501 underoriginal$20 ceiling. Source/credentialtransferscompleted andfinite detachedevaluatorstarted; qualitypending. A finite20min/10sec single-GPU profiler recordsstartup/evaluation, not a recurringautomation orwhole-run utilizationclaim.
