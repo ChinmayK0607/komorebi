@@ -43,6 +43,14 @@
     "prompt_tokens": 495698,
     "prefix_cache_hits": 308112,
     "prefix_cache_hit_fraction": 0.6216,
+    "per_rollout_timing_seconds_across_48_rollouts": {
+      "policy_model_mean": 91.59,
+      "policy_model_median": 88.65,
+      "harness_mean": 18.04,
+      "renderer_active_mean": 15.03,
+      "external_scoring_mean": 31.33,
+      "pre_scoring_wall_mean": 109.75
+    },
     "selected_trace_tokens": {
       "count": 24,
       "min": 3848,
