@@ -71,11 +71,11 @@
   },
   "config": {
     "path": "config.json",
-    "sha256": "8a2aa4e7c29c4f3001c229dbc7ea76d519ac4cf372b4b964095938024907654b"
+    "sha256": "2ad1170337157f8fdb77b283d9f39f5f78941aa124f354e87fda91d9e9cbbb66"
   },
   "receipt": {
     "path": "receipt.json",
-    "sha256": "fe786b9b193b0c016249dc999690c884667cd8414cd75b8f37174967a70fdb70"
+    "sha256": "f9f8f160bab4220a22fd46e68ca133b9b687ba5a3b608ffb5d9784f1ff64821c"
   },
   "tail_purge_hook": {
     "path": "prime_tail_purge.py",
@@ -189,7 +189,7 @@
       },
       "materializer": {
         "path": "materialize.py",
-        "sha256": "0f8e225ba1bc35592ecc9821b3ad3906b21e6ee685d384b9c8ef438f8484d5a8"
+        "sha256": "77192218825f0da6d1e8cff7a10c6cb8882fe9592de8b3740f9a8bcb87b14625"
       },
       "prepare_config": {
         "path": "prepare_config.py",

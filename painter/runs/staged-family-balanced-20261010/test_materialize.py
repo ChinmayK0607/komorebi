@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
+from unittest import mock
 
 
 RUN = Path(__file__).resolve().parent
@@ -213,6 +214,31 @@ class MaterializeTests(unittest.TestCase):
         first_files = {path.relative_to(first): path.read_bytes() for path in first.rglob("*") if path.is_file()}
         second_files = {path.relative_to(second): path.read_bytes() for path in second.rglob("*") if path.is_file()}
         self.assertEqual(first_files, second_files)
+
+    def test_shared_provenance_is_hash_verified_once_before_copy(self) -> None:
+        original = M.sha256_file
+        provenance = self.fixture.provenance.resolve()
+        calls = 0
+
+        def counting_sha256(path: Path) -> str:
+            nonlocal calls
+            if Path(path).resolve() == provenance:
+                calls += 1
+            return original(path)
+
+        with mock.patch.object(M, "sha256_file", side_effect=counting_sha256):
+            self._run("single-provenance-hash")
+
+        # The source is verified once while resolving. The copied destination
+        # is verified separately, but row validation must not re-hash source.
+        self.assertEqual(calls, 1)
+
+    def test_row_provenance_path_mismatch_is_rejected(self) -> None:
+        document = json.loads(self.fixture.train_manifest.read_text())
+        document["rows"][0]["anchor_provenance_file"] = "anchors/other-provenance.json"
+        self.fixture.train_manifest.write_text(json.dumps(document))
+        with self.assertRaises(M.MaterializationError):
+            self._run("provenance-mismatch")
 
     def test_anchor_tampering_is_rejected(self) -> None:
         target = self.fixture.assets / "anchors" / f"{self.fixture.train_rows[0]['id']}.png"

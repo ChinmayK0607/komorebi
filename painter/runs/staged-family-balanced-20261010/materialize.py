@@ -434,13 +434,11 @@ def _materialize_into(
     provenance_hash = _require_sha(train_frozen.get("provenance_sha256"), "provenance hash")
     provenance_source = _resolve_asset(asset_root, provenance_raw, provenance_hash, "anchor provenance")
     for row in ordered_rows:
-        row_provenance = _resolve_asset(
-            asset_root,
-            row.get("anchor_provenance_file"),
-            provenance_hash,
-            f"anchor provenance for {row['id']}",
-        )
-        if row_provenance != provenance_source:
+        # The shared provenance artifact is already path-bound and
+        # hash-verified above. Re-resolving it for every row repeatedly hashed
+        # the same large file (128 times in the production curriculum). Require
+        # the exact manifest path instead, then validate the artifact once.
+        if row.get("anchor_provenance_file") != provenance_raw:
             raise MaterializationError(f"anchor provenance file differs for {row['id']}")
     provenance = _read_json(provenance_source, "anchor provenance")
     _validate_provenance(provenance, ordered_rows, prior_run_id, checkpoint)
