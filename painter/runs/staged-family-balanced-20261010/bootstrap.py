@@ -54,6 +54,11 @@ PLAYWRIGHT_VERSION = "1.58.0"
 PILLOW_VERSION = "12.3.0"
 RENDERER_TIMEOUT = 90
 BRUSH_ROOT_RELATIVE = Path("painter/rl_helpers")
+SUPPORTED_TOPOLOGIES = frozenset({
+    (2, 1, 1),
+    (4, 2, 2),
+    (8, 4, 4),
+})
 
 
 class BootstrapError(RuntimeError):
@@ -244,10 +249,8 @@ def ensure_hf_snapshot_file(path: Path, description: str) -> Path:
 
 
 def validate_topology(*, gpus_per_node: int, num_train_gpus: int, num_infer_gpus: int, visible_gpus: int) -> None:
-    if (num_train_gpus, num_infer_gpus) not in {(1, 1), (2, 2)}:
-        raise ValueError("staged topology must be exactly 1+1 or 2+2 GPUs")
-    if gpus_per_node != num_train_gpus + num_infer_gpus:
-        raise ValueError("gpus-per-node must equal train plus inference GPUs")
+    if (gpus_per_node, num_train_gpus, num_infer_gpus) not in SUPPORTED_TOPOLOGIES:
+        raise ValueError("staged topology must be exactly 1+1, 2+2, or 4+4 GPUs")
     if visible_gpus < gpus_per_node or visible_gpus < 2:
         raise ValueError(f"nvidia-smi exposes {visible_gpus} GPUs; {gpus_per_node} are required")
 

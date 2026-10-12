@@ -136,8 +136,8 @@ def _validate_topology(ready: dict[str, Any], *, visible_gpus: int) -> dict[str,
         result = {key: int(topology[key]) for key in ("gpus_per_node", "num_train_gpus", "num_infer_gpus")}
     except (KeyError, TypeError, ValueError) as exc:
         raise PreparedLaunchError("bootstrap topology is malformed") from exc
-    if (result["num_train_gpus"], result["num_infer_gpus"]) not in {(1, 1), (2, 2)} or result["gpus_per_node"] != result["num_train_gpus"] + result["num_infer_gpus"]:
-        raise PreparedLaunchError("bootstrap topology is not the explicit 1+1 or 2+2 shape")
+    if (result["gpus_per_node"], result["num_train_gpus"], result["num_infer_gpus"]) not in BOOTSTRAP.SUPPORTED_TOPOLOGIES:
+        raise PreparedLaunchError("bootstrap topology is not the explicit 1+1, 2+2, or 4+4 shape")
     if visible_gpus < result["gpus_per_node"]:
         raise PreparedLaunchError("current visible GPU count is below the verified topology")
     return result

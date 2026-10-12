@@ -121,8 +121,18 @@ class LaunchHandoffTests(unittest.TestCase):
                 model=model, node_root=root / "two", materialized_root=materialized,
                 repo_root=repo, gpus_per_node=4, num_train_gpus=2, num_infer_gpus=2,
             )
+            four_plus_four = CONFIG.build_config(
+                model=model, node_root=root / "four", materialized_root=materialized,
+                repo_root=repo, gpus_per_node=8, num_train_gpus=4, num_infer_gpus=4,
+            )
             self.assertEqual((one_plus_one["deployment"]["num_train_gpus"], one_plus_one["deployment"]["num_infer_gpus"]), (1, 1))
             self.assertEqual((two_plus_two["deployment"]["num_train_gpus"], two_plus_two["deployment"]["num_infer_gpus"]), (2, 2))
+            self.assertEqual((four_plus_four["deployment"]["num_train_gpus"], four_plus_four["deployment"]["num_infer_gpus"]), (4, 4))
+            with self.assertRaises(ValueError):
+                CONFIG.build_config(
+                    model=model, node_root=root / "mismatch", materialized_root=materialized,
+                    repo_root=repo, gpus_per_node=8, num_train_gpus=2, num_infer_gpus=6,
+                )
 
     def test_config_places_scoring_timeout_under_prime_agent_schema(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -677,6 +687,7 @@ TRAIN_WRAPPER_ROOT="$(cd "$(dirname "$TRAIN_WRAPPER")" && pwd -P)"
             [
                 {"gpus_per_node": 2, "num_train_gpus": 1, "num_infer_gpus": 1},
                 {"gpus_per_node": 4, "num_train_gpus": 2, "num_infer_gpus": 2},
+                {"gpus_per_node": 8, "num_train_gpus": 4, "num_infer_gpus": 4},
             ],
         )
         self.assertFalse(bootstrap["launch_called"])

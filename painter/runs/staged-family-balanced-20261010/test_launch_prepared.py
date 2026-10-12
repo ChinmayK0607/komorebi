@@ -188,8 +188,12 @@ class PreparedLaunchTests(unittest.TestCase):
     def test_topology_shape_is_checked_before_launch(self) -> None:
         ready = {"topology": {"gpus_per_node": 2, "num_train_gpus": 1, "num_infer_gpus": 1}}
         self.assertEqual(HANDOFF._validate_topology(ready, visible_gpus=2)["gpus_per_node"], 2)
+        four_plus_four = {"topology": {"gpus_per_node": 8, "num_train_gpus": 4, "num_infer_gpus": 4}}
+        self.assertEqual(HANDOFF._validate_topology(four_plus_four, visible_gpus=8), four_plus_four["topology"])
         with self.assertRaises(HANDOFF.PreparedLaunchError):
             HANDOFF._validate_topology({"topology": {"gpus_per_node": 3, "num_train_gpus": 1, "num_infer_gpus": 2}}, visible_gpus=3)
+        with self.assertRaises(HANDOFF.PreparedLaunchError):
+            HANDOFF._validate_topology({"topology": {"gpus_per_node": 8, "num_train_gpus": 2, "num_infer_gpus": 6}}, visible_gpus=8)
 
     def test_wrapper_is_foreground_and_does_not_shell_expand_environment(self) -> None:
         source = (RUN / "launch_prepared.py").read_text(encoding="utf-8")

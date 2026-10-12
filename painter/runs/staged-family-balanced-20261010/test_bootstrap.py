@@ -25,10 +25,13 @@ class BootstrapUnitTests(unittest.TestCase):
     def test_supported_topologies_are_explicit_and_hardware_agnostic(self) -> None:
         BOOTSTRAP.validate_topology(gpus_per_node=2, num_train_gpus=1, num_infer_gpus=1, visible_gpus=2)
         BOOTSTRAP.validate_topology(gpus_per_node=4, num_train_gpus=2, num_infer_gpus=2, visible_gpus=4)
+        BOOTSTRAP.validate_topology(gpus_per_node=8, num_train_gpus=4, num_infer_gpus=4, visible_gpus=8)
         with self.assertRaises(ValueError):
             BOOTSTRAP.validate_topology(gpus_per_node=3, num_train_gpus=1, num_infer_gpus=2, visible_gpus=3)
         with self.assertRaises(ValueError):
             BOOTSTRAP.validate_topology(gpus_per_node=4, num_train_gpus=2, num_infer_gpus=2, visible_gpus=2)
+        with self.assertRaises(ValueError):
+            BOOTSTRAP.validate_topology(gpus_per_node=8, num_train_gpus=2, num_infer_gpus=6, visible_gpus=8)
 
     def test_gpu_probe_is_foreground_and_requires_linux(self) -> None:
         completed = subprocess.CompletedProcess([], 0, stdout="0\n1\n", stderr="")

@@ -162,6 +162,7 @@ def build_run_surface() -> dict[str, Any]:
             "topologies": [
                 {"gpus_per_node": 2, "num_train_gpus": 1, "num_infer_gpus": 1},
                 {"gpus_per_node": 4, "num_train_gpus": 2, "num_infer_gpus": 2},
+                {"gpus_per_node": 8, "num_train_gpus": 4, "num_infer_gpus": 4},
             ],
             "renderer_sandbox_helper": "reviewed prepare_renderer_runtime.py/patch_brush_centroid.py with a root-to-runuser painter boundary",
             "steps": [
@@ -180,7 +181,7 @@ def build_run_surface() -> dict[str, Any]:
         },
         "canary_scope": {
             "status": "prepared_not_run",
-            "scope": "pinned Prime import hook plus one bounded real renderer probe",
+            "scope": "pinned Prime config, trainer dependency imports, import hook, console scripts, and one bounded real renderer probe",
             "orchestrator_setup_called": False,
             "gpu_or_cuda": False,
             "network": False,
@@ -199,6 +200,7 @@ def build_run_surface() -> dict[str, Any]:
             "scheduling": False,
         },
         "no_gpu_or_external_calls": True,
+        "brush_root": "painter/rl_helpers",
     }
 
 
@@ -454,7 +456,7 @@ def build_config(curriculum: Mapping[str, Any] | None = None) -> dict[str, Any]:
             "sampling_attempt_accounting": "each completed six-group attempt, including censored retries, increments persisted per-stage attempts and is bounded by the two-times refill cap",
             "batch_boundary_guard": "native TrainSink._maybe_batch is blocked during group assembly and released only after a run-owned six-group pass receipt",
             "stale_group_cancellation": "stale GroupCancellation voids every arrived member as pipeline evidence and never enters the trainer candidate inventory",
-            "bootstrap": "bootstrap.py/bootstrap.sh are prepared but unrun; on an explicit Linux execution they accept only exact 1+1 or 2+2 train/inference GPU topologies, verify public pinned downloads, run the reviewed renderer sandbox helper plus materialization/preflight/canary, and write ready_no_launch without starting Prime",
+            "bootstrap": "bootstrap.py/bootstrap.sh are prepared but unrun; on an explicit Linux execution they accept only exact 1+1, 2+2, or 4+4 train/inference GPU topologies, with 4+4 reserved for an 8-GPU whole-node offer split into four trainer and four inference GPUs; verify public pinned downloads, run the reviewed renderer sandbox helper plus materialization/preflight/canary, and write ready_no_launch without starting Prime",
         },
         "runtime_binding": {
             "module": "runtime_binding.py",

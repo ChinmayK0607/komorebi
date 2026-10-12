@@ -205,8 +205,8 @@ deployment = config.get("deployment", {})
 capacity = int(deployment.get("gpus_per_node", 0))
 train = int(deployment.get("num_train_gpus", 0))
 infer = int(deployment.get("num_infer_gpus", 0))
-if capacity < 1 or train < 1 or infer < 1 or train + infer > capacity:
-    raise SystemExit("invalid Prime GPU role counts in prepared config")
+if (capacity, train, infer) not in {(2, 1, 1), (4, 2, 2), (8, 4, 4)}:
+    raise SystemExit("prepared config must use the exact 1+1, 2+2, or 4+4 GPU topology")
 print(train)
 PY
 )"

@@ -50,6 +50,11 @@ MAX_STEPS = 20
 CHECKPOINT_INTERVAL = 4
 MAX_TURNS = 3
 EXPECTED_TRAIN_ROWS = 96
+SUPPORTED_TOPOLOGIES = frozenset({
+    (2, 1, 1),
+    (4, 2, 2),
+    (8, 4, 4),
+})
 
 
 def sha256_file(path: Path) -> str:
@@ -114,6 +119,11 @@ def _directory(path: Path, description: str) -> Path:
     return path.resolve(strict=True)
 
 
+def validate_topology(*, gpus_per_node: int, num_train_gpus: int, num_infer_gpus: int) -> None:
+    if (gpus_per_node, num_train_gpus, num_infer_gpus) not in SUPPORTED_TOPOLOGIES:
+        raise ValueError("staged topology must be exactly 1+1, 2+2, or 4+4 GPUs")
+
+
 def build_config(
     *,
     model: Path,
@@ -128,6 +138,11 @@ def build_config(
 ) -> dict[str, Any]:
     """Build the staged config with the finite 20-update/24-trace contract."""
 
+    validate_topology(
+        gpus_per_node=gpus_per_node,
+        num_train_gpus=num_train_gpus,
+        num_infer_gpus=num_infer_gpus,
+    )
     node_root = node_root.expanduser().resolve()
     materialized_root = _directory(materialized_root, "materialized root")
     repo_root = _directory(repo_root, "repository root")
