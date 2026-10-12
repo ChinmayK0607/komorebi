@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 import importlib.util
+import hashlib
 import json
 import os
 from pathlib import Path
+import sys
 import tempfile
+import types
 import unittest
 from unittest.mock import patch
 from types import SimpleNamespace
@@ -26,6 +29,14 @@ resource = _load("resource_preflight")
 canary = _load("real_backward_canary")
 run_wrapper = _load("run_from_sft")
 train_wrapper = _load("train_from_sft")
+
+
+export_spec = importlib.util.spec_from_file_location(
+    "staged_export_adapter", RUN.parents[1] / "rl_helpers/integrations/prime/watercolour_sft/export_adapter.py"
+)
+assert export_spec is not None and export_spec.loader is not None
+export_adapter = importlib.util.module_from_spec(export_spec)
+export_spec.loader.exec_module(export_adapter)
 
 
 class _FakeProcess:
@@ -180,6 +191,34 @@ class ReliabilityPassTests(unittest.TestCase):
             checkpoint.mkdir(parents=True)
             (checkpoint / ".metadata").write_text("metadata", encoding="utf-8")
             (checkpoint / "rank_0.pt").write_text("state", encoding="utf-8")
+            adapter = root / "artifacts" / "adapters" / "step_1"
+            adapter.mkdir(parents=True)
+            adapter_bytes = {
+                "adapter_config.json": b'{"peft_type":"LORA"}\n',
+                "adapter_model.safetensors": b"adapter-weights",
+                "validation.json": b'{"finite":true}\n',
+            }
+            for name, value in adapter_bytes.items():
+                (adapter / name).write_bytes(value)
+            digest = lambda value: hashlib.sha256(value).hexdigest()
+            remote_files = {
+                name: {"sha256": digest(value), "bytes": len(value)}
+                for name, value in adapter_bytes.items()
+            }
+            remote_files["upload-manifest.json"] = {"sha256": "a" * 64, "bytes": 1}
+            (adapter / "hf-upload.json").write_text(json.dumps({
+                "repo_id": "fixture/repo", "path": "fixture-run/step_1", "commit": "fixture-commit",
+                "private": False, "verified": True, "files": remote_files,
+            }), encoding="utf-8")
+            (adapter / "checkpoint-contract.json").write_text(json.dumps({
+                "schema": "staged-family-balanced-checkpoint-contract-v1", "step": 1,
+                "native_dcp": {"path": str(checkpoint), "resumable": True},
+                "portable_adapter": {
+                    "path": str(adapter), "receipt_path": str(adapter / "hf-upload.json"),
+                    "repo_id": "fixture/repo", "remote_path": "fixture-run/step_1",
+                    "verified": True, "private": False,
+                },
+            }), encoding="utf-8")
             state = root / "runtime-state.json"
             state.write_text("{}", encoding="utf-8")
             receipt = root / "receipt.json"
@@ -209,6 +248,67 @@ class ReliabilityPassTests(unittest.TestCase):
         self.assertEqual(config.max_steps, 1)
         self.assertEqual(config.ckpt.interval, 1)
         self.assertFalse(hasattr(config, "trainer"))
+
+    def test_adapter_only_save_keeps_native_dcp_and_uploads_portable_folder(self) -> None:
+        calls: list[tuple] = []
+
+        class CheckpointManager:
+            def save(self, step, model, optimizers, scheduler, progress, dataloader=None):
+                calls.append((step, model, optimizers, scheduler, progress, dataloader))
+                native = export_adapter.native_checkpoint_path(config.run_dir, step)
+                native.mkdir(parents=True)
+                (native / ".metadata").write_text("dcp", encoding="utf-8")
+                (native / "state.pt").write_text("state", encoding="utf-8")
+
+        class Sender:
+            def __init__(self, *args):
+                pass
+
+            def _broadcast(self, model, step, folder):
+                folder.mkdir(parents=True, exist_ok=True)
+                for name in ("adapter_config.json", "adapter_model.safetensors", "validation.json"):
+                    (folder / name).write_text(name, encoding="utf-8")
+
+        modules = {
+            "prime_rl.configs.trainer": types.SimpleNamespace(FileSystemWeightBroadcastConfig=lambda: object()),
+            "prime_rl.trainer.ckpt": types.SimpleNamespace(CheckpointManager=CheckpointManager),
+            "prime_rl.transports.weights.filesystem": types.SimpleNamespace(FileSystemWeightSender=Sender),
+            "prime_rl.trainer.world": types.SimpleNamespace(get_world=lambda: SimpleNamespace(is_master=True)),
+            "torch.distributed": types.SimpleNamespace(barrier=lambda: None),
+        }
+        fake_torch = types.ModuleType("torch")
+        fake_torch.__path__ = []
+        fake_torch.distributed = modules["torch.distributed"]
+        modules["torch"] = fake_torch
+        config = SimpleNamespace(
+            run_dir=Path(tempfile.mkdtemp()), model=SimpleNamespace(lora=object()), resume=object()
+        )
+        uploaded: list[Path] = []
+
+        def upload(folder, repo, run):
+            uploaded.append(Path(folder))
+            receipt = {
+                "repo_id": repo, "path": f"{run}/step_1", "url": "https://example.invalid/step_1",
+                "verified": True, "private": False,
+            }
+            (Path(folder) / "hf-upload.json").write_text(json.dumps(receipt), encoding="utf-8")
+            return receipt
+
+        with patch.dict(sys.modules, modules), patch.object(
+            export_adapter, "cloud_settings", return_value=("fixture/repo", "fixture-run", upload)
+        ), patch.object(export_adapter, "validate_files", return_value={"sha256": "adapter"}), patch.dict(
+            export_adapter.os.environ, {"ADAPTER_ONLY_CHECKPOINTS": "1"}, clear=False
+        ):
+            export_adapter.install_export_hook(config)
+            CheckpointManager().save(1, "model", [], "scheduler", "progress")
+
+        self.assertEqual(len(calls), 1)
+        self.assertEqual(uploaded, [export_adapter.adapter_checkpoint_path(config.run_dir, 1)])
+        native = export_adapter.native_checkpoint_path(config.run_dir, 1)
+        self.assertTrue((native / ".metadata").is_file())
+        contract = json.loads((uploaded[0] / "checkpoint-contract.json").read_text(encoding="utf-8"))
+        self.assertEqual(contract["native_dcp"]["path"], str(native))
+        self.assertNotIn("state.pt", json.dumps(contract))
 
 
 if __name__ == "__main__":

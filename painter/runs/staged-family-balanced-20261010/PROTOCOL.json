@@ -71,7 +71,7 @@
   },
   "config": {
     "path": "config.json",
-    "sha256": "d6edadda2c3bf5cc421ea64d355e8a25e5ae059055a691c072339a9c1f9897c6"
+    "sha256": "be6cd07dce3b27c4cec036eb6fe7355af11a64a8ed9ae5765128b2c5e52bc68a"
   },
   "receipt": {
     "path": "receipt.json",
@@ -216,7 +216,7 @@
       },
       "real_backward_canary": {
         "path": "real_backward_canary.py",
-        "sha256": "39b2e502914d3f28c11d304bc2763716e4de2a4d15684d2be0257ee27733493d"
+        "sha256": "3084a613f642c1bafc1b2854bc0724d1ca624209c45a9e95dc379bd1cc12849d"
       },
       "resource_preflight": {
         "path": "resource_preflight.py",

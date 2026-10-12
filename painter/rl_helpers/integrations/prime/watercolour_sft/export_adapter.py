@@ -1,9 +1,53 @@
-"""Export portable LoRA files after native SFT checkpoints, without a receiver."""
+"""Save native DCP state and export a separate portable LoRA checkpoint.
+
+The native checkpoint remains local and resumable.  The public Hugging Face
+artifact is deliberately limited to the adapter files accepted by
+``upload_checkpoints.py``; native model or optimizer state never enters that
+upload path.
+"""
 import hashlib
 import json
 import os
 import sys
 from pathlib import Path
+
+
+CONTRACT_SCHEMA = 'staged-family-balanced-checkpoint-contract-v1'
+
+
+def native_checkpoint_path(run_dir, step):
+    return Path(run_dir) / 'checkpoints' / f'step_{step}' / 'trainer'
+
+
+def adapter_checkpoint_path(run_dir, step):
+    return Path(run_dir) / 'artifacts' / 'adapters' / f'step_{step}'
+
+
+def _write_checkpoint_contract(run_dir, step, native, adapter, receipt):
+    """Record the local/native and public/portable halves of one save."""
+
+    folder = Path(adapter)
+    native_path = Path(native)
+    contract = {
+        'schema': CONTRACT_SCHEMA,
+        'step': step,
+        'native_dcp': {
+            'path': str(native_path),
+            'resumable': native_path.is_dir() and (native_path / '.metadata').is_file(),
+        },
+        'portable_adapter': {
+            'path': str(folder),
+            'receipt_path': str(folder / 'hf-upload.json'),
+            'repo_id': receipt.get('repo_id'),
+            'remote_path': receipt.get('path'),
+            'verified': receipt.get('verified') is True,
+            'private': receipt.get('private'),
+        },
+    }
+    temporary = folder / '.checkpoint-contract.json.tmp'
+    temporary.write_text(json.dumps(contract, indent=2, sort_keys=True) + '\n', encoding='utf-8')
+    temporary.replace(folder / 'checkpoint-contract.json')
+    return contract
 
 
 def validate_files(folder, step):
@@ -55,7 +99,7 @@ def install_export_hook(config):
     def export(model, step, *, initialization_mode=None):
         if initialization_mode is not None and (initialization_mode != 'fresh_base' or step != 0):
             raise ValueError('Only genuine fresh-base initialization may use the step-zero export mode')
-        folder = config.run_dir / 'artifacts/adapters' / f'step_{step}'
+        folder = adapter_checkpoint_path(config.run_dir, step)
         world = get_world()
         if world.is_master:
             if initialization_mode == 'fresh_base' and folder.exists():
@@ -86,8 +130,13 @@ def install_export_hook(config):
             receipt = upload(folder, repo, run)
             if not receipt.get('verified'):
                 raise ValueError('Cloud checkpoint verification did not succeed')
+            if os.environ.get('ADAPTER_ONLY_CHECKPOINTS') == '1' and receipt.get('private') is not False:
+                raise ValueError('Adapter-only checkpoint must be verified in a public repository')
             if initialization_mode == 'fresh_base' and receipt.get('private') is not False:
                 raise ValueError('Fresh step-zero export must be verified public')
+            _write_checkpoint_contract(
+                config.run_dir, step, native_checkpoint_path(config.run_dir, step), folder, receipt,
+            )
             (folder / '.finished').touch()
             (folder.parent / 'latest.json').write_text(json.dumps({'step': step, 'directory': folder.name,
                                                                 'sha256': report['sha256'], 'huggingface': receipt['url']})+'\n')
@@ -95,14 +144,15 @@ def install_export_hook(config):
         return receipt if world.is_master else None
 
     def save(self, step, model, optimizers, scheduler, progress, dataloader=None):
-        # This short fresh-only diagnostic publishes adapters directly. The
-        # immutable base is already on HF; native full-base copies are redundant.
+        # Keep the native DCP for local recovery even when the public artifact
+        # is adapter-only. ``upload_checkpoint`` receives only the portable
+        # LoRA files; it never sees this native checkpoint or optimizer state.
         adapter_only = os.environ.get('ADAPTER_ONLY_CHECKPOINTS') == '1'
+        original_save(self, step, model, optimizers, scheduler, progress, dataloader)
         if adapter_only:
-            if config.resume is not None:
-                raise ValueError('Adapter-only capacity test does not support native optimizer resume')
-        else:
-            original_save(self, step, model, optimizers, scheduler, progress, dataloader)
+            native = native_checkpoint_path(config.run_dir, step)
+            if not native.is_dir() or not (native / '.metadata').is_file():
+                raise ValueError('Adapter-only checkpoint contract requires the local native DCP checkpoint')
         export(model, step)
 
     CheckpointManager.save = save
