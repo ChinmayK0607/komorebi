@@ -302,7 +302,8 @@ def build_launch_environment(*, verified: dict[str, Any], gateway_env: Path, tim
         "PAINTER_GATEWAY_ENV_FILE": str(gateway_env),
         "PAINTER_RUN_TIMEOUT_SECONDS": str(timeout_seconds),
         "PAINTER_PRIME_RUN_WRAPPER": str(RUN_ROOT / "run_from_sft.py"),
-        "PAINTER_PRIME_TRAIN_WRAPPER": str(RUN_ROOT.parent / "photo-curriculum-rl-20260922/train_from_sft.py"),
+        "PAINTER_PRIME_TRAIN_WRAPPER": str(RUN_ROOT / "train_from_sft.py"),
+        "PAINTER_NUM_TRAIN_GPUS": "4",
     })
     return env
 

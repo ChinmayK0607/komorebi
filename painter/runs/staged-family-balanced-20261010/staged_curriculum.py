@@ -125,6 +125,8 @@ def build_run_surface() -> dict[str, Any]:
         "launch": "launch.sh",
         "launch_prepared": "launch_prepared.py",
         "run_from_sft": "run_from_sft.py",
+        "staged_trainer": "train_from_sft.py",
+        "staged_init_adapter": "prime_runtime/integrations/prime/watercolour_sft/init_adapter.py",
         "runtime_binding": "runtime_binding.py",
         "sitecustomize": "sitecustomize.py",
         "prime_tail_purge": "prime_tail_purge.py",
@@ -136,10 +138,7 @@ def build_run_surface() -> dict[str, Any]:
             raise CurriculumError(f"run surface file is missing or symlinked: {relative}")
         files[name] = {"path": relative, "sha256": sha256_file(path)}
     reviewed_root = run_root.parent / "photo-curriculum-rl-20260922"
-    reviewed_files = {
-        "photo_runner": "run_from_sft.py",
-        "photo_trainer": "train_from_sft.py",
-    }
+    reviewed_files = {"photo_runner": "run_from_sft.py"}
     reviewed: dict[str, Any] = {}
     for name, relative in reviewed_files.items():
         path = reviewed_root / relative

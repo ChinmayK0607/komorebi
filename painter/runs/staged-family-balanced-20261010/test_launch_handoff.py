@@ -38,12 +38,13 @@ def load_path(name: str, path: Path):
 CONFIG = load("staged_launch_prepare_config", "prepare_config.py")
 PREPARE_NODE = load("staged_launch_prepare_node", "prepare_node.py")
 WRAPPER = load("staged_launch_wrapper", "run_from_sft.py")
-TRAIN_WRAPPER = load_path("reviewed_photo_train_wrapper", RUN.parent / "photo-curriculum-rl-20260922/train_from_sft.py")
+TRAIN_WRAPPER = load_path("staged_train_wrapper", RUN / "train_from_sft.py")
 CANARY = load("staged_launch_canary", "canary.py")
+CURRICULUM = load("staged_run_curriculum_surface", "staged_curriculum.py")
 CANARY_SOURCE = (RUN / "canary.py").read_text(encoding="utf-8")
 LAUNCH_SOURCE = (RUN / "launch.sh").read_text(encoding="utf-8")
 WRAPPER_SOURCE = (RUN / "run_from_sft.py").read_text(encoding="utf-8")
-TRAIN_WRAPPER_SOURCE = (RUN.parent / "photo-curriculum-rl-20260922/train_from_sft.py").read_text(encoding="utf-8")
+TRAIN_WRAPPER_SOURCE = (RUN / "train_from_sft.py").read_text(encoding="utf-8")
 
 
 class LaunchHandoffTests(unittest.TestCase):
@@ -246,6 +247,12 @@ class LaunchHandoffTests(unittest.TestCase):
         ):
             self.assertIn(key, WRAPPER_SOURCE)
 
+    def test_staged_trainer_is_run_owned_and_requires_four_ranks(self) -> None:
+        self.assertIn('TRAIN_WRAPPER = RUN / "train_from_sft.py"', WRAPPER_SOURCE)
+        self.assertIn("base.trainer_command = _staged_trainer_command", WRAPPER_SOURCE)
+        self.assertIn("validate_trainer_world_size", TRAIN_WRAPPER_SOURCE)
+        self.assertIn('expected_world != 4', TRAIN_WRAPPER_SOURCE)
+
     def test_staged_wrapper_accepts_trusted_snapshot_links_but_rejects_escape(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -372,11 +379,19 @@ class LaunchHandoffTests(unittest.TestCase):
             brush = root / "brush"
             helpers = brush / "integrations/prime/watercolour_sft"
             helpers.mkdir(parents=True)
+            override = root / "prime_runtime/integrations/prime/watercolour_sft"
+            override.mkdir(parents=True)
             (helpers / "model_profiles.py").write_text(
                 "def profile(): return {'name': 'qwen38_27b'}\n", encoding="utf-8"
             )
             (helpers / "init_adapter.py").write_text("", encoding="utf-8")
             (helpers / "export_adapter.py").write_text("", encoding="utf-8")
+            (override / "init_adapter.py").write_text(
+                "def validate_trainer_world_size(world_size, expected=4):\n"
+                "    if world_size != expected: raise ValueError('bad world')\n"
+                "    return {'status': 'passed', 'world_size': world_size, 'expected_world_size': expected}\n",
+                encoding="utf-8",
+            )
             wrapper = root / "train_from_sft.py"
             wrapper.write_text(TRAIN_WRAPPER_SOURCE, encoding="utf-8")
             prime_train = root / "prime_rl/trainer/rl"
@@ -578,7 +593,7 @@ class LaunchHandoffTests(unittest.TestCase):
 
     def test_launcher_is_foreground_bounded_and_wires_both_adapters(self) -> None:
         self.assertIn('RUN_WRAPPER="${PAINTER_PRIME_RUN_WRAPPER:-$RUN_SOURCE_ROOT/run_from_sft.py}"', LAUNCH_SOURCE)
-        self.assertIn('TRAIN_WRAPPER="${PAINTER_PRIME_TRAIN_WRAPPER:-$RUN_SOURCE_ROOT/../photo-curriculum-rl-20260922/train_from_sft.py}"', LAUNCH_SOURCE)
+        self.assertIn('TRAIN_WRAPPER="${PAINTER_PRIME_TRAIN_WRAPPER:-$RUN_SOURCE_ROOT/train_from_sft.py}"', LAUNCH_SOURCE)
         self.assertIn("timeout --foreground --signal=TERM --kill-after=60", LAUNCH_SOURCE)
         self.assertNotIn("setsid", LAUNCH_SOURCE)
         self.assertNotIn("nohup", LAUNCH_SOURCE)
@@ -629,9 +644,9 @@ export PATH="$PRIME_BIN${{PATH:+:$PATH}}"
             completed = subprocess.run(["bash", "-c", shell], capture_output=True, text=True, check=False)
             self.assertEqual(completed.returncode, 0, completed.stderr)
 
-    def test_launcher_canonicalizes_photo_trainer_root_before_comparison(self) -> None:
+    def test_launcher_requires_staged_trainer_root_before_comparison(self) -> None:
         self.assertIn(
-            'EXPECTED_TRAIN_WRAPPER_ROOT="$(cd "$RUN_SOURCE_ROOT/../photo-curriculum-rl-20260922" && pwd -P)"',
+            'EXPECTED_TRAIN_WRAPPER_ROOT="$RUN_SOURCE_ROOT"',
             LAUNCH_SOURCE,
         )
         self.assertIn(
@@ -645,15 +660,13 @@ export PATH="$PRIME_BIN${{PATH:+:$PATH}}"
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             run_root = root / "staged-family-balanced-20261010"
-            trainer_root = root / "photo-curriculum-rl-20260922"
             run_root.mkdir()
-            trainer_root.mkdir()
-            (trainer_root / "train_from_sft.py").write_text("# fixture\n", encoding="utf-8")
+            (run_root / "train_from_sft.py").write_text("# fixture\n", encoding="utf-8")
             shell = f'''\
 set -Eeuo pipefail
 RUN_SOURCE_ROOT="$(cd "{run_root}" && pwd -P)"
-TRAIN_WRAPPER="$RUN_SOURCE_ROOT/../photo-curriculum-rl-20260922/train_from_sft.py"
-EXPECTED_TRAIN_WRAPPER_ROOT="$(cd "$RUN_SOURCE_ROOT/../photo-curriculum-rl-20260922" && pwd -P)"
+TRAIN_WRAPPER="$RUN_SOURCE_ROOT/train_from_sft.py"
+EXPECTED_TRAIN_WRAPPER_ROOT="$RUN_SOURCE_ROOT"
 TRAIN_WRAPPER_ROOT="$(cd "$(dirname "$TRAIN_WRAPPER")" && pwd -P)"
 [[ "$TRAIN_WRAPPER_ROOT" == "$EXPECTED_TRAIN_WRAPPER_ROOT" ]]
 '''
@@ -666,7 +679,7 @@ TRAIN_WRAPPER_ROOT="$(cd "$(dirname "$TRAIN_WRAPPER")" && pwd -P)"
         expected = {
             "bootstrap", "bootstrap_shell", "materializer", "prepare_config", "prepare_node", "canary", "launch", "launch_prepared",
             "run_from_sft", "runtime_binding", "sitecustomize", "prime_tail_purge",
-            "photo_runner", "photo_trainer",
+            "photo_runner", "staged_trainer", "staged_init_adapter",
         }
         self.assertEqual(set(surface["files"]), expected)
         for details in surface["files"].values():
@@ -679,6 +692,19 @@ TRAIN_WRAPPER_ROOT="$(cd "$(dirname "$TRAIN_WRAPPER")" && pwd -P)"
         self.assertFalse(surface["canary_scope"]["network"])
         self.assertFalse(surface["canary_scope"]["model"])
         self.assertFalse(surface["canary_scope"]["judge"])
+
+    def test_run_surface_builder_hashes_run_owned_trainer_and_initializer(self) -> None:
+        surface = CURRICULUM.build_run_surface()
+        files = surface["files"]
+        self.assertEqual(files["photo_runner"]["path"], "../photo-curriculum-rl-20260922/run_from_sft.py")
+        self.assertEqual(files["staged_trainer"]["path"], "train_from_sft.py")
+        self.assertEqual(
+            files["staged_init_adapter"]["path"],
+            "prime_runtime/integrations/prime/watercolour_sft/init_adapter.py",
+        )
+        for name in ("staged_trainer", "staged_init_adapter"):
+            path = RUN / files[name]["path"]
+            self.assertEqual(files[name]["sha256"], hashlib.sha256(path.read_bytes()).hexdigest())
         bootstrap = surface["bootstrap_scope"]
         self.assertEqual(bootstrap["status"], "prepared_not_run")
         self.assertEqual(bootstrap["receipt_status"], "ready_no_launch")

@@ -34,6 +34,24 @@ sys.modules[spec.name] = base
 spec.loader.exec_module(base)
 
 
+TRAIN_WRAPPER = RUN / "train_from_sft.py"
+if not TRAIN_WRAPPER.is_file():
+    raise RuntimeError(f"staged trainer wrapper is missing: {TRAIN_WRAPPER}")
+ORIGINAL_TRAINER_COMMAND = base.trainer_command
+
+
+def _staged_trainer_command(command: list[str], wrapper: Path | None = None) -> list[str]:
+    """Force Prime's trainer child through this run's 4-rank initializer."""
+
+    selected = Path(os.environ.get("PAINTER_PRIME_TRAIN_WRAPPER", str(TRAIN_WRAPPER))).resolve(strict=True)
+    if selected != TRAIN_WRAPPER.resolve():
+        raise ValueError(f"staged trainer wrapper must remain run-owned: {selected}")
+    return ORIGINAL_TRAINER_COMMAND(command, selected)
+
+
+base.trainer_command = _staged_trainer_command
+
+
 POLICY_SHA256 = "c70c47ec0d6d7172b3bc25c4f54178919cf7c079cd9652fff3bc76db9e1eca79"
 FROZEN_SFT_SHA256 = "bea72b066986faa1b92b9dc539c710093181ee916b99323e2b2498f318ac1740"
 FROZEN_SFT_ALIAS = "sft-step512"

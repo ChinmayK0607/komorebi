@@ -330,9 +330,19 @@ spec.loader.exec_module(module)
 root, brush_root, helpers = module._trainer_dependency_paths()
 if str(brush_root) != str(Path(os.environ["BRUSH_ROOT"]).resolve(strict=True)):
     raise RuntimeError("trainer wrapper resolved a different BRUSH_ROOT")
-sys.path[:0] = [str(helpers), str(root)]
+override = root / "prime_runtime" / "integrations" / "prime" / "watercolour_sft"
+if not (override / "init_adapter.py").is_file():
+    raise RuntimeError("trainer wrapper resolved no staged adapter override")
+sys.path[:0] = [str(override), str(helpers), str(root)]
 model_profile = importlib.import_module("model_profiles").profile()
-importlib.import_module("init_adapter")
+init_adapter = importlib.import_module("init_adapter")
+world_contract = init_adapter.validate_trainer_world_size(4)
+try:
+    init_adapter.validate_trainer_world_size(2)
+except ValueError:
+    pass
+else:
+    raise RuntimeError("trainer initializer accepted the invalid two-rank staged topology")
 importlib.import_module("export_adapter")
 importlib.import_module("prime_rl.trainer.rl.train")
 if model_profile.get("name") != "qwen38_27b":
@@ -343,6 +353,7 @@ print(json.dumps({
     "helpers": str(helpers),
     "trainer_module": "prime_rl.trainer.rl.train",
     "model_profile": model_profile.get("name"),
+    "trainer_world_size_contract": world_contract,
 }, sort_keys=True))
 '''
     try:
@@ -386,6 +397,7 @@ def run_probe(*, prime_python: Path, prime_root: Path, config_path: Path, source
         "PAINTER_STAGED_CURRICULUM_ADMISSION": "1",
         "PAINTER_STAGED_CURRICULUM_ROOT": str(source_root.resolve()),
         "PAINTER_STAGED_CURRICULUM_STATE": str(state_path.resolve()),
+        "PAINTER_NUM_TRAIN_GPUS": "4",
         "PYTHONPATH": os.pathsep.join(
             [
                 str(source_root),
@@ -467,7 +479,7 @@ def canary(*, source_root: Path, node_root: Path, materialized_root: Path, rende
     prime_python = PREP._runtime_executable(prime_root / ".venv/bin/python", "prepared Prime Python", prime_root / ".venv")
     PREP._directory(repo_root / "painter/rl_helpers", "reviewed brush helper root")
     trainer_wrapper = PREP._file(
-        repo_root / "painter/runs/photo-curriculum-rl-20260922/train_from_sft.py",
+        source_root / "train_from_sft.py",
         "reviewed Prime trainer wrapper",
     )
     revision = PREP._git_revision(prime_root)
