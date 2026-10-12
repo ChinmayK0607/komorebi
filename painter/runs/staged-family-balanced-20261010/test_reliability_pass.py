@@ -7,6 +7,7 @@ from pathlib import Path
 import tempfile
 import unittest
 from unittest.mock import patch
+from types import SimpleNamespace
 
 
 RUN = Path(__file__).resolve().parent
@@ -24,6 +25,7 @@ guard = _load("launch_guard")
 resource = _load("resource_preflight")
 canary = _load("real_backward_canary")
 run_wrapper = _load("run_from_sft")
+train_wrapper = _load("train_from_sft")
 
 
 class _FakeProcess:
@@ -198,6 +200,15 @@ class ReliabilityPassTests(unittest.TestCase):
             receipt.write_text(json.dumps(value), encoding="utf-8")
             with self.assertRaises(canary.RealBackwardCanaryError):
                 canary.validate_receipt(receipt)
+
+    def test_real_backward_canary_mutates_actual_top_level_trainer_config(self) -> None:
+        config = SimpleNamespace(max_steps=20, ckpt=SimpleNamespace(interval=4))
+        with patch.dict(os.environ, {"PAINTER_CANARY_MODE": "real_backward"}, clear=False):
+            started = train_wrapper._configure_real_backward_canary(config)
+        self.assertIsInstance(started, float)
+        self.assertEqual(config.max_steps, 1)
+        self.assertEqual(config.ckpt.interval, 1)
+        self.assertFalse(hasattr(config, "trainer"))
 
 
 if __name__ == "__main__":

@@ -71,11 +71,11 @@
   },
   "config": {
     "path": "config.json",
-    "sha256": "a54c2978a0c27bf2d7e12650b612c6e7534449484a278761f3d8224ed5161916"
+    "sha256": "d6edadda2c3bf5cc421ea64d355e8a25e5ae059055a691c072339a9c1f9897c6"
   },
   "receipt": {
     "path": "receipt.json",
-    "sha256": "53e47663b67d4c1a91aa2906b82ebb5e7eb2f283bd6239d5518bb0b16b1766ef"
+    "sha256": "a68162940f38f24644b6012e5d201a4649ce05375ec1412eebf4d7104548dbc6"
   },
   "tail_purge_hook": {
     "path": "prime_tail_purge.py",
@@ -228,7 +228,7 @@
       },
       "staged_trainer": {
         "path": "train_from_sft.py",
-        "sha256": "7fa2a7498e3c23ad28eed31e18231d380d5b3ec87e415579c094693a14a0f40d"
+        "sha256": "9dcff27f565dad463d7d0c6e6e3b3c218dec271409a9aca45e73cbb840ba8651"
       },
       "staged_init_adapter": {
         "path": "prime_runtime/integrations/prime/watercolour_sft/init_adapter.py",

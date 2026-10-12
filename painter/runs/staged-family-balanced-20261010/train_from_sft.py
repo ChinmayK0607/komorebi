@@ -114,12 +114,12 @@ def _configure_real_backward_canary(config: object) -> float | None:
     if os.environ.get("PAINTER_CANARY_MODE") != "real_backward":
         return None
     # Only the bounded canary may override the prepared 20-update target.
-    # Prime's config object is mutable in the pinned trainer API; fail closed
-    # if that API shape changes rather than silently running a full job.
-    if not hasattr(config, "max_steps") or not hasattr(config, "trainer") or not hasattr(config, "ckpt"):
+    # The trainer entrypoint receives TrainerConfig directly: max_steps and
+    # ckpt.interval are top-level fields. Fail closed if that API shape changes
+    # rather than silently running a full job.
+    if not hasattr(config, "max_steps") or not hasattr(config, "ckpt") or config.ckpt is None:
         raise ValueError("real-backward canary cannot prove mutable max_steps/checkpoint config")
     config.max_steps = 1
-    config.trainer.max_steps = 1
     if not hasattr(config.ckpt, "interval"):
         raise ValueError("real-backward canary cannot prove checkpoint interval support")
     config.ckpt.interval = 1
