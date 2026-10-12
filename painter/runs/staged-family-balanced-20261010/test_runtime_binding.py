@@ -646,6 +646,7 @@ class RuntimeBindingTests(unittest.TestCase):
         self.assertFalse(self.runtime.controller.halted)
         state = json.loads((Path(self.temp.name) / "runtime-state.json").read_text())
         self.assertEqual(len(state["purge_receipts"]), 1)
+        self.assertIsNone(state["dispatch_group_limit"])
 
     def test_binding_gate_drains_existing_group_without_fresh_dispatch(self) -> None:
         dispatcher = self.orchestrator.dispatcher
@@ -675,14 +676,19 @@ class RuntimeBindingTests(unittest.TestCase):
         self.assertEqual(group.episodes_to_schedule, 0)
         self.assertFalse(self.orchestrator.dispatcher.dispatch_allowed.is_set())
 
-    def test_partial_carryover_defers_batch_until_next_six_group_cycle_passes(self) -> None:
+    def test_partial_carryover_refills_only_the_needed_group_prefix(self) -> None:
         issued_rows = []
         first_cycle_pending_ids = []
         second_cycle_first_group_ids = []
 
         async def run_cycle(cycle: int, partial_groups = set()):
             emitted_batch = None
-            requests = [self.orchestrator.train_source.next_task(step=1) for _ in range(6)]
+            requests = []
+            for _ in range(6):
+                request = self.orchestrator.train_source.next_task(step=1)
+                if request is None:
+                    break
+                requests.append(request)
             issued_rows.extend(request.task.data.source_row_id for request in requests)
             for index, request in enumerate(requests):
                 native_group_id = f"carry-{cycle}-{index}"
@@ -701,7 +707,7 @@ class RuntimeBindingTests(unittest.TestCase):
                 if maybe is not None:
                     emitted_batch = maybe
                 if cycle == 2 and index == 0:
-                    self.assertIsNone(maybe)
+                    self.assertIsNotNone(maybe)
             return emitted_batch
 
         asyncio.run(run_cycle(1, {0, 1, 2, 3}))
@@ -709,6 +715,16 @@ class RuntimeBindingTests(unittest.TestCase):
         first_cycle_pending_ids.extend(self.orchestrator.train_sink.pending_batch)
         batch = asyncio.run(run_cycle(2))
         self.assertEqual(len(issued_rows), len(set(issued_rows)))
+        self.assertEqual(len(issued_rows), 7)
+        rotated = curriculum.ordered_cycle_slots(self.plan["stages"][0], 2)
+        self.assertEqual(issued_rows[-1], rotated[0]["prompt_row_id"])
+        plans = [event for event in self.runtime.journal.state["events"] if event["type"] == "cycle_dispatch_plan"]
+        self.assertEqual([event["group_limit"] for event in plans], [6, 1])
+        self.assertIsNone(self.runtime.journal.state["dispatch_group_limit"])
+        self.assertTrue(any(
+            receipt.get("status") == "partial_refill_complete"
+            for receipt in self.runtime.journal.state.get("cycle_receipts", [])
+        ))
         self.assertEqual(len(self.runtime.controller.completed_cycle_ids), 2)
         self.assertIsNotNone(batch)
         self.assertEqual(
@@ -747,7 +763,12 @@ class RuntimeBindingTests(unittest.TestCase):
     def test_early_carryover_is_not_shipped_when_later_cycle_is_censored(self) -> None:
         async def run_cycle(cycle: int, uncertain_by_group: dict[int, int]):
             emitted = None
-            requests = [self.orchestrator.train_source.next_task(step=1) for _ in range(6)]
+            requests = []
+            for _ in range(6):
+                request = self.orchestrator.train_source.next_task(step=1)
+                if request is None:
+                    break
+                requests.append(request)
             for index, request in enumerate(requests):
                 group = [FakeEpisode(request.task, f"censor-carry-{cycle}-{index}-{rollout}") for rollout in range(4)]
                 for episode in group[:uncertain_by_group.get(index, 0)]:
@@ -765,7 +786,7 @@ class RuntimeBindingTests(unittest.TestCase):
 
         asyncio.run(run_cycle(1, {0: 1, 1: 1, 2: 1, 3: 1}))
         self.assertEqual(len(self.orchestrator.train_sink.pending_batch), 20)
-        emitted = asyncio.run(run_cycle(2, {1: 2}))
+        emitted = asyncio.run(run_cycle(2, {0: 2}))
         self.assertIsNone(emitted)
         self.assertEqual(self.runtime.controller.next_cycle, 2)
         self.assertEqual(len(self.runtime.controller.completed_cycle_ids), 1)

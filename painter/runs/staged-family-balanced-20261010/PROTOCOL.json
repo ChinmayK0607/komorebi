@@ -71,11 +71,11 @@
   },
   "config": {
     "path": "config.json",
-    "sha256": "17a9812533c6bf96fb572cad6ae050f4751d4e0dea480202ea97f1c9fb9f82a7"
+    "sha256": "92c95b0f3ea99d0236cf56fb13622247447a5cc91101c3d4710b90ea1111d987"
   },
   "receipt": {
     "path": "receipt.json",
-    "sha256": "e31a6c3a2727e8a3b14e06e6de0282ebf62624008cf8856937ddd9ecaebd8792"
+    "sha256": "01f1fd6b321fa94727c736262ac332c1d5c59ff54f0bdb0e50a6d4ea1fb53fce"
   },
   "tail_purge_hook": {
     "path": "prime_tail_purge.py",
@@ -96,7 +96,7 @@
     "atomic_state": true,
     "stage_tail_purge_required_before_advance": true,
     "optimizer_update_confirmation": "TrainBatch selection is journaled first; only WeightWatcher.on_update for the expected policy version records the optimizer update",
-    "dispatch_gate": "binding-owned six-group gate is layered with Prime lead permission; active groups drain while fresh dispatch is paused",
+    "dispatch_gate": "binding-owned complete-group-prefix gate is layered with Prime lead permission; active groups drain while fresh dispatch is paused",
     "trainer_candidate_inventory": "controller inventory contains only exact trace IDs present in native TrainSink.pending_batch after process_group",
     "activation_env": {
       "PAINTER_STAGED_CURRICULUM_ENABLE": "1",
@@ -107,7 +107,7 @@
       "PAINTER_STAGED_CURRICULUM_STATE": "<run-root>/runtime-state.json",
       "PAINTER_REQUIRE_VALID_FINAL_ACTION": "1"
     },
-    "batch_boundary": "_maybe_batch remains closed during group assembly and is released only after the active six-group pass receipt; in-group calls cannot ship carry-over traces",
+    "batch_boundary": "_maybe_batch remains closed during group assembly and is released only after the active complete-group-prefix pass receipt; in-group calls cannot ship carry-over traces",
     "resume_scope": "only clean optimizer/stage boundaries or a persisted exact selected-batch/update/tail-purge reconciliation may resume; partial native buffers fail closed"
   },
   "reward_and_renderer": {
@@ -156,12 +156,12 @@
   "pending_choices": {
     "batch_size": "Prime batch_size=24 counts trainable traces; six per-family groups provide 24 cycle capacity, partial groups can span cycles, and the node-free Prime compatibility check is required before allocation",
     "prime_tail_purge_hook": "required before any stage transition; the runtime must physically consume and purge the exact recorded stage-tail trace IDs, so this preparation is not launch-ready",
-    "runtime_censored_cycle_purge": "required: purge every native pending trace attributable to a censored six-group cycle before reopening the deterministic retry gate",
+    "runtime_censored_cycle_purge": "required: purge every native pending trace attributable to a censored admitted cycle before reopening the deterministic retry gate",
     "runtime_resume_reconciliation": "required: reconcile only a persisted exact selected TrainBatch against native startup policy.version/progress.step; partial cycle, dispatch cursor, or orphaned inventory states fail closed because native buffers are not durable",
     "renderer_canary": "measure the repaired renderer tail before any scaled rental",
     "quality_threshold": "schedule completion is a progression receipt, not a quality gate or claim of visual improvement; judge outcomes remain descriptive until the matched panel is complete",
-    "runtime_batch_boundary": "required: defer Prime _maybe_batch until the active six-group cycle has a pass receipt; carried traces may fill the next optimizer batch only after that cycle completes",
-    "runtime_sampling_attempt_cap": "required: every completed six-group attempt, including censored retries, increments persisted per-stage attempts and stops at the finite two-times cap",
+    "runtime_batch_boundary": "required: defer Prime _maybe_batch until the active complete-group prefix has a pass receipt; carried traces may fill the next optimizer batch only after that prefix completes",
+    "runtime_sampling_attempt_cap": "required: every admitted attempt, including censored and partial retries, increments persisted per-stage attempts and stops at the finite two-times cap",
     "runtime_stale_group_cancellation": "required: stale GroupCancellation voids every arrived group member as pipeline evidence and must leave no native pending IDs; non-stale cancellation may admit three scored traces with explicit placeholders",
     "preflight_surface": "hash-bound bootstrap, materializer, config/node preparation, HF snapshot-cache validation, explicit verified non-private renderer/browser scratch root, import-hook/real-renderer canary, foreground launch, receipt-derived launch_prepared.py handoff, run-owned adapter, runtime binding, sitecustomize, tail purge, and reviewed external photo runner/trainer wrappers; bootstrap/canary/launch/launch_prepared are prepared but not run",
     "bootstrap": "bootstrap.py/bootstrap.sh are prepared but unrun; on an explicit Linux execution they accept only exact 1+1, 2+2, or 4+4 train/inference GPU topologies, with 4+4 reserved for an 8-GPU whole-node offer split into four trainer and four inference GPUs; verify public pinned downloads, run the reviewed renderer sandbox helper plus materialization/preflight/canary, and write ready_no_launch without starting Prime"
@@ -180,7 +180,7 @@
     "files": {
       "bootstrap": {
         "path": "bootstrap.py",
-        "sha256": "0989130399504fed96c8cc6e7d85bb10837c88f227abffa319560011c57bd578"
+        "sha256": "89cd82087cdcd6e1f22acc74ea6749ac898a0b06cbf14b4aa2cb73c5a183e051"
       },
       "bootstrap_shell": {
         "path": "bootstrap.sh",
@@ -196,7 +196,7 @@
       },
       "prepare_node": {
         "path": "prepare_node.py",
-        "sha256": "2f04c373738efd945740fc740c853ee8836d980b63ddc084d682155c42f52417"
+        "sha256": "69eb796ca01b80dcb28c8ce96c0e7b14390d234fb4a13351655e7242ab0eb657"
       },
       "canary": {
         "path": "canary.py",
@@ -204,19 +204,31 @@
       },
       "launch": {
         "path": "launch.sh",
-        "sha256": "e96373abe1c83addc8537ed604631d3d2f21993cf4a19b43c9ee0ecfd8cd79a8"
+        "sha256": "e2af53ec1a4d764c16ec909ed49de57c8bf2a93145f338aef005e2a8542b8f21"
+      },
+      "launch_guard": {
+        "path": "launch_guard.py",
+        "sha256": "f94064885624580fba6f663bfe9aad88cabe531048c88af3f15e7b66ecb769a7"
       },
       "launch_prepared": {
         "path": "launch_prepared.py",
-        "sha256": "ba9eb3a3c3d45dc07e92722aa255c4601b1f2db56d4fd8c702681c1e94abf96b"
+        "sha256": "8b8883d8ea959f1d1c866bfcd9a0dae76256ee4d2ba2d97189e94889870809d2"
+      },
+      "real_backward_canary": {
+        "path": "real_backward_canary.py",
+        "sha256": "39b2e502914d3f28c11d304bc2763716e4de2a4d15684d2be0257ee27733493d"
+      },
+      "resource_preflight": {
+        "path": "resource_preflight.py",
+        "sha256": "6edd1350fef64267b78f7a6df116067ea0a2a17889120c3616e87c6a702f72dc"
       },
       "run_from_sft": {
         "path": "run_from_sft.py",
-        "sha256": "ef98ab7de08bdb72ec90e489b1391d4f0c752f73f1e58b5c239a10a618c99938"
+        "sha256": "3f6e1fe038c5f5154f5250bb42957c58e13649f934417bdc27f1a2fa546684b4"
       },
       "staged_trainer": {
         "path": "train_from_sft.py",
-        "sha256": "b850d36441e2cf41bc52a9aa4ef5ccb432862c32644d6257ed67a267ba688623"
+        "sha256": "7fa2a7498e3c23ad28eed31e18231d380d5b3ec87e415579c094693a14a0f40d"
       },
       "staged_init_adapter": {
         "path": "prime_runtime/integrations/prime/watercolour_sft/init_adapter.py",
@@ -224,7 +236,7 @@
       },
       "runtime_binding": {
         "path": "runtime_binding.py",
-        "sha256": "b83694b9e76288b8d136b942e5ef85e503d540e033d30470657558e8e54fedb9"
+        "sha256": "77147c8dc7ee3280dfeca9fd66bdc8fd417d26e6526f3a304f98d66938694a67"
       },
       "sitecustomize": {
         "path": "sitecustomize.py",

@@ -60,6 +60,7 @@ POLICY_PREFIX = "rl-judge-matched-20261004-flash/step_12"
 FROZEN_SFT_REVISION = "adf687e5b321514eda7be6eab050434fdc8e44ff"
 FROZEN_SFT_PREFIX = "photo-curriculum-sft-20260922-balanced/step_512"
 ORIGINAL_ORCHESTRATOR_ENV = base._orchestrator_env
+ORIGINAL_CACHE_ENV = base._cache_env
 STAGED_FORWARD_KEYS = (
     "PAINTER_REQUIRE_VALID_FINAL_ACTION",
     "PAINTER_STAGED_CURRICULUM_ENABLE",
@@ -142,11 +143,24 @@ def _staged_orchestrator_env(environment: dict[str, str]) -> dict[str, str]:
         if not value:
             raise ValueError(f"{key} is required for staged curriculum activation")
         values[key] = value
+    artifact_root = os.environ.get("PAINTER_RUN_ARTIFACT_ROOT")
+    if artifact_root:
+        values["PAINTER_RUN_ARTIFACT_ROOT"] = artifact_root
     values["PAINTER_PRIME_ROLE"] = "orchestrator"
     return values
 
 
 base._orchestrator_env = _staged_orchestrator_env
+
+
+def _staged_cache_env(root: Path, role: str, environment: dict[str, str]) -> dict[str, str]:
+    artifact_root = os.environ.get("PAINTER_RUN_ARTIFACT_ROOT")
+    if artifact_root:
+        root = Path(artifact_root).expanduser().resolve()
+    return ORIGINAL_CACHE_ENV(root, role, environment)
+
+
+base._cache_env = _staged_cache_env
 
 
 def main() -> None:

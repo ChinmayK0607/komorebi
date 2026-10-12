@@ -781,7 +781,7 @@ def expose_materialized_runtime(materialized_root: Path) -> Path:
     return root
 
 
-def ensure_prepared(*, node_root: Path, renderer_root: Path, source_root: Path, materialized: Path, prime_root: Path, model: Path, policy: Path, frozen: Path, renderer: Path, renderer_python: Path, gpus_per_node: int, num_train_gpus: int, num_infer_gpus: int, bootstrap_python: Path) -> Path:
+def ensure_prepared(*, node_root: Path, renderer_root: Path, source_root: Path, materialized: Path, prime_root: Path, model: Path, policy: Path, frozen: Path, renderer: Path, renderer_python: Path, gpus_per_node: int, num_train_gpus: int, num_infer_gpus: int, trainer_memory_gib: int | None, bootstrap_python: Path) -> Path:
     preflight = node_root / "config-preflight"
     config_path = preflight / "native.toml"
     config_receipt = preflight / "config-receipt.json"
@@ -797,7 +797,7 @@ def ensure_prepared(*, node_root: Path, renderer_root: Path, source_root: Path, 
         if prepared.exists():
             raise BootstrapError("partial prepared node directory exists")
         run_checked([
-            str(bootstrap_python), str(RUN_ROOT / "prepare_node.py"), "--source-root", str(source_root), "--node-root", str(prepared), "--materialized-root", str(materialized), "--prime-root", str(prime_root), "--model-dir", str(model), "--policy-adapter", str(policy), "--frozen-adapter", str(frozen), "--renderer", str(renderer), "--renderer-python", str(renderer_python), "--renderer-root", str(renderer_root), "--repo-root", str(REPO_ROOT), "--gpus-per-node", str(gpus_per_node), "--num-train-gpus", str(num_train_gpus), "--num-infer-gpus", str(num_infer_gpus),
+            str(bootstrap_python), str(RUN_ROOT / "prepare_node.py"), "--source-root", str(source_root), "--node-root", str(prepared), "--materialized-root", str(materialized), "--prime-root", str(prime_root), "--model-dir", str(model), "--policy-adapter", str(policy), "--frozen-adapter", str(frozen), "--renderer", str(renderer), "--renderer-python", str(renderer_python), "--renderer-root", str(renderer_root), "--repo-root", str(REPO_ROOT), "--gpus-per-node", str(gpus_per_node), "--num-train-gpus", str(num_train_gpus), "--num-infer-gpus", str(num_infer_gpus), *(["--trainer-memory-gib", str(trainer_memory_gib)] if trainer_memory_gib is not None else []),
         ], timeout=600)
     else:
         ensure_dir(prepared, "prepared node")
@@ -880,7 +880,7 @@ def bootstrap(args: argparse.Namespace) -> dict[str, Any]:
     renderer, renderer_python, browser_root, renderer_receipt = ensure_renderer(node_root=node_root, renderer_root=renderer_root, bootstrap_python=bootstrap_python, uv=uv, prime_root=prime_root)
     source_assets, source_receipt = ensure_source_assets(node_root=node_root, bootstrap_python=bootstrap_python, source_root=args.source_root)
     materialized = ensure_materialized(node_root=node_root, source_assets=source_assets, source_root=args.source_root, bootstrap_python=bootstrap_python)
-    prepared = ensure_prepared(node_root=node_root, renderer_root=renderer_root, source_root=args.source_root, materialized=materialized, prime_root=prime_root, model=model, policy=policy, frozen=frozen, renderer=renderer, renderer_python=renderer_python, gpus_per_node=args.gpus_per_node, num_train_gpus=args.num_train_gpus, num_infer_gpus=args.num_infer_gpus, bootstrap_python=bootstrap_python)
+    prepared = ensure_prepared(node_root=node_root, renderer_root=renderer_root, source_root=args.source_root, materialized=materialized, prime_root=prime_root, model=model, policy=policy, frozen=frozen, renderer=renderer, renderer_python=renderer_python, gpus_per_node=args.gpus_per_node, num_train_gpus=args.num_train_gpus, num_infer_gpus=args.num_infer_gpus, trainer_memory_gib=args.trainer_memory_gib, bootstrap_python=bootstrap_python)
     canary = ensure_canary(prepared=prepared, renderer_root=renderer_root, source_root=args.source_root, materialized=materialized, bootstrap_python=bootstrap_python)
     ready = {
         "schema": "staged-family-balanced-bootstrap-ready-v1", "status": "ready_no_launch", "run_id": RUN_ID,
@@ -893,6 +893,7 @@ def bootstrap(args: argparse.Namespace) -> dict[str, Any]:
         "source_assets": source_receipt, "materialized_root": str(materialized), "prepared_root": str(prepared),
         "renderer": renderer_receipt, "canary": {"status": canary.get("status"), "orchestrator_setup_called": canary.get("orchestrator_setup_called")},
         "next_action": "run the separately reviewed finite launch command after human node review",
+        "trainer_memory_gib": args.trainer_memory_gib,
     }
     atomic_json(ready_path, ready)
     return ready
@@ -907,6 +908,7 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--gpus-per-node", type=int, required=True)
     parser.add_argument("--num-train-gpus", type=int, required=True)
     parser.add_argument("--num-infer-gpus", type=int, required=True)
+    parser.add_argument("--trainer-memory-gib", type=int)
     return parser.parse_args(argv)
 
 

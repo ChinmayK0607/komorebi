@@ -57,6 +57,7 @@ class PreparedLaunchTests(unittest.TestCase):
             self.assertEqual(env["BRUSH_ROOT"], str(verified["brush_root"]))
             self.assertEqual(env["PAINTER_GATEWAY_ENV_FILE"], str(gateway.resolve()))
             self.assertEqual(env["PAINTER_RUN_TIMEOUT_SECONDS"], "17")
+            self.assertTrue(env["PAINTER_GUARD_NAMESPACE"].startswith(str((verified["prepared"] / "launch-guards").resolve())))
             self.assertNotIn("OPENAI_API_KEY", env)
             self.assertNotIn("PAINTER_PRIME_ROLE", env)
 
@@ -95,6 +96,73 @@ class PreparedLaunchTests(unittest.TestCase):
             gateway.chmod(0o600)
             with self.assertRaises(HANDOFF.PreparedLaunchError):
                 HANDOFF.build_launch_environment(verified=self._verified(root), gateway_env=gateway, timeout_seconds=0)
+
+    def test_real_backward_canary_is_explicit_and_bounded(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            verified = self._verified(root)
+            gateway = verified.pop("gateway")
+            env = HANDOFF.build_launch_environment(
+                verified=verified, gateway_env=gateway, timeout_seconds=1800,
+                real_backward_canary=True, canary_node_hourly_usd=75.0,
+            )
+            self.assertEqual(env["PAINTER_CANARY_MODE"], "real_backward")
+            self.assertEqual(env["PAINTER_RL_MAX_STEPS"], "1")
+            self.assertEqual(env["PAINTER_CANARY_COST_BOUND_USD"], "5.0")
+            self.assertEqual(env["PAINTER_CANARY_NODE_HOURLY_USD"], "75.0")
+            self.assertEqual(env["PAINTER_CANARY_COST_SOURCE"], "node_hourly_price_input")
+            with self.assertRaises(HANDOFF.PreparedLaunchError):
+                HANDOFF.build_launch_environment(
+                    verified=verified, gateway_env=gateway, timeout_seconds=1801,
+                    real_backward_canary=True,
+                )
+
+    def test_canary_requires_hourly_price_before_spawn(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            verified = self._verified(root)
+            gateway = verified.pop("gateway")
+            with self.assertRaisesRegex(HANDOFF.PreparedLaunchError, "canary-node-hourly-usd"):
+                HANDOFF.build_launch_environment(
+                    verified=verified, gateway_env=gateway, timeout_seconds=1800,
+                    real_backward_canary=True,
+                )
+
+    def test_each_launch_gets_isolated_guard_namespace(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            verified = self._verified(root)
+            gateway = verified.pop("gateway")
+            canary = HANDOFF.build_launch_environment(
+                verified=verified, gateway_env=gateway, timeout_seconds=1800,
+                real_backward_canary=True, canary_node_hourly_usd=75.0,
+            )
+            full = HANDOFF.build_launch_environment(
+                verified=verified, gateway_env=gateway, timeout_seconds=172800,
+            )
+            self.assertNotEqual(canary["PAINTER_GUARD_NAMESPACE"], full["PAINTER_GUARD_NAMESPACE"])
+            canary_failure = Path(canary["PAINTER_DISTRIBUTED_FAILURE_FILE"])
+            full_failure = Path(full["PAINTER_DISTRIBUTED_FAILURE_FILE"])
+            canary_failure.parent.mkdir(parents=True)
+            canary_failure.write_text('{"status":"rank_oom"}\n', encoding="utf-8")
+            self.assertTrue(canary_failure.is_file())
+            self.assertFalse(full_failure.exists())
+            self.assertNotEqual(canary["PAINTER_RANK_GUARD_DIR"], full["PAINTER_RANK_GUARD_DIR"])
+            canary_root = Path(canary["PAINTER_GUARD_NAMESPACE"])
+            full_root = Path(verified["prepared"]).resolve()
+            (canary_root / "launch.started").touch()
+            (canary_root / "runtime-state.json").write_text("{}\n", encoding="utf-8")
+            (canary_root / "async-output" / "checkpoints" / "step_1" / "trainer").mkdir(parents=True)
+            (canary_root / "rl-rollouts").mkdir()
+            self.assertEqual(canary["PAINTER_RL_CONFIG"], str(canary_root / "native.toml"))
+            self.assertEqual(canary["PAINTER_STAGED_CURRICULUM_STATE"], str(canary_root / "runtime-state.json"))
+            self.assertEqual(Path(full["PAINTER_RL_CONFIG"]).resolve(), full_root / "native.toml")
+            self.assertEqual(Path(full["PAINTER_STAGED_CURRICULUM_STATE"]).resolve(), full_root / "runtime-state.json")
+            self.assertNotIn("PAINTER_CANARY_MODE", full)
+            self.assertNotIn("PAINTER_CANARY_RECEIPT", full)
+            self.assertNotIn("PAINTER_RUN_ARTIFACT_ROOT", full)
+            for relative in ("launch.started", "runtime-state.json", "async-output", "rl-rollouts"):
+                self.assertFalse((full_root / relative).exists())
 
     def test_receipt_runtime_path_accepts_venv_link_and_rejects_escape(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

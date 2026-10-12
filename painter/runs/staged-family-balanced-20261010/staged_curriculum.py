@@ -123,7 +123,10 @@ def build_run_surface() -> dict[str, Any]:
         "prepare_node": "prepare_node.py",
         "canary": "canary.py",
         "launch": "launch.sh",
+        "launch_guard": "launch_guard.py",
         "launch_prepared": "launch_prepared.py",
+        "real_backward_canary": "real_backward_canary.py",
+        "resource_preflight": "resource_preflight.py",
         "run_from_sft": "run_from_sft.py",
         "staged_trainer": "train_from_sft.py",
         "staged_init_adapter": "prime_runtime/integrations/prime/watercolour_sft/init_adapter.py",
@@ -296,6 +299,16 @@ def _schedule_for_stage(stage: int, families: Mapping[str, Sequence[Mapping[str,
     return slots
 
 
+def ordered_cycle_slots(stage: Mapping[str, Any], cycle: int) -> list[dict[str, Any]]:
+    """Return one cycle in a stable rotation of its family slots."""
+
+    slots = [slot for slot in stage["schedule"] if slot["cycle"] == cycle]
+    if not slots:
+        return []
+    offset = (cycle - 1) % len(slots)
+    return slots[offset:] + slots[:offset]
+
+
 def build_curriculum(seed: int = SEED) -> dict[str, Any]:
     """Return the deterministic staged train schedule and fixed heldout panel."""
 
@@ -452,8 +465,8 @@ def build_config(curriculum: Mapping[str, Any] | None = None) -> dict[str, Any]:
             "prime_tail_purge_hook": "required runtime hook must physically consume and purge the recorded stage-tail trace IDs before an optimizer-target receipt can advance stages",
             "renderer_canary": "must measure the repaired renderer tail before any scaled rental",
             "stage_quality_threshold": "no unregistered quality threshold is applied; optimizer target completion advances the schedule, while receipts require valid admitted groups and explicit family quotas",
-            "sampling_attempt_accounting": "each completed six-group attempt, including censored retries, increments persisted per-stage attempts and is bounded by the two-times refill cap",
-            "batch_boundary_guard": "native TrainSink._maybe_batch is blocked during group assembly and released only after a run-owned six-group pass receipt",
+            "sampling_attempt_accounting": "each admitted attempt, including censored retries and bounded partial refills, increments persisted per-stage attempts and is bounded by the two-times refill cap",
+            "batch_boundary_guard": "native TrainSink._maybe_batch is blocked during group assembly and released only after a run-owned complete-group-prefix pass receipt",
             "stale_group_cancellation": "stale GroupCancellation voids every arrived member as pipeline evidence and never enters the trainer candidate inventory",
             "bootstrap": "bootstrap.py/bootstrap.sh are prepared but unrun; on an explicit Linux execution they accept only exact 1+1, 2+2, or 4+4 train/inference GPU topologies, with 4+4 reserved for an 8-GPU whole-node offer split into four trainer and four inference GPUs; verify public pinned downloads, run the reviewed renderer sandbox helper plus materialization/preflight/canary, and write ready_no_launch without starting Prime",
         },
@@ -474,9 +487,9 @@ def build_config(curriculum: Mapping[str, Any] | None = None) -> dict[str, Any]:
             "atomic_state": True,
             "stage_tail_purge_required_before_advance": True,
             "optimizer_update_confirmation": "TrainBatch selection is journaled first; only WeightWatcher.on_update for the expected policy version records the optimizer update",
-            "dispatch_gate": "binding-owned six-group gate is layered with Prime lead permission; active groups drain while fresh dispatch is paused",
+            "dispatch_gate": "binding-owned complete-group-prefix gate is layered with Prime lead permission; active groups drain while fresh dispatch is paused",
             "trainer_candidate_inventory": "controller inventory contains only exact trace IDs present in native TrainSink.pending_batch after process_group",
-            "batch_boundary": "_maybe_batch is allowed only after the active six-group cycle pass; in-group calls are fail-closed and cannot ship carry-over traces",
+            "batch_boundary": "_maybe_batch is allowed only after the active complete-group-prefix pass; in-group calls are fail-closed and cannot ship carry-over traces",
             "resume_scope": "only clean optimizer/stage boundaries or a persisted exact selected-batch/update/tail-purge reconciliation may resume; partial native buffers fail closed",
             "full_prime_compatibility": False,
         },
@@ -788,9 +801,11 @@ def admit_group(
 class StageController:
     """State machine for sampling-cycle receipts and schedule progression.
 
-    A sampling cycle dispatches six task groups.  Prime may combine several
-    cycles into one optimizer update when uncertainty leaves fewer than 24
-    scored traces, so optimizer updates are recorded independently.
+    The first pass through a sampling cycle dispatches six task groups.
+    Prime may combine several cycles into one optimizer update when
+    uncertainty leaves fewer than 24 scored traces; later refills dispatch
+    only the deterministic complete-group prefix needed to reach 24, so
+    optimizer updates are recorded independently.
     """
 
     plan: Mapping[str, Any]
@@ -817,8 +832,16 @@ class StageController:
             raise CurriculumError("curriculum is already complete")
         return self.plan["stages"][self.active_stage - 1]
 
-    def observe_cycle(self, records: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
-        """Admit one six-group curriculum cycle or emit a retry/stop receipt."""
+    def observe_cycle(self, records: Sequence[Mapping[str, Any]], *, partial: bool = False) -> dict[str, Any]:
+        """Admit one deterministic cycle or a bounded group refill.
+
+        The first pass through a stage remains the exact six-family cycle.  A
+        later optimizer refill may use only the prefix of the next scheduled
+        cycle needed to reach 24 traces.  Every refill still admits complete
+        groups of four and records its exact family prefix, so the controller
+        never launches a speculative six-group cycle just to fill a small
+        deficit.
+        """
 
         if self.halted:
             raise CurriculumError("controller is halted; a new run is required")
@@ -834,7 +857,15 @@ class StageController:
             })
         attempts += 1
         self.sampling_attempts_by_stage[attempt_key] = attempts
-        expected = [slot for slot in stage["schedule"] if slot["cycle"] == self.next_cycle]
+        cycle_slots = ordered_cycle_slots(stage, self.next_cycle)
+        if partial:
+            if not records or len(records) > len(cycle_slots):
+                return self._stop(stage, "invalid_partial_refill_cardinality", {
+                    "cycle": self.next_cycle, "observed": len(records), "available": len(cycle_slots),
+                })
+            expected = cycle_slots[:len(records)]
+        else:
+            expected = cycle_slots
         if len(records) != len(expected):
             return self._stop(stage, "wrong_cycle_cardinality", {"expected": len(expected), "observed": len(records)})
         by_id: dict[str, Mapping[str, Any]] = {}
@@ -883,7 +914,9 @@ class StageController:
             model_invalid_counts[group["family"]] = model_invalid_counts.get(group["family"], 0) + sum(
                 1 for rollout in group["rollouts"] if rollout["model_invalid"]
             )
-        expected_group_counts = stage["family_group_exposure_per_cycle"]
+        expected_group_counts: dict[str, int] = {}
+        for slot in expected:
+            expected_group_counts[slot["family"]] = expected_group_counts.get(slot["family"], 0) + 1
         if group_counts != expected_group_counts:
             return self._stop(stage, "family_group_quota_mismatch", {"expected_groups": expected_group_counts, "observed_groups": group_counts})
         mean_reward = sum(row["reward"] for row in admitted_rollouts) / len(admitted_rollouts)
@@ -894,7 +927,7 @@ class StageController:
             "stage_name": stage["name"],
             "cycle": self.next_cycle,
             "cycle_id": f"s{self.active_stage}-c{self.next_cycle:02d}",
-            "status": "cycle_complete",
+            "status": "partial_refill_complete" if partial else "cycle_complete",
             "decision": "pass",
             "progression_kind": "schedule_only_not_quality_gate",
             "task_groups": len(admitted_groups),
@@ -905,7 +938,8 @@ class StageController:
             "trainer_traces": sum(len(values) for values in trainer_candidate_ids_by_group.values()),
             "scored_trace_exposure": len(admitted_rollouts),
             "family_scheduled_trace_counts": {
-                family: ROLLOUTS_PER_PROMPT for family in stage["train_families"]
+                family: expected_group_counts.get(family, 0) * ROLLOUTS_PER_PROMPT
+                for family in expected_group_counts
             },
             "family_group_counts": group_counts,
             "family_scored_trace_counts": scored_counts,
@@ -927,6 +961,9 @@ class StageController:
             "mean_reward": mean_reward,
             "sampling_attempt": attempts,
             "sampling_attempt_cap": stage["max_sampling_cycles"],
+            "partial_refill": partial,
+            "scheduled_group_count": len(expected),
+            "scheduled_group_ids": [slot["group_id"] for slot in expected],
         }
         self.completed_cycle_ids.append(receipt["cycle_id"])
         cycle_trace_ids = [trace_id for group in admitted_groups for trace_id in trainer_candidate_ids_by_group[group["group_id"]]]
@@ -1224,7 +1261,7 @@ def write_preparation(output: Path, *, prime_root: Path | None = None) -> dict[s
             "atomic_state": True,
             "stage_tail_purge_required_before_advance": True,
             "optimizer_update_confirmation": "TrainBatch selection is journaled first; only WeightWatcher.on_update for the expected policy version records the optimizer update",
-            "dispatch_gate": "binding-owned six-group gate is layered with Prime lead permission; active groups drain while fresh dispatch is paused",
+            "dispatch_gate": "binding-owned complete-group-prefix gate is layered with Prime lead permission; active groups drain while fresh dispatch is paused",
             "trainer_candidate_inventory": "controller inventory contains only exact trace IDs present in native TrainSink.pending_batch after process_group",
             "full_prime_compatibility": False,
             "no_gpu_or_external_calls": True,

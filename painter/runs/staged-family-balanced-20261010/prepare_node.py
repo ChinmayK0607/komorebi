@@ -29,6 +29,12 @@ if SPEC is None or SPEC.loader is None:
 CONFIG = importlib.util.module_from_spec(SPEC)
 sys.modules[SPEC.name] = CONFIG
 SPEC.loader.exec_module(CONFIG)
+RESOURCE_SPEC = importlib.util.spec_from_file_location("staged_resource_preflight", RUN_ROOT / "resource_preflight.py")
+if RESOURCE_SPEC is None or RESOURCE_SPEC.loader is None:
+    raise RuntimeError("resource_preflight.py is unavailable")
+RESOURCE = importlib.util.module_from_spec(RESOURCE_SPEC)
+sys.modules[RESOURCE_SPEC.name] = RESOURCE
+RESOURCE_SPEC.loader.exec_module(RESOURCE)
 
 
 RUN_ID = CONFIG.RUN_ID
@@ -312,6 +318,7 @@ def prepare_node(
     gpus_per_node: int = 4,
     num_train_gpus: int = 2,
     num_infer_gpus: int = 2,
+    trainer_memory_gib: int | None = None,
 ) -> dict[str, Any]:
     require_linux()
     source_root = _directory(source_root, "staged source root")
@@ -338,6 +345,9 @@ def prepare_node(
         raise ValueError("base model config.json is missing")
     policy = _validate_adapter(policy_adapter, POLICY_SHA256, "Flash12 policy initializer")
     frozen = _validate_adapter(frozen_adapter, FROZEN_SFT_SHA256, "frozen SFT512 opponent")
+    resource_preflight = RESOURCE.inspect_resource_hooks(
+        prime_root, expected_world_size=4, trainer_memory_gib=trainer_memory_gib,
+    )
     renderer = _file(renderer, "renderer")
     try:
         renderer.absolute().relative_to(renderer_root.absolute())
@@ -388,6 +398,8 @@ def prepare_node(
         "renderer": {"root": str(renderer_root), "path": str(renderer), "sha256": RENDERER_SHA256, "python": str(renderer_python)},
         "config": {"path": str(config_path), "sha256": sha256_file(config_path), "receipt_sha256": sha256_file(config_receipt_path)},
         "config_contract": {"batch_size": 24, "group_size": 4, "constant_trainer_batch_size": True, "optimizer_updates": 20, "checkpoint_interval": 4, "train_rows": 96, "heldout_rows": 32},
+        "resource_preflight": resource_preflight,
+        "trainer_memory_gib": trainer_memory_gib,
         "prime_validation": "deferred_to_canary",
     }
     _atomic_json(node_root / "prepare-receipt.json", receipt)
@@ -410,6 +422,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--gpus-per-node", type=int, default=4)
     parser.add_argument("--num-train-gpus", type=int, default=2)
     parser.add_argument("--num-infer-gpus", type=int, default=2)
+    parser.add_argument("--trainer-memory-gib", type=int)
     args = parser.parse_args(argv)
     receipt = prepare_node(**vars(args))
     print(json.dumps(receipt, indent=2, sort_keys=True))

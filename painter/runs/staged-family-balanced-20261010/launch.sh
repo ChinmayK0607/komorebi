@@ -64,8 +64,52 @@ export PATH="$PRIME_BIN${PATH:+:$PATH}"
 [[ -f "$RENDERER_PATH" && -x "$RENDERER_PYTHON_PATH" ]] || { echo 'verified renderer paths are missing' >&2; exit 1; }
 [[ -d "$RENDERER_ROOT" && ! -L "$RENDERER_ROOT" ]] || { echo 'verified renderer root is missing or symlinked' >&2; exit 1; }
 [[ -f "$GATEWAY_ENV_FILE" && ! -L "$GATEWAY_ENV_FILE" && "$(stat -c %a "$GATEWAY_ENV_FILE")" == 600 ]] || { echo 'judge credential file must be owner-only mode 600' >&2; exit 1; }
-[[ ! -e "$NODE_ROOT/launch.started" && ! -e "$NODE_ROOT/async-output" ]] || { echo 'existing staged output; preserve it before another launch' >&2; exit 1; }
 [[ "$TIMEOUT_SECONDS" =~ ^[1-9][0-9]*$ && "$TIMEOUT_SECONDS" -le 604800 ]] || { echo 'PAINTER_RUN_TIMEOUT_SECONDS must be 1..604800' >&2; exit 2; }
+GUARD_NAMESPACE="${PAINTER_GUARD_NAMESPACE:-}"
+GUARD_PARENT="$NODE_ROOT/launch-guards"
+[[ -n "$GUARD_NAMESPACE" ]] || { echo 'PAINTER_GUARD_NAMESPACE must be supplied by launch_prepared.py' >&2; exit 2; }
+case "$GUARD_NAMESPACE" in
+    "$GUARD_PARENT"/*) ;;
+    *) echo 'PAINTER_GUARD_NAMESPACE must be a child of the prepared launch-guards directory' >&2; exit 2 ;;
+esac
+GUARD_ID="${GUARD_NAMESPACE#"$GUARD_PARENT/"}"
+[[ "$GUARD_ID" =~ ^[0-9a-f]{32}$ ]] || { echo 'PAINTER_GUARD_NAMESPACE must contain one UUID launch identifier' >&2; exit 2; }
+CANARY_MODE="${PAINTER_CANARY_MODE:-}"
+if [[ "$CANARY_MODE" == "real_backward" ]]; then
+    ARTIFACT_ROOT="$GUARD_NAMESPACE"
+elif [[ -z "$CANARY_MODE" ]]; then
+    ARTIFACT_ROOT="$NODE_ROOT"
+else
+    echo "unsupported PAINTER_CANARY_MODE: $CANARY_MODE" >&2
+    exit 2
+fi
+[[ ! -e "$ARTIFACT_ROOT/launch.started" && ! -e "$ARTIFACT_ROOT/async-output" && ! -e "$ARTIFACT_ROOT/runtime-state.json" && ! -e "$ARTIFACT_ROOT/rl-rollouts" ]] || {
+    echo "existing staged output in the selected launch namespace: $ARTIFACT_ROOT" >&2
+    exit 1
+}
+CONFIG="$NODE_ROOT/native.toml"
+export PYTHONPATH="$RUN_SOURCE_ROOT:$REPO_ROOT:$REPO_ROOT/painter:$(dirname "$RUN_WRAPPER")${PYTHONPATH:+:$PYTHONPATH}"
+if [[ "$CANARY_MODE" == "real_backward" ]]; then
+    mkdir -p "$GUARD_NAMESPACE"
+    CONFIG="$GUARD_NAMESPACE/native.toml"
+    "$PYTHON" - "$NODE_ROOT/native.toml" "$CONFIG" "$ARTIFACT_ROOT" <<'PY'
+import sys
+import tomllib
+from pathlib import Path
+from prepare_config import render_toml
+
+source, target, artifact_root = map(Path, sys.argv[1:])
+config = tomllib.loads(source.read_text(encoding="utf-8"))
+config["output_dir"] = str((artifact_root / "async-output").resolve())
+taskset = config["orchestrator"]["train"]["source"][0]["env"]["taskset"]
+taskset["output_root"] = str((artifact_root / "rl-rollouts").resolve())
+target.parent.mkdir(parents=True, exist_ok=True)
+target.write_text(render_toml(config), encoding="utf-8")
+PY
+fi
+if [[ "$CANARY_MODE" == "real_backward" ]]; then
+    cd "$ARTIFACT_ROOT"
+fi
 
 "$PYTHON" - "$POLICY_ADAPTER" "$POLICY_SHA256" "$FROZEN_ADAPTER" "$FROZEN_SFT_SHA256" "$NODE_ROOT/prepare-receipt.json" <<'PY'
 import hashlib
@@ -118,7 +162,7 @@ if receipt.get("policy_initializer", {}).get("weights_sha256") != sys.argv[2] or
     raise SystemExit("adapter bytes do not match node preparation receipt")
 PY
 
-"$PYTHON" - "$NODE_ROOT/native.toml" "$MATERIALIZED_ROOT" "$NODE_ROOT/prepare-receipt.json" "$NODE_ROOT/canary-receipt.json" <<'PY'
+"$PYTHON" - "$CONFIG" "$MATERIALIZED_ROOT" "$NODE_ROOT/prepare-receipt.json" "$NODE_ROOT/canary-receipt.json" <<'PY'
 import json
 import sys
 import tomllib
@@ -153,7 +197,7 @@ if not isinstance(final_action_validation, dict) or final_action_validation.get(
     raise SystemExit("NativePaintingRLTask final-action zero gate is required before launch")
 PY
 
-LAUNCH_RECEIPT="$NODE_ROOT/launch.started"
+LAUNCH_RECEIPT="$ARTIFACT_ROOT/launch.started"
 "$PYTHON" - "$LAUNCH_RECEIPT" "$CONFIG" "$MATERIALIZED_ROOT" "$RUN_WRAPPER" "$TRAIN_WRAPPER" "$POLICY_ADAPTER" "$FROZEN_ADAPTER" <<'PY'
 import hashlib
 import json
@@ -196,7 +240,7 @@ PY
 export PRIME_ROOT MODEL_DIR BRUSH_ROOT
 export WATERCOLOUR_INIT_ADAPTER="$POLICY_ADAPTER" PAINTER_FROZEN_SFT_ADAPTER="$FROZEN_ADAPTER"
 export PAINTER_RL_CONFIG="$CONFIG" PAINTER_RL_MANIFEST="$MATERIALIZED_ROOT/train-manifest.json" PAINTER_EVAL_MANIFEST="$MATERIALIZED_ROOT/heldout-manifest.json"
-export PAINTER_RL_RUN_NAME="$RUN_ID" PAINTER_RL_MAX_STEPS=20 PAINTER_RL_MODE=recovered_policy
+export PAINTER_RL_RUN_NAME="$RUN_ID" PAINTER_RL_MAX_STEPS="${PAINTER_RL_MAX_STEPS:-20}" PAINTER_RL_MODE=recovered_policy
 export PAINTER_RL_ADAPTER_REVISION="$POLICY_REVISION" PAINTER_RL_ADAPTER_PREFIX="$POLICY_PREFIX" PAINTER_RL_ADAPTER_SHA256="$POLICY_SHA256"
 export PAINTER_FROZEN_SFT_ALIAS=sft-step512 PAINTER_FROZEN_SFT_REVISION=adf687e5b321514eda7be6eab050434fdc8e44ff PAINTER_FROZEN_SFT_PREFIX=photo-curriculum-sft-20260922-balanced/step_512 PAINTER_FROZEN_SFT_SHA256="$FROZEN_SFT_SHA256"
 export PAINTER_REQUIRE_VALID_FINAL_ACTION=1
@@ -215,16 +259,28 @@ print(train)
 PY
 )"
 export PAINTER_RL_LIVE_POLICY_ALIAS="$MODEL_DIR" PAINTER_RL_FIXED_OPPONENT=1 PAINTER_NUM_TRAIN_GPUS="$TRAIN_GPUS"
+export PAINTER_RANK_GUARD_DIR="$GUARD_NAMESPACE/rank-guard"
+export PAINTER_DISTRIBUTED_FAILURE_FILE="$GUARD_NAMESPACE/distributed-failure.json"
+export PAINTER_RESOURCE_PREFLIGHT="$NODE_ROOT/prepare-receipt.json"
 export PAINTER_WHOLE_GROUP_ADMISSION=1 PAINTER_WHOLE_GROUP_SIZE=4 PAINTER_GROUP_RANK_MODULE=painter.consistent_group_admission
 export PAINTER_RENDERER_PATH PAINTER_RENDERER_PYTHON_PATH PAINTER_GATEWAY_ENV_FILE="$GATEWAY_ENV_FILE"
 export PAINTER_JUDGE_MODEL=xiaomi/mimo-v2.6-flash PAINTER_JUDGE_EFFORT=medium PAINTER_JUDGE_PROTOCOL=text-paint-sft-pairwise-consistent-v1 PAINTER_JUDGE_FORMAT=identity-joint-side-schema-v2-generic-v1
 export PAINTER_STAGED_CURRICULUM_ENABLE=1 PAINTER_STAGED_CURRICULUM_RUN_ID="$RUN_ID" PAINTER_STAGED_CURRICULUM_PROTOCOL=staged-family-balanced-protocol-v1 PAINTER_STAGED_CURRICULUM_ADMISSION=1
-export PAINTER_STAGED_CURRICULUM_ROOT="$RUN_SOURCE_ROOT" PAINTER_STAGED_CURRICULUM_STATE="$NODE_ROOT/runtime-state.json"
-export PYTHONPATH="$RUN_SOURCE_ROOT:$REPO_ROOT:$REPO_ROOT/painter:$(dirname "$RUN_WRAPPER")${PYTHONPATH:+:$PYTHONPATH}"
+export PAINTER_STAGED_CURRICULUM_ROOT="$RUN_SOURCE_ROOT" PAINTER_STAGED_CURRICULUM_STATE="$ARTIFACT_ROOT/runtime-state.json"
+if [[ "$CANARY_MODE" == "real_backward" ]]; then
+    export PAINTER_RUN_ARTIFACT_ROOT="$ARTIFACT_ROOT"
+else
+    unset PAINTER_RUN_ARTIFACT_ROOT || true
+fi
 export WANDB_MODE=disabled TOKENIZERS_PARALLELISM=false
 
 set +e
-timeout --foreground --signal=TERM --kill-after=60 "$TIMEOUT_SECONDS" "$PYTHON" "$RUN_WRAPPER" @ "$CONFIG"
+"$PYTHON" "$RUN_SOURCE_ROOT/launch_guard.py" \
+    --failure-file "$PAINTER_DISTRIBUTED_FAILURE_FILE" \
+    --rank-dir "$PAINTER_RANK_GUARD_DIR" \
+    --world-size "$TRAIN_GPUS" \
+    --timeout-seconds "$TIMEOUT_SECONDS" \
+    -- "$PYTHON" "$RUN_WRAPPER" @ "$CONFIG"
 STATUS=$?
 set -e
 

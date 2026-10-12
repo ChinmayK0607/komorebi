@@ -35,6 +35,7 @@ from staged_curriculum import (
     StageController,
     CurriculumError,
     build_curriculum,
+    ordered_cycle_slots,
 )
 
 
@@ -526,6 +527,7 @@ class RuntimeBinding:
         self.trace_provenance: dict[str, dict[str, Any]] = {}
         self.completed_group_ids: set[str] = set()
         self.dispatch_slots_sent = 0
+        self.dispatch_group_limit: int | None = None
         self.dispatch_paused = False
         self.pending_batch_receipt: dict[str, Any] | None = None
         self.confirmed_policy_update: dict[str, Any] | None = None
@@ -602,6 +604,10 @@ class RuntimeBinding:
         if type(saved_dispatch_count) is not int or saved_dispatch_count < 0:
             _fail("runtime dispatch cursor is malformed")
         self.dispatch_slots_sent = saved_dispatch_count
+        saved_group_limit = self.journal.state.get("dispatch_group_limit")
+        if saved_group_limit is not None and (type(saved_group_limit) is not int or saved_group_limit < 0):
+            _fail("runtime dispatch group limit is malformed")
+        self.dispatch_group_limit = saved_group_limit
         pending_batch = self.journal.state.get("pending_batch")
         if pending_batch is not None:
             if not isinstance(pending_batch, Mapping):
@@ -779,13 +785,48 @@ class RuntimeBinding:
 
     def _stage_slots(self) -> list[dict[str, Any]]:
         stage = self.manifest["stages"][self.controller.active_stage - 1]
-        return [slot for slot in stage["schedule"] if slot["cycle"] == self.controller.next_cycle]
+        return ordered_cycle_slots(stage, self.controller.next_cycle)
+
+    def _compute_cycle_group_limit(self) -> int:
+        """Return the minimum complete-group refill for the current deficit."""
+
+        slots = self._stage_slots()
+        if not slots:
+            return 0
+        available = sum(len(values) for values in self.controller.trace_ids_by_cycle.values())
+        deficit = BATCH_SIZE - available
+        if deficit <= 0:
+            return 0
+        needed = (deficit + GROUP_SIZE - 1) // GROUP_SIZE
+        # The first cycle establishes the six-family exposure contract. Later
+        # cycles use only the deterministic prefix needed to fill the batch.
+        return min(len(slots), max(needed, 1)) if available else len(slots)
+
+    def _cycle_group_limit(self) -> int:
+        """Return the snapshot dispatch plan for the active cycle."""
+
+        if self.dispatch_group_limit is None:
+            self.dispatch_group_limit = self._compute_cycle_group_limit()
+        return self.dispatch_group_limit
+
+    def _persist_cycle_dispatch_plan(self) -> int:
+        limit = self._cycle_group_limit()
+        if self.dispatch_slots_sent == 0:
+            slots = self._stage_slots()
+            self._persist("cycle_dispatch_plan", {
+                "cycle_id": slots[0]["cycle_id"] if slots else None,
+                "group_limit": limit,
+                "scheduled_group_ids": [slot["group_id"] for slot in slots[:limit]],
+                "scheduled_families": [slot["family"] for slot in slots[:limit]],
+            })
+        return limit
 
     def _source_next_task(self, source: Any, *, step: int) -> Any:
         if self.dispatch_paused or self.controller.halted:
             return None
         slots = self._stage_slots()
-        if self.dispatch_slots_sent >= len(slots):
+        limit = self._persist_cycle_dispatch_plan()
+        if limit <= 0 or self.dispatch_slots_sent >= limit:
             return None
         slot = slots[self.dispatch_slots_sent]
         if self.batch_release_cycle_id != slot["cycle_id"]:
@@ -818,7 +859,7 @@ class RuntimeBinding:
             self.active_group_ids.add(native_group_id)
             self._persist("group_bound", {"native_group_id": native_group_id, "group_id": slot["group_id"], "stage": slot["stage"]})
         result = await self._original_schedule_group_episode(group_id, group)
-        if native_group_id in self.group_slots and self.dispatch_slots_sent == len(self._stage_slots()):
+        if native_group_id in self.group_slots and self.dispatch_slots_sent == self._cycle_group_limit():
             remaining = getattr(group, "episodes_to_schedule", None)
             if type(remaining) is not int:
                 _fail("native Prime group is missing episodes_to_schedule at cycle boundary")
@@ -953,19 +994,27 @@ class RuntimeBinding:
         slots = self._stage_slots()
         if not slots or cycle_id != slots[0]["cycle_id"]:
             return
+        group_limit = self._cycle_group_limit()
+        expected_slots = slots[:group_limit]
         records = self.cycle_records.get(cycle_id, {})
-        if set(records) != {slot["group_id"] for slot in slots}:
+        if set(records) != {slot["group_id"] for slot in expected_slots}:
             return
-        receipt = self.controller.observe_cycle([records[slot["group_id"]] for slot in slots])
+        receipt = self.controller.observe_cycle(
+            [records[slot["group_id"]] for slot in expected_slots],
+            partial=group_limit < len(slots),
+        )
         self._persist("sampling_cycle_receipt", {"cycle_id": cycle_id, "status": receipt.get("status"), "decision": receipt.get("decision")}, cycle_receipts=[receipt])
         if receipt.get("status") == "stop":
             self.batch_cut_allowed = False
+            self.dispatch_slots_sent = 0
+            self.dispatch_group_limit = None
             self._halt_dispatch("sampling_cycle_stop")
             return
         self.cycle_records.pop(cycle_id, None)
         self.dispatch_slots_sent = 0
+        self.dispatch_group_limit = None
         self.batch_release_cycle_id = cycle_id
-        self.batch_cut_allowed = receipt.get("status") == "cycle_complete" and receipt.get("decision") == "pass"
+        self.batch_cut_allowed = receipt.get("status") in {"cycle_complete", "partial_refill_complete"} and receipt.get("decision") == "pass"
         self._persist("sampling_cursor_reset", {"cycle_id": cycle_id, "next_cycle": self.controller.next_cycle})
         if receipt.get("status") == "censored":
             self.batch_cut_allowed = False
@@ -1018,12 +1067,12 @@ class RuntimeBinding:
         return bool(self.cycle_records.get(cycle_id))
 
     def _maybe_batch(self, sink: Any) -> Any:
-        """Allow one native batch cut only after a complete cycle pass.
+        """Allow one native batch cut only after an admitted group prefix.
 
         This guard is unconditional while a cycle is being assembled, so a
         Prime ``process_group`` implementation that calls ``_maybe_batch``
         internally cannot ship a carry-over batch before this binding has
-        recorded the sixth group and admitted the cycle.
+        recorded the required complete groups and admitted their receipt.
         """
         if not self.batch_cut_allowed:
             return None
@@ -1071,9 +1120,9 @@ class RuntimeBinding:
         if self.pending_batch_receipt is not None or self.confirmed_policy_update is not None:
             _fail("a second Prime TrainBatch was selected before its policy update was confirmed")
         if not self.batch_cut_allowed:
-            _fail("Prime attempted to ship a batch before a complete six-group cycle pass")
+            _fail("Prime attempted to ship a batch before a complete admitted group-prefix pass")
         if self._current_cycle_has_unobserved_groups():
-            _fail("Prime attempted to ship a batch before the active six-group cycle was observed")
+            _fail("Prime attempted to ship a batch before the active admitted group prefix was observed")
         predicted = self._predict_batch_ids(sink)
         result = self._original_process_batch()
         actual = _batch_trace_ids(result)
@@ -1212,6 +1261,7 @@ class RuntimeBinding:
             )
             self.dispatch_paused = bool(self.controller.halted)
             self.dispatch_slots_sent = 0
+            self.dispatch_group_limit = None
             if self.controller.halted:
                 self._halt_dispatch("curriculum_complete")
             else:
@@ -1225,7 +1275,7 @@ class RuntimeBinding:
             # pass, but keep this guard for resume/native ordering anomalies:
             # let the already-started cycle finish without resetting its cursor.
             self.dispatch_paused = False
-            if self.dispatch_slots_sent < len(self._stage_slots()):
+            if self.dispatch_slots_sent < self._cycle_group_limit():
                 self._open_sampling_gate("confirmed_batch_waiting_for_cycle_observation")
             return
         trace_ids_by_cycle = {key: list(value) for key, value in confirmed["trace_ids_by_cycle"].items()}
@@ -1278,6 +1328,7 @@ class RuntimeBinding:
             self._persist("optimizer_update_recorded", update)
         self.dispatch_paused = bool(self.controller.halted)
         self.dispatch_slots_sent = 0
+        self.dispatch_group_limit = None
         if self.controller.halted:
             self._halt_dispatch("curriculum_complete")
         else:
@@ -1292,6 +1343,7 @@ class RuntimeBinding:
 
     def _persist(self, event_type: str, payload: Mapping[str, Any], **updates: Any) -> None:
         updates.setdefault("dispatch_slots_sent", self.dispatch_slots_sent)
+        updates.setdefault("dispatch_group_limit", self.dispatch_group_limit)
         updates.setdefault("dispatch_paused", self.dispatch_paused)
         updates.setdefault("batch_cut_allowed", self.batch_cut_allowed)
         updates.setdefault("batch_release_cycle_id", self.batch_release_cycle_id)

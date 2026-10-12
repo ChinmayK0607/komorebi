@@ -645,7 +645,9 @@ class LaunchHandoffTests(unittest.TestCase):
     def test_launcher_is_foreground_bounded_and_wires_both_adapters(self) -> None:
         self.assertIn('RUN_WRAPPER="${PAINTER_PRIME_RUN_WRAPPER:-$RUN_SOURCE_ROOT/run_from_sft.py}"', LAUNCH_SOURCE)
         self.assertIn('TRAIN_WRAPPER="${PAINTER_PRIME_TRAIN_WRAPPER:-$RUN_SOURCE_ROOT/train_from_sft.py}"', LAUNCH_SOURCE)
-        self.assertIn("timeout --foreground --signal=TERM --kill-after=60", LAUNCH_SOURCE)
+        self.assertIn('"$PYTHON" "$RUN_SOURCE_ROOT/launch_guard.py"', LAUNCH_SOURCE)
+        self.assertIn('--failure-file "$PAINTER_DISTRIBUTED_FAILURE_FILE"', LAUNCH_SOURCE)
+        self.assertIn('--timeout-seconds "$TIMEOUT_SECONDS"', LAUNCH_SOURCE)
         self.assertNotIn("setsid", LAUNCH_SOURCE)
         self.assertNotIn("nohup", LAUNCH_SOURCE)
         self.assertNotIn("export PAINTER_PRIME_ROLE=orchestrator", LAUNCH_SOURCE)
@@ -732,7 +734,7 @@ TRAIN_WRAPPER_ROOT="$(cd "$(dirname "$TRAIN_WRAPPER")" && pwd -P)"
         config = json.loads((RUN / "config.json").read_text(encoding="utf-8"))
         surface = config["run_surface"]
         expected = {
-            "bootstrap", "bootstrap_shell", "materializer", "prepare_config", "prepare_node", "canary", "launch", "launch_prepared",
+            "bootstrap", "bootstrap_shell", "materializer", "prepare_config", "prepare_node", "canary", "launch", "launch_guard", "launch_prepared", "real_backward_canary", "resource_preflight",
             "run_from_sft", "runtime_binding", "sitecustomize", "prime_tail_purge",
             "photo_runner", "staged_trainer", "staged_init_adapter",
         }

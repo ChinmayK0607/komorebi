@@ -19,6 +19,7 @@ import platform
 import subprocess
 import sys
 import tomllib
+import uuid
 from typing import Any, Sequence
 
 
@@ -281,13 +282,18 @@ def validate_ready(*, ready_path: Path, node_root: Path, visible_gpus: int) -> d
     }
 
 
-def build_launch_environment(*, verified: dict[str, Any], gateway_env: Path, timeout_seconds: int) -> dict[str, str]:
+def build_launch_environment(*, verified: dict[str, Any], gateway_env: Path, timeout_seconds: int, real_backward_canary: bool = False, canary_node_hourly_usd: float | None = None) -> dict[str, str]:
     if timeout_seconds < 1 or timeout_seconds > 604800:
         raise PreparedLaunchError("timeout seconds must be in 1..604800")
+    if real_backward_canary and timeout_seconds > 1800:
+        raise PreparedLaunchError("real-backward canary timeout must be at most 1800 seconds")
+    if real_backward_canary and canary_node_hourly_usd is None:
+        raise PreparedLaunchError("--canary-node-hourly-usd is required for a real-backward canary")
     gateway_env = validate_gateway_file(gateway_env)
+    guard_namespace = Path(verified["prepared"]).resolve() / "launch-guards" / uuid.uuid4().hex
     env = {
         key: value for key, value in os.environ.items()
-        if key not in {"HF_TOKEN", "HF_HUB_TOKEN", "OPENAI_API_KEY", "WANDB_API_KEY", "ANTHROPIC_API_KEY", "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "AWS_SESSION_TOKEN", "PAINTER_PRIME_ROLE"}
+        if key not in {"HF_TOKEN", "HF_HUB_TOKEN", "OPENAI_API_KEY", "WANDB_API_KEY", "ANTHROPIC_API_KEY", "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "AWS_SESSION_TOKEN", "PAINTER_PRIME_ROLE", "PAINTER_CANARY_MODE", "PAINTER_CANARY_RECEIPT", "PAINTER_CANARY_COST_USD", "PAINTER_CANARY_COST_SOURCE", "PAINTER_CANARY_NODE_HOURLY_USD", "PAINTER_RL_MAX_STEPS", "PAINTER_RUN_ARTIFACT_ROOT"}
     }
     env.update({
         "PAINTER_REPO_ROOT": str(verified["repo_root"]),
@@ -297,6 +303,7 @@ def build_launch_environment(*, verified: dict[str, Any], gateway_env: Path, tim
         "PAINTER_RL_CONFIG": str(verified["prepared"] / "native.toml"),
         "PAINTER_RL_MANIFEST": str(verified["materialized"] / "train-manifest.json"),
         "PAINTER_EVAL_MANIFEST": str(verified["materialized"] / "heldout-manifest.json"),
+        "PAINTER_STAGED_CURRICULUM_STATE": str(Path(verified["prepared"]).resolve() / "runtime-state.json"),
         "MODEL_DIR": str(verified["model_dir"]),
         "WATERCOLOUR_INIT_ADAPTER": str(verified["policy"]),
         "PAINTER_FROZEN_SFT_ADAPTER": str(verified["frozen"]),
@@ -315,14 +322,49 @@ def build_launch_environment(*, verified: dict[str, Any], gateway_env: Path, tim
         "PAINTER_PRIME_TRAIN_WRAPPER": str(RUN_ROOT / "train_from_sft.py"),
         "PAINTER_NUM_TRAIN_GPUS": "4",
         "PAINTER_REQUIRE_VALID_FINAL_ACTION": "1",
+        "PAINTER_GUARD_NAMESPACE": str(guard_namespace),
+        "PAINTER_RANK_GUARD_DIR": str(guard_namespace / "rank-guard"),
+        "PAINTER_DISTRIBUTED_FAILURE_FILE": str(guard_namespace / "distributed-failure.json"),
     })
+    if real_backward_canary:
+        env["PAINTER_RL_CONFIG"] = str(guard_namespace / "native.toml")
+        env["PAINTER_STAGED_CURRICULUM_STATE"] = str(guard_namespace / "runtime-state.json")
+        env.update({
+            "PAINTER_CANARY_MODE": "real_backward",
+            "PAINTER_CANARY_MAX_SECONDS": "1800",
+            "PAINTER_CANARY_COST_BOUND_USD": "5.0",
+            "PAINTER_CANARY_RECEIPT": str(guard_namespace / "real-backward-canary-receipt.json"),
+            "PAINTER_RL_MAX_STEPS": "1",
+        })
+        try:
+            hourly = float(canary_node_hourly_usd)
+        except (TypeError, ValueError) as exc:
+            raise PreparedLaunchError("canary node hourly price must be numeric") from exc
+        if not 0 < hourly <= 10000:
+            raise PreparedLaunchError("canary node hourly price must be in (0, 10000]")
+        env["PAINTER_CANARY_NODE_HOURLY_USD"] = str(hourly)
+        env["PAINTER_CANARY_COST_SOURCE"] = "node_hourly_price_input"
     return env
 
 
-def invoke(*, verified: dict[str, Any], gateway_env: Path, timeout_seconds: int, runner: Any = subprocess.run) -> int:
-    env = build_launch_environment(verified=verified, gateway_env=gateway_env, timeout_seconds=timeout_seconds)
+def invoke(*, verified: dict[str, Any], gateway_env: Path, timeout_seconds: int, real_backward_canary: bool = False, canary_node_hourly_usd: float | None = None, runner: Any = subprocess.run) -> int:
+    env = build_launch_environment(
+        verified=verified, gateway_env=gateway_env, timeout_seconds=timeout_seconds,
+        real_backward_canary=real_backward_canary, canary_node_hourly_usd=canary_node_hourly_usd,
+    )
     completed = runner(["bash", str(RUN_ROOT / "launch.sh"), str(verified["prepared"])], env=env, check=False)
-    return int(completed.returncode)
+    status = int(completed.returncode)
+    if real_backward_canary and status == 0:
+        try:
+            spec = importlib.util.spec_from_file_location("staged_real_backward_canary", RUN_ROOT / "real_backward_canary.py")
+            if spec is None or spec.loader is None:
+                raise PreparedLaunchError("real-backward canary validator is unavailable")
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+            module.validate_receipt(Path(env["PAINTER_CANARY_RECEIPT"]))
+        except (OSError, ValueError, RuntimeError) as exc:
+            raise PreparedLaunchError(f"real-backward canary receipt failed strict validation: {exc}") from exc
+    return status
 
 
 def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
@@ -330,6 +372,8 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--node-root", type=Path, required=True)
     parser.add_argument("--gateway-env-file", type=Path, required=True)
     parser.add_argument("--timeout-seconds", type=int, required=True)
+    parser.add_argument("--real-backward-canary", action="store_true")
+    parser.add_argument("--canary-node-hourly-usd", type=float)
     return parser.parse_args(argv)
 
 
@@ -341,7 +385,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         visible = BOOTSTRAP.visible_gpu_count()
         node_root = _path(str(args.node_root), "node root", directory=True)
         verified = validate_ready(ready_path=node_root / "bootstrap-ready.json", node_root=node_root, visible_gpus=visible)
-        return invoke(verified=verified, gateway_env=args.gateway_env_file, timeout_seconds=args.timeout_seconds)
+        return invoke(
+            verified=verified, gateway_env=args.gateway_env_file,
+            timeout_seconds=args.timeout_seconds, real_backward_canary=args.real_backward_canary,
+            canary_node_hourly_usd=args.canary_node_hourly_usd,
+        )
     except (PreparedLaunchError, ValueError) as exc:
         print(f"prepared launch failed closed: {exc}", file=sys.stderr)
         return 2

@@ -54,7 +54,7 @@ def valid_group(slot: dict[str, object], reward: float = 0.25) -> dict[str, obje
 
 def cycle_slots(plan: dict[str, object], stage: int, cycle: int) -> list[dict[str, object]]:
     info = plan["stages"][stage - 1]
-    return [slot for slot in info["schedule"] if slot["cycle"] == cycle]
+    return curriculum.ordered_cycle_slots(info, cycle)
 
 
 class FakeSample:
@@ -141,6 +141,16 @@ class PreparationTests(unittest.TestCase):
             totals = {family: sum(slot["family"] == family for slot in stage["schedule"]) for family in stage["train_families"]}
             self.assertEqual(len(set(totals.values())), 1)
             self.assertEqual({slot["variant"] for slot in stage["schedule"] if slot["family"] == stage["train_families"][0]}, set(range(4)))
+
+    def test_partial_refill_family_prefix_rotates_deterministically(self) -> None:
+        stage = curriculum.build_curriculum()["stages"][0]
+        first = curriculum.ordered_cycle_slots(stage, 1)
+        second = curriculum.ordered_cycle_slots(stage, 2)
+        third = curriculum.ordered_cycle_slots(stage, 3)
+        self.assertEqual(first[0]["family"], "single-apple")
+        self.assertEqual(second[0]["family"], "single-lantern")
+        self.assertEqual(third[0]["family"], "single-orb")
+        self.assertEqual({slot["family"] for slot in second}, {slot["family"] for slot in first})
 
     def test_heldout_panel_is_fixed_and_disjoint(self) -> None:
         plan = curriculum.build_curriculum()
