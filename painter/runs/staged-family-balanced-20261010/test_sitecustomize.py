@@ -17,15 +17,15 @@ MODULE_PATH = Path(__file__).with_name("sitecustomize.py")
 
 class SitecustomizeCacheTests(unittest.TestCase):
     @staticmethod
-    def _spawn_cache_child(root: Path, *, rank: str | None = None) -> str:
+    def _spawn_cache_child(root: Path, *, rank: str | None = None, role: str = "inference") -> str:
         env = {
             "PYTHONPATH": str(MODULE_PATH.parent),
-            "PAINTER_PRIME_ROLE": "inference",
-            "PAINTER_COMPILE_CACHE_ROOT": str(root / "inference"),
+            "PAINTER_PRIME_ROLE": role,
+            "PAINTER_COMPILE_CACHE_ROOT": str(root / role),
             "PAINTER_COMPILE_CACHE_PROCESS_ISOLATION": "1",
             "VLLM_WORKER_MULTIPROC_METHOD": "spawn",
-            "TRITON_CACHE_DIR": str(root / "inference" / "triton"),
-            "TORCHINDUCTOR_CACHE_DIR": str(root / "inference" / "torchinductor"),
+            "TRITON_CACHE_DIR": str(root / role / "triton"),
+            "TORCHINDUCTOR_CACHE_DIR": str(root / role / "torchinductor"),
         }
         if rank is not None:
             env["LOCAL_RANK"] = rank
@@ -48,6 +48,15 @@ class SitecustomizeCacheTests(unittest.TestCase):
             self.assertNotEqual(pid_one, pid_two)
             self.assertIn("/workers/pid-", pid_one)
             self.assertIn("/workers/pid-", pid_two)
+
+    def test_trainer_ranks_get_distinct_compile_caches(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            rank_zero = self._spawn_cache_child(root, rank="0", role="trainer")
+            rank_one = self._spawn_cache_child(root, rank="1", role="trainer")
+            self.assertNotEqual(rank_zero, rank_one)
+            self.assertRegex(rank_zero, r"/trainer/workers/rank-0-pid-\d+-[0-9a-f]{32}/triton$")
+            self.assertRegex(rank_one, r"/trainer/workers/rank-1-pid-\d+-[0-9a-f]{32}/triton$")
 
     def test_torchinductor_compile_worker_keeps_parent_namespace(self):
         spec = importlib.util.spec_from_file_location("staged_sitecustomize", MODULE_PATH)

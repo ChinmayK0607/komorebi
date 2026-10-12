@@ -178,6 +178,45 @@ class BootstrapUnitTests(unittest.TestCase):
             with self.assertRaises(BOOTSTRAP.BootstrapError):
                 BOOTSTRAP.ensure_renderer_root(node, link)
 
+    def test_existing_exposed_renderer_root_keeps_its_access_mode(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            node = root / "node"
+            renderer = node / "renderer"
+            renderer.mkdir(parents=True)
+            renderer.chmod(0o755)
+            selected = BOOTSTRAP.ensure_renderer_root(node)
+            self.assertEqual(selected, renderer.resolve())
+            self.assertEqual(renderer.stat().st_mode & 0o777, 0o755)
+
+    def test_cached_renderer_access_is_restored_from_bound_paths(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            node = root / "node"
+            renderer = node / "renderer"
+            bundle = renderer / "painter/runtime/watercolour-cancellable-centroid-v1"
+            browser = renderer / "browsers"
+            env = renderer / "renderer-env"
+            bundle.mkdir(parents=True)
+            browser.mkdir(parents=True)
+            (env / "bin").mkdir(parents=True)
+            renderer_file = bundle / "cancellable_watercolour_renderer.py"
+            renderer_file.write_text("# fixture\n", encoding="utf-8")
+            interpreter = env / "bin/python"
+            interpreter.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
+            interpreter.chmod(0o755)
+            ready = {"renderer": {"pin": {
+                "renderer": str(renderer_file),
+                "renderer_python": str(interpreter),
+                "browsers": str(browser),
+            }}}
+            with mock.patch.object(BOOTSTRAP, "ensure_browser_user"), mock.patch.object(
+                BOOTSTRAP.os, "geteuid", return_value=501
+            ):
+                BOOTSTRAP.restore_cached_renderer_access(ready, node_root=node, render_root=renderer)
+            self.assertEqual(node.stat().st_mode & 0o777, 0o711)
+            self.assertEqual(renderer.stat().st_mode & 0o777, 0o755)
+
     def test_ready_receipt_binds_renderer_root(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

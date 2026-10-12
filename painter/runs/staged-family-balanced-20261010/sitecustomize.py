@@ -1,6 +1,6 @@
-"""Install the staged binding and isolate inference compiler caches.
+"""Install the staged binding and isolate per-rank compiler caches.
 
-Prime starts vLLM workers independently. Each worker must get a private
+Prime starts vLLM workers and trainer ranks independently. Each process must get a private
 Triton/Inductor namespace: concurrent TP ranks can otherwise overwrite or
 partially observe the same autotuning ``.cubin``. TorchInductor's own
 compile-worker sidecar is the exception; it is a child of one vLLM worker and
@@ -41,10 +41,11 @@ def _worker_cache_identity() -> str | None:
     return None
 
 
-def _isolate_inference_compile_cache() -> None:
-    """Give every independent inference worker private compiler cache roots."""
+def _isolate_compile_cache() -> None:
+    """Give every independent inference or trainer rank private cache roots."""
 
-    if os.environ.get("PAINTER_PRIME_ROLE") != "inference" or _is_torchinductor_compile_worker():
+    role = os.environ.get("PAINTER_PRIME_ROLE")
+    if role not in {"inference", "trainer"} or _is_torchinductor_compile_worker():
         return
     root = os.environ.get("PAINTER_COMPILE_CACHE_ROOT")
     identity = _worker_cache_identity()
@@ -59,7 +60,7 @@ def _isolate_inference_compile_cache() -> None:
     os.environ["TORCHINDUCTOR_CACHE_DIR"] = str(worker / "torchinductor")
 
 
-_isolate_inference_compile_cache()
+_isolate_compile_cache()
 
 
 if os.environ.get("PAINTER_PRIME_ROLE") == "orchestrator":

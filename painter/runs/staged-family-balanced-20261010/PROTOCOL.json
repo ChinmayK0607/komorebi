@@ -71,11 +71,11 @@
   },
   "config": {
     "path": "config.json",
-    "sha256": "f032344984d5ae003f5b1c9c4fff93d83193ef6749a4ce67980d3fc051cba9f5"
+    "sha256": "8a2aa4e7c29c4f3001c229dbc7ea76d519ac4cf372b4b964095938024907654b"
   },
   "receipt": {
     "path": "receipt.json",
-    "sha256": "22465375c789f4c101b68e56163a0c44e0952570beabd1674f55446a56a6d6aa"
+    "sha256": "fe786b9b193b0c016249dc999690c884667cd8414cd75b8f37174967a70fdb70"
   },
   "tail_purge_hook": {
     "path": "prime_tail_purge.py",
@@ -181,7 +181,7 @@
     "files": {
       "bootstrap": {
         "path": "bootstrap.py",
-        "sha256": "89cd82087cdcd6e1f22acc74ea6749ac898a0b06cbf14b4aa2cb73c5a183e051"
+        "sha256": "89fd7f5f8b62a7b9144767dbf969473fca74a3b77f37a77cc0ed8749d8873fa0"
       },
       "bootstrap_shell": {
         "path": "bootstrap.sh",
@@ -225,7 +225,7 @@
       },
       "run_from_sft": {
         "path": "run_from_sft.py",
-        "sha256": "dae8c1777641e2d1994caf981f14124a3dc9cf6d59911b726781792136dd4981"
+        "sha256": "ae2b1484c8fbccc1fcdfc2df03c14fd5234f8ea3e572dac312ca535e5d7751bf"
       },
       "staged_trainer": {
         "path": "train_from_sft.py",
@@ -241,7 +241,7 @@
       },
       "sitecustomize": {
         "path": "sitecustomize.py",
-        "sha256": "9b112091ec291bf0cfb29596983287a909518d76452cbf2383584fa00906d02a"
+        "sha256": "8e9bfe77eff628295bbd068b831342b3523bcd57fa7458e0d781c9dad6942636"
       },
       "prime_tail_purge": {
         "path": "prime_tail_purge.py",

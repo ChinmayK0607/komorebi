@@ -162,8 +162,37 @@ class ReliabilityPassTests(unittest.TestCase):
                 run_wrapper._watch_trainer_process(process, ["torchrun", str(run_wrapper.TRAIN_WRAPPER)], paths)
             value = json.loads(failure.read_text(encoding="utf-8"))
             self.assertEqual(value["status"], "rank_exited")
-            self.assertIn("before rank readiness", value["reason"])
+            self.assertIn("exit code 17", value["reason"])
             self.assertTrue((rank_dir / "trainer-process.started.json").is_file())
+
+    def test_hidden_rank_fatal_log_writes_failure_before_torchrun_exit(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            rank_dir = root / "ranks"
+            failure = root / "distributed-failure.json"
+            log_root = root / "torchrun"
+            rank_log = log_root / "session/attempt_0/2/stdout.log"
+            rank_log.parent.mkdir(parents=True)
+            rank_log.write_text("Fatal error in train\nFileNotFoundError: kernel.cubin\n", encoding="utf-8")
+
+            class Running:
+                pid = 42
+                def poll(self):
+                    return None
+
+            command = ["torchrun", "--log-dir", str(log_root), str(run_wrapper.TRAIN_WRAPPER)]
+            with patch.dict(os.environ, {
+                "PAINTER_NUM_TRAIN_GPUS": "4",
+            }, clear=False):
+                run_wrapper._watch_trainer_process(Running(), command, (rank_dir, failure))
+            value = json.loads(failure.read_text(encoding="utf-8"))
+            self.assertEqual(value["status"], "rank_failed")
+            self.assertEqual(value["rank"], "2")
+            self.assertIn("Fatal error in train", value["reason"])
+
+    def test_trainer_cache_environment_requests_process_isolation(self) -> None:
+        values = run_wrapper._staged_cache_env(Path("/tmp/run"), "trainer", {})
+        self.assertEqual(values["PAINTER_COMPILE_CACHE_PROCESS_ISOLATION"], "1")
 
     def test_missing_prime_hooks_are_reported_fail_closed(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

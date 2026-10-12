@@ -1,0 +1,96 @@
+{
+  "schema": "staged-family-balanced-profile-result-v1",
+  "run_id": "staged-family-balanced-20261010",
+  "attempt": "live-canary-20261013-v2",
+  "status": "failed_before_optimizer_update",
+  "purpose": "one-update real-backward and checkpoint reliability canary",
+  "source": {
+    "git_commit": "436625a9cb1b3b14b0188975bf28b26a2cc3640f",
+    "config_sha256": "f032344984d5ae003f5b1c9c4fff93d83193ef6749a4ce67980d3fc051cba9f5",
+    "curriculum_manifest_sha256": "38ccfb8390730d311134b7fdddf4e4c89cd9605563d29d069e55f6b59818ea7b"
+  },
+  "hardware": {
+    "accelerators": "8x NVIDIA A100 80GB",
+    "policy_inference": "GPUs 0-3, tensor parallel 4",
+    "trainer": "GPUs 4-7, FSDP world size 4",
+    "whole_node_hourly_price_usd": 13.44
+  },
+  "rollout_batch": {
+    "episodes_observed": 76,
+    "train_traces_selected": 24,
+    "discarded": 50,
+    "discarded_fraction": 0.6579,
+    "errored": 28,
+    "no_signal": 22,
+    "stale": 0,
+    "selected_reward_mean": 0.375,
+    "selected_turns_mean": 3.0,
+    "max_off_policy": 0,
+    "elapsed_seconds": 833,
+    "note": "The first 24 errors were caused by the cached-bootstrap renderer permission regression; later exclusions were predominantly missing or uncertain judge responses."
+  },
+  "selected_token_profile": {
+    "trace_count": 24,
+    "total_tokens_mean": 9132,
+    "total_tokens_min": 3247,
+    "total_tokens_max": 20420,
+    "output_tokens_mean": 4192,
+    "aggregate_total_tokens_approx": 219168
+  },
+  "utilization": {
+    "measurement_kind": "interval observations plus process logs; no complete run-level average was preserved",
+    "inference_interval": "GPUs 0-3 remained approximately 98-100% busy during generation and were idle during external judge/render waits",
+    "trainer_interval": "GPUs 4, 5 and 7 remained approximately 100% busy after batch dispatch while GPU 6 was idle after rank 2 failed",
+    "pipeline_saturated": false
+  },
+  "failures": [
+    {
+      "kind": "cached_renderer_permission_regression",
+      "cause": "cached bootstrap reset the public renderer root to mode 0700, then returned before re-exposing it to the painter account",
+      "effect": "24 initial rollout render failures",
+      "live_repair": "renderer traversal was restored before collecting the valid batch"
+    },
+    {
+      "kind": "shared_triton_cache_race",
+      "rank": 2,
+      "observed_at_utc": "2026-10-12T23:15:53Z",
+      "cause": "four trainer ranks shared one Triton cache and rank 2 failed reading layer_norm_gated_fwd_kernel.cubin",
+      "effect": "three trainer ranks continued computing but no optimizer update completed"
+    },
+    {
+      "kind": "distributed_failure_not_propagated",
+      "cause": "Prime logged the fatal rank exception internally, so the wrapper exception recorder never saw it and no distributed-failure receipt was written",
+      "effect": "the supervisor did not terminate the remaining ranks promptly"
+    }
+  ],
+  "result": {
+    "optimizer_updates": 0,
+    "checkpoint_produced": false,
+    "hugging_face_upload": false,
+    "visual_quality_result": null
+  },
+  "cost": {
+    "last_observed_provider_spend_usd": 19.66,
+    "scope": "this whole-node rental including cold startup, failed first rollout wave, repaired rollout collection and partial trainer execution",
+    "invoice_status": "provider observation, not an invoice"
+  },
+  "release": {
+    "node_deleted": true,
+    "provider_inventory_after_delete": []
+  },
+  "evidence": {
+    "local_archive": "live-canary-20261013-v2/evidence.tgz",
+    "archive_sha256": "50f1a0f4fd9b8452c6c4b682a3368141ec6f69fa00e86b090e5a21a84567724c",
+    "git_tracking": "ignored generated evidence"
+  },
+  "next_decision": {
+    "required_repairs": [
+      "preserve and re-prove cached renderer access",
+      "give every inference worker and trainer rank a private compiler-cache namespace",
+      "watch torchrun rank logs and fail the entire launch on a fatal marker"
+    ],
+    "topology": "retain TP4 inference plus four 80GB trainer ranks",
+    "rejected_topology": "5 inference plus 3 trainer: TP5 cannot divide this model's 24 attention heads and 4 KV heads, and the reviewed trainer initializer requires four ranks",
+    "canary_scope": "repeat one bounded update only after offline tests and reviewed source are pushed; do not scale curriculum until a native checkpoint and public portable adapter both verify"
+  }
+}

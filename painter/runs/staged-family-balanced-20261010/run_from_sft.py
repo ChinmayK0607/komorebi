@@ -97,26 +97,96 @@ def _record_trainer_process_started(command: list[str], process: object) -> tupl
 
 
 def _watch_trainer_process(process: object, command: list[str], paths: tuple[Path, Path]) -> None:
-    """Turn a pre-rank torchrun exit into the same prompt failure receipt."""
+    """Surface hidden per-rank fatal logs and torchrun exits immediately."""
 
     rank_dir, failure_file = paths
-    try:
-        status = int(process.wait())  # type: ignore[attr-defined]
-    except (AttributeError, OSError, TypeError, ValueError):
-        return
-    if status == 0 or failure_file.exists():
-        return
-    _atomic_json(failure_file, {
-        "schema": "staged-family-balanced-distributed-failure-v1",
-        "status": "rank_exited",
-        "rank": "trainer-launcher",
-        "pid": int(getattr(process, "pid", 0)),
-        "world_size": os.environ.get("PAINTER_NUM_TRAIN_GPUS"),
-        "reason": f"trainer torchrun exited before rank readiness with exit code {status}",
-        "command": [str(value) for value in command],
-        "process_start_receipt": str(rank_dir / "trainer-process.started.json"),
-        "recorded_at_unix": time.time(),
-    })
+    log_root = _trainer_log_root(command)
+    positions: dict[Path, int] = {}
+    while True:
+        if failure_file.exists():
+            return
+        if log_root is not None and log_root.is_dir():
+            failure = _scan_trainer_fatal_logs(log_root, positions)
+            if failure is not None:
+                marker, path = failure
+                status = "rank_oom" if "out of memory" in marker.lower() else "rank_failed"
+                _atomic_json(failure_file, {
+                    "schema": "staged-family-balanced-distributed-failure-v1",
+                    "status": status,
+                    "rank": path.parent.name,
+                    "pid": int(getattr(process, "pid", 0)),
+                    "world_size": os.environ.get("PAINTER_NUM_TRAIN_GPUS"),
+                    "reason": f"trainer rank log reported fatal marker: {marker}",
+                    "log_path": str(path),
+                    "process_start_receipt": str(rank_dir / "trainer-process.started.json"),
+                    "recorded_at_unix": time.time(),
+                })
+                return
+        try:
+            status = process.poll()  # type: ignore[attr-defined]
+        except (AttributeError, OSError):
+            try:
+                status = int(process.wait())  # type: ignore[attr-defined]
+            except (AttributeError, OSError, TypeError, ValueError):
+                return
+        if status is not None:
+            status = int(status)
+            if status != 0 and not failure_file.exists():
+                _atomic_json(failure_file, {
+                    "schema": "staged-family-balanced-distributed-failure-v1",
+                    "status": "rank_exited",
+                    "rank": "trainer-launcher",
+                    "pid": int(getattr(process, "pid", 0)),
+                    "world_size": os.environ.get("PAINTER_NUM_TRAIN_GPUS"),
+                    "reason": f"trainer torchrun exited with exit code {status}",
+                    "command": [str(value) for value in command],
+                    "process_start_receipt": str(rank_dir / "trainer-process.started.json"),
+                    "recorded_at_unix": time.time(),
+                })
+            return
+        time.sleep(0.5)
+
+
+def _trainer_log_root(command: list[str]) -> Path | None:
+    """Extract torchrun's rank-log root without assuming an attempt UUID."""
+
+    for index, value in enumerate(command):
+        if value in {"--log-dir", "--log_dir"} and index + 1 < len(command):
+            return Path(command[index + 1]).expanduser().resolve()
+        for prefix in ("--log-dir=", "--log_dir="):
+            if value.startswith(prefix):
+                return Path(value[len(prefix) :]).expanduser().resolve()
+    return None
+
+
+_FATAL_LOG_MARKERS = (
+    "Fatal error in train",
+    "CUDA out of memory",
+    "OutOfMemoryError",
+)
+
+
+def _scan_trainer_fatal_logs(log_root: Path, positions: dict[Path, int]) -> tuple[str, Path] | None:
+    """Incrementally scan rank stdout/stderr, returning only a known marker."""
+
+    for path in sorted((*log_root.rglob("stdout.log"), *log_root.rglob("stderr.log"))):
+        try:
+            size = path.stat().st_size
+            # Retain a small overlap so a marker split across two writes is
+            # still detected. Re-reading this tail is harmless because the
+            # watcher returns on its first known fatal marker.
+            start = min(max(0, positions.get(path, 0) - 64), size)
+            with path.open("rb") as stream:
+                stream.seek(start)
+                chunk = stream.read()
+            positions[path] = size
+        except OSError:
+            continue
+        text = chunk.decode("utf-8", errors="replace")
+        for marker in _FATAL_LOG_MARKERS:
+            if marker in text:
+                return marker, path
+    return None
 
 
 def _staged_trainer_command(command: list[str], wrapper: Path | None = None) -> list[str]:
@@ -271,7 +341,10 @@ def _staged_cache_env(root: Path, role: str, environment: dict[str, str]) -> dic
     artifact_root = os.environ.get("PAINTER_RUN_ARTIFACT_ROOT")
     if artifact_root:
         root = Path(artifact_root).expanduser().resolve()
-    return ORIGINAL_CACHE_ENV(root, role, environment)
+    values = ORIGINAL_CACHE_ENV(root, role, environment)
+    if role == "trainer":
+        values["PAINTER_COMPILE_CACHE_PROCESS_ISOLATION"] = "1"
+    return values
 
 
 base._cache_env = _staged_cache_env

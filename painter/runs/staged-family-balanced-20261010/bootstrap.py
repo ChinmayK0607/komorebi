@@ -145,10 +145,16 @@ def ensure_renderer_root(node_root: Path, requested: Path | None = None) -> Path
         raise BootstrapError(f"renderer root cannot be a symlink: {candidate}")
     if candidate.exists() and not candidate.is_dir():
         raise BootstrapError(f"renderer root is not a directory: {candidate}")
+    created = not candidate.exists()
     candidate.mkdir(parents=True, exist_ok=True)
     if candidate.is_symlink():
         raise BootstrapError(f"renderer root became a symlink: {candidate}")
-    os.chmod(candidate, 0o700)
+    # A completed renderer is deliberately exposed to the unprivileged
+    # ``painter`` account by ``expose_renderer_runtime``.  Reapplying 0700 on
+    # every cached bootstrap silently revokes that access before the early
+    # ready-receipt return.  Only protect a newly-created, still-empty root.
+    if created:
+        os.chmod(candidate, 0o700)
     return candidate.resolve(strict=True)
 
 
@@ -734,6 +740,58 @@ def expose_renderer_runtime(node_root: Path, render_root: Path, browser_root: Pa
         os.chmod(renderer_python, 0o755)
 
 
+def restore_cached_renderer_access(ready: dict[str, Any], *, node_root: Path, render_root: Path) -> None:
+    """Restore and prove the sandbox account's access on a cached bootstrap.
+
+    The ready receipt is treated as an index, not authority: every referenced
+    path must still resolve below the exact renderer root before permissions
+    are changed.  Model, adapter, source, and credential trees remain private.
+    """
+
+    render_root = render_root.resolve(strict=True)
+    renderer = ready.get("renderer")
+    pin = renderer.get("pin") if isinstance(renderer, dict) else None
+    if not isinstance(pin, dict):
+        raise BootstrapError("cached bootstrap receipt lacks renderer pin metadata")
+    try:
+        renderer_file = Path(str(pin["renderer"])).resolve(strict=True)
+        pinned_renderer_python = Path(str(pin["renderer_python"])).absolute()
+        browser_root = Path(str(pin["browsers"])).resolve(strict=True)
+    except (KeyError, OSError) as exc:
+        raise BootstrapError("cached renderer paths are missing") from exc
+    expected_renderer_python = render_root / "renderer-env/bin/python"
+    try:
+        if pinned_renderer_python.resolve(strict=True) != expected_renderer_python.resolve(strict=True):
+            raise BootstrapError("cached renderer interpreter does not match the renderer runtime")
+    except OSError as exc:
+        raise BootstrapError("cached renderer interpreter is missing") from exc
+    renderer_python = ensure_runtime_executable(
+        expected_renderer_python, "cached renderer interpreter", render_root / "renderer-env"
+    )
+    for path, description in (
+        (renderer_file, "renderer"),
+        (renderer_python, "renderer interpreter"),
+        (browser_root, "renderer browser root"),
+    ):
+        try:
+            path.relative_to(render_root)
+        except ValueError as exc:
+            raise BootstrapError(f"cached {description} escaped the renderer root") from exc
+    bundle = renderer_file.parent
+    ensure_browser_user()
+    expose_renderer_runtime(node_root, render_root, browser_root, renderer_python, bundle)
+    if os.geteuid() == 0 and shutil.which("runuser") is not None:
+        probe = subprocess.run(
+            ["runuser", "-u", "painter", "--", str(renderer_python), "-c", "import sys; raise SystemExit(0)"],
+            capture_output=True,
+            text=True,
+            timeout=30,
+            check=False,
+        )
+        if probe.returncode != 0:
+            raise BootstrapError("cached renderer interpreter is not executable by the painter account")
+
+
 def ensure_materialized(*, node_root: Path, source_assets: Path, source_root: Path, bootstrap_python: Path) -> Path:
     output = node_root / "materialized"
     receipt = output / "materialization-receipt.json"
@@ -867,7 +925,9 @@ def bootstrap(args: argparse.Namespace) -> dict[str, Any]:
     ready_path = node_root / "bootstrap-ready.json"
     topology = {"gpus_per_node": args.gpus_per_node, "num_train_gpus": args.num_train_gpus, "num_infer_gpus": args.num_infer_gpus}
     if ready_path.is_file():
-        return validate_ready(ready_path, topology=topology, renderer_root=renderer_root)
+        ready = validate_ready(ready_path, topology=topology, renderer_root=renderer_root)
+        restore_cached_renderer_access(ready, node_root=node_root, render_root=renderer_root)
+        return ready
     if ready_path.exists():
         raise BootstrapError("partial bootstrap receipt exists")
     bootstrap_python, uv = ensure_bootstrap_env(node_root)
