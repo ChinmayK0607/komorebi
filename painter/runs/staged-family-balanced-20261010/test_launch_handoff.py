@@ -274,12 +274,14 @@ class LaunchHandoffTests(unittest.TestCase):
         self.assertIn('expected_world != 4', TRAIN_WRAPPER_SOURCE)
 
     def test_prime_trainer_target_is_rewritten_to_run_owned_wrapper(self) -> None:
+        env_server = ["env-server", "@", "env.json"]
+        self.assertEqual(WRAPPER._staged_trainer_command(env_server), env_server)
         command = ["torchrun", "--nproc-per-node=4", "-m", "prime_rl.trainer.rl.train", "@", "trainer.json"]
         with patch.dict(os.environ, {"PAINTER_PRIME_TRAIN_WRAPPER": str(RUN / "train_from_sft.py")}, clear=False):
             rewritten = WRAPPER._staged_trainer_command(command)
         self.assertIn(str((RUN / "train_from_sft.py").resolve()), rewritten)
-        with self.assertRaisesRegex(ValueError, "did not contain"):
-            WRAPPER._staged_trainer_command(["torchrun", "some-other-entrypoint.py"])
+        passthrough = ["torchrun", "some-other-entrypoint.py"]
+        self.assertEqual(WRAPPER._staged_trainer_command(passthrough), passthrough)
 
     def test_staged_wrapper_accepts_trusted_snapshot_links_but_rejects_escape(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

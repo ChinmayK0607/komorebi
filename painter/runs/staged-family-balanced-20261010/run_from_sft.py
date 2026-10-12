@@ -122,12 +122,16 @@ def _watch_trainer_process(process: object, command: list[str], paths: tuple[Pat
 def _staged_trainer_command(command: list[str], wrapper: Path | None = None) -> list[str]:
     """Force Prime's trainer child through this run's 4-rank initializer."""
 
+    target = ["-m", "prime_rl.trainer.rl.train"]
+    if not any(command[index : index + 2] == target for index in range(len(command) - 1)):
+        # Prime's photo runner sends env-server commands through this helper
+        # before it recognizes the orchestrator/trainer roles. Preserve those
+        # commands; only the pinned trainer target is rewritten and enforced.
+        return list(command)
     selected = Path(os.environ.get("PAINTER_PRIME_TRAIN_WRAPPER", str(TRAIN_WRAPPER))).resolve(strict=True)
     if selected != TRAIN_WRAPPER.resolve():
         raise ValueError(f"staged trainer wrapper must remain run-owned: {selected}")
     modified = ORIGINAL_TRAINER_COMMAND(command, selected)
-    if modified == list(command):
-        raise ValueError("Prime trainer command did not contain the pinned prime_rl.trainer.rl.train target")
     if str(TRAIN_WRAPPER.resolve()) not in [str(value) for value in modified]:
         raise ValueError("Prime trainer command was not rewritten to the staged trainer wrapper")
     return modified
