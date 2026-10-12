@@ -1,0 +1,132 @@
+{
+  "schema": "painter-throughput-profile-result-v1",
+  "run_id": "staged-family-balanced-20261010",
+  "attempt": 5,
+  "recorded_at_utc": "2026-10-12T17:51:00Z",
+  "status": "failed_before_optimizer_update",
+  "source_commit": "5bb5ea7ff6e1a0f0f664ec7b4fa3e9c86b53337d",
+  "immutable_inputs": {
+    "base_model": "Qwen/Qwen3.8-27B@1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+    "starting_policy": "CK0607/qwen3.8-27b-brush-painting@1227a2427a8ae16014d2fdca4d1adb6855d3fa1c:rl-judge-matched-20261004-flash/step_12",
+    "starting_policy_sha256": "c70c47ec0d6d7172b3bc25c4f54178919cf7c079cd9652fff3bc76db9e1eca79",
+    "config_sha256": "17a9812533c6bf96fb572cad6ae050f4751d4e0dea480202ea97f1c9fb9f82a7",
+    "receipt_sha256": "e31a6c3a2727e8a3b14e06e6de0282ebf62624008cf8856937ddd9ecaebd8792",
+    "protocol_sha256": "9076d74f7dbc048ccd0b4b9b1fef5dde606e12966774fde65e1c08b653faf60f"
+  },
+  "hardware": {
+    "gpus": 8,
+    "gpu_type": "RTX 5090",
+    "gpu_memory_mib": 32607,
+    "interconnect": "PCIe; no NVLink",
+    "topology": {
+      "policy_inference": "GPUs 0-3, tensor parallel 4",
+      "trainer": "GPUs 4-7, FSDP shard world size 4"
+    }
+  },
+  "training_result": {
+    "optimizer_updates": 0,
+    "checkpoint_produced": false,
+    "quality_result": false,
+    "failure": "CUDA OOM during the first forward pass on trainer ranks 1 and 3",
+    "failed_allocations_mib": [378, 382],
+    "free_memory_at_failure_mib": [337.56, 197.56]
+  },
+  "first_batch": {
+    "wall_seconds": 496,
+    "target_trainable_traces": 24,
+    "policy_rollouts_dispatched": 48,
+    "policy_turns": 144,
+    "trainable_traces_selected": 24,
+    "trainable_traces_buffered_after_selection": 18,
+    "judge_uncertain_traces": 2,
+    "generation_tokens": 186774,
+    "prompt_tokens": 495698,
+    "prefix_cache_hits": 308112,
+    "prefix_cache_hit_fraction": 0.6216,
+    "selected_trace_tokens": {
+      "count": 24,
+      "min": 3848,
+      "median": 6776,
+      "mean": 6985.5,
+      "p90_observed_order_statistic": 9517,
+      "max": 10959
+    }
+  },
+  "utilization": {
+    "sampling": "approximately one-second nvidia-smi samples; busy means sampled utilization greater than zero; each pool has four GPUs",
+    "cold_start_17_25_12_to_17_31_58_utc": {
+      "seconds": 406,
+      "samples_per_pool": 1560,
+      "inference_average_percent": 5.68,
+      "inference_busy_fraction": 0.1449,
+      "trainer_average_percent": 0.0,
+      "trainer_busy_fraction": 0.0
+    },
+    "rollout_collection_17_33_22_to_17_41_40_utc": {
+      "seconds": 498,
+      "samples_per_pool": 1960,
+      "inference_average_percent": 58.67,
+      "inference_busy_fraction": 0.6046,
+      "inference_fraction_at_least_90_percent": 0.576,
+      "trainer_average_percent": 0.0,
+      "trainer_busy_fraction": 0.0
+    },
+    "backward_before_oom_17_41_40_to_17_42_31_utc": {
+      "seconds": 51,
+      "samples_per_pool": 200,
+      "inference_average_percent": 0.0,
+      "trainer_average_percent": 40.7,
+      "trainer_busy_fraction": 0.64,
+      "trainer_max_memory_mib": 32056
+    },
+    "wedged_after_oom_17_42_31_to_17_49_17_utc": {
+      "seconds": 406,
+      "samples_per_pool": 1592,
+      "inference_average_percent": 0.18,
+      "trainer_average_percent": 50.0,
+      "trainer_busy_fraction": 0.5,
+      "interpretation": "two surviving trainer ranks remained busy after two peers had failed; this is not useful training utilization"
+    }
+  },
+  "bottlenecks_in_priority_order": [
+    "Hard trainer-memory failure on 32 GiB cards before the first optimizer update.",
+    "Cycle-wide speculative dispatch generated two complete 24-rollout cycles to fill one 24-trace batch, leaving 18 trainable traces buffered and delaying the batch boundary.",
+    "The rollout phase alternated saturated policy generation with idle intervals while renderer and external judge work completed; average inference utilization was 58.67 percent despite 57.6 percent of samples being at least 90 percent.",
+    "Two uncertain judge outcomes created long-tail completion and were correctly excluded rather than assigned fabricated rewards."
+  ],
+  "topology_decision": {
+    "requested_5_inference_3_trainer": "rejected",
+    "reasons": [
+      "Tensor parallel 5 is incompatible with the model's 24 attention heads and 4 key-value heads.",
+      "One 32 GiB RTX 5090 cannot host an independent 27B policy replica, so the fifth inference GPU cannot add a worker.",
+      "Four 32 GiB trainer ranks already OOMed; reducing the FSDP world size to three would increase per-rank state and cannot fit."
+    ],
+    "next_viable_layout": "TP4 policy inference plus a trainer pool with at least four higher-memory GPUs, preferably 80 GiB with fast peer interconnect; do not rerun this 32 GiB PCIe trainer recipe unchanged."
+  },
+  "required_repairs_before_next_gpu": [
+    "Dispatch prompt groups against the remaining batch deficit and stop launching surplus groups once the target is reachable.",
+    "Balance trajectories by actual token length across trainer ranks and set a measured training-length ceiling rather than the unused 32768-token maximum.",
+    "Move or offload the frozen vision encoder for text-only stages and validate one real backward-plus-optimizer canary before a full run.",
+    "Bound judge retries and retain uncertain outcomes as censored evidence.",
+    "Fail the whole stack immediately when any distributed trainer rank exits."
+  ],
+  "cost": {
+    "current_rental_rate_usd_per_hour": 4.96,
+    "current_rental_last_observed_spend_usd": 9.05,
+    "related_prior_rental_estimate_usd": 2.97,
+    "combined_observed_or_estimated_usd": 12.02,
+    "invoice_status": "provider observations, not invoices"
+  },
+  "evidence": {
+    "local_archive": "local-evidence/attempt5-profile/staged-family-balanced-attempt5-profile.tgz",
+    "local_archive_sha256": "5831d0186bddaac1b3091b417c9c9612424e762f49eec5178710d33fd05af9b0",
+    "gpu_telemetry": "local-evidence/attempt5-profile/gpu-telemetry.csv",
+    "gpu_telemetry_sha256": "d223bc162a8877effb9eb97e11692be950e3545338e2e705c5e7e866abf76024",
+    "git_policy": "raw evidence remains outside Git"
+  },
+  "resource_state": {
+    "gpu_node_released": true,
+    "active_pods_after_release": 0,
+    "recurring_automation": false
+  }
+}
