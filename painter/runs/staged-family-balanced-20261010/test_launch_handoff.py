@@ -47,6 +47,11 @@ TRAIN_WRAPPER_SOURCE = (RUN.parent / "photo-curriculum-rl-20260922/train_from_sf
 
 
 class LaunchHandoffTests(unittest.TestCase):
+    def test_protocol_hashes_match_source_files(self) -> None:
+        validated = PREPARE_NODE._validate_protocol(RUN)
+        self.assertEqual(validated["config_sha256"], hashlib.sha256((RUN / "config.json").read_bytes()).hexdigest())
+        self.assertEqual(validated["curriculum_sha256"], hashlib.sha256((RUN / "curriculum-manifest.json").read_bytes()).hexdigest())
+
     def test_config_is_finite_and_requires_constant_trainer_batch(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

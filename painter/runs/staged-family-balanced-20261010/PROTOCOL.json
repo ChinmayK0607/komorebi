@@ -71,7 +71,7 @@
   },
   "config": {
     "path": "config.json",
-    "sha256": "1a8a50c6c135f579e27265dffc871d278e433c546a80b295139f32a384ac3ff5"
+    "sha256": "9a952eff397b1dc1a3373f11d06d71fcf42de669cdb6d347f61f38b91a8eb4ea"
   },
   "receipt": {
     "path": "receipt.json",
