@@ -71,11 +71,11 @@
   },
   "config": {
     "path": "config.json",
-    "sha256": "cc1fb0d2a1879ceb011af5682ffe606cd476ab393ce756a83b51b6d5582c7be0"
+    "sha256": "e80b845215e01ae6b84d2c6a285f78f220a9ce16058fc76f47932d0e6186f713"
   },
   "receipt": {
     "path": "receipt.json",
-    "sha256": "e77b7720c9f073db562a157feb4f047444980b87e97d5c18577c4a15aee539b7"
+    "sha256": "2e5aa102ab939f624ec54aef90d1a5a0edd14e03552d784f347b8e99c0496b3a"
   },
   "tail_purge_hook": {
     "path": "prime_tail_purge.py",
@@ -89,7 +89,7 @@
     "path": "runtime_binding.py",
     "sitecustomize": "sitecustomize.py",
     "sha256": "b83694b9e76288b8d136b942e5ef85e503d540e033d30470657558e8e54fedb9",
-    "sitecustomize_sha256": "4f0d96b1f0cfeeccd8fcd3d7b0516e7fda2f27c3c565181458bc99be170eb3b1",
+    "sitecustomize_sha256": "9b112091ec291bf0cfb29596983287a909518d76452cbf2383584fa00906d02a",
     "status": "node_free_fake_prime_validated_pending_linux_canary",
     "validated": true,
     "full_prime_compatibility": false,
@@ -276,7 +276,7 @@
       },
       "sitecustomize": {
         "path": "sitecustomize.py",
-        "sha256": "4f0d96b1f0cfeeccd8fcd3d7b0516e7fda2f27c3c565181458bc99be170eb3b1"
+        "sha256": "9b112091ec291bf0cfb29596983287a909518d76452cbf2383584fa00906d02a"
       }
     },
     "launch_scope": {
