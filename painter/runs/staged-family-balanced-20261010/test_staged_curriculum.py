@@ -165,6 +165,7 @@ class PreparationTests(unittest.TestCase):
         self.assertFalse(config["supervision"]["enabled"])
         self.assertEqual(config["supervision"]["updates"], 0)
         self.assertTrue(config["rl"]["require_valid_final_action"])
+        self.assertEqual(config["runtime_binding"]["activation"]["PAINTER_REQUIRE_VALID_FINAL_ACTION"], "1")
         self.assertEqual(config["curriculum"]["batch_size"], 24)
         self.assertEqual(config["curriculum"]["sampling_cycle_cap"], 40)
         self.assertEqual(config["curriculum"]["task_groups_per_cycle"], 6)

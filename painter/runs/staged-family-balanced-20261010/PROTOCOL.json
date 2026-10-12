@@ -71,11 +71,11 @@
   },
   "config": {
     "path": "config.json",
-    "sha256": "432dbc875ff91132cf195c7846387fe4c7aeb7d58366700208267912c33285d5"
+    "sha256": "17a9812533c6bf96fb572cad6ae050f4751d4e0dea480202ea97f1c9fb9f82a7"
   },
   "receipt": {
     "path": "receipt.json",
-    "sha256": "eb09c46e7c32191feac62d0dcc3537f8e3e2cfd922175daec539687a21dea5fd"
+    "sha256": "e31a6c3a2727e8a3b14e06e6de0282ebf62624008cf8856937ddd9ecaebd8792"
   },
   "tail_purge_hook": {
     "path": "prime_tail_purge.py",
@@ -104,7 +104,8 @@
       "PAINTER_STAGED_CURRICULUM_PROTOCOL": "staged-family-balanced-protocol-v1",
       "PAINTER_STAGED_CURRICULUM_ADMISSION": "1",
       "PAINTER_STAGED_CURRICULUM_ROOT": "<run-root>",
-      "PAINTER_STAGED_CURRICULUM_STATE": "<run-root>/runtime-state.json"
+      "PAINTER_STAGED_CURRICULUM_STATE": "<run-root>/runtime-state.json",
+      "PAINTER_REQUIRE_VALID_FINAL_ACTION": "1"
     },
     "batch_boundary": "_maybe_batch remains closed during group assembly and is released only after the active six-group pass receipt; in-group calls cannot ship carry-over traces",
     "resume_scope": "only clean optimizer/stage boundaries or a persisted exact selected-batch/update/tail-purge reconciliation may resume; partial native buffers fail closed"
@@ -179,7 +180,7 @@
     "files": {
       "bootstrap": {
         "path": "bootstrap.py",
-        "sha256": "f4834a1de5d4e1415e85e2167e8101387662bbde0a14789bc436a759c6c3d2e9"
+        "sha256": "0989130399504fed96c8cc6e7d85bb10837c88f227abffa319560011c57bd578"
       },
       "bootstrap_shell": {
         "path": "bootstrap.sh",
@@ -195,23 +196,23 @@
       },
       "prepare_node": {
         "path": "prepare_node.py",
-        "sha256": "27bcaa0d011dcfa1d08ae1de2dcc955b80f560310ace5b522d4d2ac5fb199fac"
+        "sha256": "2f04c373738efd945740fc740c853ee8836d980b63ddc084d682155c42f52417"
       },
       "canary": {
         "path": "canary.py",
-        "sha256": "e38f2c6101829e4fba81c25dfc363319d860ae925bd7c879cce32766f085ed64"
+        "sha256": "f338a467f7da486a048a3b0ef4bc0184d0efc086f539e5a9b4a195c67d68ef7a"
       },
       "launch": {
         "path": "launch.sh",
-        "sha256": "15a18ac1931c894bc61ba2852db86f47d7ce5eb93e13661ac073c5ab36a468f2"
+        "sha256": "e96373abe1c83addc8537ed604631d3d2f21993cf4a19b43c9ee0ecfd8cd79a8"
       },
       "launch_prepared": {
         "path": "launch_prepared.py",
-        "sha256": "ce2fe15d6f8fa1d63e05ec505d7cab37843c3f3d7e2ea6c393117840f2e9c211"
+        "sha256": "ba9eb3a3c3d45dc07e92722aa255c4601b1f2db56d4fd8c702681c1e94abf96b"
       },
       "run_from_sft": {
         "path": "run_from_sft.py",
-        "sha256": "2b84fc888a9719b5579cb08fca9aae8671b3394da8816446e7dc9aac7430359d"
+        "sha256": "ef98ab7de08bdb72ec90e489b1391d4f0c752f73f1e58b5c239a10a618c99938"
       },
       "staged_trainer": {
         "path": "train_from_sft.py",

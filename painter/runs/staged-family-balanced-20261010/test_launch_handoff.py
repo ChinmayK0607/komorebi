@@ -208,6 +208,26 @@ class LaunchHandoffTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 PREPARE_NODE._runtime_executable(link, "Prime Python", venv)
 
+    def test_prepare_exposes_only_materialized_inputs(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            materialized = root / "materialized"
+            prompts = materialized / "assets/prompts/train"
+            prompts.mkdir(parents=True)
+            manifest = materialized / "train-manifest.json"
+            manifest.write_text("{}\n", encoding="utf-8")
+            prompt = prompts / "task.txt"
+            prompt.write_text("prompt\n", encoding="utf-8")
+            secret = root / "gateway.env"
+            secret.write_text("TOKEN=private\n", encoding="utf-8")
+            secret.chmod(0o600)
+            for path in (materialized, materialized / "assets", materialized / "assets/prompts", prompts, manifest, prompt):
+                path.chmod(0o700 if path.is_dir() else 0o600)
+            PREPARE_NODE.expose_materialized_runtime(materialized)
+            self.assertEqual((materialized.stat().st_mode & 0o777), 0o755)
+            self.assertEqual((manifest.stat().st_mode & 0o777), 0o644)
+            self.assertEqual((secret.stat().st_mode & 0o777), 0o600)
+
     def test_prepare_adapter_accepts_hf_blob_link_but_rejects_escape(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -277,6 +297,7 @@ class LaunchHandoffTests(unittest.TestCase):
                 "WATERCOLOUR_INIT_ADAPTER": str(policy),
                 "PAINTER_FROZEN_SFT_ADAPTER": str(frozen),
                 "PAINTER_FROZEN_SFT_ALIAS": "sft-step512",
+                "PAINTER_REQUIRE_VALID_FINAL_ACTION": "1",
             }
             with patch.object(WRAPPER, "POLICY_SHA256", hashlib.sha256(policy_weights.read_bytes()).hexdigest()), patch.object(
                 WRAPPER, "FROZEN_SFT_SHA256", hashlib.sha256(frozen_weights.read_bytes()).hexdigest()
@@ -331,6 +352,7 @@ class LaunchHandoffTests(unittest.TestCase):
                 "WATERCOLOUR_INIT_ADAPTER": str(policy),
                 "PAINTER_FROZEN_SFT_ADAPTER": str(frozen),
                 "PAINTER_FROZEN_SFT_ALIAS": "sft-step512",
+                "PAINTER_REQUIRE_VALID_FINAL_ACTION": "1",
                 "PAINTER_RL_ADAPTER_REVISION": WRAPPER.POLICY_REVISION,
                 "PAINTER_RL_ADAPTER_PREFIX": WRAPPER.POLICY_PREFIX,
                 "PAINTER_RL_ADAPTER_SHA256": WRAPPER.POLICY_SHA256,
@@ -353,6 +375,7 @@ class LaunchHandoffTests(unittest.TestCase):
             self.assertEqual(child["PAINTER_FROZEN_SFT_ADAPTER"], str(frozen.resolve()))
             self.assertEqual(child["PAINTER_STAGED_CURRICULUM_RUN_ID"], CONFIG.RUN_ID)
             self.assertEqual(child["PAINTER_RL_ADAPTER_SHA256"], environment["PAINTER_RL_ADAPTER_SHA256"])
+            self.assertEqual(child["PAINTER_REQUIRE_VALID_FINAL_ACTION"], "1")
 
     def test_canary_is_import_hook_only_and_uses_no_cuda(self) -> None:
         self.assertIn("CUDA_VISIBLE_DEVICES", CANARY_SOURCE)
@@ -557,6 +580,34 @@ class LaunchHandoffTests(unittest.TestCase):
             self.assertEqual(environment["CUDA_VISIBLE_DEVICES"], "")
             self.assertEqual(chown.call_count, 2)
 
+    def test_sandbox_probe_requires_materialized_input_and_browser_executable(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            materialized = root / "materialized"
+            materialized.mkdir()
+            manifest = materialized / "train-manifest.json"
+            manifest.write_text("{}\n", encoding="utf-8")
+            browsers = root / "browsers"
+            browser = browsers / "chromium-123/chrome-linux/chrome"
+            browser.parent.mkdir(parents=True)
+            browser.write_text("#!/bin/sh\n", encoding="utf-8")
+            browser.chmod(0o755)
+            with patch.object(CANARY.os, "geteuid", return_value=1000):
+                receipt = CANARY._sandbox_access_probe(materialized_root=materialized, browser_root=browsers)
+            self.assertEqual(receipt["status"], "passed")
+            self.assertEqual(receipt["representative_input"], str(manifest.resolve()))
+            self.assertEqual(receipt["browser_executable"], str(browser.resolve()))
+
+    def test_sandbox_probe_fails_without_browser_executable(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            materialized = root / "materialized"
+            materialized.mkdir()
+            (materialized / "train-manifest.json").write_text("{}\n", encoding="utf-8")
+            (root / "browsers").mkdir()
+            with self.assertRaises(RuntimeError):
+                CANARY._sandbox_access_probe(materialized_root=materialized, browser_root=root / "browsers")
+
     def test_renderer_canary_preserves_prior_attempt_before_retry(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -600,6 +651,10 @@ class LaunchHandoffTests(unittest.TestCase):
         self.assertNotIn("export PAINTER_PRIME_ROLE=orchestrator", LAUNCH_SOURCE)
         self.assertIn('export WATERCOLOUR_INIT_ADAPTER="$POLICY_ADAPTER" PAINTER_FROZEN_SFT_ADAPTER="$FROZEN_ADAPTER"', LAUNCH_SOURCE)
         self.assertIn('PAINTER_RENDERER_ROOT', LAUNCH_SOURCE)
+        self.assertIn('export PAINTER_REQUIRE_VALID_FINAL_ACTION=1', LAUNCH_SOURCE)
+        self.assertIn('PLAYWRIGHT_BROWSERS_PATH', (RUN / "launch_prepared.py").read_text(encoding="utf-8"))
+        self.assertIn('sandbox_access', (RUN / "launch_prepared.py").read_text(encoding="utf-8"))
+        self.assertIn('final_action_gate_validation', LAUNCH_SOURCE)
         self.assertIn('"constant_trainer_batch_size") is not True', LAUNCH_SOURCE)
         self.assertIn('"policy_initializer":', LAUNCH_SOURCE)
         self.assertIn('"frozen_sft":', LAUNCH_SOURCE)

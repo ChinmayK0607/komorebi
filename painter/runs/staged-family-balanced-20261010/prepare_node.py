@@ -274,6 +274,28 @@ def _validate_materialized(materialized_root: Path) -> dict[str, Any]:
     }
 
 
+def expose_materialized_runtime(materialized_root: Path) -> Path:
+    """Make validated materialized inputs readable by the painter sandbox.
+
+    This function is intentionally limited to the materialized tree. It
+    rejects symlinks first, then grants directory traversal and regular-file
+    read access without changing any model, adapter, source, or credential
+    path on the node.
+    """
+
+    root = materialized_root.expanduser().absolute()
+    if root.is_symlink() or not root.is_dir():
+        raise ValueError(f"materialized root is not a regular directory: {root}")
+    paths = [root, *sorted(root.rglob("*"), key=lambda path: (len(path.parts), str(path)))]
+    for path in paths:
+        if path.is_symlink():
+            raise ValueError(f"materialized runtime contains a symlink: {path}")
+        if not path.exists():
+            raise ValueError(f"materialized runtime entry disappeared: {path}")
+        os.chmod(path, 0o755 if path.is_dir() else 0o644)
+    return root
+
+
 def prepare_node(
     *,
     source_root: Path,
@@ -308,6 +330,7 @@ def prepare_node(
     revision = _git_revision(prime_root)
     protocol_receipt = _validate_protocol(source_root)
     materialized = _validate_materialized(materialized_root)
+    expose_materialized_runtime(Path(materialized["root"]))
     model_dir = _directory(model_dir, "base model directory")
     if model_dir.name != BASE_MODEL_REVISION:
         raise ValueError(f"base model directory must end in {BASE_MODEL_REVISION}")

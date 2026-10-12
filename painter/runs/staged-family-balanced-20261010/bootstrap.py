@@ -742,6 +742,7 @@ def ensure_materialized(*, node_root: Path, source_assets: Path, source_root: Pa
         value = read_json(receipt)
         if value.get("counts", {}).get("train_rows") != 96 or value.get("counts", {}).get("heldout_rows") != 32:
             raise BootstrapError("existing materialized receipt does not contain 96/32 rows")
+        expose_materialized_runtime(output)
         return output
     if output.exists():
         raise BootstrapError("partial materialized output is present")
@@ -753,7 +754,31 @@ def ensure_materialized(*, node_root: Path, source_assets: Path, source_root: Pa
         "--curriculum-manifest", str(source_root / "curriculum-manifest.json"),
     ], timeout=1800)
     ensure_regular(receipt, "materialization receipt")
+    expose_materialized_runtime(output)
     return output
+
+
+def expose_materialized_runtime(materialized_root: Path) -> Path:
+    """Expose only validated materialized inputs to the painter account.
+
+    The node root, model, adapters, Prime checkout, and gateway remain
+    private. Materialization contains only validated prompts, anchors,
+    casebriefs, manifests, and its receipt, so its tree may be made
+    traversable/readable for the renderer sandbox. Reject links before
+    changing modes to prevent a source or credential path from being exposed.
+    """
+
+    root = materialized_root.expanduser().absolute()
+    if root.is_symlink() or not root.is_dir():
+        raise BootstrapError(f"materialized root is not a regular directory: {root}")
+    paths = [root, *sorted(root.rglob("*"), key=lambda path: (len(path.parts), str(path)))]
+    for path in paths:
+        if path.is_symlink():
+            raise BootstrapError(f"materialized runtime contains a symlink: {path}")
+        if not path.exists():
+            raise BootstrapError(f"materialized runtime entry disappeared: {path}")
+        os.chmod(path, 0o755 if path.is_dir() else 0o644)
+    return root
 
 
 def ensure_prepared(*, node_root: Path, renderer_root: Path, source_root: Path, materialized: Path, prime_root: Path, model: Path, policy: Path, frozen: Path, renderer: Path, renderer_python: Path, gpus_per_node: int, num_train_gpus: int, num_infer_gpus: int, bootstrap_python: Path) -> Path:
@@ -793,6 +818,7 @@ def ensure_canary(*, prepared: Path, renderer_root: Path, source_root: Path, mat
         raise BootstrapError("prepared renderer receipt does not match the requested renderer root")
     browser_root = renderer_root / "browsers"
     env["PAINTER_BROWSER_ROOT"] = str(browser_root)
+    env["PLAYWRIGHT_BROWSERS_PATH"] = str(browser_root)
     run_checked([str(bootstrap_python), str(RUN_ROOT / "canary.py"), "--source-root", str(source_root), "--node-root", str(prepared), "--materialized-root", str(materialized), "--renderer-root", str(renderer_root), "--repo-root", str(REPO_ROOT)], env=env, timeout=600)
     value = read_json(receipt_path)
     if value.get("status") != "passed_import_hook_and_renderer":

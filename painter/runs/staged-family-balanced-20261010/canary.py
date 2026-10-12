@@ -101,6 +101,125 @@ def _renderer_invocation(
     return command, environment, unprivileged
 
 
+def _find_browser_executable(browser_root: Path) -> Path:
+    """Find a real Playwright browser binary below the pinned browser root."""
+
+    browser_root = PREP._directory(browser_root, "renderer browser root")
+    preferred = {"chrome", "chrome-headless-shell", "chromium", "headless_shell"}
+    candidates = []
+    for path in sorted(browser_root.rglob("*"), key=lambda item: str(item)):
+        if path.is_symlink() or not path.is_file():
+            continue
+        if path.name in preferred and (path.stat().st_mode & 0o111):
+            candidates.append(path)
+    if not candidates:
+        raise RuntimeError(f"no executable Playwright browser found below {browser_root}")
+    return candidates[0].resolve(strict=True)
+
+
+def _sandbox_access_probe(*, materialized_root: Path, browser_root: Path) -> dict[str, Any]:
+    """Verify the unprivileged renderer account can read both inputs and Chromium."""
+
+    materialized_root = PREP._directory(materialized_root, "materialized root")
+    representative = PREP._file(materialized_root / "train-manifest.json", "materialized train manifest")
+    browser = _find_browser_executable(browser_root)
+    runuser = shutil.which("runuser")
+    if os.geteuid() == 0:
+        if runuser is None:
+            raise RuntimeError("root renderer canary requires runuser for the painter boundary")
+        uid = subprocess.run(["id", "-u", "painter"], capture_output=True, text=True, check=False)
+        if uid.returncode != 0:
+            raise RuntimeError("root renderer canary requires the unprivileged painter account")
+        command = [
+            runuser, "-u", "painter", "--", "env", "-i", "PATH=/usr/bin:/bin", "/bin/sh", "-c",
+            'test -x "$1" && test -r "$2" && test -x "$3"',
+            "painter-materialized-browser-probe", str(materialized_root), str(representative), str(browser),
+        ]
+        completed = subprocess.run(command, capture_output=True, text=True, check=False, timeout=20)
+        if completed.returncode != 0:
+            raise RuntimeError("painter cannot traverse/read materialized inputs or execute the browser")
+        user = "painter"
+    else:
+        if not os.access(materialized_root, os.X_OK) or not os.access(representative, os.R_OK) or not os.access(browser, os.X_OK):
+            raise RuntimeError("current renderer account cannot access materialized inputs or browser")
+        user = str(os.geteuid())
+    return {
+        "status": "passed",
+        "user": user,
+        "materialized_root": str(materialized_root),
+        "representative_input": str(representative),
+        "browser_root": str(browser_root),
+        "browser_executable": str(browser),
+    }
+
+
+def _final_action_gate_smoke(*, prime_python: Path, environment: dict[str, str]) -> dict[str, Any]:
+    """Exercise the real NativePaintingRLTask terminal-credit gate offline."""
+
+    code = r'''
+import asyncio
+import hashlib
+import json
+import os
+import tempfile
+from pathlib import Path
+from types import SimpleNamespace
+
+from painter.native_painting_rl import NativePaintingRLData, NativePaintingRLTask
+
+with tempfile.TemporaryDirectory(prefix="staged-final-action-") as temporary:
+    root = Path(temporary)
+    brief = root / "brief.txt"
+    anchor = root / "anchor.png"
+    canvas = root / "canvas.png"
+    brief.write_text("Paint a pear beside a cup.\n", encoding="utf-8")
+    anchor.write_bytes(b"anchor")
+    canvas.write_bytes(b"candidate")
+    digest = lambda path: hashlib.sha256(path.read_bytes()).hexdigest()
+    data = NativePaintingRLData(
+        root=str(root), task_id="canary-final-action", source_group="canary-final-action",
+        family="simple", reference=str(brief), reference_sha256=digest(brief),
+        reference_kind="text", opponent=str(anchor), opponent_sha256=digest(anchor),
+        output_root="rl-rollouts", mode="fresh",
+    )
+    trace = SimpleNamespace(info={
+        "final_canvas": str(canvas), "final_canvas_valid": True,
+        "turns": [{"turn": 2, "action": "paint", "valid": False, "failure_kind": "program"}],
+    })
+    score = asyncio.run(NativePaintingRLTask(data).final_canvas_aesthetic(trace))
+    result = {
+        "status": "passed" if score == 0.0 and trace.info.get("reward_status") == "model_invalid_final_action" else "failed",
+        "score": score,
+        "reward_status": trace.info.get("reward_status"),
+        "retained_final_canvas_valid": trace.info.get("final_canvas_valid"),
+    }
+    print(json.dumps(result, sort_keys=True))
+'''
+    env = dict(environment)
+    env["PAINTER_REQUIRE_VALID_FINAL_ACTION"] = "1"
+    try:
+        completed = subprocess.run(
+            [str(prime_python), "-c", code],
+            env=env,
+            capture_output=True,
+            text=True,
+            timeout=60,
+            check=False,
+        )
+    except (OSError, subprocess.SubprocessError) as exc:
+        raise RuntimeError(f"final-action gate smoke could not run: {type(exc).__name__}") from exc
+    if completed.returncode != 0:
+        raise RuntimeError(f"final-action gate smoke failed with exit code {completed.returncode}")
+    lines = [line for line in completed.stdout.splitlines() if line.strip()]
+    try:
+        result = json.loads(lines[-1])
+    except (IndexError, json.JSONDecodeError) as exc:
+        raise RuntimeError("final-action gate smoke did not emit JSON") from exc
+    if not isinstance(result, dict) or result.get("status") != "passed" or result.get("reward_status") != "model_invalid_final_action" or result.get("score") != 0.0:
+        raise RuntimeError("NativePaintingRLTask did not zero an invalid final action")
+    return result
+
+
 def _renderer_probe(
     *,
     renderer: Path,
@@ -418,6 +537,7 @@ def run_probe(*, prime_python: Path, prime_root: Path, config_path: Path, source
         trainer_wrapper=trainer_wrapper,
         env=env,
     )
+    final_action_validation = _final_action_gate_smoke(prime_python=prime_python, environment=env)
     for name, path in scripts.items():
         if shutil.which(name, path=env["PATH"]) != str(path):
             raise RuntimeError(f"pinned Prime PATH does not resolve {name} to {path}")
@@ -449,6 +569,7 @@ def run_probe(*, prime_python: Path, prime_root: Path, config_path: Path, source
     result["prime_console_scripts"] = {name: str(path) for name, path in scripts.items()}
     result["path_prefix"] = str(prime_bin)
     result["trainer_dependency_validation"] = trainer_validation
+    result["final_action_gate_validation"] = final_action_validation
     return result
 
 
@@ -507,6 +628,10 @@ def canary(*, source_root: Path, node_root: Path, materialized_root: Path, rende
     )
     if prepared_renderer.get("sha256") != RENDERER_SHA256:
         raise ValueError("node preparation receipt renderer hash is not pinned")
+    sandbox_access = _sandbox_access_probe(
+        materialized_root=Path(materialized["root"]),
+        browser_root=renderer_root / "browsers",
+    )
     renderer_probe = _renderer_probe(
         renderer=renderer,
         renderer_python=renderer_python,
@@ -534,6 +659,8 @@ def canary(*, source_root: Path, node_root: Path, materialized_root: Path, rende
             "model": "prime_rl.configs.rl.RLConfig",
         },
         "trainer_dependency_validation": probe.get("trainer_dependency_validation"),
+        "final_action_gate_validation": probe.get("final_action_gate_validation"),
+        "sandbox_access": sandbox_access,
         "renderer_probe": renderer_probe,
         "cuda_visibility": "CUDA_VISIBLE_DEVICES empty; no CUDA/runtime allocation attempted",
         "runtime_environment": {

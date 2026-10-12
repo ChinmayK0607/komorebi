@@ -148,6 +148,9 @@ if not isinstance(renderer_probe, dict) or renderer_probe.get("status") != "veri
 trainer_validation = canary.get("trainer_dependency_validation")
 if not isinstance(trainer_validation, dict) or trainer_validation.get("status") != "passed" or trainer_validation.get("model_profile") != "qwen38_27b":
     raise SystemExit("reviewed Prime trainer dependency smoke is required before launch")
+final_action_validation = canary.get("final_action_gate_validation")
+if not isinstance(final_action_validation, dict) or final_action_validation.get("status") != "passed" or final_action_validation.get("reward_status") != "model_invalid_final_action" or final_action_validation.get("score") != 0.0:
+    raise SystemExit("NativePaintingRLTask final-action zero gate is required before launch")
 PY
 
 LAUNCH_RECEIPT="$NODE_ROOT/launch.started"
@@ -196,6 +199,7 @@ export PAINTER_RL_CONFIG="$CONFIG" PAINTER_RL_MANIFEST="$MATERIALIZED_ROOT/train
 export PAINTER_RL_RUN_NAME="$RUN_ID" PAINTER_RL_MAX_STEPS=20 PAINTER_RL_MODE=recovered_policy
 export PAINTER_RL_ADAPTER_REVISION="$POLICY_REVISION" PAINTER_RL_ADAPTER_PREFIX="$POLICY_PREFIX" PAINTER_RL_ADAPTER_SHA256="$POLICY_SHA256"
 export PAINTER_FROZEN_SFT_ALIAS=sft-step512 PAINTER_FROZEN_SFT_REVISION=adf687e5b321514eda7be6eab050434fdc8e44ff PAINTER_FROZEN_SFT_PREFIX=photo-curriculum-sft-20260922-balanced/step_512 PAINTER_FROZEN_SFT_SHA256="$FROZEN_SFT_SHA256"
+export PAINTER_REQUIRE_VALID_FINAL_ACTION=1
 TRAIN_GPUS="$("$PYTHON" - "$CONFIG" <<'PY'
 import sys
 import tomllib

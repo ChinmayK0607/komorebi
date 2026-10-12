@@ -52,6 +52,8 @@ class PreparedLaunchTests(unittest.TestCase):
             self.assertEqual(env["PAINTER_RENDERER_PYTHON_PATH"], str(verified["renderer_python"]))
             self.assertEqual(env["PAINTER_RENDERER_ROOT"], str(verified["renderer_root"]))
             self.assertEqual(env["PAINTER_BROWSER_ROOT"], str(verified["browser_root"]))
+            self.assertEqual(env["PLAYWRIGHT_BROWSERS_PATH"], str(verified["browser_root"]))
+            self.assertEqual(env["PAINTER_REQUIRE_VALID_FINAL_ACTION"], "1")
             self.assertEqual(env["BRUSH_ROOT"], str(verified["brush_root"]))
             self.assertEqual(env["PAINTER_GATEWAY_ENV_FILE"], str(gateway.resolve()))
             self.assertEqual(env["PAINTER_RUN_TIMEOUT_SECONDS"], "17")

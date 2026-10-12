@@ -241,9 +241,15 @@ def validate_ready(*, ready_path: Path, node_root: Path, visible_gpus: int) -> d
     renderer_probe = canary.get("renderer_probe")
     if not isinstance(renderer_probe, dict) or renderer_probe.get("status") != "verified" or renderer_probe.get("valid") is not True or renderer_probe.get("renderer_sha256") != RENDERER_SHA256:
         raise PreparedLaunchError("verified renderer canary is required")
+    sandbox_access = canary.get("sandbox_access")
+    if not isinstance(sandbox_access, dict) or sandbox_access.get("status") != "passed" or sandbox_access.get("browser_root") != str(renderer_root / "browsers") or sandbox_access.get("materialized_root") != str(materialized):
+        raise PreparedLaunchError("painter sandbox access to materialized inputs and browser is required")
     trainer_validation = canary.get("trainer_dependency_validation")
     if not isinstance(trainer_validation, dict) or trainer_validation.get("status") != "passed" or trainer_validation.get("model_profile") != "qwen38_27b":
         raise PreparedLaunchError("reviewed Prime trainer dependency smoke is required")
+    final_action_validation = canary.get("final_action_gate_validation")
+    if not isinstance(final_action_validation, dict) or final_action_validation.get("status") != "passed" or final_action_validation.get("reward_status") != "model_invalid_final_action" or final_action_validation.get("score") != 0.0:
+        raise PreparedLaunchError("NativePaintingRLTask final-action zero gate is required")
     prepared_renderer = prepare.get("renderer")
     if not isinstance(prepared_renderer, dict) or prepared_renderer.get("root") != str(renderer_root) or prepared_renderer.get("path") != str(renderer) or prepared_renderer.get("python") != str(renderer_python) or prepared_renderer.get("sha256") != RENDERER_SHA256:
         raise PreparedLaunchError("prepared renderer receipt does not match the bootstrap pin")
@@ -298,12 +304,17 @@ def build_launch_environment(*, verified: dict[str, Any], gateway_env: Path, tim
         "PAINTER_RENDERER_PYTHON_PATH": str(verified["renderer_python"]),
         "PAINTER_RENDERER_ROOT": str(verified["renderer_root"]),
         "PAINTER_BROWSER_ROOT": str(verified["browser_root"]),
+        # The reviewed photo runner forwards Playwright's standard variable,
+        # not the staged alias. Keep both names bound to the verified root so
+        # it cannot fall back to ``materialized/browsers``.
+        "PLAYWRIGHT_BROWSERS_PATH": str(verified["browser_root"]),
         "BRUSH_ROOT": str(verified["brush_root"]),
         "PAINTER_GATEWAY_ENV_FILE": str(gateway_env),
         "PAINTER_RUN_TIMEOUT_SECONDS": str(timeout_seconds),
         "PAINTER_PRIME_RUN_WRAPPER": str(RUN_ROOT / "run_from_sft.py"),
         "PAINTER_PRIME_TRAIN_WRAPPER": str(RUN_ROOT / "train_from_sft.py"),
         "PAINTER_NUM_TRAIN_GPUS": "4",
+        "PAINTER_REQUIRE_VALID_FINAL_ACTION": "1",
     })
     return env
 

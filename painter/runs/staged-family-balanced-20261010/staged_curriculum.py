@@ -463,6 +463,7 @@ def build_config(curriculum: Mapping[str, Any] | None = None) -> dict[str, Any]:
             "status": "node_free_fake_prime_validated_pending_linux_canary",
             "prime_revision": PRIME_REVISION,
             "activation": {
+                "PAINTER_REQUIRE_VALID_FINAL_ACTION": "1",
                 "PAINTER_STAGED_CURRICULUM_ENABLE": "1",
                 "PAINTER_STAGED_CURRICULUM_RUN_ID": RUN_ID,
                 "PAINTER_STAGED_CURRICULUM_PROTOCOL": "staged-family-balanced-protocol-v1",

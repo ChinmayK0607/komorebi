@@ -327,6 +327,32 @@ class BootstrapUnitTests(unittest.TestCase):
             for path in (render_root / "painter", render_root / "painter/runtime", bundle):
                 self.assertEqual(stat.S_IMODE(path.stat().st_mode), 0o755)
 
+    def test_expose_materialized_runtime_only_opens_materialized_tree(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            materialized = root / "materialized"
+            nested = materialized / "assets/prompts/train"
+            nested.mkdir(parents=True)
+            manifest = materialized / "train-manifest.json"
+            manifest.write_text("{}\n", encoding="utf-8")
+            prompt = nested / "task.txt"
+            prompt.write_text("prompt\n", encoding="utf-8")
+            secret = root / "gateway.env"
+            secret.write_text("TOKEN=private\n", encoding="utf-8")
+            secret.chmod(0o600)
+            for path in (materialized, materialized / "assets", materialized / "assets/prompts", nested, manifest, prompt):
+                path.chmod(0o700 if path.is_dir() else 0o600)
+            BOOTSTRAP.expose_materialized_runtime(materialized)
+            for path in (materialized, materialized / "assets", materialized / "assets/prompts", nested):
+                self.assertEqual(stat.S_IMODE(path.stat().st_mode), 0o755)
+            for path in (manifest, prompt):
+                self.assertEqual(stat.S_IMODE(path.stat().st_mode), 0o644)
+            self.assertEqual(stat.S_IMODE(secret.stat().st_mode), 0o600)
+            link = materialized / "escape"
+            link.symlink_to(secret)
+            with self.assertRaises(BOOTSTRAP.BootstrapError):
+                BOOTSTRAP.expose_materialized_runtime(materialized)
+
     def test_prepare_receipt_renderer_root_accepts_legacy_key_but_rejects_ambiguity(self) -> None:
         expected = "/node/renderer"
         self.assertEqual(BOOTSTRAP._renderer_receipt_root({"root": expected}), expected)
