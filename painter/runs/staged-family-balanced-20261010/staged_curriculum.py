@@ -469,6 +469,7 @@ def build_config(curriculum: Mapping[str, Any] | None = None) -> dict[str, Any]:
             "batch_boundary_guard": "native TrainSink._maybe_batch is blocked during group assembly and released only after a run-owned complete-group-prefix pass receipt",
             "stale_group_cancellation": "stale GroupCancellation voids every arrived member as pipeline evidence and never enters the trainer candidate inventory",
             "bootstrap": "bootstrap.py/bootstrap.sh are prepared but unrun; on an explicit Linux execution they accept only exact 1+1, 2+2, or 4+4 train/inference GPU topologies, with 4+4 reserved for an 8-GPU whole-node offer split into four trainer and four inference GPUs; verify public pinned downloads, run the reviewed renderer sandbox helper plus materialization/preflight/canary, and write ready_no_launch without starting Prime",
+            "real_backward_canary": "optional explicit --real-backward-canary mode; exactly one optimizer update, one native resumable checkpoint, one verified public portable adapter, declared elapsed <= 2400 seconds, declared attempt cost <= 9 USD, and zero leftover processes are required",
         },
         "runtime_binding": {
             "module": "runtime_binding.py",

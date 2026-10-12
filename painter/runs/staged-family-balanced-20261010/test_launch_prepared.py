@@ -103,18 +103,24 @@ class PreparedLaunchTests(unittest.TestCase):
             verified = self._verified(root)
             gateway = verified.pop("gateway")
             env = HANDOFF.build_launch_environment(
-                verified=verified, gateway_env=gateway, timeout_seconds=1800,
-                real_backward_canary=True, canary_node_hourly_usd=75.0,
+                verified=verified, gateway_env=gateway, timeout_seconds=2400,
+                real_backward_canary=True, canary_node_hourly_usd=13.44,
             )
             self.assertEqual(env["PAINTER_CANARY_MODE"], "real_backward")
             self.assertEqual(env["PAINTER_RL_MAX_STEPS"], "1")
-            self.assertEqual(env["PAINTER_CANARY_COST_BOUND_USD"], "5.0")
-            self.assertEqual(env["PAINTER_CANARY_NODE_HOURLY_USD"], "75.0")
+            self.assertEqual(env["PAINTER_CANARY_MAX_SECONDS"], "2400")
+            self.assertEqual(float(env["PAINTER_CANARY_COST_BOUND_USD"]), 8.96)
+            self.assertEqual(env["PAINTER_CANARY_NODE_HOURLY_USD"], "13.44")
             self.assertEqual(env["PAINTER_CANARY_COST_SOURCE"], "node_hourly_price_input")
             with self.assertRaises(HANDOFF.PreparedLaunchError):
                 HANDOFF.build_launch_environment(
-                    verified=verified, gateway_env=gateway, timeout_seconds=1801,
-                    real_backward_canary=True,
+                    verified=verified, gateway_env=gateway, timeout_seconds=2401,
+                    real_backward_canary=True, canary_node_hourly_usd=13.44,
+                )
+            with self.assertRaisesRegex(HANDOFF.PreparedLaunchError, "must not exceed \\$9"):
+                HANDOFF.build_launch_environment(
+                    verified=verified, gateway_env=gateway, timeout_seconds=2400,
+                    real_backward_canary=True, canary_node_hourly_usd=13.51,
                 )
 
     def test_canary_requires_hourly_price_before_spawn(self) -> None:
@@ -135,7 +141,7 @@ class PreparedLaunchTests(unittest.TestCase):
             gateway = verified.pop("gateway")
             canary = HANDOFF.build_launch_environment(
                 verified=verified, gateway_env=gateway, timeout_seconds=1800,
-                real_backward_canary=True, canary_node_hourly_usd=75.0,
+                real_backward_canary=True, canary_node_hourly_usd=13.44,
             )
             full = HANDOFF.build_launch_environment(
                 verified=verified, gateway_env=gateway, timeout_seconds=172800,

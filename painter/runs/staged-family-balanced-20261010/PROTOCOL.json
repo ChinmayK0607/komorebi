@@ -71,11 +71,11 @@
   },
   "config": {
     "path": "config.json",
-    "sha256": "be6cd07dce3b27c4cec036eb6fe7355af11a64a8ed9ae5765128b2c5e52bc68a"
+    "sha256": "f032344984d5ae003f5b1c9c4fff93d83193ef6749a4ce67980d3fc051cba9f5"
   },
   "receipt": {
     "path": "receipt.json",
-    "sha256": "a68162940f38f24644b6012e5d201a4649ce05375ec1412eebf4d7104548dbc6"
+    "sha256": "22465375c789f4c101b68e56163a0c44e0952570beabd1674f55446a56a6d6aa"
   },
   "tail_purge_hook": {
     "path": "prime_tail_purge.py",
@@ -164,7 +164,8 @@
     "runtime_sampling_attempt_cap": "required: every admitted attempt, including censored and partial retries, increments persisted per-stage attempts and stops at the finite two-times cap",
     "runtime_stale_group_cancellation": "required: stale GroupCancellation voids every arrived group member as pipeline evidence and must leave no native pending IDs; non-stale cancellation may admit three scored traces with explicit placeholders",
     "preflight_surface": "hash-bound bootstrap, materializer, config/node preparation, HF snapshot-cache validation, explicit verified non-private renderer/browser scratch root, import-hook/real-renderer canary, foreground launch, receipt-derived launch_prepared.py handoff, run-owned adapter, runtime binding, sitecustomize, tail purge, and reviewed external photo runner/trainer wrappers; bootstrap/canary/launch/launch_prepared are prepared but not run",
-    "bootstrap": "bootstrap.py/bootstrap.sh are prepared but unrun; on an explicit Linux execution they accept only exact 1+1, 2+2, or 4+4 train/inference GPU topologies, with 4+4 reserved for an 8-GPU whole-node offer split into four trainer and four inference GPUs; verify public pinned downloads, run the reviewed renderer sandbox helper plus materialization/preflight/canary, and write ready_no_launch without starting Prime"
+    "bootstrap": "bootstrap.py/bootstrap.sh are prepared but unrun; on an explicit Linux execution they accept only exact 1+1, 2+2, or 4+4 train/inference GPU topologies, with 4+4 reserved for an 8-GPU whole-node offer split into four trainer and four inference GPUs; verify public pinned downloads, run the reviewed renderer sandbox helper plus materialization/preflight/canary, and write ready_no_launch without starting Prime",
+    "real_backward_canary": "optional explicit --real-backward-canary mode; exactly one optimizer update, one native resumable checkpoint, one verified public portable adapter, declared elapsed <= 2400 seconds, declared attempt cost <= 9 USD, and zero leftover processes are required"
   },
   "results": {
     "status": "pending_no_gpu",
@@ -212,11 +213,11 @@
       },
       "launch_prepared": {
         "path": "launch_prepared.py",
-        "sha256": "0063bd7a3145837cc4faf82fbdb6b1811f4a2cf8f1d5e6bce01d66a32e65e08b"
+        "sha256": "2f469135f88d4c117ed9a54c77ad12df2d4cbaa75f4372497fb69e9e4eb6d19d"
       },
       "real_backward_canary": {
         "path": "real_backward_canary.py",
-        "sha256": "3084a613f642c1bafc1b2854bc0724d1ca624209c45a9e95dc379bd1cc12849d"
+        "sha256": "fc1ef57e00bf7e6c1b41822ed5d4e7bfa27f4cdcb7e8dd5c64d0a85799f6c92b"
       },
       "resource_preflight": {
         "path": "resource_preflight.py",
@@ -228,7 +229,7 @@
       },
       "staged_trainer": {
         "path": "train_from_sft.py",
-        "sha256": "9dcff27f565dad463d7d0c6e6e3b3c218dec271409a9aca45e73cbb840ba8651"
+        "sha256": "3ac93eb4586384b453dec0b15ac38ce72ec29e2bde459af687c55ddd3526eda8"
       },
       "staged_init_adapter": {
         "path": "prime_runtime/integrations/prime/watercolour_sft/init_adapter.py",

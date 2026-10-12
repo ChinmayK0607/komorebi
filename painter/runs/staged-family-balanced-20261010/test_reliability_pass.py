@@ -230,12 +230,18 @@ class ReliabilityPassTests(unittest.TestCase):
                 "checkpoint_path": str(checkpoint), "checkpoint_metadata": str(checkpoint / ".metadata"),
                 "checkpoint_file_count": 1, "world_size": 4,
                 "elapsed_seconds": 120, "cost_usd": 2.5, "node_hourly_price_usd": 75.0,
+                "time_bound_seconds": 2400, "cost_bound_usd": 9.0,
                 "cost_source": "node_hourly_price_input",
                 "processes_left_running": False,
             }), encoding="utf-8")
             self.assertEqual(canary.validate_receipt(receipt)["optimizer_updates"], 1)
             value = json.loads(receipt.read_text())
             value["cost_usd"] = None
+            receipt.write_text(json.dumps(value), encoding="utf-8")
+            with self.assertRaises(canary.RealBackwardCanaryError):
+                canary.validate_receipt(receipt)
+            value["cost_usd"] = 2.5
+            value["time_bound_seconds"] = 2401
             receipt.write_text(json.dumps(value), encoding="utf-8")
             with self.assertRaises(canary.RealBackwardCanaryError):
                 canary.validate_receipt(receipt)

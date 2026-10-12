@@ -285,8 +285,8 @@ def validate_ready(*, ready_path: Path, node_root: Path, visible_gpus: int) -> d
 def build_launch_environment(*, verified: dict[str, Any], gateway_env: Path, timeout_seconds: int, real_backward_canary: bool = False, canary_node_hourly_usd: float | None = None) -> dict[str, str]:
     if timeout_seconds < 1 or timeout_seconds > 604800:
         raise PreparedLaunchError("timeout seconds must be in 1..604800")
-    if real_backward_canary and timeout_seconds > 1800:
-        raise PreparedLaunchError("real-backward canary timeout must be at most 1800 seconds")
+    if real_backward_canary and timeout_seconds > 2400:
+        raise PreparedLaunchError("real-backward canary timeout must be at most 2400 seconds")
     if real_backward_canary and canary_node_hourly_usd is None:
         raise PreparedLaunchError("--canary-node-hourly-usd is required for a real-backward canary")
     gateway_env = validate_gateway_file(gateway_env)
@@ -328,21 +328,24 @@ def build_launch_environment(*, verified: dict[str, Any], gateway_env: Path, tim
         "PAINTER_LAUNCH_PHASE_FILE": str(guard_namespace / "launch-phase.json"),
     })
     if real_backward_canary:
-        env["PAINTER_RL_CONFIG"] = str(guard_namespace / "native.toml")
-        env["PAINTER_STAGED_CURRICULUM_STATE"] = str(guard_namespace / "runtime-state.json")
-        env.update({
-            "PAINTER_CANARY_MODE": "real_backward",
-            "PAINTER_CANARY_MAX_SECONDS": "1800",
-            "PAINTER_CANARY_COST_BOUND_USD": "5.0",
-            "PAINTER_CANARY_RECEIPT": str(guard_namespace / "real-backward-canary-receipt.json"),
-            "PAINTER_RL_MAX_STEPS": "1",
-        })
         try:
             hourly = float(canary_node_hourly_usd)
         except (TypeError, ValueError) as exc:
             raise PreparedLaunchError("canary node hourly price must be numeric") from exc
         if not 0 < hourly <= 10000:
             raise PreparedLaunchError("canary node hourly price must be in (0, 10000]")
+        cost_bound = hourly * timeout_seconds / 3600.0
+        if cost_bound > 9.0:
+            raise PreparedLaunchError("real-backward canary launch bound must not exceed $9")
+        env["PAINTER_RL_CONFIG"] = str(guard_namespace / "native.toml")
+        env["PAINTER_STAGED_CURRICULUM_STATE"] = str(guard_namespace / "runtime-state.json")
+        env.update({
+            "PAINTER_CANARY_MODE": "real_backward",
+            "PAINTER_CANARY_MAX_SECONDS": str(timeout_seconds),
+            "PAINTER_CANARY_COST_BOUND_USD": str(cost_bound),
+            "PAINTER_CANARY_RECEIPT": str(guard_namespace / "real-backward-canary-receipt.json"),
+            "PAINTER_RL_MAX_STEPS": "1",
+        })
         env["PAINTER_CANARY_NODE_HOURLY_USD"] = str(hourly)
         env["PAINTER_CANARY_COST_SOURCE"] = "node_hourly_price_input"
     return env

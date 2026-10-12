@@ -117,8 +117,8 @@ def _portable_upload_evidence(
     }
 
 
-MAX_SECONDS = 1800
-MAX_COST_USD = 5.0
+MAX_SECONDS = 2400
+MAX_COST_USD = 9.0
 
 
 class RealBackwardCanaryError(RuntimeError):
@@ -144,12 +144,18 @@ def validate_receipt(path: Path, *, expected_world_size: int = 4) -> dict[str, A
         raise RealBackwardCanaryError("canary update receipt path is missing")
     if receipt.get("world_size") != expected_world_size:
         raise RealBackwardCanaryError("canary world size does not match the four-rank trainer contract")
+    time_bound = receipt.get("time_bound_seconds")
+    if not isinstance(time_bound, (int, float)) or isinstance(time_bound, bool) or not 0 < time_bound <= MAX_SECONDS:
+        raise RealBackwardCanaryError("canary time bound is missing or exceeds 2400 seconds")
     elapsed = receipt.get("elapsed_seconds")
-    if not isinstance(elapsed, (int, float)) or isinstance(elapsed, bool) or elapsed < 0 or elapsed > MAX_SECONDS:
-        raise RealBackwardCanaryError("canary exceeded its 1800 second bound or lacks elapsed time")
+    if not isinstance(elapsed, (int, float)) or isinstance(elapsed, bool) or elapsed < 0 or elapsed > time_bound:
+        raise RealBackwardCanaryError("canary exceeded its declared time bound or lacks elapsed time")
+    cost_bound = receipt.get("cost_bound_usd")
+    if not isinstance(cost_bound, (int, float)) or isinstance(cost_bound, bool) or not 0 < cost_bound <= MAX_COST_USD:
+        raise RealBackwardCanaryError("canary cost bound is missing or exceeds $9")
     cost = receipt.get("cost_usd")
-    if not isinstance(cost, (int, float)) or isinstance(cost, bool) or cost < 0 or cost > MAX_COST_USD:
-        raise RealBackwardCanaryError("canary lacks an observed cost receipt within the $5 bound")
+    if not isinstance(cost, (int, float)) or isinstance(cost, bool) or cost < 0 or cost > cost_bound:
+        raise RealBackwardCanaryError("canary lacks an observed cost receipt within its declared bound")
     hourly = receipt.get("node_hourly_price_usd")
     if not isinstance(hourly, (int, float)) or isinstance(hourly, bool) or hourly <= 0:
         raise RealBackwardCanaryError("canary lacks the explicit node hourly price input")

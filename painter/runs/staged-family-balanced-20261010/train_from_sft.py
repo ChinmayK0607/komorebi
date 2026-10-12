@@ -157,12 +157,18 @@ def _write_real_backward_receipt(config: object, started: float) -> None:
     except ValueError:
         hourly = None
     cost_source = os.environ.get("PAINTER_CANARY_COST_SOURCE")
+    try:
+        time_bound = float(os.environ["PAINTER_CANARY_MAX_SECONDS"])
+        cost_bound = float(os.environ["PAINTER_CANARY_COST_BOUND_USD"])
+    except (KeyError, ValueError):
+        time_bound = -1.0
+        cost_bound = -1.0
     elapsed = time.monotonic() - started
     cost = hourly * elapsed / 3600.0 if hourly is not None and hourly > 0 else None
     receipt_path = Path(os.environ.get("PAINTER_CANARY_RECEIPT", str(output_dir / "real-backward-canary-receipt.json")))
     receipt = {
         "schema": "staged-family-balanced-real-backward-canary-v1",
-        "status": "passed" if update_receipt is not None and checkpoint_produced and cost is not None and cost_source == "node_hourly_price_input" and 0 <= elapsed <= 1800 and cost <= 5 else "failed",
+        "status": "passed" if update_receipt is not None and checkpoint_produced and cost is not None and cost_source == "node_hourly_price_input" and 0 <= elapsed <= time_bound <= 2400 and 0 <= cost <= cost_bound <= 9 else "failed",
         "optimizer_updates": 1 if update_receipt is not None else 0,
         "update_receipt": update_receipt,
         "update_receipt_path": str(update_receipt_path) if update_receipt is not None else None,
@@ -175,8 +181,8 @@ def _write_real_backward_receipt(config: object, started: float) -> None:
         "cost_usd": cost,
         "node_hourly_price_usd": hourly,
         "cost_source": cost_source if cost is not None else None,
-        "cost_bound_usd": 5.0,
-        "time_bound_seconds": 1800,
+        "cost_bound_usd": cost_bound,
+        "time_bound_seconds": time_bound,
         "processes_left_running": False,
         "training_started": True,
     }
