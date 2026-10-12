@@ -25,6 +25,11 @@ from typing import Any, Sequence
 FAILURE_EXIT = 70
 HEARTBEAT_STALE_SECONDS = 20.0
 STARTUP_GRACE_SECONDS = 120.0
+# Loading a TP4 inference server and prewarming both fixed adapters happens
+# before Prime returns to its launcher and creates the trainer child. This is
+# a bounded pre-trainer phase; once the trainer process receipt exists, the
+# shorter rank readiness grace applies again.
+PRETRAINER_STARTUP_GRACE_SECONDS = 600.0
 
 
 def _read_json(path: Path) -> dict[str, Any] | None:
@@ -62,16 +67,39 @@ def _failure_reason(path: Path) -> str | None:
     return str(reason) if reason else str(receipt.get("status"))
 
 
-def _stale_rank(rank_dir: Path, *, expected_world_size: int, started_at: float) -> str | None:
+def _stale_rank(
+    rank_dir: Path,
+    *,
+    expected_world_size: int,
+    started_at: float,
+    phase_file: Path | None = None,
+) -> str | None:
     if expected_world_size < 2 or not rank_dir.is_dir():
         return None
     started = sorted(rank_dir.glob("rank-*.started.json"))
     # Do not call a rank missing during torchrun startup dead until the
     # process has had a bounded opportunity to initialize.
-    if len(started) < expected_world_size and time.monotonic() - started_at < STARTUP_GRACE_SECONDS:
+    phase = _read_json(phase_file) if phase_file is not None else None
+    phase_name = phase.get("phase") if isinstance(phase, dict) else None
+    phase_recorded = phase.get("recorded_at_unix") if isinstance(phase, dict) else None
+    try:
+        phase_age = max(0.0, time.time() - float(phase_recorded))
+    except (TypeError, ValueError):
+        phase_age = time.monotonic() - started_at
+    if phase_name == "trainer_process_started":
+        grace = STARTUP_GRACE_SECONDS
+        elapsed = phase_age
+    elif phase_name:
+        grace = PRETRAINER_STARTUP_GRACE_SECONDS
+        elapsed = phase_age
+    else:
+        grace = STARTUP_GRACE_SECONDS
+        elapsed = time.monotonic() - started_at
+    if len(started) < expected_world_size and elapsed < grace:
         return None
     if len(started) < expected_world_size:
-        return f"only {len(started)} of {expected_world_size} trainer ranks created startup markers after grace"
+        phase_detail = f" during {phase_name}" if phase_name else ""
+        return f"only {len(started)} of {expected_world_size} trainer ranks created startup markers after grace{phase_detail}"
     now = time.time()
     for marker in started:
         rank = marker.name.removeprefix("rank-").removesuffix(".started.json")
@@ -92,6 +120,7 @@ def supervise(
     rank_dir: Path,
     expected_world_size: int,
     timeout_seconds: int,
+    phase_file: Path | None = None,
     poll_seconds: float = 1.0,
     popen: Any = subprocess.Popen,
 ) -> int:
@@ -99,9 +128,12 @@ def supervise(
 
     failure_file = failure_file.expanduser().resolve()
     rank_dir = rank_dir.expanduser().resolve()
+    phase_file = phase_file.expanduser().resolve() if phase_file is not None else None
     failure_file.parent.mkdir(parents=True, exist_ok=True)
     rank_dir.mkdir(parents=True, exist_ok=True)
-    _reject_stale_state(failure_file, rank_dir)
+    if phase_file is not None:
+        phase_file.parent.mkdir(parents=True, exist_ok=True)
+    _reject_stale_state(failure_file, rank_dir, phase_file)
     started_at = time.monotonic()
     process = popen(list(command), start_new_session=True)
     deadline = started_at + timeout_seconds
@@ -115,7 +147,12 @@ def supervise(
                 _write_supervisor_receipt(failure_file, reason=reason, status="supervisor_terminated")
                 _terminate(process)
                 return FAILURE_EXIT
-            stale = _stale_rank(rank_dir, expected_world_size=expected_world_size, started_at=started_at)
+            stale = _stale_rank(
+                rank_dir,
+                expected_world_size=expected_world_size,
+                started_at=started_at,
+                phase_file=phase_file,
+            )
             if stale:
                 _write_supervisor_receipt(failure_file, reason=stale, status="rank_exited")
                 _terminate(process)
@@ -149,13 +186,15 @@ def _write_supervisor_receipt(path: Path, *, reason: str, status: str) -> None:
     os.replace(temporary, path)
 
 
-def _reject_stale_state(failure_file: Path, rank_dir: Path) -> None:
+def _reject_stale_state(failure_file: Path, rank_dir: Path, phase_file: Path | None = None) -> None:
     """Require a new node-owned receipt namespace for every foreground launch."""
 
     if failure_file.exists():
         raise RuntimeError(f"stale distributed failure receipt exists: {failure_file}")
     if rank_dir.exists() and any(rank_dir.iterdir()):
         raise RuntimeError(f"stale rank guard state exists: {rank_dir}")
+    if phase_file is not None and phase_file.exists():
+        raise RuntimeError(f"stale launch phase receipt exists: {phase_file}")
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -164,6 +203,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--rank-dir", type=Path, required=True)
     parser.add_argument("--world-size", type=int, required=True)
     parser.add_argument("--timeout-seconds", type=int, required=True)
+    parser.add_argument("--phase-file", type=Path)
     parser.add_argument("command", nargs=argparse.REMAINDER)
     args = parser.parse_args(argv)
     command = list(args.command)
@@ -177,6 +217,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         rank_dir=args.rank_dir,
         expected_world_size=args.world_size,
         timeout_seconds=args.timeout_seconds,
+        phase_file=args.phase_file,
     )
 
 

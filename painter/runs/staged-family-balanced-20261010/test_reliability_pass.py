@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import os
 from pathlib import Path
 import tempfile
 import unittest
@@ -22,6 +23,7 @@ def _load(name: str):
 guard = _load("launch_guard")
 resource = _load("resource_preflight")
 canary = _load("real_backward_canary")
+run_wrapper = _load("run_from_sft")
 
 
 class _FakeProcess:
@@ -80,6 +82,75 @@ class ReliabilityPassTests(unittest.TestCase):
             with patch.object(guard.time, "monotonic", return_value=guard.STARTUP_GRACE_SECONDS + 1):
                 reason = guard._stale_rank(rank_dir, expected_world_size=4, started_at=0)
             self.assertIn("only 0 of 4", reason or "")
+
+    def test_inference_readiness_phase_has_bounded_pretrainer_grace(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            rank_dir = root / "ranks"
+            phase = root / "launch-phase.json"
+            rank_dir.mkdir()
+            phase.write_text(json.dumps({
+                "phase": "inference_readiness_wait",
+                "recorded_at_unix": 1000.0,
+            }), encoding="utf-8")
+            with patch.object(guard.time, "time", return_value=1200.0), patch.object(
+                guard.time, "monotonic", return_value=guard.STARTUP_GRACE_SECONDS + 1
+            ):
+                self.assertIsNone(guard._stale_rank(
+                    rank_dir, expected_world_size=4, started_at=0, phase_file=phase,
+                ))
+            with patch.object(guard.time, "time", return_value=1601.0), patch.object(
+                guard.time, "monotonic", return_value=guard.STARTUP_GRACE_SECONDS + 1
+            ):
+                reason = guard._stale_rank(
+                    rank_dir, expected_world_size=4, started_at=0, phase_file=phase,
+                )
+            self.assertIn("only 0 of 4", reason or "")
+            self.assertIn("inference_readiness_wait", reason or "")
+
+    def test_trainer_process_phase_resets_to_short_rank_grace(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            rank_dir = root / "ranks"
+            phase = root / "launch-phase.json"
+            rank_dir.mkdir()
+            phase.write_text(json.dumps({
+                "phase": "trainer_process_started",
+                "recorded_at_unix": 1000.0,
+            }), encoding="utf-8")
+            with patch.object(guard.time, "time", return_value=1100.0), patch.object(
+                guard.time, "monotonic", return_value=guard.PRETRAINER_STARTUP_GRACE_SECONDS + 1
+            ):
+                self.assertIsNone(guard._stale_rank(
+                    rank_dir, expected_world_size=4, started_at=0, phase_file=phase,
+                ))
+            with patch.object(guard.time, "time", return_value=1121.0), patch.object(
+                guard.time, "monotonic", return_value=guard.PRETRAINER_STARTUP_GRACE_SECONDS + 1
+            ):
+                reason = guard._stale_rank(
+                    rank_dir, expected_world_size=4, started_at=0, phase_file=phase,
+                )
+            self.assertIn("only 0 of 4", reason or "")
+            self.assertIn("trainer_process_started", reason or "")
+
+    def test_trainer_process_exit_writes_prompt_failure_receipt(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            rank_dir = root / "ranks"
+            failure = root / "distributed-failure.json"
+            process = type("Exited", (), {"pid": 42, "wait": lambda self: 17})()
+            with patch.dict(os.environ, {
+                "PAINTER_RANK_GUARD_DIR": str(rank_dir),
+                "PAINTER_DISTRIBUTED_FAILURE_FILE": str(failure),
+                "PAINTER_NUM_TRAIN_GPUS": "4",
+            }, clear=False):
+                paths = run_wrapper._record_trainer_process_started(["torchrun", str(run_wrapper.TRAIN_WRAPPER)], process)
+                self.assertIsNotNone(paths)
+                run_wrapper._watch_trainer_process(process, ["torchrun", str(run_wrapper.TRAIN_WRAPPER)], paths)
+            value = json.loads(failure.read_text(encoding="utf-8"))
+            self.assertEqual(value["status"], "rank_exited")
+            self.assertIn("before rank readiness", value["reason"])
+            self.assertTrue((rank_dir / "trainer-process.started.json").is_file())
 
     def test_missing_prime_hooks_are_reported_fail_closed(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

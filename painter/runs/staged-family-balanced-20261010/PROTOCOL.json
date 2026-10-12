@@ -71,11 +71,11 @@
   },
   "config": {
     "path": "config.json",
-    "sha256": "92c95b0f3ea99d0236cf56fb13622247447a5cc91101c3d4710b90ea1111d987"
+    "sha256": "dd5aa6c30b5b9051262cff3b2aea8993e91beba2e189e88b99d56c01f8ecc0ef"
   },
   "receipt": {
     "path": "receipt.json",
-    "sha256": "01f1fd6b321fa94727c736262ac332c1d5c59ff54f0bdb0e50a6d4ea1fb53fce"
+    "sha256": "a4c28db2875ffab5c0164a1daf85af78ad869adef0bc6dd15a9100e68d3e505c"
   },
   "tail_purge_hook": {
     "path": "prime_tail_purge.py",
@@ -175,8 +175,52 @@
     "next_decision": "await node-free compatibility and renderer-canary review"
   },
   "run_surface": {
-    "schema": "staged-family-balanced-run-surface-v1",
-    "status": "prepared_offline_not_run",
+    "bootstrap_scope": {
+      "judge_calls": false,
+      "launch_called": false,
+      "model_generation": false,
+      "network_or_hardware_used": false,
+      "public_pinned_downloads": "prepared_only_not_executed_in_this_preparation",
+      "receipt_status": "ready_no_launch",
+      "renderer_sandbox_helper": "reviewed prepare_renderer_runtime.py/patch_brush_centroid.py with a root-to-runuser painter boundary",
+      "status": "prepared_not_run",
+      "steps": [
+        "public pinned Prime/model/adapter inputs",
+        "reviewed renderer sandbox helper",
+        "materialize.py",
+        "prepare_config.py",
+        "prepare_node.py",
+        "canary.py"
+      ],
+      "topologies": [
+        {
+          "gpus_per_node": 2,
+          "num_infer_gpus": 1,
+          "num_train_gpus": 1
+        },
+        {
+          "gpus_per_node": 4,
+          "num_infer_gpus": 2,
+          "num_train_gpus": 2
+        },
+        {
+          "gpus_per_node": 8,
+          "num_infer_gpus": 4,
+          "num_train_gpus": 4
+        }
+      ],
+      "training_started": false
+    },
+    "brush_root": "painter/rl_helpers",
+    "canary_scope": {
+      "gpu_or_cuda": false,
+      "judge": false,
+      "model": false,
+      "network": false,
+      "orchestrator_setup_called": false,
+      "scope": "pinned Prime config, trainer dependency imports, import hook, console scripts, and one bounded real renderer probe",
+      "status": "prepared_not_run"
+    },
     "files": {
       "bootstrap": {
         "path": "bootstrap.py",
@@ -186,9 +230,30 @@
         "path": "bootstrap.sh",
         "sha256": "37f7d4d151029a6586dc317a4e40420108f7ac33943abb89856c900f687f1b18"
       },
+      "canary": {
+        "path": "canary.py",
+        "sha256": "f338a467f7da486a048a3b0ef4bc0184d0efc086f539e5a9b4a195c67d68ef7a"
+      },
+      "launch": {
+        "path": "launch.sh",
+        "sha256": "5da9f6a44592ef07dc91e05edc3554200eb57fc8c0bc3f5ee21baf74b43f79e6"
+      },
+      "launch_guard": {
+        "path": "launch_guard.py",
+        "sha256": "d9ad5329434d8dbda0d23a030dd303f19aab11cd1a2648e461837eab9113d408"
+      },
+      "launch_prepared": {
+        "path": "launch_prepared.py",
+        "sha256": "0063bd7a3145837cc4faf82fbdb6b1811f4a2cf8f1d5e6bce01d66a32e65e08b"
+      },
       "materializer": {
         "path": "materialize.py",
         "sha256": "0f8e225ba1bc35592ecc9821b3ad3906b21e6ee685d384b9c8ef438f8484d5a8"
+      },
+      "photo_runner": {
+        "path": "../photo-curriculum-rl-20260922/run_from_sft.py",
+        "sha256": "fa5ff58e23ba32d7f8236ee1359d9af9732c54cbfa114251c6d9ae964463c7d1",
+        "status": "reviewed_external_wrapper"
       },
       "prepare_config": {
         "path": "prepare_config.py",
@@ -198,21 +263,9 @@
         "path": "prepare_node.py",
         "sha256": "69eb796ca01b80dcb28c8ce96c0e7b14390d234fb4a13351655e7242ab0eb657"
       },
-      "canary": {
-        "path": "canary.py",
-        "sha256": "f338a467f7da486a048a3b0ef4bc0184d0efc086f539e5a9b4a195c67d68ef7a"
-      },
-      "launch": {
-        "path": "launch.sh",
-        "sha256": "e2af53ec1a4d764c16ec909ed49de57c8bf2a93145f338aef005e2a8542b8f21"
-      },
-      "launch_guard": {
-        "path": "launch_guard.py",
-        "sha256": "f94064885624580fba6f663bfe9aad88cabe531048c88af3f15e7b66ecb769a7"
-      },
-      "launch_prepared": {
-        "path": "launch_prepared.py",
-        "sha256": "8b8883d8ea959f1d1c866bfcd9a0dae76256ee4d2ba2d97189e94889870809d2"
+      "prime_tail_purge": {
+        "path": "prime_tail_purge.py",
+        "sha256": "0535199e4d6076a939122d8ad0c4c7a67e8d00dedd26acec35a71083094f5bfb"
       },
       "real_backward_canary": {
         "path": "real_backward_canary.py",
@@ -224,15 +277,7 @@
       },
       "run_from_sft": {
         "path": "run_from_sft.py",
-        "sha256": "3f6e1fe038c5f5154f5250bb42957c58e13649f934417bdc27f1a2fa546684b4"
-      },
-      "staged_trainer": {
-        "path": "train_from_sft.py",
-        "sha256": "7fa2a7498e3c23ad28eed31e18231d380d5b3ec87e415579c094693a14a0f40d"
-      },
-      "staged_init_adapter": {
-        "path": "prime_runtime/integrations/prime/watercolour_sft/init_adapter.py",
-        "sha256": "b719dba8c37800d203490ce6754cf9b4cb70fb2b91da7e6ee61c6dbc07921ee4"
+        "sha256": "cae718729596291f8284db5cd10d4a4eeb092cb53398adbe43728b5973bfdac7"
       },
       "runtime_binding": {
         "path": "runtime_binding.py",
@@ -242,74 +287,29 @@
         "path": "sitecustomize.py",
         "sha256": "9b112091ec291bf0cfb29596983287a909518d76452cbf2383584fa00906d02a"
       },
-      "prime_tail_purge": {
-        "path": "prime_tail_purge.py",
-        "sha256": "0535199e4d6076a939122d8ad0c4c7a67e8d00dedd26acec35a71083094f5bfb"
+      "staged_init_adapter": {
+        "path": "prime_runtime/integrations/prime/watercolour_sft/init_adapter.py",
+        "sha256": "b719dba8c37800d203490ce6754cf9b4cb70fb2b91da7e6ee61c6dbc07921ee4"
       },
-      "photo_runner": {
-        "path": "../photo-curriculum-rl-20260922/run_from_sft.py",
-        "sha256": "fa5ff58e23ba32d7f8236ee1359d9af9732c54cbfa114251c6d9ae964463c7d1",
-        "status": "reviewed_external_wrapper"
+      "staged_trainer": {
+        "path": "train_from_sft.py",
+        "sha256": "7fa2a7498e3c23ad28eed31e18231d380d5b3ec87e415579c094693a14a0f40d"
       }
     },
-    "bootstrap_scope": {
-      "status": "prepared_not_run",
-      "receipt_status": "ready_no_launch",
-      "public_pinned_downloads": "prepared_only_not_executed_in_this_preparation",
-      "topologies": [
-        {
-          "gpus_per_node": 2,
-          "num_train_gpus": 1,
-          "num_infer_gpus": 1
-        },
-        {
-          "gpus_per_node": 4,
-          "num_train_gpus": 2,
-          "num_infer_gpus": 2
-        },
-        {
-          "gpus_per_node": 8,
-          "num_train_gpus": 4,
-          "num_infer_gpus": 4
-        }
-      ],
-      "renderer_sandbox_helper": "reviewed prepare_renderer_runtime.py/patch_brush_centroid.py with a root-to-runuser painter boundary",
-      "steps": [
-        "public pinned Prime/model/adapter inputs",
-        "reviewed renderer sandbox helper",
-        "materialize.py",
-        "prepare_config.py",
-        "prepare_node.py",
-        "canary.py"
-      ],
-      "launch_called": false,
-      "training_started": false,
-      "model_generation": false,
-      "judge_calls": false,
-      "network_or_hardware_used": false
-    },
-    "canary_scope": {
-      "status": "prepared_not_run",
-      "scope": "pinned Prime config, trainer dependency imports, import hook, console scripts, and one bounded real renderer probe",
-      "orchestrator_setup_called": false,
-      "gpu_or_cuda": false,
-      "network": false,
-      "model": false,
-      "judge": false
-    },
     "launch_scope": {
-      "status": "prepared_guarded_foreground_not_run",
       "background_processes_started_by_shell": false,
       "bounded_timeout": true,
+      "gateway_contents_read_or_logged": false,
       "gpu_model_judge_execution": "deferred_until_explicit_launch",
       "receipt_derived_launcher": "launch_prepared.py",
       "requires_explicit_timeout_seconds": true,
       "requires_owner_only_gateway_mode": "0600",
-      "gateway_contents_read_or_logged": false,
-      "scheduling": false
+      "scheduling": false,
+      "status": "prepared_guarded_foreground_not_run"
     },
     "no_gpu_or_external_calls": true,
-    "brush_root": "painter/rl_helpers"
+    "schema": "staged-family-balanced-run-surface-v1",
+    "status": "prepared_offline_not_run"
   },
   "trainer_world_size_contract": {
     "expected_world_size": 4,

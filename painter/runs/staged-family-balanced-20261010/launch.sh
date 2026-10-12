@@ -20,8 +20,6 @@ PYTHON="${PAINTER_PRIME_PYTHON:-$PRIME_ROOT/.venv/bin/python}"
 PRIME_BIN="$PRIME_ROOT/.venv/bin"
 RUN_WRAPPER="${PAINTER_PRIME_RUN_WRAPPER:-$RUN_SOURCE_ROOT/run_from_sft.py}"
 TRAIN_WRAPPER="${PAINTER_PRIME_TRAIN_WRAPPER:-$RUN_SOURCE_ROOT/train_from_sft.py}"
-EXPECTED_TRAIN_WRAPPER_ROOT="$RUN_SOURCE_ROOT"
-TRAIN_WRAPPER_ROOT="$(cd "$(dirname "$TRAIN_WRAPPER")" && pwd -P)"
 MODEL_DIR="${MODEL_DIR:?set MODEL_DIR to the local base snapshot}"
 POLICY_ADAPTER="${WATERCOLOUR_INIT_ADAPTER:?set WATERCOLOUR_INIT_ADAPTER to the verified Flash12 adapter}"
 FROZEN_ADAPTER="${PAINTER_FROZEN_SFT_ADAPTER:?set PAINTER_FROZEN_SFT_ADAPTER to the verified SFT512 adapter}"
@@ -55,8 +53,12 @@ export PATH="$PRIME_BIN${PATH:+:$PATH}"
 [[ -f "$NODE_ROOT/native.toml" && -f "$NODE_ROOT/prepare-receipt.json" && -f "$NODE_ROOT/canary-receipt.json" ]] || { echo 'preparation and canary receipts are required' >&2; exit 1; }
 [[ -f "$MATERIALIZED_ROOT/train-manifest.json" && -f "$MATERIALIZED_ROOT/heldout-manifest.json" ]] || { echo 'materialized manifests are missing' >&2; exit 1; }
 [[ -f "$RUN_WRAPPER" && -f "$TRAIN_WRAPPER" ]] || { echo 'reviewed Prime wrappers are missing' >&2; exit 1; }
-[[ "$(cd "$(dirname "$RUN_WRAPPER")" && pwd -P)" == "$RUN_SOURCE_ROOT" ]] || { echo 'the staged run wrapper must remain run-owned' >&2; exit 1; }
-[[ "$TRAIN_WRAPPER_ROOT" == "$EXPECTED_TRAIN_WRAPPER_ROOT" ]] || { echo 'the staged trainer wrapper is required' >&2; exit 1; }
+[[ "$(realpath "$RUN_WRAPPER")" == "$RUN_SOURCE_ROOT/run_from_sft.py" ]] || { echo 'the staged run wrapper must remain run-owned' >&2; exit 1; }
+[[ "$(realpath "$TRAIN_WRAPPER")" == "$RUN_SOURCE_ROOT/train_from_sft.py" ]] || { echo 'the staged trainer wrapper is required' >&2; exit 1; }
+# Do not let an inherited operator environment silently substitute the older
+# photo trainer. The run-owned wrappers are the only admissible targets.
+RUN_WRAPPER="$RUN_SOURCE_ROOT/run_from_sft.py"
+TRAIN_WRAPPER="$RUN_SOURCE_ROOT/train_from_sft.py"
 [[ "$(git -C "$PRIME_ROOT" rev-parse HEAD)" == "$PRIME_COMMIT" ]] || { echo "Prime checkout is not pinned to $PRIME_COMMIT" >&2; exit 1; }
 [[ -d "$MODEL_DIR" && "$(basename "$MODEL_DIR")" == "$BASE_MODEL_REVISION" ]] || { echo "MODEL_DIR must end in $BASE_MODEL_REVISION" >&2; exit 1; }
 [[ -f "$POLICY_ADAPTER/adapter_model.safetensors" && -f "$FROZEN_ADAPTER/adapter_model.safetensors" ]] || { echo 'verified adapters are incomplete' >&2; exit 1; }
@@ -261,6 +263,7 @@ PY
 export PAINTER_RL_LIVE_POLICY_ALIAS="$MODEL_DIR" PAINTER_RL_FIXED_OPPONENT=1 PAINTER_NUM_TRAIN_GPUS="$TRAIN_GPUS"
 export PAINTER_RANK_GUARD_DIR="$GUARD_NAMESPACE/rank-guard"
 export PAINTER_DISTRIBUTED_FAILURE_FILE="$GUARD_NAMESPACE/distributed-failure.json"
+export PAINTER_LAUNCH_PHASE_FILE="${PAINTER_LAUNCH_PHASE_FILE:-$GUARD_NAMESPACE/launch-phase.json}"
 export PAINTER_RESOURCE_PREFLIGHT="$NODE_ROOT/prepare-receipt.json"
 export PAINTER_WHOLE_GROUP_ADMISSION=1 PAINTER_WHOLE_GROUP_SIZE=4 PAINTER_GROUP_RANK_MODULE=painter.consistent_group_admission
 export PAINTER_RENDERER_PATH PAINTER_RENDERER_PYTHON_PATH PAINTER_GATEWAY_ENV_FILE="$GATEWAY_ENV_FILE"
@@ -280,6 +283,7 @@ set +e
     --rank-dir "$PAINTER_RANK_GUARD_DIR" \
     --world-size "$TRAIN_GPUS" \
     --timeout-seconds "$TIMEOUT_SECONDS" \
+    --phase-file "$PAINTER_LAUNCH_PHASE_FILE" \
     -- "$PYTHON" "$RUN_WRAPPER" @ "$CONFIG"
 STATUS=$?
 set -e

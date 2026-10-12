@@ -325,6 +325,7 @@ def build_launch_environment(*, verified: dict[str, Any], gateway_env: Path, tim
         "PAINTER_GUARD_NAMESPACE": str(guard_namespace),
         "PAINTER_RANK_GUARD_DIR": str(guard_namespace / "rank-guard"),
         "PAINTER_DISTRIBUTED_FAILURE_FILE": str(guard_namespace / "distributed-failure.json"),
+        "PAINTER_LAUNCH_PHASE_FILE": str(guard_namespace / "launch-phase.json"),
     })
     if real_backward_canary:
         env["PAINTER_RL_CONFIG"] = str(guard_namespace / "native.toml")

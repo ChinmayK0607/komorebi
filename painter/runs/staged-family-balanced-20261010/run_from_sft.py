@@ -12,9 +12,12 @@ from __future__ import annotations
 
 import hashlib
 import importlib.util
+import json
 import os
 from pathlib import Path
 import sys
+import threading
+import time
 
 
 RUN = Path(__file__).resolve().parent
@@ -38,6 +41,82 @@ TRAIN_WRAPPER = RUN / "train_from_sft.py"
 if not TRAIN_WRAPPER.is_file():
     raise RuntimeError(f"staged trainer wrapper is missing: {TRAIN_WRAPPER}")
 ORIGINAL_TRAINER_COMMAND = base.trainer_command
+ORIGINAL_WAIT_AND_LOAD = base._wait_and_load
+ORIGINAL_PREWARM_FROZEN_OPPONENT = base._prewarm_frozen_opponent
+
+
+def _atomic_json(path: Path, value: dict[str, object]) -> None:
+    """Write a small run-owned launch receipt without exposing partial JSON."""
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_name(f".{path.name}.{os.getpid()}.tmp")
+    temporary.write_text(json.dumps(value, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    temporary.replace(path)
+
+
+def _record_launch_phase(phase: str, **details: object) -> None:
+    raw = os.environ.get("PAINTER_LAUNCH_PHASE_FILE")
+    if not raw:
+        return
+    payload: dict[str, object] = {
+        "schema": "staged-family-balanced-launch-phase-v1",
+        "phase": phase,
+        "recorded_at_unix": time.time(),
+    }
+    payload.update(details)
+    try:
+        _atomic_json(Path(raw).expanduser().resolve(), payload)
+    except OSError:
+        # Phase is diagnostic only. Rank/failure receipts remain authoritative
+        # and the supervisor still fails closed when they are unavailable.
+        return
+
+
+def _trainer_guard_paths() -> tuple[Path, Path] | None:
+    rank_dir = os.environ.get("PAINTER_RANK_GUARD_DIR")
+    failure_file = os.environ.get("PAINTER_DISTRIBUTED_FAILURE_FILE")
+    if not rank_dir or not failure_file:
+        return None
+    return Path(rank_dir).expanduser().resolve(), Path(failure_file).expanduser().resolve()
+
+
+def _record_trainer_process_started(command: list[str], process: object) -> tuple[Path, Path] | None:
+    paths = _trainer_guard_paths()
+    if paths is None:
+        return None
+    rank_dir, failure_file = paths
+    _atomic_json(rank_dir / "trainer-process.started.json", {
+        "schema": "staged-family-balanced-trainer-process-start-v1",
+        "pid": int(getattr(process, "pid", 0)),
+        "command": [str(value) for value in command],
+        "wrapper": str(TRAIN_WRAPPER.resolve()),
+        "world_size": int(os.environ.get("PAINTER_NUM_TRAIN_GPUS", "0")),
+        "recorded_at_unix": time.time(),
+    })
+    return paths
+
+
+def _watch_trainer_process(process: object, command: list[str], paths: tuple[Path, Path]) -> None:
+    """Turn a pre-rank torchrun exit into the same prompt failure receipt."""
+
+    rank_dir, failure_file = paths
+    try:
+        status = int(process.wait())  # type: ignore[attr-defined]
+    except (AttributeError, OSError, TypeError, ValueError):
+        return
+    if status == 0 or failure_file.exists():
+        return
+    _atomic_json(failure_file, {
+        "schema": "staged-family-balanced-distributed-failure-v1",
+        "status": "rank_exited",
+        "rank": "trainer-launcher",
+        "pid": int(getattr(process, "pid", 0)),
+        "world_size": os.environ.get("PAINTER_NUM_TRAIN_GPUS"),
+        "reason": f"trainer torchrun exited before rank readiness with exit code {status}",
+        "command": [str(value) for value in command],
+        "process_start_receipt": str(rank_dir / "trainer-process.started.json"),
+        "recorded_at_unix": time.time(),
+    })
 
 
 def _staged_trainer_command(command: list[str], wrapper: Path | None = None) -> list[str]:
@@ -46,10 +125,41 @@ def _staged_trainer_command(command: list[str], wrapper: Path | None = None) -> 
     selected = Path(os.environ.get("PAINTER_PRIME_TRAIN_WRAPPER", str(TRAIN_WRAPPER))).resolve(strict=True)
     if selected != TRAIN_WRAPPER.resolve():
         raise ValueError(f"staged trainer wrapper must remain run-owned: {selected}")
-    return ORIGINAL_TRAINER_COMMAND(command, selected)
+    modified = ORIGINAL_TRAINER_COMMAND(command, selected)
+    if modified == list(command):
+        raise ValueError("Prime trainer command did not contain the pinned prime_rl.trainer.rl.train target")
+    if str(TRAIN_WRAPPER.resolve()) not in [str(value) for value in modified]:
+        raise ValueError("Prime trainer command was not rewritten to the staged trainer wrapper")
+    return modified
 
 
 base.trainer_command = _staged_trainer_command
+
+
+def _staged_wait_and_load(*args, **kwargs):
+    _record_launch_phase("inference_readiness_wait")
+    try:
+        result = ORIGINAL_WAIT_AND_LOAD(*args, **kwargs)
+    except BaseException as exc:
+        _record_launch_phase("inference_readiness_failed", error=f"{type(exc).__name__}: {exc}")
+        raise
+    _record_launch_phase("inference_ready")
+    return result
+
+
+def _staged_prewarm_frozen_opponent(*args, **kwargs):
+    _record_launch_phase("opponent_prewarm_started")
+    try:
+        result = ORIGINAL_PREWARM_FROZEN_OPPONENT(*args, **kwargs)
+    except BaseException as exc:
+        _record_launch_phase("opponent_prewarm_failed", error=f"{type(exc).__name__}: {exc}")
+        raise
+    _record_launch_phase("opponent_prewarm_ready")
+    return result
+
+
+base._wait_and_load = _staged_wait_and_load
+base._prewarm_frozen_opponent = _staged_prewarm_frozen_opponent
 
 
 POLICY_SHA256 = "c70c47ec0d6d7172b3bc25c4f54178919cf7c079cd9652fff3bc76db9e1eca79"
@@ -164,7 +274,39 @@ base._cache_env = _staged_cache_env
 
 
 def main() -> None:
-    base.main()
+    # The reviewed photo runner owns the local ``Popen`` closure.  Wrap the
+    # entrypoint's Popen before entering it so the staged trainer command gets
+    # a process-level receipt even when torchrun dies before importing the
+    # rank wrapper (rank-started JSON remains the separate readiness signal).
+    import prime_rl.entrypoints.rl as entrypoint
+
+    original_popen = entrypoint.Popen
+
+    def watched_popen(command, *args, **kwargs):
+        process = original_popen(command, *args, **kwargs)
+        values = [str(value) for value in command]
+        if str(TRAIN_WRAPPER.resolve()) in values:
+            _record_launch_phase("trainer_process_started", pid=int(getattr(process, "pid", 0)))
+            paths = _record_trainer_process_started(values, process)
+            if paths is not None:
+                threading.Thread(
+                    target=_watch_trainer_process,
+                    args=(process, values, paths),
+                    name="painter-trainer-process-watch",
+                    daemon=True,
+                ).start()
+        elif values and Path(values[0]).name == "inference":
+            _record_launch_phase("inference_process_started", pid=int(getattr(process, "pid", 0)))
+        elif values and Path(values[0]).name == "orchestrator":
+            _record_launch_phase("orchestrator_process_started", pid=int(getattr(process, "pid", 0)))
+        return process
+
+    entrypoint.Popen = watched_popen
+    try:
+        _record_launch_phase("run_started", pid=os.getpid())
+        base.main()
+    finally:
+        entrypoint.Popen = original_popen
 
 
 if __name__ == "__main__":

@@ -273,6 +273,14 @@ class LaunchHandoffTests(unittest.TestCase):
         self.assertIn("validate_trainer_world_size", TRAIN_WRAPPER_SOURCE)
         self.assertIn('expected_world != 4', TRAIN_WRAPPER_SOURCE)
 
+    def test_prime_trainer_target_is_rewritten_to_run_owned_wrapper(self) -> None:
+        command = ["torchrun", "--nproc-per-node=4", "-m", "prime_rl.trainer.rl.train", "@", "trainer.json"]
+        with patch.dict(os.environ, {"PAINTER_PRIME_TRAIN_WRAPPER": str(RUN / "train_from_sft.py")}, clear=False):
+            rewritten = WRAPPER._staged_trainer_command(command)
+        self.assertIn(str((RUN / "train_from_sft.py").resolve()), rewritten)
+        with self.assertRaisesRegex(ValueError, "did not contain"):
+            WRAPPER._staged_trainer_command(["torchrun", "some-other-entrypoint.py"])
+
     def test_staged_wrapper_accepts_trusted_snapshot_links_but_rejects_escape(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -645,6 +653,9 @@ class LaunchHandoffTests(unittest.TestCase):
     def test_launcher_is_foreground_bounded_and_wires_both_adapters(self) -> None:
         self.assertIn('RUN_WRAPPER="${PAINTER_PRIME_RUN_WRAPPER:-$RUN_SOURCE_ROOT/run_from_sft.py}"', LAUNCH_SOURCE)
         self.assertIn('TRAIN_WRAPPER="${PAINTER_PRIME_TRAIN_WRAPPER:-$RUN_SOURCE_ROOT/train_from_sft.py}"', LAUNCH_SOURCE)
+        self.assertIn('$(realpath "$TRAIN_WRAPPER")" == "$RUN_SOURCE_ROOT/train_from_sft.py"', LAUNCH_SOURCE)
+        self.assertIn('PAINTER_LAUNCH_PHASE_FILE', LAUNCH_SOURCE)
+        self.assertIn('--phase-file "$PAINTER_LAUNCH_PHASE_FILE"', LAUNCH_SOURCE)
         self.assertIn('"$PYTHON" "$RUN_SOURCE_ROOT/launch_guard.py"', LAUNCH_SOURCE)
         self.assertIn('--failure-file "$PAINTER_DISTRIBUTED_FAILURE_FILE"', LAUNCH_SOURCE)
         self.assertIn('--timeout-seconds "$TIMEOUT_SECONDS"', LAUNCH_SOURCE)
@@ -702,18 +713,7 @@ export PATH="$PRIME_BIN${{PATH:+:$PATH}}"
             self.assertEqual(completed.returncode, 0, completed.stderr)
 
     def test_launcher_requires_staged_trainer_root_before_comparison(self) -> None:
-        self.assertIn(
-            'EXPECTED_TRAIN_WRAPPER_ROOT="$RUN_SOURCE_ROOT"',
-            LAUNCH_SOURCE,
-        )
-        self.assertIn(
-            'TRAIN_WRAPPER_ROOT="$(cd "$(dirname "$TRAIN_WRAPPER")" && pwd -P)"',
-            LAUNCH_SOURCE,
-        )
-        self.assertIn(
-            '[[ "$TRAIN_WRAPPER_ROOT" == "$EXPECTED_TRAIN_WRAPPER_ROOT" ]]',
-            LAUNCH_SOURCE,
-        )
+        self.assertIn('[[ "$(realpath "$TRAIN_WRAPPER")" == "$RUN_SOURCE_ROOT/train_from_sft.py" ]]', LAUNCH_SOURCE)
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             run_root = root / "staged-family-balanced-20261010"
@@ -723,9 +723,7 @@ export PATH="$PRIME_BIN${{PATH:+:$PATH}}"
 set -Eeuo pipefail
 RUN_SOURCE_ROOT="$(cd "{run_root}" && pwd -P)"
 TRAIN_WRAPPER="$RUN_SOURCE_ROOT/train_from_sft.py"
-EXPECTED_TRAIN_WRAPPER_ROOT="$RUN_SOURCE_ROOT"
-TRAIN_WRAPPER_ROOT="$(cd "$(dirname "$TRAIN_WRAPPER")" && pwd -P)"
-[[ "$TRAIN_WRAPPER_ROOT" == "$EXPECTED_TRAIN_WRAPPER_ROOT" ]]
+[[ "$(realpath "$TRAIN_WRAPPER")" == "$RUN_SOURCE_ROOT/train_from_sft.py" ]]
 '''
             completed = subprocess.run(["bash", "-c", shell], capture_output=True, text=True, check=False)
             self.assertEqual(completed.returncode, 0, completed.stderr)
