@@ -684,6 +684,15 @@ class LaunchHandoffTests(unittest.TestCase):
         self.assertIn('export BRUSH_MODEL_PROFILE=qwen38_27b', LAUNCH_SOURCE)
         self.assertIn('integrations/prime/watercolour_sft/model_profiles.py', LAUNCH_SOURCE)
         self.assertIn('integrations/prime/watercolour_sft/model_profiles.py', LAUNCH_SOURCE)
+        self.assertIn('HF_CHECKPOINT_REPO and unique HF_CHECKPOINT_RUN are required before launch', LAUNCH_SOURCE)
+        self.assertIn('ADAPTER_ONLY_CHECKPOINTS=1 is required for public portable checkpoints', LAUNCH_SOURCE)
+        self.assertIn('owner-only Hugging Face token file is required before launch', LAUNCH_SOURCE)
+        self.assertIn('chmod 0711 "$NODE_ROOT"', LAUNCH_SOURCE)
+        self.assertIn('runuser -u painter -- test -r "$ACCESS_PROBE/program.js"', LAUNCH_SOURCE)
+        self.assertLess(
+            LAUNCH_SOURCE.index('runuser -u painter -- test -r "$ACCESS_PROBE/program.js"'),
+            LAUNCH_SOURCE.index('"$PYTHON" "$RUN_SOURCE_ROOT/launch_guard.py"'),
+        )
 
     def test_launcher_prime_path_precedes_sanitized_ambient_path(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

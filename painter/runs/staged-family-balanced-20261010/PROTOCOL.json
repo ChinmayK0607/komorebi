@@ -71,11 +71,11 @@
   },
   "config": {
     "path": "config.json",
-    "sha256": "2ad1170337157f8fdb77b283d9f39f5f78941aa124f354e87fda91d9e9cbbb66"
+    "sha256": "c44c699511b867623560c649cf2fffac4cce368c659cae0f2eacb29469eadd5f"
   },
   "receipt": {
     "path": "receipt.json",
-    "sha256": "f9f8f160bab4220a22fd46e68ca133b9b687ba5a3b608ffb5d9784f1ff64821c"
+    "sha256": "adc41590de58d5b0231b2b5ad0ef6aacc956e3ce12901170246dfc56eb4f5ef2"
   },
   "tail_purge_hook": {
     "path": "prime_tail_purge.py",
@@ -205,7 +205,7 @@
       },
       "launch": {
         "path": "launch.sh",
-        "sha256": "5da9f6a44592ef07dc91e05edc3554200eb57fc8c0bc3f5ee21baf74b43f79e6"
+        "sha256": "ac8919ee7d9300904eae7a46c75ed27e69fd4d75b8fbc916a1b3e8d83db2377c"
       },
       "launch_guard": {
         "path": "launch_guard.py",

@@ -66,6 +66,11 @@ TRAIN_WRAPPER="$RUN_SOURCE_ROOT/train_from_sft.py"
 [[ -f "$RENDERER_PATH" && -x "$RENDERER_PYTHON_PATH" ]] || { echo 'verified renderer paths are missing' >&2; exit 1; }
 [[ -d "$RENDERER_ROOT" && ! -L "$RENDERER_ROOT" ]] || { echo 'verified renderer root is missing or symlinked' >&2; exit 1; }
 [[ -f "$GATEWAY_ENV_FILE" && ! -L "$GATEWAY_ENV_FILE" && "$(stat -c %a "$GATEWAY_ENV_FILE")" == 600 ]] || { echo 'judge credential file must be owner-only mode 600' >&2; exit 1; }
+[[ -n "${HF_CHECKPOINT_REPO:-}" && -n "${HF_CHECKPOINT_RUN:-}" ]] || { echo 'HF_CHECKPOINT_REPO and unique HF_CHECKPOINT_RUN are required before launch' >&2; exit 1; }
+[[ "$HF_CHECKPOINT_RUN" =~ ^[A-Za-z0-9._-]+$ ]] || { echo 'HF_CHECKPOINT_RUN must be a safe single path component' >&2; exit 1; }
+[[ "${ADAPTER_ONLY_CHECKPOINTS:-}" == 1 ]] || { echo 'ADAPTER_ONLY_CHECKPOINTS=1 is required for public portable checkpoints' >&2; exit 1; }
+HF_TOKEN_FILE="${HF_HOME:-$HOME/.cache/huggingface}/token"
+[[ -f "$HF_TOKEN_FILE" && ! -L "$HF_TOKEN_FILE" && "$(stat -c %a "$HF_TOKEN_FILE")" == 600 ]] || { echo 'owner-only Hugging Face token file is required before launch' >&2; exit 1; }
 [[ "$TIMEOUT_SECONDS" =~ ^[1-9][0-9]*$ && "$TIMEOUT_SECONDS" -le 604800 ]] || { echo 'PAINTER_RUN_TIMEOUT_SECONDS must be 1..604800' >&2; exit 2; }
 GUARD_NAMESPACE="${PAINTER_GUARD_NAMESPACE:-}"
 GUARD_PARENT="$NODE_ROOT/launch-guards"
@@ -93,6 +98,19 @@ CONFIG="$NODE_ROOT/native.toml"
 export PYTHONPATH="$RUN_SOURCE_ROOT:$REPO_ROOT:$REPO_ROOT/painter:$(dirname "$RUN_WRAPPER")${PYTHONPATH:+:$PYTHONPATH}"
 if [[ "$CANARY_MODE" == "real_backward" ]]; then
     mkdir -p "$GUARD_NAMESPACE"
+    # Prime writes rollout artifacts as root, while the renderer intentionally
+    # crosses into the unprivileged painter account. Keep file contents private
+    # by default but expose directory traversal to the exact run-owned paths.
+    chmod 0711 "$NODE_ROOT"
+    chmod 0755 "$GUARD_PARENT" "$GUARD_NAMESPACE"
+    ACCESS_PROBE="$GUARD_NAMESPACE/.painter-access-probe/episode/turn-1"
+    mkdir -p "$ACCESS_PROBE"
+    chmod 0755 "$GUARD_NAMESPACE/.painter-access-probe" "$GUARD_NAMESPACE/.painter-access-probe/episode"
+    chmod 0777 "$ACCESS_PROBE"
+    printf '%s\n' 'function setup(){createCanvas(8,8);noLoop();}' > "$ACCESS_PROBE/program.js"
+    chmod 0644 "$ACCESS_PROBE/program.js"
+    runuser -u painter -- test -r "$ACCESS_PROBE/program.js" || { echo 'painter cannot traverse/read generated rollout paths' >&2; exit 1; }
+    rm -rf "$GUARD_NAMESPACE/.painter-access-probe"
     CONFIG="$GUARD_NAMESPACE/native.toml"
     "$PYTHON" - "$NODE_ROOT/native.toml" "$CONFIG" "$ARTIFACT_ROOT" <<'PY'
 import sys
