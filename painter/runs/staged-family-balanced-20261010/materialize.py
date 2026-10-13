@@ -255,6 +255,31 @@ def _resolve_asset(root: Path, raw: Any, expected_sha256: str, description: str)
     return matches[0]
 
 
+def _resolve_expected_asset(root: Path, raw: Any, expected: Path, description: str) -> Path:
+    """Resolve a historical asset label to one already hash-verified path.
+
+    This preserves the legacy absolute-path remapping accepted by
+    ``_resolve_asset`` without hashing the same shared artifact for every row.
+    """
+
+    if not isinstance(raw, str) or not raw:
+        raise MaterializationError(f"{description} path is missing")
+    expected = expected.resolve(strict=True)
+    for candidate in _candidate_paths(root, raw):
+        try:
+            resolved = _assert_below(root, candidate, description)
+        except MaterializationError as exc:
+            if candidate.absolute() == candidate and candidate.exists() and candidate.is_symlink():
+                raise
+            if "escapes" in str(exc) or "traversal" in str(exc) or "uses a symlink" in str(exc):
+                if candidate.exists() or candidate.is_symlink():
+                    raise
+            continue
+        if resolved == expected:
+            return expected
+    raise MaterializationError(f"{description} does not resolve to the verified shared asset")
+
+
 def _copy_verified(source: Path, destination: Path, expected_sha256: str, description: str) -> str:
     expected = _require_sha(expected_sha256, f"{description} expected hash")
     destination.parent.mkdir(parents=True, exist_ok=True)
@@ -433,12 +458,20 @@ def _materialize_into(
         raise MaterializationError("train and heldout provenance paths differ")
     provenance_hash = _require_sha(train_frozen.get("provenance_sha256"), "provenance hash")
     provenance_source = _resolve_asset(asset_root, provenance_raw, provenance_hash, "anchor provenance")
+    resolved_provenance_labels: dict[str, Path] = {}
     for row in ordered_rows:
-        # The shared provenance artifact is already path-bound and
-        # hash-verified above. Re-resolving it for every row repeatedly hashed
-        # the same large file (128 times in the production curriculum). Require
-        # the exact manifest path instead, then validate the artifact once.
-        if row.get("anchor_provenance_file") != provenance_raw:
+        # The shared artifact is hash-verified above. Resolve each distinct
+        # historical label once, then reuse the identity result for every row.
+        raw = row.get("anchor_provenance_file")
+        if not isinstance(raw, str) or not raw:
+            raise MaterializationError(f"anchor provenance file differs for {row['id']}")
+        row_provenance = resolved_provenance_labels.get(raw)
+        if row_provenance is None:
+            row_provenance = _resolve_expected_asset(
+                asset_root, raw, provenance_source, f"anchor provenance for {row['id']}"
+            )
+            resolved_provenance_labels[raw] = row_provenance
+        if row_provenance != provenance_source:
             raise MaterializationError(f"anchor provenance file differs for {row['id']}")
     provenance = _read_json(provenance_source, "anchor provenance")
     _validate_provenance(provenance, ordered_rows, prior_run_id, checkpoint)

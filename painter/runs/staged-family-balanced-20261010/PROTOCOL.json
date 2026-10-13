@@ -71,7 +71,7 @@
   },
   "config": {
     "path": "config.json",
-    "sha256": "a364b47e95dc1d9b82c21e1f01feb00594dd65692ea100d1fff989b936d04305"
+    "sha256": "15607ace2d7434c86b534ba4e09f87562ad7789b09cc0cf0fe0f76fb44b65454"
   },
   "receipt": {
     "path": "receipt.json",
@@ -189,7 +189,7 @@
       },
       "materializer": {
         "path": "materialize.py",
-        "sha256": "77192218825f0da6d1e8cff7a10c6cb8882fe9592de8b3740f9a8bcb87b14625"
+        "sha256": "158872fd2a85f074ecdc1aaf2e468f70910060b69d1984454fc2c3aaa34d7dc6"
       },
       "prepare_config": {
         "path": "prepare_config.py",
