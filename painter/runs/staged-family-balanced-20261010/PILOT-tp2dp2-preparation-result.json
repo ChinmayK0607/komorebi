@@ -1,0 +1,57 @@
+{
+  "schema": "staged-family-balanced-pilot-preparation-result-v1",
+  "run_id": "staged-family-balanced-20261010",
+  "status": "expired_after_ready_no_launch",
+  "date_utc": "2026-10-13",
+  "source": {
+    "bounded_pilot_commit": "ca27737fa5d29a19000f0ac2e06ff16164f84bc5",
+    "materializer_repair_commit": "aab4222e8796fb68e1846a4376014688982bfacd"
+  },
+  "hypothesis": "Two TP2 inference replicas should reduce rollout collection time while retaining the proven four-rank trainer.",
+  "matched_baseline": "Flash12 initializer and the immutable staged-family-balanced curriculum, judge, renderer, optimizer, batch and group contracts",
+  "topology": {
+    "hardware": "8xA100-80G",
+    "inference": "2 replicas x TP2",
+    "trainer": "FSDP4",
+    "requested_updates": 4,
+    "checkpoint_interval": 1
+  },
+  "preparation": {
+    "bootstrap_status": "ready_no_launch",
+    "model_verified": true,
+    "policy_adapter_verified": true,
+    "frozen_sft_adapter_verified": true,
+    "prime_revision_verified": true,
+    "renderer_canary": "passed_import_hook_and_renderer",
+    "train_rows_materialized": 96,
+    "heldout_rows_materialized": 32,
+    "materializer_failure": "archived rows used a historical absolute provenance label while the optimization required literal equality",
+    "materializer_repair": "cache each distinct label after resolving it to the once-hash-verified shared provenance file"
+  },
+  "training": {
+    "model_generation_calls": 0,
+    "judge_calls": 0,
+    "optimizer_updates": 0,
+    "checkpoints": 0,
+    "visual_evaluation": "not_run"
+  },
+  "termination": {
+    "reason": "provider TTL expired while explicit Vercel credential-transfer authorization was pending",
+    "ttl_minutes": 85,
+    "active_pods_afterward": 0
+  },
+  "cost": {
+    "listed_whole_node_usd_per_hour": 13.44,
+    "ttl_upper_bound_usd": 19.04,
+    "last_observed_subtotal_usd": 2.33,
+    "last_observed_subtotal_uptime_minutes": 10,
+    "post_expiry_account_balance_usd": 4.243067454238615,
+    "final_charge": "unavailable",
+    "invoice_status": "provider observations only"
+  },
+  "utilization": {
+    "reported": false,
+    "reason": "the attempt never entered policy inference or training"
+  },
+  "decision": "Do not allocate an underfunded or unsupported topology. Fund a suitable 4+4 node and attach a persistent prepared cache before relaunch."
+}
