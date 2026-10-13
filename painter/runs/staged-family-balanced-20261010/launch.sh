@@ -114,17 +114,11 @@ if [[ "$CANARY_MODE" == "real_backward" ]]; then
     CONFIG="$GUARD_NAMESPACE/native.toml"
     "$PYTHON" - "$NODE_ROOT/native.toml" "$CONFIG" "$ARTIFACT_ROOT" <<'PY'
 import sys
-import tomllib
 from pathlib import Path
-from prepare_config import render_toml
+from launch_prepared import materialize_real_backward_canary_config
 
 source, target, artifact_root = map(Path, sys.argv[1:])
-config = tomllib.loads(source.read_text(encoding="utf-8"))
-config["output_dir"] = str((artifact_root / "async-output").resolve())
-taskset = config["orchestrator"]["train"]["source"][0]["env"]["taskset"]
-taskset["output_root"] = str((artifact_root / "rl-rollouts").resolve())
-target.parent.mkdir(parents=True, exist_ok=True)
-target.write_text(render_toml(config), encoding="utf-8")
+materialize_real_backward_canary_config(source, target, artifact_root)
 PY
 fi
 if [[ "$CANARY_MODE" == "real_backward" ]]; then

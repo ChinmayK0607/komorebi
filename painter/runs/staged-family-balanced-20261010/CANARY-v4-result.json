@@ -1,0 +1,108 @@
+{
+  "schema": "staged-family-balanced-canary-result-v4",
+  "status": "optimizer_checkpoint_canary_passed_with_shutdown_false_positive",
+  "date": "2026-10-13",
+  "hypothesis": "A 4-inference/4-trainer A100-80G topology can complete one grouped RL optimizer update from Flash12, preserve both native DCP and a public portable LoRA, and expose the actual steady-state bottleneck before a larger run.",
+  "matched_baseline": {
+    "policy_repo": "CK0607/qwen3.8-27b-brush-painting",
+    "revision": "1227a2427a8ae16014d2fdca4d1adb6855d3fa1c",
+    "prefix": "rl-judge-matched-20261004-flash/step_12",
+    "weights_sha256": "c70c47ec0d6d7172b3bc25c4f54178919cf7c079cd9652fff3bc76db9e1eca79"
+  },
+  "immutable_inputs": {
+    "source_commit": "c3e652c",
+    "source_config_sha256": "c44c699511b867623560c649cf2fffac4cce368c659cae0f2eacb29469eadd5f",
+    "resolved_native_config_sha256": "2514f29849f562cce93c1a1d7d25f5468c27a9a9f59ce6971a843f5ebedcbeeb",
+    "curriculum_manifest_sha256": "38ccfb8390730d311134b7fdddf4e4c89cd9605563d29d069e55f6b59818ea7b",
+    "base_model": "Qwen/Qwen3.8-27B",
+    "base_revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+    "prime_revision": "26b3131d2716a4f8210b165df584b83b4bc54f61",
+    "judge_model": "xiaomi/mimo-v2.6-flash",
+    "judge_effort": "medium",
+    "trainer_world_size": 4,
+    "inference_tensor_parallel": 4,
+    "inference_data_parallel": 1
+  },
+  "training": {
+    "optimizer_updates": 1,
+    "batch_size": 24,
+    "group_size": 4,
+    "reward": 0.2431,
+    "loss": 0.002,
+    "entropy": 0.582,
+    "mismatch_kl": 0.0003,
+    "gradient_norm": 0.0126,
+    "learning_rate": 0.000001,
+    "trainer_tokens_per_second": 1082,
+    "reported_mfu_percent": 19.1,
+    "peak_trainer_memory_gib": 57.3,
+    "trainable_traces": 24,
+    "observed_episodes": 52,
+    "discarded_episodes": 28,
+    "errored_episodes": 4,
+    "no_signal_episodes": 24,
+    "mean_turns": 3.0,
+    "max_off_policy_steps": 0
+  },
+  "timing": {
+    "inference_cold_start_seconds": 515,
+    "batch_collection_and_judging_seconds": 856,
+    "batch_ready_to_optimizer_update_seconds": 365,
+    "checkpoint_export_and_upload_seconds": 103,
+    "trainer_canary_elapsed_seconds": 1452.663
+  },
+  "utilization": {
+    "trainer_reported_mfu_percent": 19.1,
+    "live_snapshots": {
+      "inference_during_generation_percent_per_gpu": [100, 100, 100, 100],
+      "trainer_during_backward_percent_range": [42, 97]
+    },
+    "limitation": "The GPU values are live snapshots, not a sampled run-level average. The trainer MFU uses Prime's full step window, whose denominator includes rollout/judge waiting. No interval GPU telemetry was preserved for this canary."
+  },
+  "cost": {
+    "whole_node_usd_per_hour": 13.44,
+    "canary_receipt_usd": 5.42327682290241,
+    "final_observed_node_total_usd": 17.56,
+    "note": "The node total includes bootstrap plus two failed launch attempts on the same rental; it is a provider observation, not an invoice."
+  },
+  "checkpoint": {
+    "native_dcp_produced": true,
+    "native_dcp_rank_files": 4,
+    "native_dcp_durable_after_node_release": false,
+    "portable_public": true,
+    "repo": "CK0607/qwen3.8-27b-brush-painting",
+    "revision": "e32967afe6f03e071f88fe4ea4cc1a7c68f33628",
+    "prefix": "staged-family-balanced-20261013-v4-canary/step_1",
+    "adapter_sha256": "871623a07696ec443cb289b4781c86f3decc35a11273f9e06cb69a1dda1cfbe3",
+    "adapter_bytes": 233590600,
+    "verified": true,
+    "private": false
+  },
+  "evidence": {
+    "local_audit_archive_sha256": "737c88434473057c2427a92e08fccbb5a7d3cf298bfa4559008b0b2454b228e9",
+    "public_rollout_archive_sha256": "cb7416b80e90e9a3b9a1e553f290cabdd039813c029be60cfa3470422f3c8fec",
+    "public_rollout_commit": "c1fe52dbef62e0ae533af0458f9ba848a37f695e",
+    "public_checksum_commit": "c35a43567f045ee7b46aa79e03a8b72529d1c453",
+    "public_audit_commit": "5f0d00853c5d897be195245c9b607ea02c064f9e",
+    "raw_rollout_file_count": 607
+  },
+  "failures_and_censored_cases": {
+    "judge_or_pipeline_exclusions": "28/52 episodes were discarded: four errored and 24 no-signal traces; no stale traces were trained.",
+    "normal_shutdown_false_positive": "The success receipt and upload completed, then the heartbeat supervisor labeled normally exited peer ranks stale while rank 0 finalized. This produced exit 70 despite a passed canary receipt.",
+    "post_final_dispatch": "Only the trainer config was shortened to one step; the orchestrator retained max_steps=20 and dispatched one unnecessary policy-v1 wave during checkpoint finalization.",
+    "fsdp_warning": "PyTorch warned that FSDP-wrapped modules returned views; no in-place-op failure was observed and gradients were finite, but this warning remains a correctness item for later source-level validation."
+  },
+  "decision": {
+    "result": "Infrastructure canary passed; no visual improvement claim.",
+    "changes_before_next_run": [
+      "Write explicit per-rank normal-completion markers so peer checkpoint upload cannot trigger a stale-heartbeat failure.",
+      "Set trainer and orchestrator canary horizons together to prevent post-final rollout generation.",
+      "Use two TP2 inference replicas on the same four A100 inference GPUs; TP5 is incompatible with the model head counts and a three-rank trainer is less safe than the proven FSDP4 trainer.",
+      "Keep the four-rank trainer and validate the DP2/TP2 config through pinned Prime before allocation.",
+      "Treat rollout/judge collection and the 53.8% discard fraction as the dominant throughput/credit-assignment targets."
+    ]
+  },
+  "node_released": true,
+  "active_pods_after_release": 0,
+  "scheduled_automation_created": false
+}

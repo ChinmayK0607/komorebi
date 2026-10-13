@@ -71,7 +71,7 @@
   },
   "config": {
     "path": "config.json",
-    "sha256": "c44c699511b867623560c649cf2fffac4cce368c659cae0f2eacb29469eadd5f"
+    "sha256": "3ddeb47db027f3f997b4a7d74a455bc499791f099356f6755750d027d58ea93f"
   },
   "receipt": {
     "path": "receipt.json",
@@ -193,7 +193,7 @@
       },
       "prepare_config": {
         "path": "prepare_config.py",
-        "sha256": "2ca12439c0e00a3b4412c5fe95c006e694b3979d7a9b9950ef6be5a9c53deb50"
+        "sha256": "66e69ce8f40119b819916a23f66d61da7d044df82e19ab49c33ceabb274a2ffc"
       },
       "prepare_node": {
         "path": "prepare_node.py",
@@ -205,15 +205,15 @@
       },
       "launch": {
         "path": "launch.sh",
-        "sha256": "ac8919ee7d9300904eae7a46c75ed27e69fd4d75b8fbc916a1b3e8d83db2377c"
+        "sha256": "3ad30d93f2e60eb4689874a2d248e62229b5c686b18a0e89a9ba5c182e1b628e"
       },
       "launch_guard": {
         "path": "launch_guard.py",
-        "sha256": "d9ad5329434d8dbda0d23a030dd303f19aab11cd1a2648e461837eab9113d408"
+        "sha256": "9ab87155110a3a31664b2de79154885d2fb15f32ba035481ae3e471738bdc138"
       },
       "launch_prepared": {
         "path": "launch_prepared.py",
-        "sha256": "2f469135f88d4c117ed9a54c77ad12df2d4cbaa75f4372497fb69e9e4eb6d19d"
+        "sha256": "e36f0af94aab128c6eb0f9505638f447cc520d5fe6ebe2ca8a9dbcb08355b57c"
       },
       "real_backward_canary": {
         "path": "real_backward_canary.py",
@@ -229,7 +229,7 @@
       },
       "staged_trainer": {
         "path": "train_from_sft.py",
-        "sha256": "3ac93eb4586384b453dec0b15ac38ce72ec29e2bde459af687c55ddd3526eda8"
+        "sha256": "1374bf2b98c0483dca360815c896fa3b4abc4f944a4be623b8a97c7715b341b8"
       },
       "staged_init_adapter": {
         "path": "prime_runtime/integrations/prime/watercolour_sft/init_adapter.py",

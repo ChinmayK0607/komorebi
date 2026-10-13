@@ -129,6 +129,18 @@ class LaunchHandoffTests(unittest.TestCase):
             self.assertEqual((one_plus_one["deployment"]["num_train_gpus"], one_plus_one["deployment"]["num_infer_gpus"]), (1, 1))
             self.assertEqual((two_plus_two["deployment"]["num_train_gpus"], two_plus_two["deployment"]["num_infer_gpus"]), (2, 2))
             self.assertEqual((four_plus_four["deployment"]["num_train_gpus"], four_plus_four["deployment"]["num_infer_gpus"]), (4, 4))
+            self.assertEqual(
+                (one_plus_one["inference"]["vllm"]["tensor_parallel_size"], one_plus_one["inference"]["vllm"]["data_parallel_size"]),
+                (1, 1),
+            )
+            self.assertEqual(
+                (two_plus_two["inference"]["vllm"]["tensor_parallel_size"], two_plus_two["inference"]["vllm"]["data_parallel_size"]),
+                (2, 1),
+            )
+            self.assertEqual(
+                (four_plus_four["inference"]["vllm"]["tensor_parallel_size"], four_plus_four["inference"]["vllm"]["data_parallel_size"]),
+                (2, 2),
+            )
             with self.assertRaises(ValueError):
                 CONFIG.build_config(
                     model=model, node_root=root / "mismatch", materialized_root=materialized,

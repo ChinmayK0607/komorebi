@@ -351,6 +351,42 @@ def build_launch_environment(*, verified: dict[str, Any], gateway_env: Path, tim
     return env
 
 
+def materialize_real_backward_canary_config(source: Path, target: Path, artifact_root: Path) -> None:
+    """Make trainer and orchestrator share the canary's one-update horizon."""
+
+    spec = importlib.util.spec_from_file_location("staged_prepare_config_for_canary", RUN_ROOT / "prepare_config.py")
+    if spec is None or spec.loader is None:
+        raise PreparedLaunchError("prepare_config.py is unavailable for canary materialization")
+    prepare_config = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(prepare_config)
+
+    try:
+        config = tomllib.loads(source.read_text(encoding="utf-8"))
+    except (OSError, tomllib.TOMLDecodeError) as exc:
+        raise PreparedLaunchError("prepared Prime config is not valid TOML") from exc
+    trainer = config.get("trainer")
+    orchestrator = config.get("orchestrator")
+    checkpoint = config.get("ckpt")
+    if (
+        config.get("max_steps") != 20
+        or not isinstance(trainer, dict)
+        or trainer.get("max_steps") != 20
+        or not isinstance(orchestrator, dict)
+        or orchestrator.get("max_steps") != 20
+        or not isinstance(checkpoint, dict)
+    ):
+        raise PreparedLaunchError("real-backward canary source lacks the matched 20-update horizon")
+    config["max_steps"] = 1
+    trainer["max_steps"] = 1
+    orchestrator["max_steps"] = 1
+    checkpoint["interval"] = 1
+    config["output_dir"] = str((artifact_root / "async-output").resolve())
+    taskset = orchestrator["train"]["source"][0]["env"]["taskset"]
+    taskset["output_root"] = str((artifact_root / "rl-rollouts").resolve())
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(prepare_config.render_toml(config), encoding="utf-8")
+
+
 def invoke(*, verified: dict[str, Any], gateway_env: Path, timeout_seconds: int, real_backward_canary: bool = False, canary_node_hourly_usd: float | None = None, runner: Any = subprocess.run) -> int:
     env = build_launch_environment(
         verified=verified, gateway_env=gateway_env, timeout_seconds=timeout_seconds,

@@ -5,6 +5,7 @@ import hashlib
 import json
 from pathlib import Path
 import tempfile
+import tomllib
 import unittest
 from unittest.mock import patch
 
@@ -14,6 +15,10 @@ SPEC = importlib.util.spec_from_file_location("staged_launch_prepared", RUN / "l
 assert SPEC is not None and SPEC.loader is not None
 HANDOFF = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(HANDOFF)
+PREP_SPEC = importlib.util.spec_from_file_location("staged_prepare_config_for_handoff_test", RUN / "prepare_config.py")
+assert PREP_SPEC is not None and PREP_SPEC.loader is not None
+PREP = importlib.util.module_from_spec(PREP_SPEC)
+PREP_SPEC.loader.exec_module(PREP)
 
 
 class PreparedLaunchTests(unittest.TestCase):
@@ -122,6 +127,34 @@ class PreparedLaunchTests(unittest.TestCase):
                     verified=verified, gateway_env=gateway, timeout_seconds=2400,
                     real_backward_canary=True, canary_node_hourly_usd=13.51,
                 )
+
+    def test_real_backward_canary_bounds_trainer_and_orchestrator_together(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / "native.toml"
+            target = root / "guard" / "native.toml"
+            artifact_root = root / "guard"
+            model = root / PREP.BASE_MODEL_REVISION
+            materialized = root / "materialized"
+            repo = root / "repo"
+            for path in (model, materialized, repo):
+                path.mkdir()
+            config = PREP.build_config(
+                model=model, node_root=root, materialized_root=materialized, repo_root=repo,
+                gpus_per_node=8, num_train_gpus=4, num_infer_gpus=4,
+            )
+            source.write_text(PREP.render_toml(config), encoding="utf-8")
+            HANDOFF.materialize_real_backward_canary_config(source, target, artifact_root)
+            value = tomllib.loads(target.read_text(encoding="utf-8"))
+            self.assertEqual(value["max_steps"], 1)
+            self.assertEqual(value["trainer"]["max_steps"], 1)
+            self.assertEqual(value["orchestrator"]["max_steps"], 1)
+            self.assertEqual(value["ckpt"]["interval"], 1)
+            self.assertEqual(value["output_dir"], str((artifact_root / "async-output").resolve()))
+            self.assertEqual(
+                value["orchestrator"]["train"]["source"][0]["env"]["taskset"]["output_root"],
+                str((artifact_root / "rl-rollouts").resolve()),
+            )
 
     def test_canary_requires_hourly_price_before_spawn(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

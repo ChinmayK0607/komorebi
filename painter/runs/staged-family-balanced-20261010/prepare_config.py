@@ -55,6 +55,11 @@ SUPPORTED_TOPOLOGIES = frozenset({
     (4, 2, 2),
     (8, 4, 4),
 })
+# Four inference GPUs are split into two TP2 replicas. Qwen3.8-27B's 24
+# attention heads and four KV heads divide by two, and the measured A100-80G
+# run left ample KV headroom. TP5 is invalid for those head counts, while TP4
+# produced one saturated replica and made rollout collection the bottleneck.
+INFERENCE_TP_BY_GPU_COUNT = {1: 1, 2: 2, 4: 2}
 
 
 def sha256_file(path: Path) -> str:
@@ -180,8 +185,9 @@ def build_config(
         "max_inflight": BATCH_SIZE,
     })
     config["inference"]["vllm"]["max_num_seqs"] = BATCH_SIZE
-    config["inference"]["vllm"]["tensor_parallel_size"] = num_infer_gpus
-    config["inference"]["vllm"]["data_parallel_size"] = 1
+    inference_tp = INFERENCE_TP_BY_GPU_COUNT[num_infer_gpus]
+    config["inference"]["vllm"]["tensor_parallel_size"] = inference_tp
+    config["inference"]["vllm"]["data_parallel_size"] = num_infer_gpus // inference_tp
 
     source = config["orchestrator"]["train"]["source"][0]
     source["name"] = "staged-family-balanced"

@@ -103,6 +103,13 @@ def _stale_rank(
     now = time.time()
     for marker in started:
         rank = marker.name.removeprefix("rank-").removesuffix(".started.json")
+        completed = _read_json(rank_dir / f"rank-{rank}.completed.json")
+        if (
+            isinstance(completed, dict)
+            and completed.get("schema") == "staged-family-balanced-rank-complete-v1"
+            and str(completed.get("rank")) == rank
+        ):
+            continue
         heartbeat = rank_dir / f"rank-{rank}.heartbeat"
         try:
             age = now - heartbeat.stat().st_mtime

@@ -7,6 +7,7 @@ import os
 from pathlib import Path
 import sys
 import tempfile
+import time
 import types
 import unittest
 from unittest.mock import patch
@@ -145,6 +146,31 @@ class ReliabilityPassTests(unittest.TestCase):
                 )
             self.assertIn("only 0 of 4", reason or "")
             self.assertIn("trainer_process_started", reason or "")
+
+    def test_completed_rank_is_not_reported_stale_during_peer_checkpoint_upload(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            rank_dir = Path(directory) / "ranks"
+            rank_dir.mkdir()
+            (rank_dir / "rank-1.started.json").write_text("{}", encoding="utf-8")
+            (rank_dir / "rank-1.heartbeat").touch()
+            (rank_dir / "rank-1.completed.json").write_text(json.dumps({
+                "schema": "staged-family-balanced-rank-complete-v1",
+                "rank": "1",
+            }), encoding="utf-8")
+            with patch.object(guard.time, "time", return_value=time.time() + 60):
+                self.assertIsNone(guard._stale_rank(
+                    rank_dir, expected_world_size=1, started_at=0,
+                ))
+
+    def test_rank_heartbeat_writes_explicit_normal_completion(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            heartbeat = train_wrapper._RankHeartbeat(Path(directory))
+            heartbeat.start()
+            heartbeat.mark_completed()
+            heartbeat.close()
+            value = json.loads(heartbeat.completed.read_text(encoding="utf-8"))
+            self.assertEqual(value["schema"], "staged-family-balanced-rank-complete-v1")
+            self.assertEqual(value["rank"], train_wrapper._rank_number())
 
     def test_trainer_process_exit_writes_prompt_failure_receipt(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

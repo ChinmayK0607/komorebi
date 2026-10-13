@@ -34,6 +34,7 @@ class _RankHeartbeat:
         self.rank = _rank_number()
         self.path = rank_dir / f"rank-{self.rank}.heartbeat"
         self.started = rank_dir / f"rank-{self.rank}.started.json"
+        self.completed = rank_dir / f"rank-{self.rank}.completed.json"
         self.stop = threading.Event()
         self.thread: threading.Thread | None = None
 
@@ -61,6 +62,18 @@ class _RankHeartbeat:
         self.stop.set()
         if self.thread is not None:
             self.thread.join(timeout=2.0)
+
+    def mark_completed(self) -> None:
+        """Publish an explicit normal-exit marker before stopping heartbeats."""
+
+        temporary = self.completed.with_name(f".{self.completed.name}.{os.getpid()}.tmp")
+        temporary.write_text(json.dumps({
+            "schema": "staged-family-balanced-rank-complete-v1",
+            "rank": self.rank,
+            "pid": os.getpid(),
+            "recorded_at_unix": time.time(),
+        }, sort_keys=True) + "\n", encoding="utf-8")
+        temporary.replace(self.completed)
 
 
 def _record_rank_failure(failure_file: Path, exc: BaseException) -> None:
@@ -264,6 +277,8 @@ def main() -> None:
         heartbeat.start()
     try:
         _run()
+        if heartbeat is not None:
+            heartbeat.mark_completed()
     except BaseException as exc:
         if guard is not None:
             _record_rank_failure(guard[1], exc)
