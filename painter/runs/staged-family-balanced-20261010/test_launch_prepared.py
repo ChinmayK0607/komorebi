@@ -62,6 +62,7 @@ class PreparedLaunchTests(unittest.TestCase):
             self.assertEqual(env["BRUSH_ROOT"], str(verified["brush_root"]))
             self.assertEqual(env["PAINTER_GATEWAY_ENV_FILE"], str(gateway.resolve()))
             self.assertEqual(env["PAINTER_RUN_TIMEOUT_SECONDS"], "17")
+            self.assertEqual(env["PAINTER_BOUNDED_MAX_STEPS"], "20")
             self.assertTrue(env["PAINTER_GUARD_NAMESPACE"].startswith(str((verified["prepared"] / "launch-guards").resolve())))
             self.assertNotIn("OPENAI_API_KEY", env)
             self.assertNotIn("PAINTER_PRIME_ROLE", env)
@@ -155,6 +156,47 @@ class PreparedLaunchTests(unittest.TestCase):
                 value["orchestrator"]["train"]["source"][0]["env"]["taskset"]["output_root"],
                 str((artifact_root / "rl-rollouts").resolve()),
             )
+
+    def test_four_step_pilot_bounds_all_horizons_and_uses_isolated_outputs(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            verified = self._verified(root)
+            gateway = verified.pop("gateway")
+            env = HANDOFF.build_launch_environment(
+                verified=verified, gateway_env=gateway, timeout_seconds=4800, max_steps=4,
+            )
+            self.assertEqual(env["PAINTER_BOUNDED_MAX_STEPS"], "4")
+            self.assertNotIn("PAINTER_CANARY_MODE", env)
+
+            source = root / "native.toml"
+            target = root / "guard" / "native.toml"
+            artifact_root = root / "guard"
+            model = root / PREP.BASE_MODEL_REVISION
+            materialized = root / "materialized-pilot"
+            repo = root / "repo-pilot"
+            for path in (model, materialized, repo):
+                path.mkdir()
+            config = PREP.build_config(
+                model=model, node_root=root, materialized_root=materialized, repo_root=repo,
+                gpus_per_node=8, num_train_gpus=4, num_infer_gpus=4,
+            )
+            source.write_text(PREP.render_toml(config), encoding="utf-8")
+            HANDOFF.materialize_bounded_config(source, target, artifact_root, max_steps=4)
+            value = tomllib.loads(target.read_text(encoding="utf-8"))
+            self.assertEqual(value["max_steps"], 4)
+            self.assertEqual(value["trainer"]["max_steps"], 4)
+            self.assertEqual(value["orchestrator"]["max_steps"], 4)
+            self.assertEqual(value["ckpt"]["interval"], 1)
+
+    def test_invalid_bounded_horizon_fails_before_spawn(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            verified = self._verified(Path(directory))
+            gateway = verified.pop("gateway")
+            for value in (0, 21):
+                with self.assertRaisesRegex(HANDOFF.PreparedLaunchError, "max steps"):
+                    HANDOFF.build_launch_environment(
+                        verified=verified, gateway_env=gateway, timeout_seconds=17, max_steps=value,
+                    )
 
     def test_canary_requires_hourly_price_before_spawn(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

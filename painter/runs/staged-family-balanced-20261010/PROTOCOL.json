@@ -71,7 +71,7 @@
   },
   "config": {
     "path": "config.json",
-    "sha256": "3ddeb47db027f3f997b4a7d74a455bc499791f099356f6755750d027d58ea93f"
+    "sha256": "a364b47e95dc1d9b82c21e1f01feb00594dd65692ea100d1fff989b936d04305"
   },
   "receipt": {
     "path": "receipt.json",
@@ -205,7 +205,7 @@
       },
       "launch": {
         "path": "launch.sh",
-        "sha256": "3ad30d93f2e60eb4689874a2d248e62229b5c686b18a0e89a9ba5c182e1b628e"
+        "sha256": "cd7da258ed097b3050db4483cb7816fd46f8cbd6429671f7c97d8a480648ba6d"
       },
       "launch_guard": {
         "path": "launch_guard.py",
@@ -213,7 +213,7 @@
       },
       "launch_prepared": {
         "path": "launch_prepared.py",
-        "sha256": "e36f0af94aab128c6eb0f9505638f447cc520d5fe6ebe2ca8a9dbcb08355b57c"
+        "sha256": "a01f2b38795fe9274f51b6b02e705f28fa13d21adace20ab6e8ff56f1e8ffed6"
       },
       "real_backward_canary": {
         "path": "real_backward_canary.py",

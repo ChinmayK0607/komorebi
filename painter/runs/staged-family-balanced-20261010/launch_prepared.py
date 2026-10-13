@@ -282,13 +282,18 @@ def validate_ready(*, ready_path: Path, node_root: Path, visible_gpus: int) -> d
     }
 
 
-def build_launch_environment(*, verified: dict[str, Any], gateway_env: Path, timeout_seconds: int, real_backward_canary: bool = False, canary_node_hourly_usd: float | None = None) -> dict[str, str]:
+def build_launch_environment(*, verified: dict[str, Any], gateway_env: Path, timeout_seconds: int, real_backward_canary: bool = False, canary_node_hourly_usd: float | None = None, max_steps: int | None = None) -> dict[str, str]:
     if timeout_seconds < 1 or timeout_seconds > 604800:
         raise PreparedLaunchError("timeout seconds must be in 1..604800")
     if real_backward_canary and timeout_seconds > 2400:
         raise PreparedLaunchError("real-backward canary timeout must be at most 2400 seconds")
     if real_backward_canary and canary_node_hourly_usd is None:
         raise PreparedLaunchError("--canary-node-hourly-usd is required for a real-backward canary")
+    max_steps = 1 if real_backward_canary and max_steps is None else 20 if max_steps is None else max_steps
+    if max_steps < 1 or max_steps > 20:
+        raise PreparedLaunchError("max steps must be in 1..20")
+    if real_backward_canary and max_steps != 1:
+        raise PreparedLaunchError("real-backward canary requires max steps 1")
     gateway_env = validate_gateway_file(gateway_env)
     guard_namespace = Path(verified["prepared"]).resolve() / "launch-guards" / uuid.uuid4().hex
     env = {
@@ -326,6 +331,7 @@ def build_launch_environment(*, verified: dict[str, Any], gateway_env: Path, tim
         "PAINTER_RANK_GUARD_DIR": str(guard_namespace / "rank-guard"),
         "PAINTER_DISTRIBUTED_FAILURE_FILE": str(guard_namespace / "distributed-failure.json"),
         "PAINTER_LAUNCH_PHASE_FILE": str(guard_namespace / "launch-phase.json"),
+        "PAINTER_BOUNDED_MAX_STEPS": str(max_steps),
     })
     if real_backward_canary:
         try:
@@ -354,6 +360,15 @@ def build_launch_environment(*, verified: dict[str, Any], gateway_env: Path, tim
 def materialize_real_backward_canary_config(source: Path, target: Path, artifact_root: Path) -> None:
     """Make trainer and orchestrator share the canary's one-update horizon."""
 
+    materialize_bounded_config(source, target, artifact_root, max_steps=1)
+
+
+def materialize_bounded_config(source: Path, target: Path, artifact_root: Path, *, max_steps: int) -> None:
+    """Bind every Prime horizon and output path to one finite launch."""
+
+    if max_steps < 1 or max_steps > 20:
+        raise PreparedLaunchError("bounded max steps must be in 1..20")
+
     spec = importlib.util.spec_from_file_location("staged_prepare_config_for_canary", RUN_ROOT / "prepare_config.py")
     if spec is None or spec.loader is None:
         raise PreparedLaunchError("prepare_config.py is unavailable for canary materialization")
@@ -376,9 +391,9 @@ def materialize_real_backward_canary_config(source: Path, target: Path, artifact
         or not isinstance(checkpoint, dict)
     ):
         raise PreparedLaunchError("real-backward canary source lacks the matched 20-update horizon")
-    config["max_steps"] = 1
-    trainer["max_steps"] = 1
-    orchestrator["max_steps"] = 1
+    config["max_steps"] = max_steps
+    trainer["max_steps"] = max_steps
+    orchestrator["max_steps"] = max_steps
     checkpoint["interval"] = 1
     config["output_dir"] = str((artifact_root / "async-output").resolve())
     taskset = orchestrator["train"]["source"][0]["env"]["taskset"]
@@ -387,10 +402,11 @@ def materialize_real_backward_canary_config(source: Path, target: Path, artifact
     target.write_text(prepare_config.render_toml(config), encoding="utf-8")
 
 
-def invoke(*, verified: dict[str, Any], gateway_env: Path, timeout_seconds: int, real_backward_canary: bool = False, canary_node_hourly_usd: float | None = None, runner: Any = subprocess.run) -> int:
+def invoke(*, verified: dict[str, Any], gateway_env: Path, timeout_seconds: int, real_backward_canary: bool = False, canary_node_hourly_usd: float | None = None, max_steps: int | None = None, runner: Any = subprocess.run) -> int:
     env = build_launch_environment(
         verified=verified, gateway_env=gateway_env, timeout_seconds=timeout_seconds,
         real_backward_canary=real_backward_canary, canary_node_hourly_usd=canary_node_hourly_usd,
+        max_steps=max_steps,
     )
     completed = runner(["bash", str(RUN_ROOT / "launch.sh"), str(verified["prepared"])], env=env, check=False)
     status = int(completed.returncode)
@@ -414,6 +430,7 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--timeout-seconds", type=int, required=True)
     parser.add_argument("--real-backward-canary", action="store_true")
     parser.add_argument("--canary-node-hourly-usd", type=float)
+    parser.add_argument("--max-steps", type=int)
     return parser.parse_args(argv)
 
 
@@ -428,7 +445,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         return invoke(
             verified=verified, gateway_env=args.gateway_env_file,
             timeout_seconds=args.timeout_seconds, real_backward_canary=args.real_backward_canary,
-            canary_node_hourly_usd=args.canary_node_hourly_usd,
+            canary_node_hourly_usd=args.canary_node_hourly_usd, max_steps=args.max_steps,
         )
     except (PreparedLaunchError, ValueError) as exc:
         print(f"prepared launch failed closed: {exc}", file=sys.stderr)

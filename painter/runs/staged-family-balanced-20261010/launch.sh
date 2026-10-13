@@ -82,13 +82,13 @@ esac
 GUARD_ID="${GUARD_NAMESPACE#"$GUARD_PARENT/"}"
 [[ "$GUARD_ID" =~ ^[0-9a-f]{32}$ ]] || { echo 'PAINTER_GUARD_NAMESPACE must contain one UUID launch identifier' >&2; exit 2; }
 CANARY_MODE="${PAINTER_CANARY_MODE:-}"
-if [[ "$CANARY_MODE" == "real_backward" ]]; then
+BOUNDED_MAX_STEPS="${PAINTER_BOUNDED_MAX_STEPS:-20}"
+[[ "$BOUNDED_MAX_STEPS" =~ ^([1-9]|1[0-9]|20)$ ]] || { echo 'PAINTER_BOUNDED_MAX_STEPS must be 1..20' >&2; exit 2; }
+[[ -z "$CANARY_MODE" || "$CANARY_MODE" == "real_backward" ]] || { echo "unsupported PAINTER_CANARY_MODE: $CANARY_MODE" >&2; exit 2; }
+if [[ "$CANARY_MODE" == "real_backward" || "$BOUNDED_MAX_STEPS" != 20 ]]; then
     ARTIFACT_ROOT="$GUARD_NAMESPACE"
-elif [[ -z "$CANARY_MODE" ]]; then
-    ARTIFACT_ROOT="$NODE_ROOT"
 else
-    echo "unsupported PAINTER_CANARY_MODE: $CANARY_MODE" >&2
-    exit 2
+    ARTIFACT_ROOT="$NODE_ROOT"
 fi
 [[ ! -e "$ARTIFACT_ROOT/launch.started" && ! -e "$ARTIFACT_ROOT/async-output" && ! -e "$ARTIFACT_ROOT/runtime-state.json" && ! -e "$ARTIFACT_ROOT/rl-rollouts" ]] || {
     echo "existing staged output in the selected launch namespace: $ARTIFACT_ROOT" >&2
@@ -96,7 +96,7 @@ fi
 }
 CONFIG="$NODE_ROOT/native.toml"
 export PYTHONPATH="$RUN_SOURCE_ROOT:$REPO_ROOT:$REPO_ROOT/painter:$(dirname "$RUN_WRAPPER")${PYTHONPATH:+:$PYTHONPATH}"
-if [[ "$CANARY_MODE" == "real_backward" ]]; then
+if [[ "$CANARY_MODE" == "real_backward" || "$BOUNDED_MAX_STEPS" != 20 ]]; then
     mkdir -p "$GUARD_NAMESPACE"
     # Prime writes rollout artifacts as root, while the renderer intentionally
     # crosses into the unprivileged painter account. Keep file contents private
@@ -112,16 +112,16 @@ if [[ "$CANARY_MODE" == "real_backward" ]]; then
     runuser -u painter -- test -r "$ACCESS_PROBE/program.js" || { echo 'painter cannot traverse/read generated rollout paths' >&2; exit 1; }
     rm -rf "$GUARD_NAMESPACE/.painter-access-probe"
     CONFIG="$GUARD_NAMESPACE/native.toml"
-    "$PYTHON" - "$NODE_ROOT/native.toml" "$CONFIG" "$ARTIFACT_ROOT" <<'PY'
+    "$PYTHON" - "$NODE_ROOT/native.toml" "$CONFIG" "$ARTIFACT_ROOT" "$BOUNDED_MAX_STEPS" <<'PY'
 import sys
 from pathlib import Path
-from launch_prepared import materialize_real_backward_canary_config
+from launch_prepared import materialize_bounded_config
 
-source, target, artifact_root = map(Path, sys.argv[1:])
-materialize_real_backward_canary_config(source, target, artifact_root)
+source, target, artifact_root = map(Path, sys.argv[1:4])
+materialize_bounded_config(source, target, artifact_root, max_steps=int(sys.argv[4]))
 PY
 fi
-if [[ "$CANARY_MODE" == "real_backward" ]]; then
+if [[ "$CANARY_MODE" == "real_backward" || "$BOUNDED_MAX_STEPS" != 20 ]]; then
     cd "$ARTIFACT_ROOT"
 fi
 
@@ -176,16 +176,17 @@ if receipt.get("policy_initializer", {}).get("weights_sha256") != sys.argv[2] or
     raise SystemExit("adapter bytes do not match node preparation receipt")
 PY
 
-"$PYTHON" - "$CONFIG" "$MATERIALIZED_ROOT" "$NODE_ROOT/prepare-receipt.json" "$NODE_ROOT/canary-receipt.json" <<'PY'
+"$PYTHON" - "$CONFIG" "$MATERIALIZED_ROOT" "$NODE_ROOT/prepare-receipt.json" "$NODE_ROOT/canary-receipt.json" "$BOUNDED_MAX_STEPS" <<'PY'
 import json
 import sys
 import tomllib
 from pathlib import Path
-config_path, materialized_root, prepare_path, canary_path = map(Path, sys.argv[1:])
+config_path, materialized_root, prepare_path, canary_path = map(Path, sys.argv[1:5])
+expected_steps = int(sys.argv[5])
 config = tomllib.loads(config_path.read_text())
 taskset = config["orchestrator"]["train"]["source"][0]["env"]["taskset"]
-if config.get("max_steps") != 20 or config.get("trainer", {}).get("max_steps") != 20:
-    raise SystemExit("Prime config is not bounded to 20 updates")
+if config.get("max_steps") != expected_steps or config.get("trainer", {}).get("max_steps") != expected_steps or config.get("orchestrator", {}).get("max_steps") != expected_steps:
+    raise SystemExit("Prime config horizons do not match the bounded launch")
 if config["orchestrator"].get("batch_size") != 24 or config["orchestrator"].get("group_size") != 4 or config["orchestrator"].get("constant_trainer_batch_size") is not True:
     raise SystemExit("Prime config batch/group shape is not 24/4")
 if Path(taskset["root"]).resolve() != materialized_root.resolve() or taskset.get("manifest") != "train-manifest.json":
@@ -254,7 +255,7 @@ PY
 export PRIME_ROOT MODEL_DIR BRUSH_ROOT
 export WATERCOLOUR_INIT_ADAPTER="$POLICY_ADAPTER" PAINTER_FROZEN_SFT_ADAPTER="$FROZEN_ADAPTER"
 export PAINTER_RL_CONFIG="$CONFIG" PAINTER_RL_MANIFEST="$MATERIALIZED_ROOT/train-manifest.json" PAINTER_EVAL_MANIFEST="$MATERIALIZED_ROOT/heldout-manifest.json"
-export PAINTER_RL_RUN_NAME="$RUN_ID" PAINTER_RL_MAX_STEPS="${PAINTER_RL_MAX_STEPS:-20}" PAINTER_RL_MODE=recovered_policy
+export PAINTER_RL_RUN_NAME="$RUN_ID" PAINTER_RL_MAX_STEPS="$BOUNDED_MAX_STEPS" PAINTER_RL_MODE=recovered_policy
 export PAINTER_RL_ADAPTER_REVISION="$POLICY_REVISION" PAINTER_RL_ADAPTER_PREFIX="$POLICY_PREFIX" PAINTER_RL_ADAPTER_SHA256="$POLICY_SHA256"
 export PAINTER_FROZEN_SFT_ALIAS=sft-step512 PAINTER_FROZEN_SFT_REVISION=adf687e5b321514eda7be6eab050434fdc8e44ff PAINTER_FROZEN_SFT_PREFIX=photo-curriculum-sft-20260922-balanced/step_512 PAINTER_FROZEN_SFT_SHA256="$FROZEN_SFT_SHA256"
 export PAINTER_REQUIRE_VALID_FINAL_ACTION=1
